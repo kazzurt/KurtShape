@@ -1,0 +1,26 @@
+# STEP import — October 2, 2026
+
+Use **Open** or **Ctrl+O**, choose a `.step` or `.stp` file, and select a Body from the Parts chooser when adding features. **Save / Ctrl+S** creates an FCStd project, defaulting to the STEP source's filename with the native extension. The STEP input stays unchanged; importing again creates another independent project. Recent entries support both native projects and STEP sources. Relaunch KurtShape after saving/closing any older app window to load this implementation.
+
+The implementation uses this project's portable FreeCAD 1.1.4 / OCCT 7.8.1. Native Part reads the source geometry and units. It validates the full shape before creating a new document, then recursively separates compounds into individual native Bodies with `PartDesign::Feature` bases. Solid positions remain in the source coordinate system; they are neither fused nor automatically aligned. Non-solid geometry is retained in `Part::Feature` references. Native additions, undo, save/reopen, recovery and current-solid export use the existing controller. No scripts or feature code execute from the input.
+
+This geometry import does not reconstruct Onshape sketches, driving dimensions, native historical features, original product names/colors, assembly structure or mates. Imported solids receive numbered labels and can be renamed. Assembly occurrences become independent solids. Reference surfaces remain visible in FCStd but solid exports include only solids; a surface-only project has no solid export. FeatureScript interpretation and the real parametric conversion milestone remain separate and incomplete (**0/2**).
+
+Provenance records the source absolute path and SHA256, initially imported Body/reference IDs and the history/hierarchy limitations in native project metadata. It describes the import baseline; after modeling it is not a claim that the current geometry equals the input. Export sidecars include this baseline alongside current revision and geometry/hash evidence. The controller rejects a source that changes during reading, empty/corrupt/invalid geometry, wrong formats, relative paths, active native editing and concurrent mutations. Failures discard any partial new document and restore the prior active document. Identical session request IDs replay the accepted response without importing twice.
+
+## Reproduction and evidence
+
+The automated native regression is `tests/test_step_import.py`, included in the offline suite:
+
+```powershell
+& runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin/python.exe -B tools/validate_offline.py
+.\validate-review-gui.ps1 -Scenario step
+```
+
+The second command starts a separate hidden FreeCAD process under `runtime/review-step-validation`; it never drives the user's open application. GUI evidence is written to `validation/step-import/gui-test-result.json`, with screenshots and disposable native projects in that descriptive validation folder. The seven native tests cover both real three-solid sources, volume/area/bounds preservation, native save/reopen and STEP export/provenance, native Pad/undo on a base, mixed/surface references, failed publication, empty/changing inputs, request replay and edit/busy guards. Originals are referenced in place under `CADkz/Onshape examples` and their SHA256 values are checked unchanged.
+
+Verified: **68 offline native tests, 22 shortcut tests and 4 loopback tests pass (94 total)**, including the seven import regressions. The final native GUI run passes **19 checks**. Both original examples retain three solids through import, FCStd save/reopen and STEP export; original hashes are unchanged. Screenshots at 1200×800 and 1600×1000 show the pipe, and the settled hub view shows all imported geometry. Open/Save dialogs use the incumbent native theme and show the new formats/default filename without adding toolbar clutter. No visual-system change was needed.
+
+The visual check caught FreeCAD's deferred view-provider population: an immediate fit could frame an empty hub view. Import now schedules a second fit on the next event-loop tick, guarded against a document switch or active edit. The GUI regression waits for that tick and verifies a nonempty fit. The dialog recipe uses a fresh PID-named native destination each run, avoiding repeat-run overwrite prompts; its first attempt was stopped after a scripted selection did not settle, and the helper now waits for the file model before accepting. Only verified validation processes were stopped.
+
+The hidden GUI continues to log the previously observed native `GUIApplication::notify` startup access-violation exception before import begins, together with missing Start-thumbnail warnings. It recovers and completes the workflow checks; their pass is not a claim of clean native startup. Those messages are retained in the GUI JSON. The recipe also deliberately tests corrupt-file and active-edit error reporting. Native source reading/validation remains synchronous on the GUI thread; the recorded aggregate disk/model operation worst case is 5.864 seconds in this fixture, not an ordinary interaction latency claim. GUI automation demonstrates the workflow; Kurt's hands-on comfort and larger STEP latency remain user acceptance work.

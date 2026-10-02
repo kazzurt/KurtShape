@@ -1,7 +1,7 @@
 {
   "passed": true,
-  "tests": 61,
-  "seconds": 12.262068100040779,
+  "tests": 68,
+  "seconds": 19.859916100045666,
   "network": "Python connect/create_connection/DNS denied; commands also run in the restricted tool sandbox",
   "limits": "Physical network disconnection and native C++ socket interception not exercised; graphical startup tested separately"
 }

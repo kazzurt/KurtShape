@@ -169,9 +169,10 @@ class Controller:
     MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line",
                  "pad", "pocket", "set_parameter", "set_expression", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "rebuild"}
     EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "set_parameter", "set_expression", "pierce", "finish_sketch_edit", "undo", "redo"}
-    OPS = READ_OPS | MODEL_OPS | {"new", "open", "recover", "adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
+    CREATE_OPS = {"new", "open", "recover", "import_step"}
+    OPS = READ_OPS | MODEL_OPS | CREATE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
     ARGS = {
-        "new": {"name"}, "open": {"path"}, "recover": {"path"}, "adopt": {"path"}, "create_body": {"id", "name"}, "inspect": set(), "list_documents": set(),
+        "new": {"name"}, "open": {"path"}, "import_step": {"path"}, "recover": {"path"}, "adopt": {"path"}, "create_body": {"id", "name"}, "inspect": set(), "list_documents": set(),
         "create_sketch": {"id", "plane", "support", "source_feature_id", "source_feature_name"},
         "sketch_rectangle": {"id","width","height","x","y","plane","support","source_feature_id","source_feature_name"},
         "sketch_circle": {"id","x","y","diameter","plane","support","center_on","source_feature_id","source_feature_name"},
@@ -516,7 +517,8 @@ class Controller:
                 "last_failed_attempt": self.last_failures.get(meta.DocumentId),
                 "active_sketch_edit": self.sketch_edits.get(meta.DocumentId, {}).get("feature"),
                 "managed": self.is_managed(doc), "unsupported_objects": unsupported, "bodies": evaluated_results,
-                "operations": sorted(self.OPS if self.is_managed(doc) else self.READ_OPS | {"open", "adopt"})}
+                "import_source": json.loads(getattr(meta, "ImportSource", "{}")) or None,
+                "operations": sorted(self.OPS if self.is_managed(doc) else self.READ_OPS | self.CREATE_OPS | {"adopt"})}
 
     def dispatch(self, request):
         tracked = isinstance(request, dict) and request.get("op") not in self.READ_OPS and "request_id" in request
@@ -551,6 +553,7 @@ class Controller:
             if op == "capabilities":
                 return {"ok": True, "result": {"contract": 2, "session_id": self.ledger.session_id,
                     "operations": sorted(self.OPS), "preview_operations": ["set_parameter", "set_expression"],
+                    "import_formats": [".step", ".stp"],
                     "retry": {"scope": "session", "result_limit": self.ledger.limit, "session_request_limit": self.ledger.session_request_limit,
                               "missing_status": "not_recorded does not prove a request never executed; reconcile after restart or eviction"},
                     "request_size_limit_bytes": 65536, "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}}}
@@ -563,10 +566,10 @@ class Controller:
                 return {"ok": True, "result": {"documents": [self.inspect(d) for d in self.documents.values() if self._is_open(d)]}}
             if op not in self.READ_OPS and self.busy:
                 raise OperationError("busy", "A modeling operation is already active")
-            if op in {"new", "open", "recover"} and any(identifier in self.sketch_edits and self._is_open(existing)
+            if op in self.CREATE_OPS and any(identifier in self.sketch_edits and self._is_open(existing)
                                                          for identifier, existing in self.documents.items()):
                 raise OperationError("sketch_edit_active", "Finish or cancel the active sketch before changing documents")
-            if op in {"new", "open", "recover"} and getattr(App, "GuiUp", False):
+            if op in self.CREATE_OPS and getattr(App, "GuiUp", False):
                 import FreeCADGui as Gui
                 if Gui.Control.activeDialog() or any(Gui.getDocument(name) and Gui.getDocument(name).getInEdit() for name in App.listDocuments()):
                     raise OperationError("sketch_edit_active", "Finish or cancel graphical editing before changing documents")
@@ -577,6 +580,9 @@ class Controller:
                 doc.addObject("PartDesign::Body", "Body")
                 self._recompute(doc)
                 self.signatures[self._meta(doc).DocumentId] = self._signature(doc)
+            elif op == "import_step":
+                self.busy = owns_busy = True
+                doc = self._import_step(request.get("path"))
             elif op in {"open", "recover"}:
                 self.busy = owns_busy = True
                 recovery_record = None
@@ -747,6 +753,9 @@ class Controller:
                 # flag after the successful disk operation and final inspect.
                 # This neither rewrites the accepted file nor changes undo.
                 Gui.getDocument(doc.Name).Modified = False
+            if op == "import_step" and getattr(App, "GuiUp", False):
+                import FreeCADGui as Gui
+                Gui.getDocument(doc.Name).Modified = True
             result["operation_ms"] = round((time.perf_counter() - start) * 1000, 2)
             return {"ok": True, "result": result}
         except Exception as exc:
@@ -881,6 +890,88 @@ class Controller:
             if clone:
                 self.documents.pop(self.identifier(clone), None)
                 App.closeDocument(clone.Name)
+            raise
+
+    def _import_step(self, raw):
+        """Read neutral geometry, then publish a complete new native project.
+
+        Flatten STEP occurrences into independent Bodies with native base
+        features. Keep non-solid leaves as references rather than dropping
+        them. No edits, writes or transactions touch the current document.
+        """
+        if not isinstance(raw, str) or not Path(raw).is_absolute():
+            raise OperationError("invalid_argument", "STEP source must be an absolute file path")
+        path = Path(raw).resolve()
+        if path.suffix.lower() not in {".step", ".stp"}:
+            raise OperationError("invalid_format", "Import requires a .step or .stp file")
+        if not path.is_file():
+            raise OperationError("missing_file", "STEP source file does not exist")
+
+        def digest():
+            with path.open("rb") as source:
+                return hashlib.file_digest(source, "sha256").hexdigest()
+
+        source_hash = digest()
+        try:
+            shape = Part.read(str(path))
+        except Exception as exc:
+            raise OperationError("step_import_failed", "STEP could not be read; check the source file", reason=str(exc)) from exc
+        if source_hash != digest():
+            raise OperationError("source_changed", "STEP source changed while being imported; retry with a stable file")
+        if shape.isNull():
+            raise OperationError("empty_step", "STEP file contains no usable geometry")
+        if not shape.isValid():
+            raise OperationError("invalid_step_geometry", "STEP contains invalid geometry; repair it before importing")
+
+        leaves = []
+        def collect(item):
+            if item.ShapeType in {"Compound", "CompSolid"}:
+                for child in item.childShapes():
+                    collect(child)
+            else:
+                leaves.append(item)
+        collect(shape)
+        if not leaves:
+            raise OperationError("empty_step", "STEP file contains no usable geometry")
+
+        active, imported = App.activeDocument(), None
+        try:
+            imported = App.newDocument("KurtShapeSTEP")
+            imported.Label = path.stem[:120]
+            solid_ids, reference_ids = [], []
+            for leaf in leaves:
+                if leaf.ShapeType == "Solid":
+                    body = imported.addObject("PartDesign::Body", "Body")
+                    body.Label = "Imported solid " + str(len(solid_ids) + 1)
+                    base = body.newObject("PartDesign::Feature", "ImportedSolid")
+                    base.Label = "STEP solid " + str(len(solid_ids) + 1)
+                    base.Shape = leaf
+                    body.Tip = base
+                    solid_ids.append(body.Name)
+                else:
+                    reference = imported.addObject("Part::Feature", "ImportedReference")
+                    reference.Label = "STEP reference " + str(len(reference_ids) + 1)
+                    reference.Shape = leaf
+                    reference_ids.append(reference.Name)
+            meta = metadata(imported)
+            meta.addProperty("App::PropertyString", "ImportSource", "KurtShape")
+            meta.ImportSource = json.dumps({"format": "STEP", "path": str(path), "sha256": source_hash,
+                "body_ids": solid_ids, "reference_ids": reference_ids,
+                "feature_history": "unavailable", "assembly_structure": "flattened"}, sort_keys=True)
+            meta.setEditorMode("ImportSource", 1)
+            self._recompute(imported)
+            self.attach(imported)
+            if self._build_status(imported):
+                raise OperationError("invalid_step_geometry", "Imported STEP could not form valid native geometry")
+            return imported
+        except Exception:
+            if imported:
+                identifier = self.identifier(imported)
+                self.documents.pop(identifier, None)
+                self.signatures.pop(identifier, None)
+                App.closeDocument(imported.Name)
+            if active and self._is_open(active):
+                App.setActiveDocument(active.Name)
             raise
 
     def _id(self, doc, request, fallback):
@@ -1259,6 +1350,7 @@ class Controller:
             Part.export(included,str(stage))
         provenance={"document_id":self._meta(doc).DocumentId,"revision":self._meta(doc).Revision,"units":"mm",
                     "source_mapping":json.loads(self._meta(doc).SourceMapping),
+                    "import_source":json.loads(getattr(self._meta(doc), "ImportSource", "{}")) or None,
                     "engine":{"FreeCAD":App.Version(),"OCCT":Part.OCC_VERSION},
                     "sha256":hashlib.sha256(stage.read_bytes()).hexdigest(),
                     "native_file":doc.FileName or None,"format":path.suffix.lower(),"included_body_ids":[obj.Name for obj in included],"shape":self._geometry(doc, included),

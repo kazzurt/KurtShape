@@ -1,8 +1,9 @@
 {
-  "document_id": "752537bf-7671-485d-b811-23c9d579ea59",
-  "revision": "09775194-bee6-4b13-983a-5397240080b2",
+  "document_id": "260d79fe-f2f7-4288-9737-63e1fee04226",
+  "revision": "67815d83-64e3-4c82-9548-59c9b8085102",
   "units": "mm",
   "source_mapping": {},
+  "import_source": null,
   "engine": {
     "FreeCAD": [
       "1",
@@ -16,7 +17,7 @@
     ],
     "OCCT": "7.8.1"
   },
-  "sha256": "6dcfeaefb6819cd2d7a83f84d6e76e5237206216c0a367492a7ec6fb10f967b9",
+  "sha256": "01f46485af998d31f77b5c17c0fb2f07f09e55c63f5e50ce12f6b95c5c8dd11d",
   "native_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\core-acceptance\\plate.FCStd",
   "format": ".step",
   "included_body_ids": [

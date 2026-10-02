@@ -26,7 +26,8 @@ from test_core_safety import CoreSafetyTests
 from test_sketch_planes import SketchPlaneTests
 from test_navigation import SketchProjectionTests
 from test_review_followup import ReviewFollowupTests
-suite=unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromTestCase(c) for c in [NativeCoreTests,NativeConversionTests,PreflightTests,CoreSafetyTests,SketchPlaneTests,SketchProjectionTests,ReviewFollowupTests])
+from test_step_import import StepImportTests
+suite=unittest.TestSuite(unittest.defaultTestLoader.loadTestsFromTestCase(c) for c in [NativeCoreTests,NativeConversionTests,PreflightTests,CoreSafetyTests,SketchPlaneTests,SketchProjectionTests,ReviewFollowupTests,StepImportTests])
 result=unittest.TextTestRunner(verbosity=2).run(suite)
 report={"passed":result.wasSuccessful(),"tests":result.testsRun,"seconds":time.perf_counter()-start,
         "network":"Python connect/create_connection/DNS denied; commands also run in the restricted tool sandbox",

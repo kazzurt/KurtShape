@@ -1,0 +1,130 @@
+"""Exercise actual Open/Save dialogs in an isolated hidden native GUI."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+app = QtGui.QApplication.instance()
+app.setAttribute(QtCore.Qt.AA_DontUseNativeDialogs, True)
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.show()
+from kurtshape.ui import start
+from kurtshape.core import intent_signature
+panel = start()
+output = root / "validation" / "step-import"
+working = output / "step-import-projects-working"
+working.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "method": "Separate hidden FreeCAD GUI; actual Qt Open/Save/Cancel dialogs, real STEP sources and native body selection"}
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label)
+    report["checks"].append(label)
+
+def choose_dialog(path=None, screenshot=None, save=False):
+    try:
+        dialog = next(w for w in app.topLevelWidgets() if isinstance(w, QtWidgets.QFileDialog) and w.isVisible())
+        if save:
+            check("Save suggests the STEP source stem with FCStd extension", Path(dialog.selectedFiles()[0]).name == "Dodec pipe mount.FCStd")
+        else:
+            filters = " ".join(dialog.nameFilters())
+            check("Open chooser includes FCStd, STEP and STP including uppercase suffixes", all(suffix in filters for suffix in ("*.FCStd", "*.step", "*.stp", "*.STP")))
+        if screenshot:
+            dialog.grab().save(str(output / screenshot))
+        if path:
+            dialog.setDirectory(str(Path(path).parent))
+            dialog.findChild(QtWidgets.QLineEdit, "fileNameEdit").setText(Path(path).name)
+            QtCore.QTimer.singleShot(350, dialog.accept)
+        else:
+            dialog.reject()
+    except Exception:
+        report["dialog_error"] = traceback.format_exc()
+        for widget in app.topLevelWidgets():
+            if isinstance(widget, QtWidgets.QFileDialog) and widget.isVisible():
+                widget.reject()
+
+def validate():
+    try:
+        panel.operation("sketch_rectangle", id="Original", width=10, height=10)
+        panel.operation("pad", profile="Original", length=5)
+        previous = App.activeDocument()
+        previous_signature = intent_signature(previous)
+        pipe = root.parents[1] / "Onshape examples" / "Dodec pipe mount.step"
+        hub = root.parents[1] / "Onshape examples" / "Dodec Hub Conformal.step"
+        hashes = {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in (pipe, hub)}
+        QtCore.QTimer.singleShot(200, lambda: choose_dialog(pipe, "open-step-dialog.png"))
+        panel.open()
+        check("Actual Open imports the three pipe solids into a managed unsaved project", bool(panel.state.get("import_source")) and panel.state["managed"] and panel.state["native_file"] is None and panel.state["measurements"]["solid_count"] == 3)
+        imported = App.activeDocument()
+        check("Three native Bodies and three selectable Parts are shown", panel.body_choice.count() == 3 and panel.parts.topLevelItemCount() == 3)
+        check("Import is marked unsaved in the native GUI", Gui.getDocument(imported.Name).Modified)
+        check("Original project remains open with unchanged intent", previous.Name in App.listDocuments() and intent_signature(previous) == previous_signature)
+        panel.body_choice.setCurrentIndex(2)
+        check("Body chooser activates the selected imported native Body", Gui.activeDocument().activeView().getActiveObject("pdbody") == panel.active_body())
+        panel.part_selection(panel.parts.topLevelItem(2))
+        check("Part selection selects the imported solid", bool(Gui.Selection.getSelection()) and Gui.Selection.getSelection()[0].TypeId == "PartDesign::Body")
+        for width, height in ((1200, 800), (1600, 1000)):
+            main.resize(width, height)
+            QtTest.QTest.qWait(150)
+            main.grab().save(str(output / f"imported-pipe-{width}.png"))
+        native = working / f"imported-pipe-{os.getpid()}.FCStd"
+        QtCore.QTimer.singleShot(200, lambda: choose_dialog(native, "save-imported-project-dialog.png", save=True))
+        panel.save()
+        check("Actual Save writes FCStd and clears unsaved flag", native.is_file() and panel.state["native_file"] == str(native) and not Gui.getDocument(imported.Name).Modified)
+        imported_id = panel.state["document_id"]
+        App.closeDocument(imported.Name)
+        panel.open_path(str(native))
+        check("Saved STEP project reopens with provenance and all solids", panel.state["document_id"] == imported_id and panel.state["measurements"]["solid_count"] == 3 and panel.state["import_source"]["sha256"] == hashes[str(pipe)])
+        before_cancel = panel.state["document_id"]
+        QtCore.QTimer.singleShot(200, choose_dialog)
+        panel.open()
+        check("Cancel Open preserves the current project", panel.state["document_id"] == before_cancel)
+        menu = QtWidgets.QMenu()
+        panel.fill_recent(menu)
+        next(action for action in menu.actions() if action.text() == pipe.name).trigger()
+        check("Recent STEP entry reimports through the typed operation", panel.state["measurements"]["solid_count"] == 3 and panel.state["document_id"] != imported_id)
+        check("Conformal hub imports all three solids through Open path", bool(panel.open_path(str(hub))) and panel.state["measurements"]["solid_count"] == 3)
+        QtTest.QTest.qWait(250)
+        camera = Gui.activeDocument().activeView().getCameraNode()
+        check("Deferred viewport fit frames the hub after native view nodes exist", camera.height.getValue() > 50)
+        main.grab().save(str(output / "imported-hub-1600.png"))
+        before_failure = panel.state["document_id"]
+        broken = working / "broken.step"
+        broken.write_text("Invalid STEP")
+        check("Broken STEP reports failure and preserves current project", panel.open_path(str(broken)) is None and panel.state["document_id"] == before_failure and panel.parts.topLevelItemCount() == 3 and panel.messages_dock.isVisible())
+        check("Wait cursor is restored after failed import", app.overrideCursor() is None)
+        panel.operation("create_sketch", id="InProgress")
+        panel.select_feature("InProgress")
+        panel.edit_sketch()
+        names = set(App.listDocuments())
+        check("Import is blocked during native sketch editing", panel.open_path(str(pipe)) is None and set(App.listDocuments()) == names and panel.active_sketch().Name == "InProgress")
+        panel.finish_sketch(cancel=True)
+        check("Both original STEP hashes are unchanged", all(hashlib.sha256(Path(path).read_bytes()).hexdigest() == digest for path, digest in hashes.items()))
+        report.update(passed=True, source_hashes=hashes, native_messages=panel.messages.toPlainText(), engine={"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}, timings=panel.core.timings.report())
+    except Exception:
+        report["error"] = traceback.format_exc()
+        main.grab().save(str(output / "failure.png"))
+    finally:
+        (output / "gui-test-result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.getDocument(name).setClosable(True)
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+QtCore.QTimer.singleShot(1500, validate)

@@ -1,0 +1,75 @@
+{
+  "passed": true,
+  "checks": [
+    "Open chooser includes FCStd, STEP and STP including uppercase suffixes",
+    "Actual Open imports the three pipe solids into a managed unsaved project",
+    "Three native Bodies and three selectable Parts are shown",
+    "Import is marked unsaved in the native GUI",
+    "Original project remains open with unchanged intent",
+    "Body chooser activates the selected imported native Body",
+    "Part selection selects the imported solid",
+    "Save suggests the STEP source stem with FCStd extension",
+    "Actual Save writes FCStd and clears unsaved flag",
+    "Saved STEP project reopens with provenance and all solids",
+    "Open chooser includes FCStd, STEP and STP including uppercase suffixes",
+    "Cancel Open preserves the current project",
+    "Recent STEP entry reimports through the typed operation",
+    "Conformal hub imports all three solids through Open path",
+    "Deferred viewport fit frames the hub after native view nodes exist",
+    "Broken STEP reports failure and preserves current project",
+    "Wait cursor is restored after failed import",
+    "Import is blocked during native sketch editing",
+    "Both original STEP hashes are unchanged"
+  ],
+  "method": "Separate hidden FreeCAD GUI; actual Qt Open/Save/Cancel dialogs, real STEP sources and native body selection",
+  "source_hashes": {
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec pipe mount.step": "0d83f47ae66ddf23de94c7cadc56ac1634ee1c5583f5a6895af3d569fe1957f0",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec Hub Conformal.step": "ed9949c937ccaa768d018038cebcbab6638c9af48223b684dd7ace235389a3fc"
+  },
+  "native_messages": "15:44:03  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\5e5718b7461fab07110befb9253733a6.png\"): device not open\n15:44:03  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\75292e0a20854497660f8c4dfc4be4b9.png\"): device not open\n15:44:03  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\bb448bc572657bb8e67db5ccce4c147b.png\"): device not open\n15:44:03  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\9217d59def2f632f64cac703dd0866ef.png\"): device not open\n15:44:03  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\18454f9c4ef66d31f5c13beb658410c1.png\"): device not open\n15:44:03  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\00f6208f57d0c1e17f8fb96d05c09abc.png\"): device not open\n15:44:03  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\b422966d528006fef56eb186c6c55ccd.png\"): device not open\n15:44:03  QStatusBar::insertPermanentWidget: Index out of range (0), appending widget\n15:44:04  Unhandled Base::Exception caught in GUIApplication::notify.\nThe error message is: Access violation\nSTEP could not be read; check the source file\nFinish or cancel the active sketch before changing documents",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "timings": {
+    "intent": {
+      "samples": 16,
+      "median_ms": 0.69,
+      "p95_ms": 1.567,
+      "worst_ms": 1.567
+    },
+    "native_recompute": {
+      "samples": 13,
+      "median_ms": 7.789,
+      "p95_ms": 206.568,
+      "worst_ms": 206.568
+    },
+    "inspection": {
+      "samples": 24,
+      "median_ms": 1.185,
+      "p95_ms": 1910.625,
+      "worst_ms": 2007.51
+    },
+    "operation": {
+      "samples": 24,
+      "median_ms": 2.521,
+      "p95_ms": 4505.201,
+      "worst_ms": 5863.387
+    },
+    "recovery_checkpoint": {
+      "samples": 12,
+      "median_ms": 0.256,
+      "p95_ms": 340.049,
+      "worst_ms": 340.049
+    }
+  }
+}

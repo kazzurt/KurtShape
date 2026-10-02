@@ -277,7 +277,7 @@ class Panel(QtGui.QDockWidget):
         self.document_name.setStyleSheet("font-weight:600;padding:0 14px")
         self.document_name.setMinimumWidth(160)
         self.document_bar.addWidget(self.document_name)
-        for name, callback, tip in [("New", self.new, "New part studio · Ctrl+N"), ("Open", self.open, "Open native project · Ctrl+O"), ("Save", self.save, "Save project · Ctrl+S"), ("Export", self.export, "Export current solid · STEP / STL")]:
+        for name, callback, tip in [("New", self.new, "New part studio · Ctrl+N"), ("Open", self.open, "Open FCStd or import STEP / STP · Ctrl+O"), ("Save", self.save, "Save project · Ctrl+S"), ("Export", self.export, "Export current solid · STEP / STL")]:
             self.tool(self.document_bar, name, callback, tip)
         recent = QtGui.QMenu("Recent projects", self.main)
         recent.aboutToShow.connect(lambda: self.fill_recent(recent))
@@ -463,16 +463,16 @@ class Panel(QtGui.QDockWidget):
 
     def operation(self, op, **args):
         if getattr(self, "feedback_started", None) is not None:
-            if op in {"save", "open", "adopt", "recover", "export"}:
+            if op in {"save", "open", "import_step", "adopt", "recover", "export"}:
                 self.feedback_kind = "disk"
             elif op in self.core.MODEL_OPS | {"begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "new"}:
                 self.feedback_kind = "model"
         if op != "inspect" and self.native_feature_task_active():
             self.notify("Finish or cancel the current feature before another operation.")
             return None
-        if op in {"new", "open", "recover"}:
+        if op in self.core.CREATE_OPS:
             self.cancel_task()
-        if op not in {"new", "open", "recover"}:
+        if op not in self.core.CREATE_OPS:
             doc = self.document()
             if not doc or not self.state:
                 self.notify("Create or open a project first.", "error")
@@ -498,17 +498,22 @@ class Panel(QtGui.QDockWidget):
             self.notify(response["error"]["message"], "error")
             return None
         self.state = response["result"]
-        if op in {"new", "open", "recover", "adopt"}:
+        if op in self.core.CREATE_OPS | {"adopt"}:
             document_owner = self.core.documents[self.state["document_id"]]
             App.setActiveDocument(document_owner.Name)
             Gui.ActiveDocument = Gui.getDocument(document_owner.Name)
             self.maximize_document_view()
         self.refresh()
+        if op in self.core.CREATE_OPS | {"adopt"}:
+            self.change_body()
         self.sync_edit_ui()
         if op == "create_body" and self.state.get("created_feature"):
             self.body_choice.setCurrentIndex(self.body_choice.findData(self.state["created_feature"]))
         navigation.apply_navigation()
         self.notify(op.replace("_", " ").capitalize() + " complete")
+        if op == "import_step":
+            count = self.state["measurements"]["solid_count"] if self.state["measurements"] else 0
+            self.notify(f"STEP imported · {count} solids · geometry only. Save as FCStd to keep your project.")
         if op == "recover" and self.state.get("active_sketch_edit"):
             Gui.activeDocument().setEdit(self.state["active_sketch_edit"])
             self.sync_edit_ui()
@@ -580,6 +585,8 @@ class Panel(QtGui.QDockWidget):
         self.parts_title.setText(f"Parts ({count})")
         geometry = self.state["measurements"]
         detail = "Rebuild required · retained geometry" if self.state["build_status"] in {"failed", "needs_rebuild"} else (f"{geometry['solid_count']} solid · {geometry['volume_mm3']:,.2f} mm³" if geometry else "Sketches only · mm")
+        if self.state.get("import_source"):
+            detail = "Imported STEP · " + (detail if geometry or self.state["build_status"] in {"failed", "needs_rebuild"} else "Reference geometry only · mm")
         self.status.setText(detail)
         if not self.state.get("managed", True):
             self.status.setText("Native reference · inspect or adopt a copy · " + detail)
@@ -706,10 +713,10 @@ class Panel(QtGui.QDockWidget):
     def fill_recent(self, menu):
         menu.clear()
         for path in self.core.settings.data.get("recent_projects", []):
-            if Path(path).suffix.lower() == ".fcstd" and Path(path).is_file():
+            if Path(path).suffix.lower() in {".fcstd", ".step", ".stp"} and Path(path).is_file():
                 action = menu.addAction(Path(path).name)
                 action.setToolTip(path)
-                action.triggered.connect(lambda checked=False, p=path: self.operation("open", path=p))
+                action.triggered.connect(lambda checked=False, p=path: self.open_path(p))
         if not menu.actions():
             menu.addAction("No recent projects").setEnabled(False)
 
@@ -778,9 +785,38 @@ class Panel(QtGui.QDockWidget):
         if self.active_sketch() or self.native_feature_task_active():
             self.notify("Finish or cancel the current edit before opening a project.")
             return
-        path = QtGui.QFileDialog.getOpenFileName(self, "Open native project", self.core.settings.last_directory, "FreeCAD project (*.FCStd)")[0]
-        if path and self.operation("open", path=path):
+        directory = Path(self.core.settings.last_directory)
+        if not directory.is_dir():
+            directory = self.core.settings.project_directory
+            directory.mkdir(parents=True, exist_ok=True)
+        path = QtGui.QFileDialog.getOpenFileName(self, "Open project or import STEP", str(directory),
+            "CAD files (*.FCStd *.fcstd *.FCSTD *.step *.stp *.STEP *.STP);;FreeCAD project (*.FCStd *.fcstd *.FCSTD);;STEP geometry (*.step *.stp *.STEP *.STP)")[0]
+        if path:
+            return self.open_path(path)
+
+    def open_path(self, path):
+        op = "import_step" if Path(path).suffix.lower() in {".step", ".stp"} else "open"
+        if op == "import_step":
+            QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        try:
+            state = self.operation(op, path=path)
+        finally:
+            if op == "import_step":
+                QtGui.QApplication.restoreOverrideCursor()
+        if state:
             self.core.settings.remember(path)
+            self.isometric()
+            self.fit()
+            if op == "import_step":
+                name = self.core.documents[state["document_id"]].Name
+                # FreeCAD adds new view-provider nodes on the event loop.
+                # Fit again after those nodes exist, while this import is
+                # still active, so a direct/recent import cannot fit empty.
+                QtCore.QTimer.singleShot(0, lambda: self.frame_import(name))
+        return state
+
+    def frame_import(self, name):
+        if self.document() and self.document().Name == name and not self.active_sketch() and not self.native_feature_task_active():
             self.isometric()
             self.fit()
 
@@ -795,7 +831,9 @@ class Panel(QtGui.QDockWidget):
         path = self.state.get("native_file") if not save_as else None
         if not path:
             self.core.settings.project_directory.mkdir(parents=True, exist_ok=True)
-            path = QtGui.QFileDialog.getSaveFileName(self, "Save native project", self.state.get("native_file") or str(Path(self.core.settings.last_directory) / "my-part.FCStd"), "FreeCAD project (*.FCStd)")[0]
+            imported = self.state.get("import_source")
+            filename = Path(imported["path"]).stem + ".FCStd" if imported else "my-part.FCStd"
+            path = QtGui.QFileDialog.getSaveFileName(self, "Save native project", self.state.get("native_file") or str(Path(self.core.settings.last_directory) / filename), "FreeCAD project (*.FCStd)")[0]
         if path:
             self.core.settings.grant_destination(path)
             return self.operation("save", path=path)
