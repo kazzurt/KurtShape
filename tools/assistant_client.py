@@ -7,11 +7,14 @@ import argparse
 import json
 from pathlib import Path
 import urllib.request
+import uuid
 
 ROOT=Path(__file__).resolve().parents[1]
 
 
 def send(request,session_path=None):
+    if request.get("op") not in {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics"}:
+        request.setdefault("request_id", str(uuid.uuid4()))
     session=json.loads(Path(session_path or ROOT/"runtime"/"assistant-session.json").read_text())
     message=urllib.request.Request(session["url"],data=json.dumps(request).encode(),
         headers={"Authorization":"Bearer "+session["token"],"Content-Type":"application/json"},method="POST")

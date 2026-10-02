@@ -51,6 +51,9 @@ class TestPanel(QtCore.QObject):
     def refresh(self):
         pass
 
+    def operation(self, op, **args):
+        return call(op, **args)
+
     def tick(self):
         doc = App.activeDocument()
         if doc:
@@ -174,7 +177,7 @@ def validate():
                 dock.show()
         QtTest.QTest.qWait(100)
         cancel_button = next(box.button(QtWidgets.QDialogButtonBox.Cancel) for box in main.findChildren(QtWidgets.QDialogButtonBox)
-                             if box.isVisible() and box.button(QtWidgets.QDialogButtonBox.Cancel))
+                             if box.button(QtWidgets.QDialogButtonBox.Cancel))
         QtTest.QTest.mouseClick(cancel_button, QtCore.Qt.LeftButton)
         QtTest.QTest.qWait(150)
         check("Native Cancel closes Pad edit and its task", not Gui.activeDocument().getInEdit() and not Gui.Control.activeDialog())

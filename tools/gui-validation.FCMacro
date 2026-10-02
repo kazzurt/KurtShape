@@ -178,13 +178,30 @@ def validate():
         require(panel.operation('open',path=str(path)))
         check('Saved native features rebuild after close and reopen',panel.state['build_status']=='valid')
         check('Successful save/reopen clears native modified indicator',not Gui.activeDocument().Modified)
+        panel.select_feature('Pad');panel.parameters(show=True)
+        panel.value.lineEdit().setText('1/8 in')
+        QtTest.QTest.keyClick(panel.value.lineEdit(),QtCore.Qt.Key_Return);wait()
+        check('Native quantity field applies fractional inches through the controller',abs(App.activeDocument().Pad.Length.Value-3.175)<1e-6)
+        panel.history_move('undo')
+        live=App.activeDocument()
+        from kurtshape.core import intent_signature
+        before=(intent_signature(live),panel.state['revision'],live.UndoCount,live.RedoCount,Gui.activeDocument().Modified,
+                Gui.activeDocument().activeView().getCamera(),[(s.ObjectName,list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()],live.FileName)
+        preview=panel.core.dispatch({'op':'preview','document_id':panel.state['document_id'],'expected_revision':panel.state['revision'],
+                                    'proposal':{'op':'set_parameter','feature':'Pad','parameter':'Length','value':'1 in'}})
+        after=(intent_signature(live),panel.core.inspect(live)['revision'],live.UndoCount,live.RedoCount,Gui.getDocument(live.Name).Modified,
+               Gui.getDocument(live.Name).activeView().getCamera(),[(s.ObjectName,list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()],live.FileName)
+        check('Isolated preview preserves live revision, history, modified flag, camera, selection and file',preview['ok'] and preview['result']['valid'] and before==after)
         plate_doc=App.activeDocument().Name
         baseline=panel.state['revision']
         change={'op':'set_parameter','document_id':panel.state['document_id'],'expected_revision':baseline,'feature':'Pad','parameter':'Length','value':8}
         response=bridge_call(change)
         check('Actual loopback assistant edits the displayed native document',response['ok'] and abs(App.activeDocument().Pad.Length.Value-8)<1e-6)
         replay=bridge_call(change)
-        check('Live assistant stale replay is rejected',not replay['ok'] and replay['error']['code']=='stale_revision')
+        check('Live assistant identical request replay returns the original result',replay['ok'] and replay['result']==response['result'])
+        import uuid
+        stale=bridge_call(dict(change,request_id=str(uuid.uuid4())))
+        check('A fresh request with stale revision is rejected',not stale['ok'] and stale['error']['code']=='stale_revision')
         key(QtCore.Qt.Key_Z,QtCore.Qt.ControlModifier)
         check('GUI undo restores actual assistant change',abs(App.activeDocument().Pad.Length.Value-6)<1e-6)
         # Verify native geometry tools from the official shortcuts, not just typed fixtures.
@@ -232,6 +249,10 @@ def validate():
         count=len(panel.state['features'])
         panel.accept_task()
         check('Old task cannot mutate a different document',len(panel.state['features'])==count)
+        require(panel.operation('create_body',id='Housing'))
+        check('GUI body choice activates the selected native Body',panel.active_body().Name=='Housing' and Gui.activeDocument().activeView().getActiveObject('pdbody').Name=='Housing')
+        require(panel.operation('create_sketch',id='HousingSketch',plane='YZ'))
+        check('GUI new sketch uses the selected Body origin',App.activeDocument().HousingSketch in App.activeDocument().Housing.Group)
         App.closeDocument(new_doc)
         panel.isometric();panel.fit();panel.editor.hide();wait(200)
         main.resize(1200,800);wait(150)
@@ -240,6 +261,7 @@ def validate():
         main.resize(1600,1000);wait(150)
         main.grab().save(str(output/'kurtshape-1600.png'))
         report.update(passed=True,seconds=time.perf_counter()-began,state=panel.state,
+                      timing_samples=panel.core.timings.report(),
                       shortcut_coverage=panel.router.available_actions(),docks=[{'name':d.objectName(),'title':d.windowTitle(),'visible':d.isVisible()} for d in main.findChildren(QtGui.QDockWidget)])
     except Exception:
         report.update(error=traceback.format_exc(),message=panel.message.text(),seconds=time.perf_counter()-began)

@@ -1,0 +1,110 @@
+"""Native keyboard/repair gates added by the accepted review follow-up."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+from unittest.mock import patch
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+import Sketcher
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+from kurtshape.ui import start
+from kurtshape import core as module
+panel = start()
+output = root / "validation" / "review-followup"
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "method": "Separate hidden native GUI; actual Shift+G, constraint failure/repair and native text controls"}
+
+def check(label, condition):
+    assert condition, label + ": " + panel.message.text()
+    report["checks"].append(label)
+
+def call(op, **args):
+    state = panel.operation(op, **args)
+    assert state, panel.message.text()
+    return state
+
+def viewport():
+    area = next(area for area in main.findChildren(QtWidgets.QMdiArea) if area.activeSubWindow())
+    return next(widget for widget in area.activeSubWindow().findChildren(QtWidgets.QWidget) if widget.metaObject().className() == "QOpenGLWidget")
+
+def key(code, modifiers=QtCore.Qt.NoModifier):
+    gl = viewport()
+    gl.setFocus()
+    QtTest.QTest.keyClick(gl, code, modifiers)
+    QtTest.QTest.qWait(100)
+
+def validate():
+    try:
+        call("create_sketch", id="Crossing", plane="XZ")
+        call("add_line", sketch="Crossing", x1=2, y1=-5, x2=2, y2=5)
+        call("create_sketch", id="Target")
+        doc = App.activeDocument()
+        doc.Target.addGeometry(Part.Point(App.Vector(4, 0, 0)))
+        doc.recompute()
+        doc.commitTransaction()
+        panel.tick()
+        panel.select_feature("Target")
+        panel.edit_sketch()
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, "Target", "Vertex1")
+        Gui.Selection.addSelection(doc.Name, "Crossing", "Edge1")
+        key(QtCore.Qt.Key_G, QtCore.Qt.ShiftModifier)
+        check("Actual Shift+G creates a native intersection reference and coincident point",abs(doc.Target.Geometry[0].X-2)<1e-6 and len(doc.Target.ExternalGeometry)==1)
+        key(QtCore.Qt.Key_Z, QtCore.Qt.ControlModifier)
+        check("Sketch undo removes Pierce reference and restores point",len(doc.Target.ExternalGeometry)==0 and abs(doc.Target.Geometry[0].X-4)<1e-6)
+        key(QtCore.Qt.Key_Y, QtCore.Qt.ControlModifier)
+        check("Sketch redo restores Pierce",len(doc.Target.ExternalGeometry)==1)
+        check("Finish accepts native Pierce",bool(panel.finish_sketch()))
+        check("Perpendicular remains Shift+L",panel.router.resolve("Shift+L","sketch")["native_command"]=="Sketcher_ConstrainPerpendicular")
+        panel.new()
+        call("sketch_circle",id="ConflictSketch",x=0,y=0,diameter=4)
+        panel.select_feature("ConflictSketch")
+        panel.edit_sketch()
+        doc=App.activeDocument()
+        constraints_before=doc.ConflictSketch.ConstraintCount
+        doc.ConflictSketch.addConstraint(Sketcher.Constraint("Diameter",0,5))
+        doc.recompute()
+        panel.tick()
+        check("Rejected Finish retains the whole conflicting draft and reopens the editor",not panel.finish_sketch() and panel.active_sketch().Name=="ConflictSketch" and doc.ConflictSketch.ConstraintCount==constraints_before+1 and doc.ConflictSketch.GeometryCount==1)
+        check("Native/controller errors remain visible in Messages",panel.messages_dock.isVisible() and bool(panel.messages.toPlainText()))
+        doc.ConflictSketch.delConstraint(doc.ConflictSketch.ConstraintCount-1)
+        doc.recompute()
+        panel.tick()
+        check("Repair followed by Finish succeeds without redrawing",bool(panel.finish_sketch()) and doc.ConflictSketch.GeometryCount==1)
+        panel.select_feature("ConflictSketch")
+        panel.edit_sketch()
+        call("add_circle",sketch="ConflictSketch",x=6,y=0,diameter=2)
+        check("Explicit Cancel discards the current edit",bool(panel.finish_sketch(cancel=True)) and doc.ConflictSketch.GeometryCount==1)
+        panel.tick()
+        with patch.object(module,"intent_signature",wraps=module.intent_signature) as intent, patch.object(module,"measurements",wraps=module.measurements) as validity:
+            for _ in range(25):
+                panel.tick()
+            check("25 idle GUI ticks perform no intent hash or BRep validation",intent.call_count==0 and validity.call_count==0)
+        report.update(passed=True,timings=panel.core.timings.report(),engine={"FreeCAD":App.Version(),"OCCT":Part.OCC_VERSION})
+    except Exception:
+        report["error"]=traceback.format_exc()
+    finally:
+        main.grab().save(str(output/"review-gui.png"))
+        (output/"gui-review.json").write_text(json.dumps(report,indent=2),encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc=Gui.getDocument(name)
+            if gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.getDocument(name).setClosable(True)
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0,QtGui.QApplication.instance().quit)
+
+QtCore.QTimer.singleShot(1500,validate)

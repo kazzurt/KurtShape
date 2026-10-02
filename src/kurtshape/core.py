@@ -8,10 +8,17 @@ from pathlib import Path
 import re
 import time
 import uuid
+import traceback
 
 import FreeCAD as App
 import Part
 import Sketcher
+from .document_state import DocumentState
+from .settings import Settings
+from .request_ledger import RequestLedger
+from .bodies import bodies, owner, origin_plane, results as native_results
+from .recovery import RecoveryStore
+from .timing import Timings
 
 ROOT = Path(__file__).resolve().parents[2]
 WRITE_ROOT = ROOT.parent.resolve()
@@ -25,7 +32,19 @@ class OperationError(Exception):
         self.code, self.details = code, details
 
 
-def number(value, name, positive=False):
+def number(value, name, positive=False, unit="mm"):
+    if isinstance(value, str):
+        try:
+            quantity = App.Units.Quantity(value)
+            target_unit = App.Units.Quantity("1 " + unit).Unit
+            if quantity.Unit == App.Units.Quantity(1).Unit:
+                value = quantity.Value
+            elif quantity.Unit == target_unit:
+                value = math.radians(quantity.Value) if unit == "rad" else quantity.Value
+            else:
+                raise ValueError("Wrong dimension")
+        except Exception as exc:
+            raise OperationError("invalid_argument", f"{name} requires a finite {unit} quantity") from exc
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
         raise OperationError("invalid_argument", f"{name} must be a finite number in mm")
     if positive and value <= 0:
@@ -35,10 +54,12 @@ def number(value, name, positive=False):
     return float(value)
 
 
-def write_path(raw, suffixes):
+def write_path(raw, suffixes, roots=None):
+    if not isinstance(raw, str) or not Path(raw).is_absolute():
+        raise OperationError("invalid_argument", "Destination must be an absolute path")
     path = Path(raw).resolve()
-    if not path.is_relative_to(WRITE_ROOT):
-        raise OperationError("path_outside_workspace", "Generated files must stay within CADkz/Codex")
+    if not any(path.is_relative_to(root) for root in (roots or {WRITE_ROOT})):
+        raise OperationError("path_outside_workspace", "Choose this project folder in the app before an assistant writes there")
     if path.suffix.lower() not in suffixes:
         raise OperationError("invalid_format", f"Expected {', '.join(suffixes)}")
     if not path.parent.is_dir():
@@ -99,10 +120,10 @@ def _native_value(value):
     return re.sub(r" at 0x[0-9A-Fa-f]+", "", result)
 
 
-def native_intent(doc):
+def native_intent(doc, objects=None):
     """Read native modeling intent, including native edits made outside our panel."""
     state = []
-    for obj in doc.Objects:
+    for obj in doc.Objects if objects is None else objects:
         if obj.Name == METADATA or obj.TypeId.startswith(("App::Origin", "App::Line", "App::Plane")):
             continue
         item = {"id": obj.Name, "type": obj.TypeId, "label": obj.Label, "properties": {}}
@@ -129,7 +150,7 @@ def native_intent(doc):
 
 
 def intent_signature(doc):
-    return hashlib.sha256(json.dumps(native_intent(doc), sort_keys=True).encode()).hexdigest()
+    return hashlib.sha256(json.dumps({"label": doc.Label, "objects": native_intent(doc)}, sort_keys=True).encode()).hexdigest()
 
 
 def measurements(shape):
@@ -144,13 +165,13 @@ def measurements(shape):
 
 
 class Controller:
-    READ_OPS = {"inspect", "list_documents"}
-    MODEL_OPS = {"create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line",
-                 "pad", "pocket", "set_parameter", "rename_feature", "delete_feature", "rebuild"}
-    EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "set_parameter", "finish_sketch_edit", "undo", "redo"}
-    OPS = READ_OPS | MODEL_OPS | {"new", "open", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
+    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics"}
+    MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line",
+                 "pad", "pocket", "set_parameter", "set_expression", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "rebuild"}
+    EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "set_parameter", "set_expression", "pierce", "finish_sketch_edit", "undo", "redo"}
+    OPS = READ_OPS | MODEL_OPS | {"new", "open", "recover", "adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
     ARGS = {
-        "new": {"name"}, "open": {"path"}, "inspect": set(), "list_documents": set(),
+        "new": {"name"}, "open": {"path"}, "recover": {"path"}, "adopt": {"path"}, "create_body": {"id", "name"}, "inspect": set(), "list_documents": set(),
         "create_sketch": {"id", "plane", "support", "source_feature_id", "source_feature_name"},
         "sketch_rectangle": {"id","width","height","x","y","plane","support","source_feature_id","source_feature_name"},
         "sketch_circle": {"id","x","y","diameter","plane","support","center_on","source_feature_id","source_feature_name"},
@@ -162,8 +183,14 @@ class Controller:
         "pocket": {"id","profile","length","through_all","reversed","source_feature_id","source_feature_name"},
         "rename_feature": {"feature", "name"}, "delete_feature": {"feature", "cascade"},
         "set_parameter": {"feature","parameter","value"}, "rebuild": set(), "undo": set(), "redo": set(),
-        "save": {"path"}, "export": {"path"},
+        "set_expression": {"feature", "parameter", "expression"},
+        "duplicate_feature": {"feature", "fingerprint"},
+        "pierce": {"sketch", "geometry", "point", "target", "subelement"},
+        "save": {"path"}, "export": {"path", "body"},
+        "capabilities": set(), "request_status": {"request_id"}, "preview": {"proposal"}, "diagnostics": set(),
     }
+    for _op in MODEL_OPS - {"create_body", "rebuild"} | {"begin_sketch_edit"}:
+        ARGS[_op] = ARGS[_op] | {"body"}
 
     def __init__(self):
         self.documents = {}
@@ -171,9 +198,88 @@ class Controller:
         self.last_failures = {}
         self.sketch_edits = {}
         self.busy = False
+        self.settings = Settings(ROOT)
+        self.evaluations = {}
+        self.observer = DocumentState(self)
+        self.ledger = RequestLedger()
+        self.unmanaged = {}
+        self.timings = Timings()
+        self.recovery = RecoveryStore(self.settings.path.parent)
 
-    def attach(self, doc):
-        meta = metadata(doc)
+    def checkpoint(self, doc, force=False):
+        if self.busy or not self.is_managed(doc):
+            return None
+        self.sync(doc)
+        return self.recovery.capture(doc, self._meta(doc), self.sketch_edits.get(self.identifier(doc)), force)
+
+    def _signature(self, doc):
+        return self.timings.measure("intent", intent_signature, doc)
+
+    def _recompute(self, doc):
+        return self.timings.measure("native_recompute", doc.recompute)
+
+    def _meta(self, doc):
+        return self.unmanaged[doc.Name] if doc.Name in self.unmanaged else metadata(doc)
+
+    def identifier(self, doc):
+        return self._meta(doc).DocumentId
+
+    def is_managed(self, doc):
+        return doc.Name not in self.unmanaged and doc.getObject(METADATA) is not None
+
+    def _body(self, doc, request=None, target=None):
+        request = request or {}
+        selected = doc.getObject(request["body"]) if isinstance(request.get("body"), str) else None
+        if "body" in request and (selected is None or selected.TypeId != "PartDesign::Body"):
+            raise OperationError("missing_body", "body must identify a native PartDesign Body")
+        candidate = owner(doc, target)
+        if selected and target and candidate != selected:
+            raise OperationError("cross_body_reference", "Feature and support must belong to the selected Body")
+        if selected or candidate:
+            return selected or candidate
+        eligible = bodies(doc)
+        if len(eligible) != 1:
+            raise OperationError("ambiguous_body" if eligible else "missing_body", "Choose an explicit body ID")
+        return eligible[0]
+
+    def _geometry(self, doc, objects=None):
+        objects = native_results(doc) if objects is None else objects
+        shapes = [obj.Shape for obj in objects if not obj.Shape.isNull() and obj.Shape.Solids]
+        if not shapes:
+            return None
+        generation = self.observer.state(doc)["generation"]
+        key = "aggregate:" + ",".join(obj.Name for obj in objects)
+        cache = self.evaluations.setdefault(doc.Name, {})
+        if key not in cache or cache[key][0] != generation:
+            cache[key] = (generation, measurements(Part.makeCompound(shapes)))
+        return dict(cache[key][1])
+
+    def close(self):
+        self.observer.close()
+
+    def needs_refresh(self, doc):
+        return self.observer.state(doc)["refresh"]
+
+    def record_edit_boundary(self, doc):
+        self.observer.state(doc)["snapshot_pending"] = True
+
+    def _evaluated_shape(self, doc, body):
+        generation = self.observer.state(doc)["generation"]
+        cache = self.evaluations.setdefault(doc.Name, {})
+        cached = cache.get(body.Name)
+        if cached is None or cached[0] != generation:
+            cached = (generation, measurements(body.Shape))
+            cache[body.Name] = cached
+        return dict(cached[1])
+
+    def attach(self, doc, managed=True):
+        if managed:
+            self.unmanaged.pop(doc.Name, None)
+        if not managed:
+            from types import SimpleNamespace
+            self.unmanaged[doc.Name] = SimpleNamespace(DocumentId=str(uuid.uuid4()), Revision=str(uuid.uuid4()),
+                                                      BuildStatus="sketch_only", LastFailure="", SourceMapping="{}")
+        meta = self._meta(doc)
         existing=self.documents.get(meta.DocumentId)
         if existing is not None and self._is_open(existing) and existing.Name!=doc.Name:
             raise OperationError("duplicate_document_id", "Close the existing project before opening another copy with the same document ID", existing_document=existing.Name)
@@ -190,7 +296,8 @@ class Controller:
                 self.last_failures[meta.DocumentId]=json.loads(meta.LastFailure)
             except ValueError:
                 pass
-        self.signatures[meta.DocumentId] = intent_signature(doc)
+        self.signatures[meta.DocumentId] = self._signature(doc)
+        self.observer.state(doc)["intent_dirty"] = False
         doc.UndoMode = 1
         self._build_status(doc)
         return doc
@@ -217,20 +324,25 @@ class Controller:
                 self.sketch_edits.pop(identifier, None)
 
     def sync(self, doc):
-        meta = metadata(doc)
-        signature = intent_signature(doc)
-        if self.signatures.get(meta.DocumentId) != signature:
-            meta.Revision = str(uuid.uuid4())
-            self.signatures[meta.DocumentId] = signature
+        meta = self._meta(doc)
+        state = self.observer.state(doc)
+        if state["intent_dirty"]:
+            signature = self._signature(doc)
+            if self.signatures.get(meta.DocumentId) != signature:
+                meta.Revision = str(uuid.uuid4())
+                self.signatures[meta.DocumentId] = signature
+            state["intent_dirty"] = False
+        if state["snapshot_pending"]:
             self._record_sketch_edit(doc)
+            state["snapshot_pending"] = False
         self._build_status(doc)
 
     def _sketch_edit_signature(self, doc, name):
-        item = next(item for item in native_intent(doc) if item["id"] == name)
+        item = native_intent(doc, [doc.getObject(name)])[0]
         return hashlib.sha256(json.dumps(item, sort_keys=True).encode()).hexdigest()
 
     def _record_sketch_edit(self, doc):
-        editing = self.sketch_edits.get(metadata(doc).DocumentId)
+        editing = self.sketch_edits.get(self._meta(doc).DocumentId)
         if not editing:
             return
         sketch = doc.getObject(editing["feature"])
@@ -254,7 +366,7 @@ class Controller:
         restoring the exact accepted sketch buffer. A metadata boundary then
         invalidates redo of canceled geometry without deleting earlier undo.
         """
-        identifier = metadata(doc).DocumentId
+        identifier = self._meta(doc).DocumentId
         editing = self.sketch_edits[identifier]
         if doc.HasPendingTransaction:
             doc.abortTransaction()
@@ -270,7 +382,7 @@ class Controller:
             self.sketch_edits.pop(identifier, None)
             raise OperationError("sketch_history_changed", "The accepted sketch no longer exists in native history")
         sketch.restoreContent(editing["initial"])
-        doc.recompute()
+        self._recompute(doc)
         self.sketch_edits.pop(identifier, None)
         if undone:
             doc.openTransaction(SKETCH_CANCEL_BOUNDARY)
@@ -281,7 +393,7 @@ class Controller:
 
     def _commit_sketch_edit(self, doc):
         """Group native command commits within the exclusive sketch lease."""
-        editing = self.sketch_edits[metadata(doc).DocumentId]
+        editing = self.sketch_edits[self._meta(doc).DocumentId]
         if doc.HasPendingTransaction:
             doc.commitTransaction()
         if doc.UndoCount < editing["undo_before"]:
@@ -290,6 +402,7 @@ class Controller:
             sketch = doc.getObject(editing["feature"])
             final = bytes(sketch.dumpContent())
             label = sketch.Label
+            editing["grouping_started"] = True
             while doc.UndoCount > editing["undo_before"]:
                 doc.undo()
             sketch = doc.getObject(editing["feature"])
@@ -297,11 +410,32 @@ class Controller:
                 raise OperationError("sketch_history_changed", "The accepted sketch no longer exists in native history")
             doc.openTransaction(f"KurtShape: edit {label}")
             sketch.restoreContent(final)
-            doc.recompute()
+            self._recompute(doc)
             errors = self._build_status(doc)
             if errors:
                 raise OperationError("build_failed", "Grouped sketch edit could not rebuild native features", features=errors)
             doc.commitTransaction()
+            editing.pop("grouping_started", None)
+
+    def _preserve_sketch_draft(self, doc, draft):
+        """Recover a rejected command or finalization without discarding the lease."""
+        editing = self.sketch_edits[self._meta(doc).DocumentId]
+        if editing.pop("grouping_started", False):
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            if doc.UndoCount < editing["undo_before"]:
+                raise OperationError("sketch_history_changed", "Native history crossed the edit checkpoint; draft recovery required")
+            while doc.UndoCount > editing["undo_before"]:
+                doc.undo()
+        sketch = doc.getObject(editing["feature"])
+        if sketch is None:
+            raise OperationError("sketch_history_changed", "The edited sketch no longer exists; draft recovery required")
+        if not doc.HasPendingTransaction:
+            doc.openTransaction(f"KurtShape: edit {sketch.Label}")
+        sketch.restoreContent(draft)
+        self._recompute(doc)
+        editing["signature"] = self._sketch_edit_signature(doc, sketch.Name)
+        self._new_revision(doc)
 
     def _native_history(self, doc, op):
         """Skip discard-only boundaries while preserving native model history."""
@@ -323,23 +457,27 @@ class Controller:
             if obj.Name == METADATA:
                 continue
             flags = set(obj.State)
-            if "Touched" in flags and obj.TypeId.startswith(("Sketcher::","PartDesign::")):
+            if "Touched" in flags and obj.TypeId.startswith(("Sketcher::","PartDesign::", "Part::")):
                 pending.append(obj.Name)
             if "Invalid" in flags or "Error" in flags:
                 errors.append({"feature": obj.Name, "message": obj.getStatusString()})
-        body = doc.getObject("Body")
-        solid = body and not body.Shape.isNull() and bool(body.Shape.Solids)
-        if solid and not body.Shape.isValid():
-            errors.append({"feature": "Body", "message": "Invalid solid"})
+        solids = [obj for obj in native_results(doc) if not obj.Shape.isNull() and obj.Shape.Solids]
+        solid = bool(solids)
+        for obj in solids:
+            if not self._evaluated_shape(doc, obj)["valid"]:
+                errors.append({"feature": obj.Name, "message": "Invalid solid"})
         status = "failed" if errors else ("needs_rebuild" if pending else ("valid" if solid else "sketch_only"))
-        meta = metadata(doc)
+        meta = self._meta(doc)
         if meta.BuildStatus != status:
             meta.BuildStatus = status
         return errors
 
     def inspect(self, doc):
+        return self.timings.measure("inspection", self._inspect, doc)
+
+    def _inspect(self, doc):
         self.sync(doc)
-        meta = metadata(doc)
+        meta = self._meta(doc)
         features = []
         for obj in doc.Objects:
             if obj.Name == METADATA or obj.TypeId.startswith(("App::Origin", "App::Line", "App::Plane")):
@@ -359,76 +497,142 @@ class Controller:
                 f["source_feature_id"] = obj.SourceFeatureId
                 f["source_feature_name"] = obj.SourceFeatureName
             features.append(f)
-        body = doc.getObject("Body")
-        available_geometry = measurements(body.Shape) if body and not body.Shape.isNull() and body.Shape.Solids else None
+        available_geometry = self._geometry(doc)
         geometry = available_geometry if meta.BuildStatus=="valid" else None
+        evaluated_results = []
+        for obj in native_results(doc):
+            flags = set(obj.State) | {flag for member in getattr(obj, "Group", []) for flag in member.State}
+            metrics = self._evaluated_shape(doc, obj) if not obj.Shape.isNull() and obj.Shape.Solids else None
+            status = "failed" if flags & {"Invalid", "Error"} or metrics and not metrics["valid"] else ("needs_rebuild" if "Touched" in flags else ("valid" if metrics else "sketch_only"))
+            evaluated_results.append({"id": obj.Name, "name": obj.Label, "type": obj.TypeId, "build_status": status,
+                                      "measurements": metrics if status == "valid" else None,
+                                      "retained_geometry_measurements": metrics if status in {"failed", "needs_rebuild"} else None})
+        unsupported = [obj.Name for obj in doc.Objects if obj.Name != METADATA and (obj.TypeId.endswith("Python") or "Proxy" in obj.PropertiesList
+                       or any(link.Document != doc for link in obj.OutList))]
         return {"document_id": meta.DocumentId, "revision": meta.Revision, "name": doc.Label,
                 "native_file": doc.FileName or None, "units": "mm", "build_status": meta.BuildStatus,
                 "build_errors": self._build_status(doc), "features": features,
                 "measurements": geometry, "retained_geometry_measurements": available_geometry if meta.BuildStatus in {"failed","needs_rebuild"} else None,
                 "last_failed_attempt": self.last_failures.get(meta.DocumentId),
                 "active_sketch_edit": self.sketch_edits.get(meta.DocumentId, {}).get("feature"),
-                "operations": sorted(self.OPS)}
+                "managed": self.is_managed(doc), "unsupported_objects": unsupported, "bodies": evaluated_results,
+                "operations": sorted(self.OPS if self.is_managed(doc) else self.READ_OPS | {"open", "adopt"})}
 
     def dispatch(self, request):
+        tracked = isinstance(request, dict) and request.get("op") not in self.READ_OPS and "request_id" in request
+        if tracked:
+            try:
+                replay = self.ledger.register(request, "started")
+            except (ValueError, TypeError):
+                return {"ok": False, "error": {"code": "invalid_argument", "message": "Request must contain finite JSON values"}}
+            if replay is not None:
+                return replay
+        response = self.timings.measure("operation", self._dispatch, request)
+        if tracked:
+            self.ledger.complete(request["request_id"], response)
+        return response
+
+    def _dispatch(self, request):
         start = time.perf_counter()
         doc = None
         transaction = False
+        draft = None
+        draft_history = None
+        created_feature = None
+        owns_busy = False
         try:
             self._prune_closed_sketch_edits()
             if not isinstance(request, dict) or request.get("op") not in self.OPS:
                 raise OperationError("unsupported_operation", "Unknown operation")
             op = request["op"]
-            unknown = set(request) - self.ARGS[op] - {"op", "document_id", "expected_revision"}
+            unknown = set(request) - self.ARGS[op] - {"op", "document_id", "expected_revision", "request_id"}
             if unknown:
                 raise OperationError("unknown_argument", "Unsupported request fields", fields=sorted(unknown))
+            if op == "capabilities":
+                return {"ok": True, "result": {"contract": 2, "session_id": self.ledger.session_id,
+                    "operations": sorted(self.OPS), "preview_operations": ["set_parameter", "set_expression"],
+                    "retry": {"scope": "session", "result_limit": self.ledger.limit, "session_request_limit": self.ledger.session_request_limit,
+                              "missing_status": "not_recorded does not prove a request never executed; reconcile after restart or eviction"},
+                    "request_size_limit_bytes": 65536, "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}}}
+            if op == "request_status":
+                return {"ok": True, "result": self.ledger.status(request.get("request_id"))}
+            if op == "diagnostics":
+                return {"ok": True, "result": {"timings": self.timings.report(), "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+                    "recovery_directory": str(self.recovery.directory), "checkpoint_interval_seconds": self.recovery.interval_seconds}}
             if op == "list_documents":
                 return {"ok": True, "result": {"documents": [self.inspect(d) for d in self.documents.values() if self._is_open(d)]}}
-            if op in {"new", "open"} and any(identifier in self.sketch_edits and self._is_open(existing)
+            if op not in self.READ_OPS and self.busy:
+                raise OperationError("busy", "A modeling operation is already active")
+            if op in {"new", "open", "recover"} and any(identifier in self.sketch_edits and self._is_open(existing)
                                                          for identifier, existing in self.documents.items()):
                 raise OperationError("sketch_edit_active", "Finish or cancel the active sketch before changing documents")
-            if op in {"new", "open"} and getattr(App, "GuiUp", False):
+            if op in {"new", "open", "recover"} and getattr(App, "GuiUp", False):
                 import FreeCADGui as Gui
                 if Gui.Control.activeDialog() or any(Gui.getDocument(name) and Gui.getDocument(name).getInEdit() for name in App.listDocuments()):
                     raise OperationError("sketch_edit_active", "Finish or cancel graphical editing before changing documents")
             if op == "new":
+                self.busy = owns_busy = True
                 doc = self.attach(App.newDocument("KurtShape"))
                 doc.Label = str(request.get("name", "New part"))[:120]
                 doc.addObject("PartDesign::Body", "Body")
-                doc.recompute()
-                self.signatures[metadata(doc).DocumentId] = intent_signature(doc)
-            elif op == "open":
-                path = Path(request["path"]).resolve()
+                self._recompute(doc)
+                self.signatures[self._meta(doc).DocumentId] = self._signature(doc)
+            elif op in {"open", "recover"}:
+                self.busy = owns_busy = True
+                recovery_record = None
+                if op == "recover":
+                    path, recovery_record = self.recovery.read(request["path"])
+                else:
+                    path = Path(request["path"]).resolve()
                 if path.suffix.lower() != ".fcstd" or not path.is_file():
                     raise OperationError("invalid_format", "Open requires an existing native .FCStd file")
                 doc = App.openDocument(str(path))
-                if not doc.getObject(METADATA):
-                    App.closeDocument(doc.Name)
-                    doc = None
-                    raise OperationError("unmanaged_document", "Native file has no KurtShape metadata; use native FreeCAD to inspect it")
                 try:
-                    self.attach(doc)
+                    self.attach(doc, managed=doc.getObject(METADATA) is not None)
                 except OperationError:
                     App.closeDocument(doc.Name)
                     doc=None
                     raise
-                for obj in doc.Objects:
-                    if obj.TypeId.startswith(("Sketcher::", "PartDesign::")):
-                        obj.touch()
-                doc.recompute()
+                if self.is_managed(doc):
+                    for obj in doc.Objects:
+                        if obj.TypeId.startswith(("Sketcher::", "PartDesign::")):
+                            obj.touch()
+                    self._recompute(doc)
+                if recovery_record:
+                    doc.FileName = ""
+                    feature = recovery_record.get("sketch")
+                    if feature:
+                        import base64
+                        sketch = doc.getObject(feature)
+                        initial = base64.b64decode(recovery_record["accepted_sketch"], validate=True)
+                        draft = base64.b64decode(recovery_record["draft_sketch"], validate=True) if recovery_record.get("draft_sketch") else bytes(sketch.dumpContent())
+                        sketch.restoreContent(initial)
+                        self._recompute(doc)
+                        undo_before = doc.UndoCount
+                        doc.openTransaction("KurtShape: recover unfinished sketch")
+                        sketch.restoreContent(draft)
+                        self._recompute(doc)
+                        self.sketch_edits[self.identifier(doc)] = {"feature": feature, "initial": initial,
+                            "undo_before": undo_before, "signature": self._sketch_edit_signature(doc, feature),
+                            "undo": [initial, draft], "redo": []}
+                        self._new_revision(doc)
             else:
                 doc = self._doc(request)
-                if op != "inspect":
+                if op == "preview":
+                    return {"ok": True, "result": self._preview(doc, request)}
+                if not self.is_managed(doc) and op not in self.READ_OPS | {"adopt"}:
+                    raise OperationError("unmanaged_document", "Inspect this native file or adopt a copy before editing")
+                if op not in self.READ_OPS:
                     expected = request.get("expected_revision")
-                    if expected != metadata(doc).Revision:
-                        raise OperationError("stale_revision", "Inspect the current document before mutating", expected=expected, actual=metadata(doc).Revision)
+                    if expected != self._meta(doc).Revision:
+                        raise OperationError("stale_revision", "Inspect the current document before mutating", expected=expected, actual=self._meta(doc).Revision)
                     if self.busy:
                         raise OperationError("busy", "A modeling operation is already active")
-                    editing = self.sketch_edits.get(metadata(doc).DocumentId)
+                    editing = self.sketch_edits.get(self._meta(doc).DocumentId)
                     if editing:
                         if op not in self.EDIT_OPS:
                             raise OperationError("sketch_edit_active", "Finish or cancel the managed sketch before another operation", feature=editing["feature"])
-                        target = request.get("sketch") if op.startswith("add_") else request.get("feature")
+                        target = request.get("sketch") if op.startswith("add_") or op == "pierce" else request.get("feature")
                         if target is not None and target != editing["feature"]:
                             raise OperationError("managed_sketch_mismatch", "Only the sketch in the active edit session may be changed", feature=editing["feature"])
                     if getattr(App, "GuiUp", False):
@@ -440,20 +644,24 @@ class Controller:
                         if (Gui.Control.activeDialog() or native_edit) and not managed_native_edit:
                             raise OperationError("sketch_edit_active", "Finish or cancel graphical editing before another operation")
                     self.busy = True
-                if op == "begin_sketch_edit":
+                    owns_busy = True
+                if op == "adopt":
+                    doc = self._adopt(doc, request["path"])
+                elif op == "begin_sketch_edit":
                     sketch = self._profile(doc, request["feature"])
+                    self._body(doc, request, sketch)
                     if doc.HasPendingTransaction:
                         raise OperationError("unmanaged_transaction", "Finish the existing native transaction before starting sketch editing")
                     undo_before = doc.UndoCount
                     initial = bytes(sketch.dumpContent())
                     doc.openTransaction(f"KurtShape: edit {sketch.Label}")
-                    self.sketch_edits[metadata(doc).DocumentId] = {
+                    self.sketch_edits[self._meta(doc).DocumentId] = {
                         "feature": sketch.Name, "signature": self._sketch_edit_signature(doc, sketch.Name),
                         "initial": initial, "undo_before": undo_before,
                         "undo": [initial], "redo": []}
                     self._new_revision(doc)
                 elif op == "finish_sketch_edit":
-                    editing = self.sketch_edits.get(metadata(doc).DocumentId)
+                    editing = self.sketch_edits.get(self._meta(doc).DocumentId)
                     if not editing:
                         raise OperationError("no_sketch_edit", "No managed sketch edit session is active")
                     if not isinstance(request.get("cancel", False), bool):
@@ -469,35 +677,43 @@ class Controller:
                     if request.get("cancel", False):
                         self._rollback_sketch_edit(doc)
                     else:
+                        draft = bytes(doc.getObject(editing["feature"]).dumpContent())
                         self._profile(doc, editing["feature"])
-                        doc.recompute()
+                        self._recompute(doc)
                         errors = self._build_status(doc)
                         if errors:
                             raise OperationError("build_failed", "Finishing sketch editing could not rebuild native features", features=errors)
                         self._commit_sketch_edit(doc)
-                    self.sketch_edits.pop(metadata(doc).DocumentId, None)
+                    self.sketch_edits.pop(self._meta(doc).DocumentId, None)
                     transaction = False
-                    doc.recompute()
+                    self._recompute(doc)
                     self._new_revision(doc)
                 elif op in self.MODEL_OPS:
-                    editing = self.sketch_edits.get(metadata(doc).DocumentId)
+                    editing = self.sketch_edits.get(self._meta(doc).DocumentId)
+                    if editing:
+                        draft = bytes(doc.getObject(editing["feature"]).dumpContent())
+                        draft_history = (list(editing["undo"]), list(editing["redo"]))
                     if not editing:
+                        if op == "duplicate_feature" and doc.HasPendingTransaction:
+                            raise OperationError("unmanaged_transaction", "Finish the native transaction before another operation")
                         doc.openTransaction(f"KurtShape: {op}")
                     transaction = True
-                    self._model_operation(doc, request)
-                    doc.recompute()
+                    created_feature = self._model_operation(doc, request)
+                    self._recompute(doc)
                     errors = self._build_status(doc)
                     if errors and not editing:
                         raise OperationError("build_failed", "Native feature rebuild failed", features=errors)
-                    if not editing and (op in {"pad", "pocket"} or (op == "set_parameter" and doc.Body.Tip and doc.Body.Tip.TypeId != "Sketcher::SketchObject")):
-                        if metadata(doc).BuildStatus != "valid" or len(doc.Body.Shape.Solids) != 1:
+                    affected = doc.getObject(request.get("profile") or request.get("feature") or created_feature or "")
+                    affected_body = owner(doc, affected)
+                    if not editing and affected_body and (op in {"pad", "pocket"} or op in {"set_parameter", "set_expression", "duplicate_feature"} and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject"):
+                        if self._meta(doc).BuildStatus != "valid" or len(affected_body.Shape.Solids) != 1:
                             raise OperationError("build_failed", "Operation must produce one valid solid")
                     if not editing:
                         doc.commitTransaction()
                     transaction = False
                     self._new_revision(doc)
                 elif op in {"undo", "redo"}:
-                    editing = self.sketch_edits.get(metadata(doc).DocumentId)
+                    editing = self.sketch_edits.get(self._meta(doc).DocumentId)
                     if editing:
                         sketch = doc.getObject(editing["feature"])
                         if op == "undo":
@@ -511,17 +727,19 @@ class Controller:
                             snapshot = editing["redo"].pop()
                             editing["undo"].append(snapshot)
                         sketch.restoreContent(snapshot)
-                        doc.recompute()
+                        self._recompute(doc)
                         editing["signature"] = self._sketch_edit_signature(doc, sketch.Name)
                     else:
                         self._native_history(doc, op)
-                    doc.recompute()
+                    self._recompute(doc)
                     self._new_revision(doc)
                 elif op == "save":
                     self._save(doc, request["path"])
                 elif op == "export":
-                    self._export(doc, request["path"])
+                    self._export(doc, request["path"], request.get("body"))
             result = self.inspect(doc)
+            if created_feature:
+                result["created_feature"] = created_feature
             if op in {"save", "open"} and getattr(App, "GuiUp", False):
                 import FreeCADGui as Gui
                 # saveCopy intentionally preserves the GUI dirty flag; open
@@ -533,10 +751,21 @@ class Controller:
             return {"ok": True, "result": result}
         except Exception as exc:
             if transaction and doc:
-                ended_edit = metadata(doc).DocumentId in self.sketch_edits
+                ended_edit = self._meta(doc).DocumentId in self.sketch_edits
                 if ended_edit:
+                    if draft is not None:
+                        try:
+                            self.recovery.capture(doc, self._meta(doc), self.sketch_edits[self.identifier(doc)], force=True, draft=draft)
+                        except Exception as recovery_error:
+                            self.last_failures[self.identifier(doc)] = {"recovery_error": str(recovery_error)}
                     try:
-                        self._rollback_sketch_edit(doc)
+                        if draft is not None:
+                            self._preserve_sketch_draft(doc, draft)
+                            if draft_history is not None:
+                                editing = self.sketch_edits[self._meta(doc).DocumentId]
+                                editing["undo"], editing["redo"] = draft_history
+                        else:
+                            self._rollback_sketch_edit(doc)
                     except Exception as rollback_error:
                         # An external native history change must be reported,
                         # never escaped from dispatch or repaired by undoing
@@ -545,24 +774,114 @@ class Controller:
                         self._new_revision(doc)
                 else:
                     doc.abortTransaction()
-                    doc.recompute()
-                    self.signatures[metadata(doc).DocumentId] = intent_signature(doc)
+                    self._recompute(doc)
+                    self.signatures[self._meta(doc).DocumentId] = self._signature(doc)
                     self._build_status(doc)
             code = exc.code if isinstance(exc, OperationError) else "operation_failed"
+            if not isinstance(exc, OperationError):
+                log_path = Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime"))) / "kurtshape.log"
+                try:
+                    log_path.parent.mkdir(parents=True, exist_ok=True)
+                    with log_path.open("a", encoding="utf-8") as log:
+                        log.write(traceback.format_exc() + "\n")
+                except OSError:
+                    pass
             error = {"code": code, "message": str(exc), **(exc.details if isinstance(exc, OperationError) else {})}
             if doc and code not in {"stale_revision", "busy", "sketch_edit_active", "managed_sketch_mismatch", "sketch_editor_open"}:
-                self.last_failures[metadata(doc).DocumentId] = {"request": request, "error": error, "rejected": True}
-                metadata(doc).LastFailure=json.dumps(self.last_failures[metadata(doc).DocumentId])
+                self.last_failures[self._meta(doc).DocumentId] = {"request": request, "error": error, "rejected": True}
+                self._meta(doc).LastFailure=json.dumps(self.last_failures[self._meta(doc).DocumentId])
             return {"ok": False, "error": error}
         finally:
-            self.busy = False
+            if owns_busy:
+                self.busy = False
 
     def _new_revision(self, doc):
-        meta = metadata(doc)
+        meta = self._meta(doc)
         meta.Revision = str(uuid.uuid4())
-        self.signatures[meta.DocumentId] = intent_signature(doc)
+        self.signatures[meta.DocumentId] = self._signature(doc)
+        self.observer.state(doc)["intent_dirty"] = False
         self._record_sketch_edit(doc)
         self._build_status(doc)
+
+    def _preview(self, doc, request):
+        if self.busy:
+            raise OperationError("busy", "Finish the active operation before previewing")
+        if not self.is_managed(doc):
+            raise OperationError("unmanaged_document", "Adopt a copy before previewing changes")
+        if request.get("expected_revision") != self._meta(doc).Revision:
+            raise OperationError("stale_revision", "Inspect before previewing a proposal")
+        if self._meta(doc).DocumentId in self.sketch_edits or doc.HasPendingTransaction:
+            raise OperationError("sketch_edit_active", "Finish editing before previewing")
+        if getattr(App, "GuiUp", False):
+            import FreeCADGui as Gui
+            if Gui.Control.activeDialog() or any(Gui.getDocument(name).getInEdit() for name in App.listDocuments()):
+                raise OperationError("sketch_edit_active", "Finish graphical editing before previewing")
+        proposal = request.get("proposal")
+        if not isinstance(proposal, dict) or proposal.get("op") not in {"set_parameter", "set_expression"} or set(proposal) - self.ARGS[proposal["op"]] - {"op"}:
+            raise OperationError("unsupported_preview", "Preview accepts a parameter or expression operation only")
+        import tempfile
+        clone = None
+        active = App.ActiveDocument
+        try:
+            with tempfile.TemporaryDirectory(prefix="kurtshape-parameter-preview-") as temporary:
+                path = Path(temporary) / "native-preview.FCStd"
+                doc.saveCopy(str(path))
+                clone = App.openDocument(str(path), True)
+                failure = None
+                try:
+                    self._model_operation(clone, proposal)
+                    self._recompute(clone)
+                    errors = self._build_status(clone)
+                    if errors:
+                        raise OperationError("build_failed", "Preview could not rebuild", features=errors)
+                    affected_body = owner(clone, clone.getObject(proposal.get("feature", "")))
+                    if affected_body and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject":
+                        if self._meta(clone).BuildStatus != "valid" or len(affected_body.Shape.Solids) != 1:
+                            raise OperationError("build_failed", "Preview must produce one valid solid in the affected Body")
+                except Exception as exc:
+                    failure = {"code": getattr(exc, "code", "preview_failed"), "message": str(exc)}
+                errors = self._build_status(clone)
+                status = self._meta(clone).BuildStatus
+                evaluated = {"build_status": status, "build_errors": errors,
+                             "measurements": self._geometry(clone) if status == "valid" else None}
+                return {"base_revision": request["expected_revision"], "proposal": proposal,
+                        "valid": failure is None and evaluated["build_status"] in {"valid", "sketch_only"},
+                        "error": failure, "build_status": evaluated["build_status"], "build_errors": evaluated["build_errors"],
+                        "measurements": evaluated["measurements"], "discarded": True}
+        finally:
+            if clone:
+                name = clone.Name
+                App.closeDocument(name)
+                self.evaluations.pop(name, None)
+            if active and self._is_open(active):
+                App.setActiveDocument(active.Name)
+
+    def _adopt(self, source, raw):
+        path = write_path(raw, {".fcstd"}, self.settings.roots)
+        if path.exists() or source.FileName and path == Path(source.FileName).resolve():
+            raise OperationError("adoption_destination_exists", "Adoption requires a new file, preserving the original")
+        unsupported = self.inspect(source)["unsupported_objects"]
+        if unsupported:
+            raise OperationError("unsupported_adoption", "Resolve script-owned objects or external document links before adoption", objects=unsupported)
+        import tempfile
+        clone = None
+        try:
+            with tempfile.TemporaryDirectory(prefix="kurtshape-native-adoption-") as temporary:
+                source.saveCopy(str(Path(temporary) / "adoption-source.FCStd"))
+                clone = App.openDocument(str(Path(temporary) / "adoption-source.FCStd"))
+                clone.openTransaction("KurtShape: adopt native copy")
+                meta = metadata(clone)
+                meta.DocumentId = str(uuid.uuid4())
+                self._recompute(clone)
+                clone.commitTransaction()
+                self.attach(clone)
+                self._save(clone, str(path))
+                return clone
+        except Exception:
+            if clone:
+                self.documents.pop(self.identifier(clone), None)
+                App.closeDocument(clone.Name)
+            raise
 
     def _id(self, doc, request, fallback):
         name = request.get("id", fallback)
@@ -574,7 +893,7 @@ class Controller:
 
     def _profile(self, doc, name):
         obj = doc.getObject(name)
-        if not obj or obj.TypeId != "Sketcher::SketchObject" or obj not in doc.Body.Group:
+        if not obj or obj.TypeId != "Sketcher::SketchObject" or owner(doc, obj) is None:
             raise OperationError("missing_reference", "Profile must name a sketch in this body")
         if obj.solve() != 0:
             raise OperationError("constraint_conflict", "Sketch solver reports conflicting constraints")
@@ -590,14 +909,14 @@ class Controller:
             n += 1
         sketch.renameConstraint(i, selected)
 
-    def _sketch_support(self, doc, req):
+    def _sketch_support(self, doc, req, body):
         if "plane" in req and "support" in req:
             raise OperationError("invalid_argument", "Choose one origin plane or one native planar support")
         if "support" not in req:
             plane = req.get("plane", "XY")
             if plane not in {"XY", "XZ", "YZ"}:
                 raise OperationError("unsupported_plane", "Origin plane must be XY, XZ or YZ")
-            return doc.getObject(plane + "_Plane"), ""
+            return origin_plane(body, plane), ""
         reference = req["support"]
         if not isinstance(reference, dict) or not isinstance(reference.get("feature"), str) or set(reference) - {"feature", "subelement"}:
             raise OperationError("invalid_argument", "support requires a native feature ID and optional FaceN subelement")
@@ -606,10 +925,10 @@ class Controller:
             raise OperationError("missing_reference", "Sketch support does not exist in this document")
         # A displayed Body face is owned by its current solid Tip. Link the
         # sketch to that feature, avoiding a self-reference through its Body.
-        if obj == doc.Body:
-            obj = doc.Body.Tip
-        origins = list(doc.Body.Origin.OriginFeatures)
-        if obj is None or (obj not in doc.Body.Group and obj not in origins):
+        if obj == body:
+            obj = body.Tip
+        origins = list(body.Origin.OriginFeatures)
+        if obj is None or (obj not in body.Group and obj not in origins):
             raise OperationError("unsupported_reference", "Sketch support must belong to the active native Body")
         element = reference.get("subelement", "")
         if obj.TypeId in {"App::Plane", "PartDesign::Plane"}:
@@ -628,12 +947,14 @@ class Controller:
         return obj, element
 
     def _new_sketch(self, doc, req, fallback):
-        support, element = self._sketch_support(doc, req)
+        target = doc.getObject(req.get("support", {}).get("feature", ""))
+        body = self._body(doc, req, target)
+        support, element = self._sketch_support(doc, req, body)
         sk = doc.addObject("Sketcher::SketchObject", self._id(doc, req, fallback))
-        doc.Body.addObject(sk)
+        body.addObject(sk)
         sk.AttachmentSupport = (support, [element])
         sk.MapMode = "FlatFace"
-        doc.recompute()
+        self._recompute(doc)
         if "Error" in sk.State or "Invalid" in sk.State:
             raise OperationError("attachment_failed", "Native sketch attachment failed", status=sk.getStatusString())
         return sk
@@ -700,9 +1021,10 @@ class Controller:
 
     def _delete_feature(self, doc, req):
         target = doc.getObject(req["feature"])
+        body = self._body(doc, req, target)
         if target is None:
             raise OperationError("missing_reference", "Feature ID does not exist")
-        if not self._deletable_feature(target, doc.Body):
+        if not self._deletable_feature(target, body):
             raise OperationError("unsupported_feature", "Delete supports sketches, native datum planes and built-in PartDesign features in this Body")
         cascade = req.get("cascade", False)
         if not isinstance(cascade, bool):
@@ -712,11 +1034,11 @@ class Controller:
         while pending:
             obj = pending.pop()
             for dependent in obj.InList:
-                if dependent == doc.Body or dependent.Name in removed:
+                if dependent == body or dependent.Name in removed:
                     continue
-                if dependent not in doc.Body.Group:
+                if dependent not in body.Group:
                     raise OperationError("external_dependency", "A feature outside this Body depends on the deletion", feature=dependent.Name)
-                if not self._deletable_feature(dependent, doc.Body):
+                if not self._deletable_feature(dependent, body):
                     raise OperationError("unsupported_dependency", "A script-owned or unsupported feature depends on this deletion", feature=dependent.Name)
                 removed.add(dependent.Name)
                 pending.append(dependent)
@@ -725,19 +1047,27 @@ class Controller:
         # Remove consumers first. Keep upstream features and choose the latest
         # surviving solid as Tip so deleting the last sketch does not retarget
         # the Body to an earlier sketch.
-        ordered = [obj.Name for obj in doc.Body.Group if obj.Name in removed]
+        ordered = [obj.Name for obj in body.Group if obj.Name in removed]
         for name in reversed(ordered):
             doc.removeObject(name)
-        solids = [obj for obj in doc.Body.Group if obj.TypeId.startswith("PartDesign::") and hasattr(obj,"Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
+        solids = [obj for obj in body.Group if obj.TypeId.startswith("PartDesign::") and hasattr(obj,"Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
         # Body.Tip must be a PartDesign feature. A surviving Sketcher profile
         # is editable history, but assigning it as Tip produces a Body error.
-        doc.Body.Tip = solids[-1] if solids else None
-        meta = metadata(doc)
+        body.Tip = solids[-1] if solids else None
+        meta = self._meta(doc)
         mapping = json.loads(meta.SourceMapping)
         meta.SourceMapping = json.dumps({key:value for key,value in mapping.items() if value not in removed}, sort_keys=True)
 
     def _model_operation(self, doc, req):
         op = req["op"]
+        if op == "create_body":
+            created = doc.addObject("PartDesign::Body", self._id(doc, req, "Body"))
+            created.Label = str(req.get("name", created.Name))[:120]
+            return created.Name
+        if "support" in req and not isinstance(req["support"], dict):
+            raise OperationError("invalid_argument", "support requires a native reference object")
+        target = doc.getObject(req.get("feature") or req.get("profile") or req.get("sketch") or req.get("support", {}).get("feature") or "")
+        body = self._body(doc, req, target) if op != "rebuild" else None
         if op == "create_sketch":
             sk = self._new_sketch(doc, req, "Sketch")
         elif op == "sketch_rectangle":
@@ -770,10 +1100,10 @@ class Controller:
             profile=self._profile(doc,req["profile"])
             if profile.Shape.isNull() or not profile.Shape.Wires:
                 raise OperationError("open_profile", "Sketch must contain a closed profile")
-            prior_volume=doc.Body.Shape.Volume if not doc.Body.Shape.isNull() else 0
+            prior_volume=body.Shape.Volume if not body.Shape.isNull() else 0
             if op=="pocket" and prior_volume<=0:
                 raise OperationError("missing_body", "Pocket requires an existing solid")
-            feature=doc.Body.newObject("PartDesign::Pad" if op=="pad" else "PartDesign::Pocket",self._id(doc,req,"Pad" if op=="pad" else "Pocket"))
+            feature=body.newObject("PartDesign::Pad" if op=="pad" else "PartDesign::Pocket",self._id(doc,req,"Pad" if op=="pad" else "Pocket"))
             feature.Profile=profile
             if "reversed" in req and not isinstance(req["reversed"], bool):
                 raise OperationError("invalid_argument", "reversed must be boolean")
@@ -787,21 +1117,21 @@ class Controller:
                 feature.Type=1 if req.get("through_all",True) else 0
                 if str(feature.Type)=="Length":
                     feature.Length=number(req["length"],"length",True)
-            doc.recompute()
+            self._recompute(doc)
             if op=="pocket":
                 def cut_valid():
-                    return (not doc.Body.Shape.isNull() and doc.Body.Shape.isValid() and len(doc.Body.Shape.Solids)==1
-                            and doc.Body.Shape.Volume < prior_volume - 1e-7
+                    return (not body.Shape.isNull() and self._evaluated_shape(doc, body)["valid"] and len(body.Shape.Solids)==1
+                            and body.Shape.Volume < prior_volume - 1e-7
                             and not set(feature.State) & {"Error", "Invalid"})
                 # Native Pocket goes against the sketch normal by default.
                 # At a bottom/origin plane that direction may contain no
                 # material. Try the opposite only when direction was omitted.
                 if not cut_valid() and "reversed" not in req:
                     feature.Reversed = True
-                    doc.recompute()
+                    self._recompute(doc)
                 if not cut_valid():
                     raise OperationError("empty_cut", "Pocket removes no valid material in the requested direction")
-        elif op=="set_parameter":
+        elif op in {"set_parameter", "set_expression"}:
             feature=doc.getObject(req["feature"])
             if not feature:
                 raise OperationError("missing_reference", "Feature ID does not exist")
@@ -811,11 +1141,20 @@ class Controller:
             info=native_parameters(feature)[parameter]
             if feature.TypeId=="Sketcher::SketchObject" and not feature.Constraints[info["constraint_index"]].Driving:
                 raise OperationError("unsupported_parameter", "This parameter is not a supported driving length dimension")
-            value=number(req["value"],"value",info.get("constraint_type") not in {"DistanceX", "DistanceY", "Angle"})
+            value = number(req["value"], "value", info.get("constraint_type") not in {"DistanceX", "DistanceY", "Angle"}, info["unit"]) if op == "set_parameter" else None
             property_path=(f"Constraints.{info['name']}" if info.get("name") else f"Constraints[{info['constraint_index']}]") if feature.TypeId=="Sketcher::SketchObject" else parameter
             aliases={property_path}
             if feature.TypeId=="Sketcher::SketchObject":
                 aliases.add(f"Constraints[{native_parameters(feature)[parameter]['constraint_index']}]")
+            if op == "set_expression":
+                expression = req.get("expression")
+                if expression is not None and (not isinstance(expression, str) or len(expression) > 512 or not re.fullmatch(r"[A-Za-z0-9_ .+*/()\[\]-]+", expression)):
+                    raise OperationError("invalid_argument", "Use a dimensional formula with named properties and arithmetic")
+                feature.setExpression(property_path, expression)
+                self._recompute(doc)
+                if set(feature.State) & {"Invalid", "Error"}:
+                    raise OperationError("invalid_expression", "Formula is invalid, has a missing reference, or has incompatible units", status=feature.getStatusString())
+                return
             if any(path.lstrip(".") in aliases for path,_ in feature.ExpressionEngine):
                 raise OperationError("expression_driven", "Edit the upstream driving parameter instead")
             if feature.TypeId=="Sketcher::SketchObject":
@@ -824,11 +1163,43 @@ class Controller:
                     raise OperationError("constraint_conflict", "Dimension produces a sketch solver conflict")
             else:
                 feature.Length=value
+        elif op == "duplicate_feature":
+            source = doc.getObject(req["feature"])
+            if source is None or source not in body.Group or source.TypeId not in {"Sketcher::SketchObject", "PartDesign::Pad", "PartDesign::Pocket"}:
+                raise OperationError("unsupported_feature", "Duplicate supports a native sketch, Pad or Pocket in this Body")
+            if req.get("fingerprint") and hashlib.sha256(bytes(source.dumpContent())).hexdigest() != req["fingerprint"]:
+                raise OperationError("changed_source", "Copied feature changed; copy it again")
+            previous_tip = body.Tip
+            created = doc.copyObject(source, False)
+            body.addObject(created)
+            created.Label = source.Label + " copy"
+            if created.TypeId == "Sketcher::SketchObject":
+                body.Tip = previous_tip
+            return created.Name
+        elif op == "pierce":
+            sketch = self._profile(doc, req["sketch"])
+            source = doc.getObject(req["target"])
+            geometry, point = req["geometry"], req.get("point", 1)
+            if isinstance(geometry, bool) or not isinstance(geometry, int) or not 0 <= geometry < sketch.GeometryCount or isinstance(point, bool) or point not in {1, 2, 3}:
+                raise OperationError("invalid_argument", "Choose one native sketch endpoint or center")
+            if source is None or source == sketch or source not in body.Group or not re.fullmatch(r"Edge[1-9][0-9]*", str(req["subelement"])):
+                raise OperationError("invalid_argument", "Select an independent native curve edge in this Body")
+            if sketch in source.OutListRecursive:
+                raise OperationError("cyclic_reference", "Pierce cannot reference a downstream feature")
+            previous = len(sketch.ExternalGeo)
+            sketch.addExternal(source.Name, req["subelement"], False, True)
+            self._recompute(doc)
+            external = sketch.ExternalGeo[previous:]
+            if len(external) != 1 or not isinstance(external[0], Part.Point):
+                raise OperationError("ambiguous_intersection", "Curve must cross the sketch plane at exactly one point")
+            sketch.addConstraint(Sketcher.Constraint("Coincident", geometry, point, -(previous + 1), 1))
+            if sketch.solve() != 0:
+                raise OperationError("constraint_conflict", "Pierce conflicts with existing sketch constraints")
         elif op == "rename_feature":
             feature = doc.getObject(req["feature"])
             if feature is None:
                 raise OperationError("missing_reference", "Feature ID does not exist")
-            if feature != doc.Body and feature not in doc.Body.Group:
+            if feature != body and feature not in body.Group:
                 raise OperationError("unsupported_feature", "Rename requires a feature in the active Body")
             label = req["name"]
             if not isinstance(label, str) or not label.strip() or len(label) > 120 or any(ord(c) < 32 for c in label):
@@ -847,13 +1218,13 @@ class Controller:
                 created.addProperty("App::PropertyString",prop,"Onshape source")
                 setattr(created,prop,str(value))
                 created.setEditorMode(prop,1)
-            meta=metadata(doc)
+            meta=self._meta(doc)
             mapping=json.loads(meta.SourceMapping)
             mapping[str(req["source_feature_id"])]=created.Name
             meta.SourceMapping=json.dumps(mapping,sort_keys=True)
 
     def _save(self, doc, raw):
-        path=write_path(raw,{".fcstd"})
+        path=write_path(raw,{".fcstd"}, self.settings.roots)
         stage=path.with_name(path.stem + ".saving.FCStd")
         old_name=doc.FileName
         try:
@@ -872,20 +1243,25 @@ class Controller:
             doc.FileName=old_name
             raise
 
-    def _export(self, doc, raw):
-        path=write_path(raw,{".step",".stp",".stl"})
-        if metadata(doc).BuildStatus!="valid":
+    def _export(self, doc, raw, body_id=None):
+        path=write_path(raw,{".step",".stp",".stl"}, self.settings.roots)
+        if self._meta(doc).BuildStatus!="valid":
             raise OperationError("build_failed", "Only a current valid solid can be exported")
         stage=path.with_name(path.stem + ".exporting" + path.suffix)
+        included = [self._body(doc, {"body": body_id})] if body_id is not None else native_results(doc)
+        included = [obj for obj in included if not obj.Shape.isNull() and obj.Shape.Solids]
+        shape = Part.makeCompound([obj.Shape for obj in included])
         if path.suffix.lower()==".stl":
             import MeshPart
-            mesh=MeshPart.meshFromShape(Shape=doc.Body.Shape,LinearDeflection=0.05,AngularDeflection=0.1,Relative=False)
+            mesh=MeshPart.meshFromShape(Shape=shape,LinearDeflection=0.05,AngularDeflection=0.1,Relative=False)
             mesh.write(str(stage))
         else:
-            Part.export([doc.Body],str(stage))
-        provenance={"document_id":metadata(doc).DocumentId,"revision":metadata(doc).Revision,"units":"mm",
+            Part.export(included,str(stage))
+        provenance={"document_id":self._meta(doc).DocumentId,"revision":self._meta(doc).Revision,"units":"mm",
+                    "source_mapping":json.loads(self._meta(doc).SourceMapping),
+                    "engine":{"FreeCAD":App.Version(),"OCCT":Part.OCC_VERSION},
                     "sha256":hashlib.sha256(stage.read_bytes()).hexdigest(),
-                    "native_file":doc.FileName or None,"format":path.suffix.lower(),"shape":measurements(doc.Body.Shape),
+                    "native_file":doc.FileName or None,"format":path.suffix.lower(),"included_body_ids":[obj.Name for obj in included],"shape":self._geometry(doc, included),
                     "settings":{"linear_deflection_mm":0.05,"angular_deflection_rad":0.1} if path.suffix.lower()==".stl" else {"writer":"FreeCAD Part/OCCT"}}
         sidecar=path.with_suffix(path.suffix+".json")
         temp=sidecar.with_suffix(sidecar.suffix+".saving")

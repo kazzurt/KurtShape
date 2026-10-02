@@ -3,6 +3,8 @@ import os
 from pathlib import Path
 import sys
 import unittest
+import json
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -16,6 +18,21 @@ class RouterTests(unittest.TestCase):
         self.context = "part_studio"
         self.router = ShortcutRouter(None, {}, lambda: self.context, self.messages.append,
                                      native_runner=self.commands.append)
+
+    def test_user_override_conflicts_reject_and_perpendicular_keeps_shift_l(self):
+        with tempfile.TemporaryDirectory(prefix="shortcut-override-") as folder:
+            path = Path(folder) / "shortcuts.user.json"
+            path.write_text(json.dumps({"schema_version": 1, "bindings": {"sketch.pierce": "Ctrl+Alt+G"}}))
+            registry = load_registry(user_path=path)
+            entries = registry["shortcuts"]
+            pierce = next(entry for entry in entries if entry["id"] == "sketch.pierce")
+            self.assertEqual(pierce["key"], "Ctrl+Alt+G")
+            self.assertTrue(pierce["overridden"])
+            perpendicular = next(entry for entry in entries if entry["id"] == "sketch.perpendicular")
+            self.assertEqual(perpendicular["key"], "Shift+L")
+            path.write_text(json.dumps({"schema_version": 1, "bindings": {"sketch.pierce": "Shift+L"}}))
+            with self.assertRaises(ValueError):
+                load_registry(user_path=path)
 
     def test_shift_s_retains_all_three_context_meanings(self):
         self.assertEqual(self.router.resolve("Shift+S", "part_studio")["id"], "sketch.start")

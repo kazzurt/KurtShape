@@ -1,0 +1,30 @@
+"""Compare startup against the preserved baseline using a disposable profile."""
+import os
+from pathlib import Path
+import sys
+root = Path(os.environ["KURTSHAPE_ROOT"])
+baseline = root / "runtime" / "review-startup-diagnostics" / "baseline" / "src"
+sys.path.insert(0, str(baseline if os.environ.get("KURTSHAPE_STARTUP_BASELINE") else root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+main=Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen,True)
+main.resize(1440,920)
+main.show()
+import kurtshape.core as core
+core.ROOT=root
+from kurtshape.ui import start
+App.Console.PrintLog("STARTUP_PROBE_BEFORE\n")
+panel=start()
+App.Console.PrintLog("STARTUP_PROBE_AFTER\n")
+
+def finish():
+    App.Console.PrintLog("STARTUP_PROBE_FINISHED\n")
+    for name in list(App.listDocuments()):
+        App.getDocument(name).setClosable(True)
+        App.closeDocument(name)
+    QtCore.QTimer.singleShot(100,QtGui.QApplication.instance().quit)
+
+QtCore.QTimer.singleShot(3000,finish)

@@ -105,7 +105,7 @@
     {"id":"sketch.offset","key":"O","contexts":["sketch"],"label":"Offset geometry","status":"native","native_command":"Sketcher_Offset"},
     {"id":"sketch.parallel","key":"B","contexts":["sketch"],"label":"Parallel constraint","status":"native","native_command":"Sketcher_ConstrainParallel"},
     {"id":"sketch.perpendicular","key":"Shift+L","contexts":["sketch"],"label":"Perpendicular constraint","status":"native","native_command":"Sketcher_ConstrainPerpendicular"},
-    {"id":"sketch.pierce","key":"Shift+G","contexts":["sketch"],"label":"Pierce constraint","status":"unsupported","note":"A true three-dimensional pierce constraint is not implemented."},
+    {"id":"sketch.pierce","key":"Shift+G","contexts":["sketch"],"label":"Pierce constraint","status":"callback","note":"Select one sketch point and one curve crossing the sketch plane; native intersection plus coincidence preserves the reference."},
     {"id":"sketch.point","key":"Shift+S","contexts":["sketch"],"label":"Sketch point","status":"native","native_command":"Sketcher_CreatePoint"},
     {"id":"sketch.fillet","key":"Shift+F","contexts":["sketch"],"label":"Sketch fillet","status":"native","native_command":"Sketcher_CreateFillet"},
     {"id":"sketch.inference_suppress","key":"Shift","contexts":["sketch"],"label":"Suppress inference (hold)","status":"pass_through","note":"Held Shift reaches native Sketcher; its inference rules differ from Onshape."},

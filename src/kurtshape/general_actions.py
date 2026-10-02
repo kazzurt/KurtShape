@@ -13,6 +13,7 @@ from pathlib import Path
 import uuid
 
 from .core import ROOT, METADATA, metadata
+from .bodies import owner
 
 
 class GeneralActions:
@@ -122,7 +123,7 @@ class GeneralActions:
             if len(selected) != 1:
                 raise ValueError("Select one native sketch, extrude, or remove feature to copy.")
             obj = selected[0]
-            if obj.Document != doc or obj.TypeId not in self.COPY_TYPES or obj not in doc.Body.Group:
+            if obj.Document != doc or obj.TypeId not in self.COPY_TYPES or owner(doc, obj) is None:
                 raise ValueError("Copy supports native sketches, extrudes, and remove features in this Body.")
             self._inspect(doc)
             self._feature_clipboard = {"document_id": metadata(doc).DocumentId, "document_name": doc.Name,
@@ -153,41 +154,17 @@ class GeneralActions:
             if clip["document_id"] != metadata(doc).DocumentId or clip["document_name"] != doc.Name:
                 raise ValueError("Feature paste retains dependencies in its source document. Switch to that document to paste.")
             source = doc.getObject(clip["feature"])
-            if source is None or source not in doc.Body.Group or self._fingerprint(source) != clip["fingerprint"]:
+            if source is None or owner(doc, source) is None or self._fingerprint(source) != clip["fingerprint"]:
                 raise ValueError("The copied source feature changed or was removed. Copy it again.")
             state = self._inspect(doc)
             if state["active_sketch_edit"] or doc.HasPendingTransaction or self.panel.task or self.panel.pending_sketch:
                 raise ValueError("Finish or cancel the current tool before pasting a feature.")
-            expected_revision = state["revision"]
-            self.panel.core.busy = True
-            created = None
-            try:
-                if metadata(doc).Revision != expected_revision:
-                    raise ValueError("The document changed. Copy or paste again on the current revision.")
-                doc.openTransaction("KurtShape: paste native feature")
-                previous_tip = doc.Body.Tip
-                created = doc.copyObject(source, False)
-                doc.Body.addObject(created)
-                created.Label = source.Label + " copy"
-                if created.TypeId == "Sketcher::SketchObject":
-                    doc.Body.Tip = previous_tip
-                doc.recompute()
-                errors = self.panel.core._build_status(doc)
-                if errors:
-                    raise ValueError("Pasted feature failed to rebuild: " + "; ".join(item["message"] for item in errors))
-                if created.TypeId.startswith("PartDesign::") and (doc.Body.Shape.isNull() or not doc.Body.Shape.isValid() or len(doc.Body.Shape.Solids) != 1):
-                    raise ValueError("Pasted feature must produce one valid native solid.")
-                created_name = created.Name
-                doc.commitTransaction()
-            except Exception:
-                doc.abortTransaction()
-                doc.recompute()
-                self.panel.core.sync(doc)
-                raise
-            finally:
-                self.panel.core.busy = False
-            self.panel.state = self._inspect(doc)
-            self.panel.refresh()
+            previous_tip = owner(doc, source).Tip
+            result = self.panel.operation("duplicate_feature", feature=source.Name, fingerprint=clip["fingerprint"])
+            if not result:
+                return True
+            created_name = result["created_feature"]
+            created = doc.getObject(created_name)
             self.panel.select_feature(created_name)
             if hasattr(created, "ViewObject"):
                 created.ViewObject.Visibility = True

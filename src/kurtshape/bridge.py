@@ -7,6 +7,8 @@ from pathlib import Path
 import queue
 import secrets
 import threading
+import time
+from .request_ledger import RequestLedger
 
 
 class Bridge:
@@ -15,6 +17,7 @@ class Bridge:
         self.pending=queue.Queue(maxsize=32)
         self.token=secrets.token_urlsafe(32)
         self.request_timeout=request_timeout
+        self.ledger=getattr(controller, "ledger", None) or RequestLedger()
         bridge=self
 
         class Handler(BaseHTTPRequestHandler):
@@ -35,18 +38,32 @@ class Bridge:
                         self.send_error(413)
                         return
                     request=json.loads(self.rfile.read(size))
+                    if not isinstance(request, dict):
+                        raise ValueError("Request must be an object")
+                    tracked=request.get("op") not in getattr(bridge.controller, "READ_OPS", {"dummy"})
+                    replay=bridge.ledger.register(request, "queued") if tracked else None
                     reply=queue.Queue(maxsize=1)
                     cancel=threading.Event()
                     started=threading.Event()
                     gate=threading.Lock()
-                    bridge.pending.put_nowait((request,reply,cancel,started,gate))
+                    if replay is not None:
+                        reply.put(replay)
+                    else:
+                        try:
+                            bridge.pending.put_nowait((request,reply,cancel,started,gate,time.perf_counter(),tracked))
+                        except queue.Full:
+                            if tracked:
+                                bridge.ledger.complete(request["request_id"], {"ok":False,"error":{"code":"queue_full","message":"Queue is full; request was not started"}}, "cancelled")
+                            raise
                     try:
                         result=reply.get(timeout=bridge.request_timeout)
                     except queue.Empty:
                         with gate:
                             cancel.set()
                             was_started=started.is_set()
-                        result={"ok":False,"error":{"code":"outcome_unknown" if was_started else "timeout","message":"Operation may have completed after the client timeout; inspect before retrying" if was_started else "Queued operation canceled before start; inspect before retrying"}}
+                        result={"ok":False,"error":{"code":"outcome_unknown" if was_started else "timeout","message":"Operation may have completed; look up request_status or replay the identical request" if was_started else "Queued operation canceled before start", "request_id":request.get("request_id"),"session_id":bridge.ledger.session_id}}
+                        if tracked and not was_started:
+                            bridge.ledger.complete(request["request_id"], result, "cancelled")
                     raw=json.dumps(result).encode()
                     self.send_response(200)
                     self.send_header("Content-Type","application/json")
@@ -61,13 +78,13 @@ class Bridge:
         self.server=ThreadingHTTPServer(("127.0.0.1",0),Handler)
         self.server.daemon_threads=True
         self.path=Path(runtime)/"assistant-session.json"
-        self.path.write_text(json.dumps({"url":f"http://127.0.0.1:{self.server.server_port}/operation","token":self.token,"pid":os.getpid(),"contract":1},indent=2))
+        self.path.write_text(json.dumps({"url":f"http://127.0.0.1:{self.server.server_port}/operation","token":self.token,"pid":os.getpid(),"contract":2,"session_id":self.ledger.session_id},indent=2))
         self.thread=threading.Thread(target=self.server.serve_forever,daemon=True)
         self.thread.start()
 
     def tick(self):
         try:
-            request,reply,cancel,started,gate=self.pending.get_nowait()
+            request,reply,cancel,started,gate,queued_at,tracked=self.pending.get_nowait()
         except queue.Empty:
             return False
         with gate:
@@ -75,11 +92,17 @@ class Bridge:
             if should_start:
                 started.set()
         if should_start:
-            reply.put(self.controller.dispatch(request))
+            queue_ms=round((time.perf_counter()-queued_at)*1000,2)
+            result=self.controller.dispatch(request)
+            result["queue_wait_ms"]=queue_ms
+            if hasattr(self.controller,"timings"):
+                self.controller.timings.record("queue_wait",queue_ms)
+            reply.put(result)
         return True
 
     def close(self):
         self.server.shutdown()
+        self.server.server_close()
         # Do not remove another instance's session file.
         try:
             if json.loads(self.path.read_text()).get("pid")==os.getpid():

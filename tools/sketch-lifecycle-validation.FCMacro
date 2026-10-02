@@ -91,10 +91,12 @@ def run():
         QtTest.QTest.keyClick(gl, QtCore.Qt.Key_Escape)
         QtTest.QTest.qWait(150)
         assert doc.Profile.GeometryCount == 4, doc.Profile.GeometryCount
+        core.record_edit_boundary(doc)
         dispatch("inspect")
         stage("actual_native_rectangle_mouse_command")
         doc.Profile.addGeometry(Part.Circle(App.Vector(8,6,0), App.Vector(0,0,1), 2), True)
         doc.recompute()
+        core.record_edit_boundary(doc)
         dispatch("inspect")
         stage("native_circle")
         dispatch("undo")

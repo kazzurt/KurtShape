@@ -5,6 +5,8 @@ workbench bindings. CAD and Qt imports are lazy for headless routing tests.
 """
 from __future__ import annotations
 import json
+import os
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,10 +37,29 @@ def active_contexts(context):
     return result
 
 
-def load_registry(path=None):
+def load_registry(path=None, user_path=None):
     data = json.loads(Path(path or ROOT / "shortcuts.json").read_text(encoding="utf-8"))
     if data.get("schema_version") != 1 or not isinstance(data.get("shortcuts"), list):
         raise ValueError("Unsupported shortcut registry schema")
+    user_path = Path(user_path or Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime"))) / "shortcuts.user.json")
+    if user_path.exists():
+        overrides = json.loads(user_path.read_text(encoding="utf-8"))
+        if overrides.get("schema_version") != 1 or not isinstance(overrides.get("bindings"), dict):
+            raise ValueError("Unsupported user shortcut schema")
+        known = {item["id"] for item in data["shortcuts"]}
+        if set(overrides["bindings"]) - known:
+            raise ValueError("Unknown shortcut override")
+        for item in data["shortcuts"]:
+            item["default_key"] = item["key"]
+            if item["id"] in overrides["bindings"]:
+                key = overrides["bindings"][item["id"]]
+                if not isinstance(key, str) or not key.strip():
+                    raise ValueError("Shortcut needs a key")
+                parts = key.strip().replace("Control+", "Ctrl+").split("+")
+                if any(modifier not in {"Ctrl", "Alt", "Shift", "Meta"} for modifier in parts[:-1]) or not re.fullmatch(r".|F(?:[1-9]|[12][0-9]|3[0-5])|Escape|Esc|Enter|Return|Space|Tab|Backspace|Delete|Del|Insert|Home|End|PageUp|PageDown|PgUp|PgDown|Up|Down|Left|Right", parts[-1]):
+                    raise ValueError("Use a keyboard key with Ctrl, Alt, Shift or Meta modifiers")
+                item["key"] = normalize_key(key)
+                item["overridden"] = item["key"] != normalize_key(item["default_key"])
     seen, ids = set(), set()
     for item in data["shortcuts"]:
         if item["id"] in ids:
@@ -66,7 +87,13 @@ class ShortcutRouter:
         self.callbacks = dict(callbacks)
         self.context_provider = context_provider
         self.status_callback = status_callback
-        self.registry = load_registry(registry_path)
+        self.registry_path = registry_path
+        self.user_path = Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime"))) / "shortcuts.user.json"
+        try:
+            self.registry = load_registry(registry_path, self.user_path)
+        except (ValueError, OSError) as exc:
+            self.status_callback("User shortcuts rejected: " + str(exc))
+            self.registry = load_registry(registry_path, ROOT / "runtime" / "no-user-shortcuts")
         self.entries = self.registry["shortcuts"]
         self.native_runner = native_runner
         self._filter = None
@@ -261,27 +288,13 @@ class ShortcutRouter:
             if entry["resolved_status"] not in {"available", "native equivalent"}:
                 label += " — unavailable"
             actions[target.addAction(label)] = action_id
-        if "sketch" in active_contexts(self.context_provider()):
-            for action_id in ("sketch.line", "sketch.circle", "sketch.arc", "sketch.corner_rectangle",
-                              "sketch.center_rectangle", "sketch.point", "sketch.trim", "sketch.offset", "sketch.construction"):
-                add(menu, action_id)
-            constraints = menu.addMenu("Constraints and dimensions")
-            for action_id in ("sketch.dimension", "sketch.coincident", "sketch.concentric", "sketch.horizontal", "sketch.vertical",
-                              "sketch.parallel", "sketch.perpendicular", "sketch.equal", "sketch.tangent", "sketch.symmetric",
-                              "sketch.midpoint", "sketch.fix", "sketch.curvature", "sketch.normal", "sketch.pierce"):
-                add(constraints, action_id)
-        else:
-            for action_id in ("sketch.start", "feature.extrude", "feature.revolve", "feature.fillet"):
-                add(menu, action_id)
-        menu.addSeparator()
-        for action_id in ("view.fit", "view.normal", "view.isometric"):
-            add(menu, action_id)
-        views = menu.addMenu("Standard views")
-        for action_id in ("view.front", "view.back", "view.left", "view.right", "view.top", "view.bottom"):
-            add(views, action_id)
-        menu.addSeparator()
-        for action_id in ("general.undo", "general.redo", "local.save", "general.search", "general.help"):
-            add(menu, action_id)
+        groups = {}
+        for entry in entries.values():
+            if entry["resolved_status"] not in {"available", "native equivalent"}:
+                continue
+            category = entry["contexts"][0].replace("_", " ").title()
+            group = groups.setdefault(category, menu.addMenu(category)) if category not in groups else groups[category]
+            add(group, entry["id"])
         chosen = menu.exec(QtGui.QCursor.pos())
         if chosen in actions:
             self.invoke(actions[chosen])
@@ -315,7 +328,7 @@ class ShortcutRouter:
         layout.addWidget(table)
         entries = self.entries if mode == "help" else self.available_actions()
         for entry in entries:
-            item = QtGui.QTreeWidgetItem([entry["label"], entry["key"], ", ".join(entry["contexts"]), self.action_status(entry)])
+            item = QtGui.QTreeWidgetItem([entry["label"], entry["key"] + (" *" if entry.get("overridden") else ""), ", ".join(entry["contexts"]), self.action_status(entry)])
             item.setData(0, QtCore.Qt.UserRole, entry["id"])
             item.setToolTip(0, entry.get("note", ""))
             table.addTopLevelItem(item)
@@ -329,6 +342,39 @@ class ShortcutRouter:
             dialog.close()
             self.invoke(action)
         table.itemActivated.connect(activate)
+        if mode == "help":
+            row = QtGui.QHBoxLayout()
+            rebind = QtGui.QPushButton("Rebind selected")
+            reset = QtGui.QPushButton("Reset selected")
+            row.addWidget(rebind)
+            row.addWidget(reset)
+            layout.addLayout(row)
+            def change(reset_binding=False):
+                item = table.currentItem()
+                if item is None:
+                    return
+                action_id = item.data(0, QtCore.Qt.UserRole)
+                key, accepted = (None, True) if reset_binding else QtGui.QInputDialog.getText(dialog, "Rebind shortcut", "Key (for example Shift+L):", text=item.text(1).replace(" *", ""))
+                if not accepted:
+                    return
+                try:
+                    data = json.loads(self.user_path.read_text()) if self.user_path.exists() else {"schema_version":1, "bindings":{}}
+                    if reset_binding:
+                        data["bindings"].pop(action_id, None)
+                    else:
+                        data["bindings"][action_id] = key
+                    self.user_path.parent.mkdir(parents=True, exist_ok=True)
+                    stage = self.user_path.with_suffix(".saving")
+                    stage.write_text(json.dumps(data, indent=2), encoding="utf-8")
+                    registry = load_registry(self.registry_path, stage)
+                    os.replace(stage, self.user_path)
+                    self.registry, self.entries = registry, registry["shortcuts"]
+                    dialog.close()
+                    self.show_help(parent)
+                except (OSError, ValueError) as exc:
+                    QtGui.QMessageBox.warning(dialog, "Shortcut unchanged", str(exc))
+            rebind.clicked.connect(lambda: change(False))
+            reset.clicked.connect(lambda: change(True))
         close = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Close)
         close.rejected.connect(dialog.close)
         layout.addWidget(close)

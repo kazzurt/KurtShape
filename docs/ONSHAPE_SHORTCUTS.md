@@ -2,7 +2,9 @@
 
 The complete official Windows default table is recorded in `shortcuts.json`, checked on October 2, 2026 against the [official Onshape shortcuts documentation](https://cad.onshape.com/help/Content/Home/keyboard_shortcuts_and_hotkeys.htm) (page updated September 24, 2026). The registry contains 126 normalized default action/gesture records and 3 separate local file shortcuts. Directional key groups are expanded; the repeated construction-tool entry is deduplicated.
 
-This is a complete key registry with partial function equivalence. Unsupported operations are explicitly named in shortcut help and feedback. The registry has 38 verified native equivalents, 47 official actions requiring application callbacks, 35 unavailable operations, and 6 recorded held-modifier/mouse gestures whose exact compatibility is unverified. The live help calculates availability from the callbacks and native commands actually installed.
+This is a complete key registry with partial function equivalence. Unsupported operations are named in help and feedback. After the review follow-up the registry has 38 native equivalents, 48 official callback actions, 34 unavailable meanings and 6 recorded gestures with unverified exact compatibility. Live help checks callbacks and installed native commands. Pierce is Shift+G, Perpendicular remains Shift+L. Kurt deferred analysis/history-bar tools, assemblies/mates, Feature Studio code tools and drawings.
+
+**Rebind selected / Reset selected** in shortcut help persists action-ID overrides in `runtime/shortcuts.user.json` (or the isolated session profile). Keyboard syntax and context collisions reject before replacement. Overrides show `*`; invalid startup files fall back to usable defaults. Palettes list capable actions in the current context.
 
 ## Daily use
 

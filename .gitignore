@@ -16,3 +16,4 @@ validation/**
 validation/**/user-data/
 validation/**/SavedPreferencePacks/
 validation/**/*working/
+validation/user-reports/

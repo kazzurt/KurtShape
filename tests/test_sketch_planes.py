@@ -145,7 +145,7 @@ class SketchPlaneTests(unittest.TestCase):
         feature.Shape = Part.makeBox(2,2,2)
         self.doc.recompute()
         self.call("inspect")
-        self.rejected("unsupported_reference", "create_sketch", support={"feature":"OtherSolid", "subelement":"Face1"})
+        self.rejected("cross_body_reference", "create_sketch", body="Body", support={"feature":"OtherSolid", "subelement":"Face1"})
 
     def test_explicit_pocket_direction_is_respected_and_auto_origin_cut_works(self):
         self.plate()
@@ -181,7 +181,7 @@ class SketchPlaneTests(unittest.TestCase):
         self.call("finish_sketch_edit", cancel=True)
         self.assertEqual(self.doc.Managed.GeometryCount, 5)
 
-    def test_native_constraint_conflict_finish_aborts_managed_transaction(self):
+    def test_native_constraint_conflict_finish_preserves_draft_until_explicit_cancel(self):
         self.call("sketch_circle", id="Managed", x=2, y=3, diameter=4)
         self.call("begin_sketch_edit", feature="Managed")
         self.doc.Managed.addConstraint(Sketcher.Constraint("Diameter", 0, 6.0))
@@ -189,6 +189,9 @@ class SketchPlaneTests(unittest.TestCase):
         self.call("inspect")
         self.rejected("constraint_conflict", "finish_sketch_edit")
         self.call("inspect")
+        self.assertEqual(self.state["active_sketch_edit"], "Managed")
+        self.assertEqual(self.doc.Managed.ConstraintCount, 4)
+        self.call("finish_sketch_edit", cancel=True)
         self.assertIsNone(self.state["active_sketch_edit"])
         self.assertEqual(self.doc.Managed.ConstraintCount, 3)
         self.assertAlmostEqual(self.doc.Managed.Geometry[0].Radius, 2, places=7)
@@ -226,8 +229,8 @@ class SketchPlaneTests(unittest.TestCase):
         self.call("add_circle", sketch="Managed", x=2,y=3,diameter=4)
         self.rejected("invalid_argument", "add_line", sketch="Managed", x1=0,y1=0,x2=0,y2=0)
         self.call("inspect")
-        self.assertEqual(self.doc.Managed.GeometryCount, 0)
-        self.assertIsNone(self.state["active_sketch_edit"])
+        self.assertEqual(self.doc.Managed.GeometryCount, 1)
+        self.assertEqual(self.state["active_sketch_edit"], "Managed")
         self.assertNotEqual(self.state["revision"], stale["revision"])
         response = self.core.dispatch({"op":"rename_feature", "feature":"Managed", "name":"Stale name",
                                       "document_id":stale["document_id"],"expected_revision":stale["revision"]})
@@ -253,7 +256,7 @@ class SketchPlaneTests(unittest.TestCase):
         self.assertAlmostEqual(self.doc.Body.Shape.Volume, accepted, places=7)
         self.assertEqual(self.doc.RedoCount, 0)
 
-    def test_failed_finish_after_native_auto_commit_restores_accepted_model(self):
+    def test_failed_finish_after_native_auto_commit_preserves_draft_and_can_repair(self):
         self.plate()
         accepted = self.doc.Body.Shape.Volume
         original_constraints = self.doc.Plate.ConstraintCount
@@ -264,9 +267,16 @@ class SketchPlaneTests(unittest.TestCase):
         self.call("inspect")
         self.rejected("constraint_conflict", "finish_sketch_edit")
         self.call("inspect")
+        self.assertEqual(self.state["active_sketch_edit"], "Plate")
+        self.assertEqual(self.doc.Plate.ConstraintCount, original_constraints + 1)
+        self.doc.Plate.delConstraint(original_constraints)
+        self.doc.recompute()
+        self.call("inspect")
+        self.call("finish_sketch_edit")
         self.assertIsNone(self.state["active_sketch_edit"])
-        self.assertEqual(self.doc.Plate.ConstraintCount, original_constraints)
         self.assertAlmostEqual(self.doc.Body.Shape.Volume, accepted, places=7)
+        self.call("undo")
+        self.assertIsNotNone(self.doc.getObject("Pad"))
         self.call("undo")
         self.assertIsNone(self.doc.getObject("Pad"))
         self.call("redo")

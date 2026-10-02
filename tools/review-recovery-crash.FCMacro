@@ -1,0 +1,80 @@
+"""Crash only this isolated disposable GUI after its real recovery timers run."""
+import json
+import os
+from pathlib import Path
+import sys
+import time
+import traceback
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+from kurtshape.ui import start
+panel = start()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"])
+output = root / "validation" / "review-followup"
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "pid": os.getpid(), "method": "Disposable hidden GUI, real 30-second native checkpoint timer, native autosave enabled at one minute, os._exit without clean shutdown"}
+
+def require(value):
+    assert value, panel.message.text()
+    return value
+
+def prepare():
+    try:
+        require(panel.operation("sketch_rectangle", id="Plate", width=20, height=10))
+        require(panel.operation("pad", profile="Plate", length=6))
+        require(panel.operation("save", path=str(session / "saved-before-crash.FCStd")))
+        require(panel.operation("set_parameter", feature="Pad", parameter="Length", value=9))
+        require(panel.operation("create_sketch", id="Unfinished"))
+        active_document = App.activeDocument()
+        stable = App.newDocument("StableNativeAutosave")
+        stable_feature = stable.addObject("Part::Feature", "Solid")
+        import Part
+        stable_feature.Shape = Part.makeBox(2, 2, 2)
+        stable.recompute()
+        stable.saveAs(str(session / "native-autosave-stable.FCStd"))
+        stable.openTransaction("Disposable stable unsaved geometry")
+        stable_feature.Shape = Part.makeBox(3, 3, 3)
+        stable.recompute()
+        stable.commitTransaction()
+        report["stable_transient_directory"] = str(stable.TransientDir)
+        App.setActiveDocument(active_document.Name)
+        Gui.ActiveDocument = Gui.getDocument(active_document.Name)
+        panel.tick()
+        require(panel.operation("begin_sketch_edit", feature="Unfinished"))
+        Gui.activeDocument().setEdit("Unfinished")
+        require(panel.operation("add_circle", sketch="Unfinished", x=0, y=0, diameter=4))
+        doc = App.activeDocument()
+        preferences = App.ParamGet("User parameter:BaseApp/Preferences/Document")
+        report.update(document_id=panel.state["document_id"], expected_volume_mm3=1800,
+                      expected_draft_geometry=1, original_file=str(session / "saved-before-crash.FCStd"),
+                      native_transient_directory=str(doc.TransientDir),
+                      autosave={"enabled":preferences.GetBool("AutoSaveEnabled"), "recovery_enabled":preferences.GetBool("RecoveryEnabled"), "minutes":preferences.GetInt("AutoSaveTimeout")})
+        QtCore.QTimer.singleShot(75000, crash)
+    except Exception:
+        report["error"] = traceback.format_exc()
+        (output / "recovery-crash.json").write_text(json.dumps(report, indent=2))
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+def crash():
+    try:
+        records = panel.core.recovery.available()
+        match = next((path, record) for path, record in records if record["document_id"] == report["document_id"] and record["sketch"] == "Unfinished")
+        report["checkpoint_manifest"] = str(match[0])
+        transient = Path(report["native_transient_directory"])
+        report["native_recovery_files"] = [{"path":str(path), "bytes":path.stat().st_size} for path in transient.rglob("*") if path.is_file()]
+        stable = Path(report["stable_transient_directory"])
+        report["native_stable_recovery_files"] = [{"path":str(path), "bytes":path.stat().st_size} for path in stable.rglob("*") if path.is_file()]
+        report["timings"] = panel.core.timings.report()
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    (output / "recovery-crash.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    os._exit(23)
+
+QtCore.QTimer.singleShot(1500, prepare)
