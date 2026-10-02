@@ -1,6 +1,8 @@
 # What KurtShape currently marks unavailable
 
-Checked October 2, 2026 against [shortcuts.json](../../shortcuts.json). **35 registered Onshape actions are explicitly marked unsupported.** They are grouped below by workflow; the Context column retains the registry's actual routing context.
+Initial October 2 inventory: **35 actions were unsupported**. After the approved follow-up, **34 remain**: Pierce is implemented on Shift+G, and Perpendicular was already mapped to Shift+L. The original rows below preserve the review-time inventory. Live [shortcuts.json](../../shortcuts.json) and shortcut help show current status.
+
+Kurt selected Pierce/Perpendicular and ordinary Ctrl+S/Escape, deferred analysis/history-bar tools, assemblies/mates, other Feature Studio code shortcuts and drawings. Rebind/reset is now available in shortcut help. No additional deferred features were implemented to reduce this count.
 
 Eight entries concern modeling/sketch work: two analysis actions, two rollback-bar actions and four sketch actions. The remaining 27 concern assemblies/mates, Feature Studio code editing and drawings. FeatureScript search belongs to Feature Studio, not the ordinary Part Studio workflow.
 

@@ -1,10 +1,27 @@
 {
-  "document_id": "45e30da2-f98c-42a8-8056-808b6a98eed0",
-  "revision": "a2536059-4391-4df1-ae38-9fd11d13e63b",
+  "document_id": "817d2653-67e5-4abc-ab88-bb95a3b24c9c",
+  "revision": "87d1d914-6488-499e-b36e-ab079685b46b",
   "units": "mm",
-  "sha256": "5fbe9fb44ba9ce63933ddc0a5901f5d09936b0a1e8ea93ab9d8bd1cddb0a1844",
+  "source_mapping": {},
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "sha256": "b2720965d69c7a2cfc6250ce8ee34cff2843b8b4cb4293e5b07251afe22b536e",
   "native_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\interface-pass\\interface-plate.FCStd",
   "format": ".step",
+  "included_body_ids": [
+    "Body"
+  ],
   "shape": {
     "valid": true,
     "solid_count": 1,

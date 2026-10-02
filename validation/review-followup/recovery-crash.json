@@ -1,0 +1,90 @@
+{
+  "passed": true,
+  "pid": 6944,
+  "method": "Disposable hidden GUI, real 30-second native checkpoint timer, native autosave enabled at one minute, os._exit without clean shutdown",
+  "stable_transient_directory": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/runtime/review-recovery-validation/user-data/temp\\FreeCAD_Doc_710ef2ed-29a6-445a-bc2d-b28f37a4f270_514478_316566",
+  "document_id": "a3cb8cbc-083b-4075-b7b8-af36b85dbc6f",
+  "expected_volume_mm3": 1800,
+  "expected_draft_geometry": 1,
+  "original_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\review-recovery-validation\\saved-before-crash.FCStd",
+  "native_transient_directory": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/runtime/review-recovery-validation/user-data/temp\\FreeCAD_Doc_4ca8d0c4-86e5-435d-8792-50ceb897f42f_da39a3_316566",
+  "autosave": {
+    "enabled": true,
+    "recovery_enabled": true,
+    "minutes": 1
+  },
+  "checkpoint_manifest": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\review-recovery-validation\\project-recovery\\a3cb8cbc-083b-4075-b7b8-af36b85dbc6f.json",
+  "native_recovery_files": [
+    {
+      "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\review-recovery-validation\\user-data\\temp\\FreeCAD_Doc_4ca8d0c4-86e5-435d-8792-50ceb897f42f_da39a3_316566\\fc_recovery_file.fcstd",
+      "bytes": 17045
+    },
+    {
+      "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\review-recovery-validation\\user-data\\temp\\FreeCAD_Doc_4ca8d0c4-86e5-435d-8792-50ceb897f42f_da39a3_316566\\fc_recovery_file.xml",
+      "bytes": 281
+    }
+  ],
+  "native_stable_recovery_files": [
+    {
+      "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\review-recovery-validation\\user-data\\temp\\FreeCAD_Doc_710ef2ed-29a6-445a-bc2d-b28f37a4f270_514478_316566\\fc_recovery_file.fcstd",
+      "bytes": 4212
+    },
+    {
+      "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\review-recovery-validation\\user-data\\temp\\FreeCAD_Doc_710ef2ed-29a6-445a-bc2d-b28f37a4f270_514478_316566\\fc_recovery_file.xml",
+      "bytes": 294
+    }
+  ],
+  "timings": {
+    "intent": {
+      "samples": 11,
+      "median_ms": 0.776,
+      "p95_ms": 2.088,
+      "worst_ms": 2.088
+    },
+    "native_recompute": {
+      "samples": 9,
+      "median_ms": 6.579,
+      "p95_ms": 15.508,
+      "worst_ms": 15.508
+    },
+    "inspection": {
+      "samples": 19,
+      "median_ms": 0.69,
+      "p95_ms": 6.971,
+      "worst_ms": 6.971
+    },
+    "operation": {
+      "samples": 19,
+      "median_ms": 1.515,
+      "p95_ms": 510.868,
+      "worst_ms": 510.868
+    },
+    "recovery_checkpoint": {
+      "samples": 77,
+      "median_ms": 0.198,
+      "p95_ms": 0.409,
+      "worst_ms": 330.487
+    }
+  },
+  "reopened_checkpoint": true,
+  "recovered_unsaved_volume_mm3": 1799.9999999999998,
+  "recovered_draft": true,
+  "explicit_cancel_restored_accepted_sketch": true,
+  "original_file_unchanged": true,
+  "original_file_sha256": "5cb705c870d564e43e156f32ebd12ce26e68c3f44872409fde70e2defffe6736",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ]
+  },
+  "saved_project_reopened": true,
+  "native_autosave_reopened": true,
+  "native_autosave_volume_mm3": 27.0
+}

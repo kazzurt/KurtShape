@@ -2,7 +2,15 @@
 
 Updated October 2, 2026, America/Los_Angeles. Implementation authorized in this chat; **M1 remains incomplete**. Current runnable slice: `Codex/kurtshape`. Prior plans remain in `cadkz-project-planning`; source examples and Claude reference area are preserved in place.
 
-## October 2 Claude review follow-up — proposed
+## October 2 Claude review follow-up — implemented app changes
+
+Kurt approved the follow-up and selected Shift+G Pierce, Shift+L Perpendicular and ordinary Ctrl+S/Escape, with analysis/history-bar tools, assemblies/mates, code editing and drawings deferred. [Implementation and handoff](2026-10-02-claude-review-follow-up/IMPLEMENTATION.md) records the completed independent app work: draft preservation/repair, observer caches and command-boundary undo, user folders/start/recent projects, native units/formulas, controller duplication, visible errors, shortcut overrides, contract-2 request identity/isolated preview, shared body ownership, multi-solid export and unmanaged adoption.
+
+New evidence passes: 61 offline native tests, 4 bridge and 22 routing tests; 41 integrated GUI checks, 10 review GUI checks, 25 native clipboard checks and 22 lifecycle stages. Controlled disposable-process crash/reopen recovered native stable autosave and unsaved active-sketch checkpoints, while preserving the saved input. Performance fixtures include 200 native sketches and both original STEP geometries as references. These are not parametric real conversions. Baseline Git commit is `b65f066`; FreeCAD 1.1.4 / OCCT 7.8.1 remains pinned. Impeccable was updated to 4.5.0 with authorization; a verified redundant installer cache was removed during the full-C: incident, and Kurt freed more space. Sources, Claude files and the user's open app were preserved.
+
+Next: save/close older app and relaunch, then Kurt's comfort walkthrough. Actual Claude/MCP shared edits, authenticated source capture, pattern/suppress/split/merge reference tests, physical offline acceptance and real conversions remain open. **M1 stays incomplete; real conversions remain 0/2.** The original assessment below is historical context.
+
+### Original review assessment
 
 Kurt requested an assessment and update plan for Claude's comprehensive app review. The [proposed update plan](2026-10-02-claude-review-follow-up/UPDATE_PLAN.md), [response prepared for Claude](2026-10-02-claude-review-follow-up/RESPONSE_TO_CLAUDE.md) and [assessment evidence](2026-10-02-claude-review-follow-up/REVIEW_EVIDENCE.md) are saved together. The main findings are accepted, with qualifications on preview isolation, quantity/expression handling, observer/undo boundaries, human-selected file destinations and the limits of the current evidence.
 

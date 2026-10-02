@@ -1,6 +1,8 @@
 # KurtShape update plan after Claude's October 2 review
 
-Prepared October 2, 2026, America/Los_Angeles. **Proposed sequence; implementation has not started under this review request.** This plan supplements the existing M1 scope. It does not mark M1 complete, change the foundation decision, or assign Claude work.
+Prepared October 2, 2026, America/Los_Angeles; subsequently approved by Kurt. **Independent app work in increments 0–3 is implemented; see [implementation/evidence](IMPLEMENTATION.md).** Source-dependent reconstruction and human acceptance remain open. This plan supplements M1; it does not mark M1 complete or change the provisional foundation decision.
+
+Kurt selected Pierce on Shift+G and Perpendicular on Shift+L, ordinary Ctrl+S/Escape, and deferred analysis/history-bar tools, assemblies/mates, Feature Studio code tools and drawings. The proposed Claude ownership split remains a coordination plan; no message or assignment was sent from this chat.
 
 Inputs: [Claude's review](../../../../Claude/reviews/2026-10-02_kurtshape-app-review.md), the current app, tests and validation records, [M1 execution plan](../../../cadkz-project-planning/M1_EXECUTION_PLAN.md), and [project continuity](../M1_PROGRESS.md). [Review evidence](REVIEW_EVIDENCE.md) distinguishes code findings, existing recorded results and the small probe run for this assessment. [Response to Claude](RESPONSE_TO_CLAUDE.md) gives the qualifications and answers his questions.
 
@@ -80,7 +82,7 @@ Audit other app-authored modeling mutations. Native Sketcher and native feature 
 
 ### 1F. Make the test informative — findings 10 and P3 timing/recovery
 
-Provide a minimal `shortcuts.user.json` override layer keyed by action ID, with context conflict validation, visible overrides and reset-to-default. Expose rebind from shortcut help; generate palette entries from actual registered/capable actions. Do not implement all 35 unavailable entries merely to reduce the count. Kurt requested the inventory before selecting priorities; [the full list with keys and contexts](UNAVAILABLE_SHORTCUTS.md) is now supplied. Eight entries concern modeling/sketch work and 27 concern other workspaces. Usage priorities remain unestablished.
+Provide a minimal `shortcuts.user.json` override layer keyed by action ID, with context conflict validation, visible overrides and reset-to-default. Expose rebind from help; generate palettes from capable actions. Do not implement all original 35 unavailable entries merely to reduce the count. [The inventory](UNAVAILABLE_SHORTCUTS.md) informed Kurt's choice: Pierce Shift+G, Perpendicular Shift+L and ordinary Ctrl+S/Escape. Other listed workflows are deferred.
 
 Record input-to-visible-feedback, queue wait, intent/inspection, native recompute and total operation times separately. Use plate, supplied STEP geometry labeled as references, and a generated larger native history fixture. The latter is a performance fixture, not a hub conversion. Report sample count, runtime/hardware, median/p95 and worst stalls. Proposed first interaction target: p95 under 100 ms for ordinary selection/tool feedback; exact recompute has a separate measured budget. This is a target, not a measured claim or manufacturing tolerance.
 
@@ -126,4 +128,4 @@ Keep ADR-0 provisional. If Kurt's measured workflow exposes a named reuse blocke
 
 Later: configurable STL deflection with provenance and bounded validation, theme/string consolidation and diagnostics polish. Archival bundles can start from already preserved originals with hashes/manifests; additional online revision capture depends on access and known source identity. Neither archival capture nor a metadata adoption counts as a converted design.
 
-**Next implementation step:** baseline Git, then Increment 1A. Approval of this proposed plan and work split remains separate from the completed planning request.
+**Next step:** Kurt's hands-on create/edit/repair/undo/save/reopen/export walkthrough in his own folder, followed by the remaining source/both-client M1 gates. App updates and their evidence are recorded in [IMPLEMENTATION.md](IMPLEMENTATION.md).

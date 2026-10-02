@@ -24,8 +24,11 @@
     "Native tab close clears stale UI state",
     "Saved native features rebuild after close and reopen",
     "Successful save/reopen clears native modified indicator",
+    "Native quantity field applies fractional inches through the controller",
+    "Isolated preview preserves live revision, history, modified flag, camera, selection and file",
     "Actual loopback assistant edits the displayed native document",
-    "Live assistant stale replay is rejected",
+    "Live assistant identical request replay returns the original result",
+    "A fresh request with stale revision is rejected",
     "GUI undo restores actual assistant change",
     "G and two real clicks draw native rectangle on Front plane",
     "C and two real clicks draw native circle on Front plane",
@@ -36,26 +39,28 @@
     "Shift+Enter in depth field accepts and repeats extrusion",
     "Switching documents cancels old unfinished feature task",
     "Old task cannot mutate a different document",
+    "GUI body choice activates the selected native Body",
+    "GUI new sketch uses the selected Body origin",
     "Compact window keeps history and toolbar visible"
   ],
   "method": "Actual isolated Qt window, native viewport, keyboard and mouse events; user hands-on acceptance remains pending",
   "face_click": {
     "pixel": [
       607,
-      566
+      395
     ],
     "ratio": 1.5,
     "qt_position": [
       404,
-      376
+      262
     ],
     "viewport": [
       809,
-      754
+      526
     ],
     "hit": {
-      "x": 30.031991958618164,
-      "y": 20.03199005126953,
+      "x": 30.04585838317871,
+      "y": 20.045856475830078,
       "z": 6.0,
       "ParentObject": "Body",
       "SubName": "Pad.Face6",
@@ -81,10 +86,10 @@
     "expected_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\interface-pass\\interface-plate.FCStd",
     "active_document": "interface_plate"
   },
-  "seconds": 10.436117000179365,
+  "seconds": 12.27107090014033,
   "state": {
-    "document_id": "45e30da2-f98c-42a8-8056-808b6a98eed0",
-    "revision": "bf55508c-3c18-44c7-8ea3-b9aea03f40cf",
+    "document_id": "817d2653-67e5-4abc-ab88-bb95a3b24c9c",
+    "revision": "34dc0a2c-1149-441a-8dc6-a5d31020884e",
     "name": "interface-plate",
     "native_file": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/validation/interface-pass/interface-plate.FCStd",
     "units": "mm",
@@ -287,6 +292,70 @@
           "Up-to-date"
         ],
         "reversed": false
+      },
+      {
+        "id": "Housing",
+        "name": "Housing",
+        "type": "PartDesign::Body",
+        "parameters": {},
+        "dependencies": [
+          "Origin002",
+          "HousingSketch"
+        ],
+        "expressions": [],
+        "state": [
+          "Expanded",
+          "Up-to-date"
+        ]
+      },
+      {
+        "id": "Origin003",
+        "name": "Origin003",
+        "type": "App::Point",
+        "parameters": {},
+        "dependencies": [],
+        "expressions": [],
+        "state": [
+          "Up-to-date"
+        ]
+      },
+      {
+        "id": "HousingSketch",
+        "name": "HousingSketch",
+        "type": "Sketcher::SketchObject",
+        "parameters": {},
+        "dependencies": [
+          "YZ_Plane001"
+        ],
+        "expressions": [],
+        "state": [
+          "Up-to-date"
+        ],
+        "fully_constrained": true,
+        "geometry_count": 0,
+        "constraint_count": 0,
+        "placement": {
+          "position_mm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation_xyzw": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        "support": [
+          {
+            "feature": "YZ_Plane001",
+            "subelements": [
+              ""
+            ]
+          }
+        ],
+        "map_mode": "FlatFace"
       }
     ],
     "measurements": {
@@ -320,13 +389,65 @@
     "retained_geometry_measurements": null,
     "last_failed_attempt": null,
     "active_sketch_edit": null,
+    "managed": true,
+    "unsupported_objects": [],
+    "bodies": [
+      {
+        "id": "Body",
+        "name": "Body",
+        "type": "PartDesign::Body",
+        "build_status": "valid",
+        "measurements": {
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 14299.469035085125,
+          "area_mm2": 6050.2654824574365,
+          "bbox_mm": {
+            "min": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "max": [
+              60.0,
+              40.0,
+              6.0
+            ],
+            "size": [
+              60.0,
+              40.0,
+              6.0
+            ]
+          },
+          "center_of_mass_mm": [
+            30.0,
+            20.000000000000004,
+            2.985939203103527
+          ]
+        },
+        "retained_geometry_measurements": null
+      },
+      {
+        "id": "Housing",
+        "name": "Housing",
+        "type": "PartDesign::Body",
+        "build_status": "sketch_only",
+        "measurements": null,
+        "retained_geometry_measurements": null
+      }
+    ],
     "operations": [
       "add_circle",
       "add_line",
       "add_rectangle",
+      "adopt",
       "begin_sketch_edit",
+      "capabilities",
+      "create_body",
       "create_sketch",
       "delete_feature",
+      "diagnostics",
+      "duplicate_feature",
       "export",
       "finish_sketch_edit",
       "inspect",
@@ -334,17 +455,78 @@
       "new",
       "open",
       "pad",
+      "pierce",
       "pocket",
+      "preview",
       "rebuild",
+      "recover",
       "redo",
       "rename_feature",
+      "request_status",
       "save",
+      "set_expression",
       "set_parameter",
       "sketch_circle",
       "sketch_rectangle",
       "undo"
     ],
-    "operation_ms": 26.76
+    "operation_ms": 5.18
+  },
+  "timing_samples": {
+    "intent": {
+      "samples": 57,
+      "median_ms": 0.973,
+      "p95_ms": 2.478,
+      "worst_ms": 2.606
+    },
+    "native_recompute": {
+      "samples": 46,
+      "median_ms": 2.367,
+      "p95_ms": 32.262,
+      "worst_ms": 39.06
+    },
+    "inspection": {
+      "samples": 102,
+      "median_ms": 0.899,
+      "p95_ms": 13.401,
+      "worst_ms": 97.279
+    },
+    "operation": {
+      "samples": 103,
+      "median_ms": 2.474,
+      "p95_ms": 97.647,
+      "worst_ms": 825.883
+    },
+    "recovery_checkpoint": {
+      "samples": 19,
+      "median_ms": 0.217,
+      "p95_ms": 227.846,
+      "worst_ms": 227.846
+    },
+    "input_to_feedback": {
+      "samples": 19,
+      "median_ms": 26.481,
+      "p95_ms": 173.902,
+      "worst_ms": 173.902
+    },
+    "input_to_feedback_ordinary": {
+      "samples": 5,
+      "median_ms": 2.133,
+      "p95_ms": 3.456,
+      "worst_ms": 3.456
+    },
+    "input_to_feedback_model": {
+      "samples": 14,
+      "median_ms": 44.405,
+      "p95_ms": 173.902,
+      "worst_ms": 173.902
+    },
+    "queue_wait": {
+      "samples": 2,
+      "median_ms": 8.265,
+      "p95_ms": 16.3,
+      "worst_ms": 16.3
+    }
   },
   "shortcut_coverage": [
     {
@@ -1087,6 +1269,11 @@
       "name": "KurtShapeEditor",
       "title": "Feature settings",
       "visible": false
+    },
+    {
+      "name": "KurtShapeMessages",
+      "title": "Messages",
+      "visible": true
     },
     {
       "name": "KurtShapeHistory",

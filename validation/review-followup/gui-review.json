@@ -1,0 +1,67 @@
+{
+  "passed": true,
+  "checks": [
+    "Actual Shift+G creates a native intersection reference and coincident point",
+    "Sketch undo removes Pierce reference and restores point",
+    "Sketch redo restores Pierce",
+    "Finish accepts native Pierce",
+    "Perpendicular remains Shift+L",
+    "Rejected Finish retains the whole conflicting draft and reopens the editor",
+    "Native/controller errors remain visible in Messages",
+    "Repair followed by Finish succeeds without redrawing",
+    "Explicit Cancel discards the current edit",
+    "25 idle GUI ticks perform no intent hash or BRep validation"
+  ],
+  "method": "Separate hidden native GUI; actual Shift+G, constraint failure/repair and native text controls",
+  "timings": {
+    "intent": {
+      "samples": 31,
+      "median_ms": 0.514,
+      "p95_ms": 1.495,
+      "worst_ms": 1.979
+    },
+    "native_recompute": {
+      "samples": 24,
+      "median_ms": 1.192,
+      "p95_ms": 10.665,
+      "worst_ms": 21.19
+    },
+    "inspection": {
+      "samples": 40,
+      "median_ms": 0.504,
+      "p95_ms": 0.987,
+      "worst_ms": 2.288
+    },
+    "operation": {
+      "samples": 40,
+      "median_ms": 2.321,
+      "p95_ms": 59.563,
+      "worst_ms": 952.773
+    },
+    "recovery_checkpoint": {
+      "samples": 3,
+      "median_ms": 0.125,
+      "p95_ms": 231.069,
+      "worst_ms": 231.069
+    },
+    "input_to_feedback": {
+      "samples": 3,
+      "median_ms": 12.121,
+      "p95_ms": 19.974,
+      "worst_ms": 19.974
+    }
+  },
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  }
+}

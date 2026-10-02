@@ -1,0 +1,303 @@
+{
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_processors": 32,
+    "platform": "Windows-10-10.0.26200-SP0"
+  },
+  "limits": "Headless inspection and native recompute; viewport and hand comfort require the GUI and user. STEP cases are preserved reference geometry, not editable conversions.",
+  "cases": [
+    {
+      "label": "synthetic-1-sketch-history",
+      "objects": 12,
+      "measurements": {
+        "valid": true,
+        "solid_count": 1,
+        "volume_mm3": 2481.858196335936,
+        "area_mm2": 1124.690169985146,
+        "bbox_mm": {
+          "min": [
+            -10.0,
+            -10.0,
+            0.0
+          ],
+          "max": [
+            10.0,
+            10.0,
+            7.9
+          ],
+          "size": [
+            20.0,
+            20.0,
+            7.9
+          ]
+        },
+        "center_of_mass_mm": [
+          -1.2826000538245002e-15,
+          -7.676700344322682e-17,
+          3.950000000000001
+        ]
+      },
+      "timings": {
+        "warm_inspection": {
+          "samples": 100,
+          "median_ms": 0.513,
+          "p95_ms": 0.735,
+          "worst_ms": 0.841
+        },
+        "changed_intent_inspection": {
+          "samples": 20,
+          "median_ms": 1.126,
+          "p95_ms": 1.622,
+          "worst_ms": 1.623
+        },
+        "parameter_commit": {
+          "samples": 20,
+          "median_ms": 7.007,
+          "p95_ms": 7.869,
+          "worst_ms": 8.226
+        }
+      },
+      "controller_stages": {
+        "intent": {
+          "samples": 41,
+          "median_ms": 0.567,
+          "p95_ms": 0.933,
+          "worst_ms": 1.066
+        },
+        "inspection": {
+          "samples": 162,
+          "median_ms": 0.543,
+          "p95_ms": 2.449,
+          "worst_ms": 6.171
+        },
+        "native_recompute": {
+          "samples": 20,
+          "median_ms": 1.704,
+          "p95_ms": 1.974,
+          "worst_ms": 2.261
+        },
+        "operation": {
+          "samples": 20,
+          "median_ms": 7.004,
+          "p95_ms": 7.867,
+          "worst_ms": 8.223
+        }
+      }
+    },
+    {
+      "label": "synthetic-200-sketch-history",
+      "objects": 211,
+      "measurements": {
+        "valid": true,
+        "solid_count": 1,
+        "volume_mm3": 2481.858196335936,
+        "area_mm2": 1124.690169985146,
+        "bbox_mm": {
+          "min": [
+            -10.0,
+            -10.0,
+            0.0
+          ],
+          "max": [
+            10.0,
+            10.0,
+            7.9
+          ],
+          "size": [
+            20.0,
+            20.0,
+            7.9
+          ]
+        },
+        "center_of_mass_mm": [
+          -1.2826000538245002e-15,
+          -7.676700344322682e-17,
+          3.950000000000001
+        ]
+      },
+      "timings": {
+        "warm_inspection": {
+          "samples": 100,
+          "median_ms": 13.809,
+          "p95_ms": 16.52,
+          "worst_ms": 19.85
+        },
+        "changed_intent_inspection": {
+          "samples": 20,
+          "median_ms": 49.598,
+          "p95_ms": 73.748,
+          "worst_ms": 80.974
+        },
+        "parameter_commit": {
+          "samples": 20,
+          "median_ms": 45.483,
+          "p95_ms": 84.263,
+          "worst_ms": 84.967
+        }
+      },
+      "controller_stages": {
+        "intent": {
+          "samples": 41,
+          "median_ms": 29.795,
+          "p95_ms": 53.011,
+          "worst_ms": 54.972
+        },
+        "inspection": {
+          "samples": 162,
+          "median_ms": 14.004,
+          "p95_ms": 54.939,
+          "worst_ms": 80.963
+        },
+        "native_recompute": {
+          "samples": 20,
+          "median_ms": 2.053,
+          "p95_ms": 3.414,
+          "worst_ms": 4.707
+        },
+        "operation": {
+          "samples": 20,
+          "median_ms": 45.479,
+          "p95_ms": 84.259,
+          "worst_ms": 84.963
+        }
+      }
+    },
+    {
+      "label": "STEP reference: Dodec pipe mount.step",
+      "objects": 2,
+      "measurements": {
+        "valid": true,
+        "solid_count": 3,
+        "volume_mm3": 690742.5329512528,
+        "area_mm2": 99898.82647762813,
+        "bbox_mm": {
+          "min": [
+            -27.30500000000001,
+            -27.305000000000003,
+            -152.4
+          ],
+          "max": [
+            135.255,
+            53.38955666634334,
+            152.4
+          ],
+          "size": [
+            162.56,
+            80.69455666634335,
+            304.8
+          ]
+        },
+        "center_of_mass_mm": [
+          5.173949698972267,
+          5.4445511761656284,
+          3.181649099200971e-08
+        ]
+      },
+      "timings": {
+        "warm_inspection": {
+          "samples": 100,
+          "median_ms": 0.306,
+          "p95_ms": 0.645,
+          "worst_ms": 0.766
+        },
+        "changed_intent_inspection": {
+          "samples": 20,
+          "median_ms": 0.364,
+          "p95_ms": 0.468,
+          "worst_ms": 0.475
+        }
+      },
+      "controller_stages": {
+        "intent": {
+          "samples": 21,
+          "median_ms": 0.037,
+          "p95_ms": 0.108,
+          "worst_ms": 0.109
+        },
+        "inspection": {
+          "samples": 122,
+          "median_ms": 0.308,
+          "p95_ms": 0.648,
+          "worst_ms": 117.916
+        }
+      },
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec pipe mount.step",
+      "import_ms": 63.73999989591539
+    },
+    {
+      "label": "STEP reference: Dodec Hub Conformal.step",
+      "objects": 2,
+      "measurements": {
+        "valid": true,
+        "solid_count": 3,
+        "volume_mm3": 73546.8291753619,
+        "area_mm2": 37959.39954278379,
+        "bbox_mm": {
+          "min": [
+            -392.0209249464391,
+            -290.47746243007225,
+            -26.298012129763706
+          ],
+          "max": [
+            -297.3387380410173,
+            -203.679999999549,
+            54.194653031889274
+          ],
+          "size": [
+            94.68218690542182,
+            86.79746243052324,
+            80.49266516165298
+          ]
+        },
+        "center_of_mass_mm": [
+          -349.59300279390015,
+          -253.99467104871567,
+          5.666851488959896
+        ]
+      },
+      "timings": {
+        "warm_inspection": {
+          "samples": 100,
+          "median_ms": 0.305,
+          "p95_ms": 0.495,
+          "worst_ms": 0.809
+        },
+        "changed_intent_inspection": {
+          "samples": 20,
+          "median_ms": 0.35,
+          "p95_ms": 0.436,
+          "worst_ms": 0.45
+        }
+      },
+      "controller_stages": {
+        "intent": {
+          "samples": 21,
+          "median_ms": 0.036,
+          "p95_ms": 0.1,
+          "worst_ms": 0.108
+        },
+        "inspection": {
+          "samples": 122,
+          "median_ms": 0.307,
+          "p95_ms": 0.493,
+          "worst_ms": 1843.481
+        }
+      },
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec Hub Conformal.step",
+      "import_ms": 406.28990018740296
+    }
+  ]
+}
