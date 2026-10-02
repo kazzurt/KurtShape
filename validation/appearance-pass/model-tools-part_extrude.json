@@ -1,0 +1,526 @@
+{
+  "passed": true,
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "method": "Actual KurtShape toolbar buttons and native PartDesign Tasks; assistant transport excluded.",
+  "cases": [
+    {
+      "tool": "part_extrude",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Shape tools / Part extrude",
+        "command": "Part_Extrude"
+      },
+      "workbench": "PartWorkbench",
+      "editing": null,
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:spinLenFwd",
+        "Gui::QuantitySpinBox:spinLenRev",
+        "Gui::QuantitySpinBox:spinTaperAngle",
+        "Gui::QuantitySpinBox:spinTaperAngleRev",
+        "Gui::TaskView::TaskView:Tasks",
+        "PartGui::DlgExtrusion:PartGui__DlgExtrusion",
+        "QCheckBox:chkReversed",
+        "QCheckBox:chkSolid",
+        "QCheckBox:chkSymmetric",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QDoubleSpinBox:dirX",
+        "QDoubleSpinBox:dirY",
+        "QDoubleSpinBox:dirZ",
+        "QFrame:line",
+        "QGroupBox:groupBox",
+        "QGroupBox:groupBox_2",
+        "QLabel:label",
+        "QLabel:label_2",
+        "QLabel:label_5",
+        "QLabel:label_6",
+        "QLabel:statusLabel",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QLineEdit:txtLink",
+        "QPushButton:btnSelectEdge",
+        "QPushButton:btnX",
+        "QPushButton:btnY",
+        "QPushButton:btnZ",
+        "QRadioButton:rbDirModeCustom",
+        "QRadioButton:rbDirModeEdge",
+        "QRadioButton:rbDirModeNormal",
+        "QTreeWidget:treeWidget",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "task_buttons": [
+        {
+          "text": "OK",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Ok",
+          "role": "ButtonRole.AcceptRole"
+        },
+        {
+          "text": "Close",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Close",
+          "role": "ButtonRole.RejectRole"
+        },
+        {
+          "text": "Apply",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Apply",
+          "role": "ButtonRole.ApplyRole"
+        }
+      ],
+      "history_visible": true,
+      "direct_core_task_guards": [
+        {
+          "request": {
+            "op": "new",
+            "name": "Part native dialog guard probe"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before changing documents"
+            }
+          },
+          "checks": [
+            {
+              "name": "new_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "new_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "new_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "new_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "new_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "new_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "open",
+            "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\draft-accepted.FCStd"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before changing documents"
+            }
+          },
+          "checks": [
+            {
+              "name": "open_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "open_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "open_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "open_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "open_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "open_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "set_parameter",
+            "document_id": "58d34b0f-2bf1-4292-9453-4692679fefb4",
+            "expected_revision": "4e3a6bd5-59ad-4ab3-9f81-6f19e221f746",
+            "feature": "Profile",
+            "parameter": "Width",
+            "value": 6
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before another operation"
+            }
+          },
+          "checks": [
+            {
+              "name": "set_parameter_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "save",
+            "document_id": "58d34b0f-2bf1-4292-9453-4692679fefb4",
+            "expected_revision": "4e3a6bd5-59ad-4ab3-9f81-6f19e221f746",
+            "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\part-task-direct-core-save-probe.FCStd"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before another operation"
+            }
+          },
+          "checks": [
+            {
+              "name": "save_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "save_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "save_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "save_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "save_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "save_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        }
+      ],
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      }
+    },
+    {
+      "tool": "part_extrude",
+      "mode": "accept",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Shape tools / Part extrude",
+        "command": "Part_Extrude"
+      },
+      "workbench": "PartWorkbench",
+      "editing": null,
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:spinLenFwd",
+        "Gui::QuantitySpinBox:spinLenRev",
+        "Gui::QuantitySpinBox:spinTaperAngle",
+        "Gui::QuantitySpinBox:spinTaperAngleRev",
+        "Gui::TaskView::TaskView:Tasks",
+        "PartGui::DlgExtrusion:PartGui__DlgExtrusion",
+        "QCheckBox:chkReversed",
+        "QCheckBox:chkSolid",
+        "QCheckBox:chkSymmetric",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QDoubleSpinBox:dirX",
+        "QDoubleSpinBox:dirY",
+        "QDoubleSpinBox:dirZ",
+        "QFrame:line",
+        "QGroupBox:groupBox",
+        "QGroupBox:groupBox_2",
+        "QLabel:label",
+        "QLabel:label_2",
+        "QLabel:label_5",
+        "QLabel:label_6",
+        "QLabel:statusLabel",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QLineEdit:txtLink",
+        "QPushButton:btnSelectEdge",
+        "QPushButton:btnX",
+        "QPushButton:btnY",
+        "QPushButton:btnZ",
+        "QRadioButton:rbDirModeCustom",
+        "QRadioButton:rbDirModeEdge",
+        "QRadioButton:rbDirModeNormal",
+        "QTreeWidget:treeWidget",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "task_buttons": [
+        {
+          "text": "OK",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Ok",
+          "role": "ButtonRole.AcceptRole"
+        },
+        {
+          "text": "Close",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Close",
+          "role": "ButtonRole.RejectRole"
+        },
+        {
+          "text": "Apply",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Apply",
+          "role": "ButtonRole.ApplyRole"
+        }
+      ],
+      "history_visible": true,
+      "direct_core_task_guards": [
+        {
+          "request": {
+            "op": "new",
+            "name": "Part native dialog guard probe"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before changing documents"
+            }
+          },
+          "checks": [
+            {
+              "name": "new_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "new_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "new_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "new_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "new_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "new_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "open",
+            "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\draft-accepted.FCStd"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before changing documents"
+            }
+          },
+          "checks": [
+            {
+              "name": "open_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "open_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "open_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "open_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "open_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "open_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "set_parameter",
+            "document_id": "a92eba5c-41f1-450e-9da6-3f320a020f48",
+            "expected_revision": "ebde1579-1aa2-4fc9-bfd3-89647a3ee264",
+            "feature": "Profile",
+            "parameter": "Width",
+            "value": 6
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before another operation"
+            }
+          },
+          "checks": [
+            {
+              "name": "set_parameter_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "save",
+            "document_id": "a92eba5c-41f1-450e-9da6-3f320a020f48",
+            "expected_revision": "ebde1579-1aa2-4fc9-bfd3-89647a3ee264",
+            "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\part-task-direct-core-save-probe.FCStd"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before another operation"
+            }
+          },
+          "checks": [
+            {
+              "name": "save_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "save_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "save_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "save_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "save_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "save_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        }
+      ],
+      "preview": {
+        "tip": null,
+        "note": "Standalone Part result is created by native OK; no Body Tip preview."
+      },
+      "accepted": {
+        "name": "Extrude",
+        "type": "Part::Extrusion",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 499.9999999999999,
+        "history_present": true,
+        "build_status": "sketch_only",
+        "file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\part_extrude-accepted.FCStd"
+      }
+    }
+  ],
+  "native_warnings": [],
+  "case_count": 2
+}

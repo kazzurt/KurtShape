@@ -1,0 +1,125 @@
+{
+  "completed_utc": "2026-10-02T09:06:33.5111768Z",
+  "engine": "FreeCAD 1.1.4 / 4fd3bf320d9566a27e60069fc8387448aaa3a094 / OCCT 7.8.1",
+  "platform": "Windows / PySide6 / 150% display scale",
+  "automated_suite": {
+    "offline_native": 47,
+    "total": 70,
+    "transport": 2,
+    "qt_shortcut": 21
+  },
+  "native_toolbar": {
+    "scenarios": 8,
+    "dialog_cancel_only": [
+      "Mirror",
+      "Pattern"
+    ],
+    "accepted": [
+      "Fillet",
+      "Chamfer",
+      "Revolve"
+    ],
+    "edit_guards": 39
+  },
+  "records": [
+    {
+      "record": "offline-test-result.json",
+      "passed": true,
+      "tests": 47,
+      "checks": null,
+      "sha256": "6ea7874f952f99a8381875e3559dc0cfdb46ae7ac0ea5d37b1331e3ded94c6af"
+    },
+    {
+      "record": "interface-pass/gui-test-result.json",
+      "passed": true,
+      "tests": null,
+      "checks": 36,
+      "sha256": "77dcde46c82207f567a6dcf0567af700c66f87cefba2344372cfcd043013495d"
+    },
+    {
+      "record": "navigation-test-result.json",
+      "passed": true,
+      "tests": null,
+      "checks": 16,
+      "sha256": "7b38d574015175db207cf28b94bd915d7a988abb367f1fc2bf29f40713abd150"
+    },
+    {
+      "record": "sketch-lifecycle-result.json",
+      "passed": true,
+      "tests": null,
+      "checks": null,
+      "sha256": "2b3f888007904ef82add7b23c027e6874a10945f41ad039d94194a328bac36c3"
+    },
+    {
+      "record": "general-actions-gui-result.json",
+      "passed": true,
+      "tests": null,
+      "checks": 25,
+      "sha256": "ff6257c833c86679ee4557680e0f6935b42d91bac5b333ec858c253dbf3b4797"
+    },
+    {
+      "record": "general-actions-select-other-result.json",
+      "passed": true,
+      "tests": null,
+      "checks": 8,
+      "sha256": "9bae75e673451743e4220d372110053c0fd5db3c43455202b6d197f4e5f1ce1f"
+    },
+    {
+      "record": "viewport-actions-test-result.json",
+      "passed": true,
+      "tests": null,
+      "checks": 40,
+      "sha256": "22f05b3dceaa36bf8d0b8f2802abe1d9b6af1e3874a146e142e5930a55bb8f88"
+    },
+    {
+      "record": "view-selection-result.json",
+      "passed": true,
+      "tests": null,
+      "checks": 20,
+      "sha256": "6d0f16afd3ccbaee00a4e8c4af1a645d0f6e6506a8c1f174c18819ad855651b8"
+    },
+    {
+      "record": "toolbar-pass/toolbar-test-result.json",
+      "passed": true,
+      "tests": null,
+      "checks": null,
+      "sha256": "b410c71df3ce4c6c70c73fe697c94920fe925e8514cdb9b769a9baa23a9f6e43"
+    }
+  ],
+  "modules": [
+    {
+      "path": "src/kurtshape/ui.py",
+      "sha256": "8ca8f632977393023873a4d83558f770fa2b734616422ca3a74b9e5f488b37c5"
+    },
+    {
+      "path": "src/kurtshape/core.py",
+      "sha256": "f2412c6d53ed16d1904e523d97af584032ac592541577d43aa3df97697a35602"
+    },
+    {
+      "path": "src/kurtshape/navigation.py",
+      "sha256": "09b70d3522072d926e3a9a76676c734194f0144cd987b56b837b23942a3ddca3"
+    },
+    {
+      "path": "src/kurtshape/viewport_actions.py",
+      "sha256": "e1e347b47f784cb2a7dca98df516f2ac866d1468888855ed8b635f95c40534ce"
+    },
+    {
+      "path": "src/kurtshape/shortcuts.py",
+      "sha256": "9a74c1b2350316b574e15c2ac23516ed6e48a1f0db21ed19901a070331094222"
+    },
+    {
+      "path": "shortcuts.json",
+      "sha256": "a1be985894fe89840f9c543d27e846fd951eaed9c79a18f120cb85939bbd6d65"
+    },
+    {
+      "path": "src/kurtshape/general_actions.py",
+      "sha256": "7c3c9f28a6d0c4a0ae339548d24fea087410d5d7264dfe59020c9e4c349b0496"
+    }
+  ],
+  "limits": [
+    "Hands-on usability acceptance pending",
+    "Real Onshape migration 0/2",
+    "Physical offline and C++ socket interception not tested",
+    "35 official shortcut entries unavailable; six gestures passive"
+  ]
+}

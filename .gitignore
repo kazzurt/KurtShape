@@ -1,0 +1,18 @@
+runtime/
+__pycache__/
+*.pyc
+validation/temporary-projects/
+*.FCStd1
+*.FCBak
+*.recovery
+*.recovery.FCStd
+*.saving.FCStd
+*.exporting.*
+*.log
+# Generated evidence is reproducible; retain the small reports, not working configs.
+validation/**
+!validation/**/
+!validation/**/*.json
+validation/**/user-data/
+validation/**/SavedPreferencePacks/
+validation/**/*working/

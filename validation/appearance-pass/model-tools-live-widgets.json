@@ -1,0 +1,11 @@
+{
+  "active_modal": null,
+  "widgets": [
+    {
+      "class": "Gui::MainWindow",
+      "title": "[*] Expanded shell - FreeCAD 1.1.4",
+      "modal": false
+    }
+  ],
+  "active_dialog": false
+}

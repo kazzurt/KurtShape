@@ -1,0 +1,121 @@
+{
+  "passed": true,
+  "checks": [
+    "History click selects Top datum",
+    "Top datum uses its native datum axis",
+    "N aligns to Top datum",
+    "Repeated N flips Top datum",
+    "History click selects Front datum",
+    "Front datum uses its native datum axis",
+    "N aligns to Front datum",
+    "Repeated N flips Front datum",
+    "History click selects Right datum",
+    "Right datum uses its native datum axis",
+    "N aligns to Right datum",
+    "Repeated N flips Right datum",
+    "N aligns to selected planar model face",
+    "Repeated N flips selected planar model face",
+    "Y hides selected native object",
+    "Selected Y leaves the other solid visible",
+    "Real native mouse hover preselects the second solid",
+    "Y hides the hover-only native object",
+    "Hover Y preserves previously hidden selection",
+    "N/Y keep the same native document and edit context"
+  ],
+  "normals": [
+    {
+      "target": "Top datum",
+      "expected": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "first": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "second": [
+        0.0,
+        -1.2246468525851679e-16,
+        -1.0
+      ]
+    },
+    {
+      "target": "Front datum",
+      "expected": [
+        0.0,
+        -1.0000000000000002,
+        0.0
+      ],
+      "first": [
+        0.0,
+        -0.9999999999999998,
+        0.0
+      ],
+      "second": [
+        0.0,
+        0.9999999999999998,
+        0.0
+      ]
+    },
+    {
+      "target": "Right datum",
+      "expected": [
+        1.0,
+        -1.1102230246251565e-16,
+        1.1102230246251565e-16
+      ],
+      "first": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "second": [
+        -1.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "target": "selected planar model face",
+      "expected": [
+        0.0,
+        -1.0,
+        -0.0
+      ],
+      "first": [
+        0.0,
+        -0.9999999999999998,
+        0.0
+      ],
+      "second": [
+        0.0,
+        0.9999999999999998,
+        0.0
+      ]
+    }
+  ],
+  "method": "Actual isolated KurtShape Panel, native Qt tree clicks/keyboard/mouse hover; separate hidden native GUI/config/session",
+  "hover": {
+    "pixel_ratio": 1.5,
+    "qt_position": [
+      585,
+      375
+    ],
+    "object": "HoverSolid",
+    "subelements": [
+      "Face6"
+    ]
+  },
+  "freecad_version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ]
+}

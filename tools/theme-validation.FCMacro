@@ -1,0 +1,281 @@
+"""Readable Qt controls and native Tasks from a hostile dark startup palette."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+
+sys.dont_write_bytecode = True
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+from kurtshape.theme import COLORS, STYLESHEET, native_theme_preferences
+
+
+class NoTransport:
+    def __init__(self, *args): pass
+    def tick(self): return False
+    def close(self): pass
+
+
+ui.Bridge = NoTransport
+app = QtGui.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+output = root / "validation" / "appearance-pass"
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "contrast": [], "screenshots": [],
+          "method": "Actual invisible native KurtShape GUI, hostile inherited dark palette/stylesheet, dynamic popup/dialog/native Pad task checks; transport excluded"}
+panel = None
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() == QtCore.QEvent.Polish and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden_filter = HiddenPopupFilter(app)
+app.installEventFilter(hidden_filter)
+
+
+def wait(ms=120):
+    QtTest.QTest.qWait(ms)
+
+
+def check(name, condition):
+    assert condition, name
+    report["checks"].append(name)
+
+
+def luminance(color):
+    values = [color.redF(), color.greenF(), color.blueF()]
+    linear = [value / 12.92 if value <= .04045 else ((value + .055) / 1.055) ** 2.4 for value in values]
+    return sum(weight * value for weight, value in zip((.2126, .7152, .0722), linear))
+
+
+def ratio(first, second):
+    light, dark = sorted((luminance(first), luminance(second)), reverse=True)
+    return (light + .05) / (dark + .05)
+
+
+def contrast(name, widget, foreground, background, group=QtGui.QPalette.Active):
+    palette = widget.palette()
+    fg, bg = palette.color(group, foreground), palette.color(group, background)
+    value = ratio(fg, bg)
+    report["contrast"].append({"name": name, "method": "resolved Qt palette", "foreground": fg.name(), "background": bg.name(), "ratio": round(value, 3)})
+    check(name + " contrast meets 4.5:1", value >= 4.5)
+
+
+def screenshot(name, widget):
+    path = output / ("theme-" + name + ".png")
+    check(name + " screenshot saved", widget.grab().save(str(path)))
+    report["screenshots"].append(str(path))
+
+
+def glyph_pixels(widget, color):
+    image = widget.grab().toImage()
+    return sum(1 for y in range(image.height()) for x in range(image.width())
+               if image.pixelColor(x, y).rgb() == color.rgb())
+
+
+def rendered_pair(name, widget, foreground, background):
+    fg, bg = QtGui.QColor(foreground), QtGui.QColor(background)
+    value = ratio(fg, bg)
+    report["contrast"].append({"name": name, "method": "actual foreground/background pixels",
+                               "foreground": fg.name(), "background": bg.name(), "ratio": round(value, 3)})
+    check(name + " rendered colors meet 4.5:1", value >= 4.5 and glyph_pixels(widget, fg) > 8 and glyph_pixels(widget, bg) > 20)
+
+
+def arrow_pixels(widget):
+    image = widget.grab().toImage()
+    edge = round(18 * widget.devicePixelRatioF())
+    return sum(1 for y in range(2, image.height() - 2) for x in range(image.width() - edge, image.width() - 2)
+               if max(image.pixelColor(x, y).red(), image.pixelColor(x, y).green(), image.pixelColor(x, y).blue()) < 130)
+
+
+def black_menu_pixels(widget):
+    image = widget.grab().toImage()
+    edge = round(14 * widget.devicePixelRatioF())
+    return sum(1 for y in range(2, image.height() - 2) for x in range(image.width() - edge, image.width() - 2)
+               if max(image.pixelColor(x, y).red(), image.pixelColor(x, y).green(), image.pixelColor(x, y).blue()) < 30)
+
+
+def validate():
+    global panel
+    try:
+        before_preferences = native_theme_preferences()
+        dark = QtGui.QPalette(app.palette())
+        for group in (QtGui.QPalette.Active, QtGui.QPalette.Inactive, QtGui.QPalette.Disabled):
+            for role in (QtGui.QPalette.WindowText, QtGui.QPalette.Text, QtGui.QPalette.ButtonText):
+                dark.setColor(group, role, QtGui.QColor("#ffffff"))
+            for role in (QtGui.QPalette.Window, QtGui.QPalette.Base, QtGui.QPalette.Button):
+                dark.setColor(group, role, QtGui.QColor("#25282d"))
+        app.setPalette(dark)
+        app.setStyleSheet("QWidget { color: white; background-color: #25282d; } QLineEdit { color: white; background-color: #33363b; }")
+        main.setStyleSheet("QWidget { color: white; }")
+        check("Hostile dark startup palette installed", app.palette().color(QtGui.QPalette.Text).name() == "#ffffff")
+        panel = ui.start()
+        panel.timer.stop()
+        main.resize(1440, 920)
+        wait(200)
+        report["theme_diagnostics"] = app._kurtshape_theme_diagnostics
+        check("Application owns the light stylesheet", app.styleSheet() == STYLESHEET)
+        check("Inherited native dark window stylesheet removed", not main.styleSheet())
+        check("Theme changes no FreeCAD preference", native_theme_preferences() == before_preferences)
+        for group, group_name in ((QtGui.QPalette.Active, "active"), (QtGui.QPalette.Inactive, "inactive"), (QtGui.QPalette.Disabled, "disabled")):
+            for fg, bg, title in ((QtGui.QPalette.WindowText, QtGui.QPalette.Window, "labels"),
+                                  (QtGui.QPalette.Text, QtGui.QPalette.Base, "inputs"),
+                                  (QtGui.QPalette.ButtonText, QtGui.QPalette.Button, "buttons"),
+                                  (QtGui.QPalette.HighlightedText, QtGui.QPalette.Highlight, "selection"),
+                                  (QtGui.QPalette.ToolTipText, QtGui.QPalette.ToolTipBase, "tooltips")):
+                contrast(group_name + " " + title, main, fg, bg, group)
+        contrast("History tree", panel.features, QtGui.QPalette.Text, QtGui.QPalette.Base)
+        contrast("Parameter dropdown", panel.parameter, QtGui.QPalette.Text, QtGui.QPalette.Base)
+        contrast("Dimension spinbox", panel.value, QtGui.QPalette.Text, QtGui.QPalette.Base)
+        contrast("Document name", panel.document_name, QtGui.QPalette.WindowText, QtGui.QPalette.Window)
+        assert panel.operation("sketch_rectangle", id="ThemeProfile", plane="XY", width=30, height=20)
+        assert panel.operation("pad", id="ThemePad", profile="ThemeProfile", length=8)
+        panel.document().ThemeProfile.ViewObject.Visibility = False
+        panel.isometric()
+        panel.fit()
+        wait(200)
+        screenshot("workspace", main)
+
+        dialog = QtWidgets.QDialog(main)
+        dialog.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        dialog.setWindowTitle("Native light theme coverage")
+        layout = QtWidgets.QVBoxLayout(dialog)
+        label = QtWidgets.QLabel("Readable native labels, fields and controls")
+        field = QtWidgets.QLineEdit("Driving dimension")
+        field.setPlaceholderText("Enter a dimension")
+        spin = QtWidgets.QDoubleSpinBox()
+        spin.setValue(12.5)
+        combo = QtWidgets.QComboBox()
+        combo.addItems(["Blind", "Through all", "Symmetric"])
+        button = QtWidgets.QPushButton("Confirm feature")
+        button.setDefault(True)
+        disabled = QtWidgets.QPushButton("Unavailable while editing")
+        disabled.setEnabled(False)
+        split = QtWidgets.QToolButton()
+        split.setText("Native sketch options")
+        split.setPopupMode(QtWidgets.QToolButton.MenuButtonPopup)
+        split_menu = QtWidgets.QMenu(split)
+        split_menu.addAction("Show constraints")
+        split.setMenu(split_menu)
+        for widget in (label, field, spin, combo, button, disabled, split):
+            layout.addWidget(widget)
+        dialog.resize(460, 280)
+        dialog.show()
+        wait()
+        contrast("Dynamic dialog label", label, QtGui.QPalette.WindowText, QtGui.QPalette.Window)
+        contrast("Dynamic line input", field, QtGui.QPalette.Text, QtGui.QPalette.Base)
+        contrast("Dynamic spin input", spin, QtGui.QPalette.Text, QtGui.QPalette.Base)
+        contrast("Dynamic default button", button, QtGui.QPalette.ButtonText, QtGui.QPalette.Button)
+        contrast("Dynamic disabled button", disabled, QtGui.QPalette.ButtonText, QtGui.QPalette.Button, QtGui.QPalette.Disabled)
+        contrast("Input placeholder", field, QtGui.QPalette.PlaceholderText, QtGui.QPalette.Base)
+        rendered_pair("Default action button", button, "#ffffff", COLORS["accent"])
+        rendered_pair("Disabled action button", disabled, COLORS["disabled_ink"], COLORS["disabled"])
+        check("Rendered label has visible ink glyphs", glyph_pixels(label, QtGui.QColor(COLORS["ink"])) > 20)
+        check("Rendered field has visible ink glyphs", glyph_pixels(field, QtGui.QColor(COLORS["ink"])) > 20)
+        check("Dropdown has a visible rendered arrow", arrow_pixels(combo) > 8)
+        check("Spinbox has visible rendered increment arrows", arrow_pixels(spin) > 8)
+        check("Split-menu button has a visible dropdown arrow", arrow_pixels(split) > 8)
+        check("Split-menu button has no black dropdown rectangle", black_menu_pixels(split) < 8)
+        screenshot("dynamic-dialog", dialog)
+        combo.showPopup()
+        wait()
+        contrast("Dropdown popup", combo.view(), QtGui.QPalette.Text, QtGui.QPalette.Base)
+        contrast("Dropdown popup selection", combo.view(), QtGui.QPalette.HighlightedText, QtGui.QPalette.Highlight)
+        screenshot("dropdown-popup", combo.view())
+        combo.hidePopup()
+        menu = QtWidgets.QMenu(main)
+        menu.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        choice = menu.addAction("Edit native feature")
+        menu.addAction("Unavailable operation").setEnabled(False)
+        menu.setActiveAction(choice)
+        menu.popup(main.mapToGlobal(QtCore.QPoint(250, 150)))
+        wait()
+        contrast("Dynamic context menu", menu, QtGui.QPalette.WindowText, QtGui.QPalette.Window)
+        screenshot("context-menu", menu)
+        menu.close()
+        long_menu = QtWidgets.QMenu(main)
+        long_menu.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        long_actions = [long_menu.addAction("Native modeling operation " + str(index + 1)) for index in range(60)]
+        long_menu.popup(main.mapToGlobal(QtCore.QPoint(250, 150)))
+        wait()
+        report["long_menu"] = {"scrollable_hint": long_menu.style().styleHint(QtWidgets.QStyle.SH_Menu_Scrollable, None, long_menu),
+                               "height": long_menu.height(), "screen_height": main.screen().availableGeometry().height()}
+        check("Long menu uses native scrolling", report["long_menu"]["scrollable_hint"] == 1)
+        check("Long menu fits the available screen height", long_menu.height() <= main.screen().availableGeometry().height())
+        QtTest.QTest.keyClick(long_menu, QtCore.Qt.Key_End)
+        wait()
+        check("Last long-menu action is reachable and visible", long_menu.activeAction() == long_actions[-1] and long_menu.rect().intersects(long_menu.actionGeometry(long_actions[-1])))
+        QtTest.QTest.keyClick(long_menu, QtCore.Qt.Key_Home)
+        wait()
+        check("First long-menu action remains reachable", long_menu.activeAction() == long_actions[0] and long_menu.rect().intersects(long_menu.actionGeometry(long_actions[0])))
+        long_menu.close()
+        QtGui.QToolTip.showText(main.mapToGlobal(QtCore.QPoint(400, 170)), "Native feature tool shortcut", main)
+        wait()
+        tooltip = next(widget for widget in app.topLevelWidgets() if widget.metaObject().className() == "QTipLabel" and widget.isVisible())
+        contrast("Actual native tooltip", tooltip, QtGui.QPalette.WindowText, QtGui.QPalette.Window)
+        rendered_pair("Native tooltip", tooltip, "#ffffff", COLORS["tooltip"])
+        screenshot("tooltip", tooltip)
+        QtGui.QToolTip.hideText()
+        dialog.close()
+
+        Gui.Selection.clearSelection()
+        Gui.activeDocument().setEdit("ThemePad")
+        panel.sync_edit_ui()
+        for dock in main.findChildren(QtWidgets.QDockWidget):
+            if dock.objectName() == "Tasks" or dock.windowTitle() in {"Tasks", "Combo View"}:
+                dock.show()
+        wait(220)
+        task = main.findChild(QtWidgets.QDockWidget, "Tasks")
+        check("Actual native Pad task opened", bool(Gui.Control.activeDialog()) and bool(Gui.activeDocument().getInEdit()))
+        check("Native Tasks panel visible", task is not None and task.isVisible())
+        task_labels = [widget for widget in task.findChildren(QtWidgets.QLabel) if widget.isVisible() and widget.text()]
+        check("Native task has rendered labels", bool(task_labels))
+        for index, widget in enumerate(task_labels):
+            contrast("Native task label " + str(index), widget, QtGui.QPalette.WindowText, QtGui.QPalette.Window)
+        task_fields = [widget for widget in task.findChildren(QtWidgets.QLineEdit) if widget.isVisible()]
+        check("Native task has rendered inputs", bool(task_fields))
+        for index, widget in enumerate(task_fields):
+            contrast("Native task input " + str(index), widget, QtGui.QPalette.Text, QtGui.QPalette.Base)
+        accept = next(box.button(QtWidgets.QDialogButtonBox.Ok) for box in task.findChildren(QtWidgets.QDialogButtonBox)
+                      if box.button(QtWidgets.QDialogButtonBox.Ok) is not None and box.button(QtWidgets.QDialogButtonBox.Ok).isVisible())
+        rendered_pair("Native task OK button", accept, "#ffffff", COLORS["accent"])
+        task_combos = [widget for widget in task.findChildren(QtWidgets.QComboBox) if widget.isVisible()]
+        check("Native task dropdown arrows are rendered", bool(task_combos) and all(arrow_pixels(widget) > 8 for widget in task_combos))
+        screenshot("native-pad-task", main)
+        cancel = next(box.button(QtWidgets.QDialogButtonBox.Cancel) for box in task.findChildren(QtWidgets.QDialogButtonBox)
+                      if box.button(QtWidgets.QDialogButtonBox.Cancel) is not None and box.button(QtWidgets.QDialogButtonBox.Cancel).isVisible())
+        QtTest.QTest.mouseClick(cancel, QtCore.Qt.LeftButton)
+        wait()
+        check("Native cancel remains functional with the theme", not Gui.Control.activeDialog() and not Gui.activeDocument().getInEdit())
+        report.update(passed=True, freecad_version=App.Version(), preferences_unchanged=True)
+    except Exception:
+        report["error"] = traceback.format_exc()
+        if panel:
+            report["status_message"] = panel.message.text()
+        main.grab().save(str(output / "theme-failure.png"))
+    finally:
+        (output / "theme-result.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        if panel:
+            panel.shutdown()
+        if Gui.activeDocument() and Gui.activeDocument().getInEdit():
+            Gui.activeDocument().resetEdit()
+        for name in list(App.listDocuments()):
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(100, app.quit)
+
+
+QtCore.QTimer.singleShot(700, validate)

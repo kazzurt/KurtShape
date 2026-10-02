@@ -1,0 +1,70 @@
+[
+  {
+    "kind": "sketch",
+    "type": "Sketcher::SketchObject",
+    "created": "Profile001",
+    "links": [
+      "XY_Plane"
+    ],
+    "state": [
+      "Up-to-date"
+    ],
+    "source_count": 12,
+    "source_geometry": 4,
+    "copy_geometry": 4,
+    "volume_before": 0,
+    "volume_after": 0,
+    "build_status": "sketch_only",
+    "tip": null,
+    "profile": "",
+    "base": null,
+    "metadata_count": 1,
+    "abort_removed_copy": true
+  },
+  {
+    "kind": "pad",
+    "type": "PartDesign::Pad",
+    "created": "Pad001",
+    "links": [
+      "Profile",
+      "Pad"
+    ],
+    "state": [
+      "Up-to-date"
+    ],
+    "source_count": 13,
+    "source_geometry": null,
+    "copy_geometry": null,
+    "volume_before": 3000.0,
+    "volume_after": 3000.0,
+    "build_status": "valid",
+    "tip": "Pad001",
+    "profile": "(<Sketcher::SketchObject>, [])",
+    "base": "Pad",
+    "metadata_count": 1,
+    "abort_removed_copy": true
+  },
+  {
+    "kind": "pocket",
+    "type": "PartDesign::Pocket",
+    "created": "Pocket001",
+    "links": [
+      "CutProfile",
+      "Pocket"
+    ],
+    "state": [
+      "Up-to-date"
+    ],
+    "source_count": 15,
+    "source_geometry": null,
+    "copy_geometry": null,
+    "volume_before": 2901.8252295753186,
+    "volume_after": 2901.8252295753186,
+    "build_status": "valid",
+    "tip": "Pocket001",
+    "profile": "(<Sketcher::SketchObject>, [])",
+    "base": "Pocket",
+    "metadata_count": 1,
+    "abort_removed_copy": true
+  }
+]

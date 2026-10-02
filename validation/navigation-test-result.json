@@ -1,0 +1,559 @@
+{
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "passed": true,
+  "checks": [
+    {
+      "mode": "hovered_surface_pivot",
+      "before_pixels": [
+        490,
+        589
+      ],
+      "after_pixels": [
+        490,
+        590
+      ],
+      "hit_object": "Box"
+    },
+    {
+      "mode": "orbit",
+      "before": {
+        "orientation": [
+          0.3456591116981247,
+          -0.03336693849515465,
+          0.2791594362413102,
+          0.8952521628418207
+        ],
+        "position": [
+          60.956886291503906,
+          -146.5640869140625,
+          200.86146545410156
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 250.0
+      },
+      "after": {
+        "orientation": [
+          0.27340243661951064,
+          -0.18497656703554716,
+          0.2248300481637003,
+          0.9167803590506106
+        ],
+        "position": [
+          -25.982532501220703,
+          -133.35134887695312,
+          206.63015747070312
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 250.0
+      }
+    },
+    {
+      "mode": "pan",
+      "before": {
+        "orientation": [
+          0.27340243661951064,
+          -0.18497656703554716,
+          0.2248300481637003,
+          0.9167803590506106
+        ],
+        "position": [
+          -25.982532501220703,
+          -133.35134887695312,
+          206.63015747070312
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 250.0
+      },
+      "after": {
+        "orientation": [
+          0.27340243661951064,
+          -0.18497656703554716,
+          0.2248300481637003,
+          0.9167803590506106
+        ],
+        "position": [
+          -33.99601364135742,
+          -132.45635986328125,
+          205.08346557617188
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 250.0
+      }
+    },
+    {
+      "mode": "zoom",
+      "before": {
+        "orientation": [
+          0.27340243661951064,
+          -0.18497656703554716,
+          0.2248300481637003,
+          0.9167803590506106
+        ],
+        "position": [
+          -33.99601364135742,
+          -132.45635986328125,
+          205.08346557617188
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 250.0
+      },
+      "after": {
+        "orientation": [
+          0.27340243661951064,
+          -0.18497656703554716,
+          0.2248300481637003,
+          0.9167803590506106
+        ],
+        "position": [
+          -33.99601364135742,
+          -132.45635986328125,
+          205.08346557617188
+        ],
+        "height": 31.980207443237305,
+        "focal_distance": 250.0
+      }
+    },
+    {
+      "mode": "wheel_forward_zoom_out",
+      "before": {
+        "orientation": [
+          0.27340243661951064,
+          -0.18497656703554716,
+          0.2248300481637003,
+          0.9167803590506106
+        ],
+        "position": [
+          -33.99601364135742,
+          -132.45635986328125,
+          205.08346557617188
+        ],
+        "height": 31.980207443237305,
+        "focal_distance": 250.0
+      },
+      "after": {
+        "orientation": [
+          0.27340243661951064,
+          -0.18497656703554716,
+          0.2248300481637003,
+          0.9167803590506106
+        ],
+        "position": [
+          -34.001773834228516,
+          -132.4479522705078,
+          205.08815002441406
+        ],
+        "height": 39.06071472167969,
+        "focal_distance": 250.0
+      }
+    },
+    {
+      "mode": "double_middle_fit",
+      "before": {
+        "orientation": [
+          0.27340243661951064,
+          -0.18497656703554716,
+          0.2248300481637003,
+          0.9167803590506106
+        ],
+        "position": [
+          -34.001773834228516,
+          -132.4479522705078,
+          205.08815002441406
+        ],
+        "height": 39.06071472167969,
+        "focal_distance": 250.0
+      },
+      "after": {
+        "orientation": [
+          0.27340243661951064,
+          -0.18497656703554716,
+          0.2248300481637003,
+          0.9167803590506106
+        ],
+        "position": [
+          18.27518081665039,
+          -0.6775989532470703,
+          30.322866439819336
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 31.100643157958984
+      }
+    },
+    {
+      "mode": "preserve_camera_on_sketch_entry",
+      "before": {
+        "orientation": [
+          0.27340243661951064,
+          -0.18497656703554716,
+          0.2248300481637003,
+          0.9167803590506106
+        ],
+        "position": [
+          18.27518081665039,
+          -0.6775989532470703,
+          30.322866439819336
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 31.100643157958984
+      },
+      "after": {
+        "orientation": [
+          0.27340236132744206,
+          -0.18497650207949332,
+          0.224830000166316,
+          0.9167804063810638
+        ],
+        "position": [
+          18.27518081665039,
+          -0.6775989532470703,
+          30.322866439819336
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 31.100643157958984
+      }
+    },
+    {
+      "mode": "sketch_edit_orbit",
+      "before": {
+        "orientation": [
+          0.27340236132744206,
+          -0.18497650207949332,
+          0.224830000166316,
+          0.9167804063810638
+        ],
+        "position": [
+          18.27518081665039,
+          -0.6775989532470703,
+          30.322866439819336
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 31.100643157958984
+      },
+      "after": {
+        "orientation": [
+          0.18742409090291753,
+          -0.3315991151957762,
+          0.161976441532813,
+          0.910317455253364
+        ],
+        "position": [
+          -108.2315673828125,
+          -95.71115112304688,
+          184.01483154296875
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 250.0
+      },
+      "still_in_edit": true
+    },
+    {
+      "mode": "sketch_edit_pan",
+      "before": {
+        "orientation": [
+          0.18742409090291753,
+          -0.3315991151957762,
+          0.161976441532813,
+          0.910317455253364
+        ],
+        "position": [
+          -108.2315673828125,
+          -95.71115112304688,
+          184.01483154296875
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 250.0
+      },
+      "after": {
+        "orientation": [
+          0.18742409090291753,
+          -0.3315991151957762,
+          0.161976441532813,
+          0.910317455253364
+        ],
+        "position": [
+          -115.58361053466797,
+          -93.1298828125,
+          180.02220153808594
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 250.0
+      },
+      "still_in_edit": true
+    },
+    {
+      "mode": "sketch_edit_zoom",
+      "before": {
+        "orientation": [
+          0.18742409090291753,
+          -0.3315991151957762,
+          0.161976441532813,
+          0.910317455253364
+        ],
+        "position": [
+          -115.58361053466797,
+          -93.1298828125,
+          180.02220153808594
+        ],
+        "height": 62.20128631591797,
+        "focal_distance": 250.0
+      },
+      "after": {
+        "orientation": [
+          0.18742409090291753,
+          -0.3315991151957762,
+          0.161976441532813,
+          0.910317455253364
+        ],
+        "position": [
+          -115.58361053466797,
+          -93.1298828125,
+          180.02220153808594
+        ],
+        "height": 30.59743881225586,
+        "focal_distance": 250.0
+      },
+      "still_in_edit": true
+    },
+    {
+      "mode": "normal_while_editing",
+      "before": {
+        "orientation": [
+          0.18742409090291753,
+          -0.3315991151957762,
+          0.161976441532813,
+          0.910317455253364
+        ],
+        "position": [
+          -115.58361053466797,
+          -93.1298828125,
+          180.02220153808594
+        ],
+        "height": 30.59743881225586,
+        "focal_distance": 250.0
+      },
+      "after": {
+        "orientation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          20.167476654052734,
+          19.033451080322266,
+          252.56507873535156
+        ],
+        "height": 30.59743881225586,
+        "focal_distance": 250.0
+      }
+    },
+    {
+      "mode": "isometric_while_editing",
+      "before": {
+        "orientation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          20.167476654052734,
+          19.033451080322266,
+          252.56507873535156
+        ],
+        "height": 30.59743881225586,
+        "focal_distance": 250.0
+      },
+      "after": {
+        "orientation": [
+          0.4247081853416402,
+          0.17591988947654358,
+          0.33985113918473153,
+          0.82047324940257
+        ],
+        "position": [
+          164.5050506591797,
+          -125.30411529541016,
+          146.90264892578125
+        ],
+        "height": 30.59743881225586,
+        "focal_distance": 250.0
+      }
+    },
+    {
+      "mode": "orbit_plane_projection",
+      "expected": [
+        13.0,
+        0.0,
+        0.0
+      ],
+      "actual": [
+        12.977122619770103,
+        0.012791742866482991,
+        0.0
+      ],
+      "pixels": [
+        162,
+        528
+      ]
+    },
+    {
+      "mode": "double_middle_fit_while_editing",
+      "before": {
+        "orientation": [
+          0.4247081853416402,
+          0.17591988947654358,
+          0.33985113918473153,
+          0.82047324940257
+        ],
+        "position": [
+          164.5050506591797,
+          -125.30411529541016,
+          146.90264892578125
+        ],
+        "height": 30.59743881225586,
+        "focal_distance": 250.0
+      },
+      "after": {
+        "orientation": [
+          0.4247081853416402,
+          0.17591988947654358,
+          0.33985113918473153,
+          0.82047324940257
+        ],
+        "position": [
+          42.956687927246094,
+          -0.45668983459472656,
+          23.96319007873535
+        ],
+        "height": 62.20379638671875,
+        "focal_distance": 31.101898193359375
+      }
+    },
+    {
+      "mode": "perspective_tilted_plane_projection",
+      "expected": [
+        13.0,
+        8.0,
+        0.0
+      ],
+      "actual": [
+        12.985879766907821,
+        8.025622598173165,
+        0.0
+      ],
+      "pixels": [
+        431,
+        626
+      ]
+    },
+    {
+      "mode": "tilted_sketch_normal",
+      "sketch_rotation": [
+        0.31730465640509214,
+        0.0,
+        0.0,
+        0.9483236552061993
+      ],
+      "camera_rotation": [
+        0.3173046657966,
+        0.0,
+        0.0,
+        0.9483236520638448
+      ]
+    }
+  ],
+  "method": "QtTest presses/releases and direct Qt move events to the native Coin viewport; hidden independent GUI process",
+  "view_methods": [
+    "getCamera",
+    "getCameraNode",
+    "getCameraOrientation",
+    "getCameraType",
+    "getCornerCrossSize",
+    "getNavigationType",
+    "getPoint",
+    "getPointOnFocalPlane",
+    "getPointOnScreen",
+    "getPointOnViewport",
+    "getSize",
+    "getViewer",
+    "listCameraTypes",
+    "listNavigationTypes",
+    "projectPointToLine",
+    "setCamera",
+    "setCameraOrientation",
+    "setCameraType",
+    "setCornerCrossSize",
+    "setNavigationType"
+  ],
+  "projection_docs": {
+    "projectPointToLine": "projectPointToLine(pixel coords (as integer)) -> line defined by two points\n\nReturn the projecting 3D line to the given 2D point",
+    "getPointOnScreen": "Same as getPointOnViewport",
+    "getPointOnViewport": "getPointOnViewport(3D vector) -> pixel coords (as integer)\n\nReturn the projected 3D point (in pixel coordinates).\n",
+    "getSize": "getSize()"
+  },
+  "viewer_type": "<class 'View3DInventorViewerPy'>",
+  "viewer_methods": [
+    "getNavigationStyle"
+  ],
+  "navigation_methods": {
+    "Module": "str(object='') -> str\nstr(bytes_or_buffer[, encoding[, errors]]) -> str\n\nCreate a new string object from the given object. If encoding or\nerrors is specified, then the object must expose a data buffer\nthat will be decoded using the given encoding and error handler.\nOtherwise, returns the result of object.__str__() (if defined)\nor repr(object).\nencoding defaults to sys.getdefaultencoding().\nerrors defaults to 'strict'.",
+    "TypeId": "str(object='') -> str\nstr(bytes_or_buffer[, encoding[, errors]]) -> str\n\nCreate a new string object from the given object. If encoding or\nerrors is specified, then the object must expose a data buffer\nthat will be decoded using the given encoding and error handler.\nOtherwise, returns the result of object.__str__() (if defined)\nor repr(object).\nencoding defaults to sys.getdefaultencoding().\nerrors defaults to 'strict'.",
+    "getAllDerivedFrom": "Returns all descendants",
+    "isDerivedFrom": "Returns true if given type is a father"
+  },
+  "projection_test": "(Vector (-1.3427311182022095, -0.730570912361145, 0.0009999871253967285), Vector (-1.3427311182022095, -0.730570912361145, -0.001000046730041504))",
+  "native_style": "Gui::SolidWorksNavigationStyle",
+  "widgets": [
+    {
+      "class": "QOpenGLWidget",
+      "name": "",
+      "size": [
+        100,
+        30
+      ]
+    },
+    {
+      "class": "Gui::View3DInventor",
+      "name": "",
+      "size": [
+        934,
+        632
+      ]
+    },
+    {
+      "class": "Gui::View3DInventorViewer",
+      "name": "",
+      "size": [
+        934,
+        632
+      ]
+    },
+    {
+      "class": "QOpenGLWidget",
+      "name": "",
+      "size": [
+        934,
+        632
+      ]
+    }
+  ],
+  "viewport_size": [
+    934,
+    632
+  ],
+  "viewport_native_size": [
+    1401,
+    948
+  ],
+  "device_pixel_ratio": 1.5
+}

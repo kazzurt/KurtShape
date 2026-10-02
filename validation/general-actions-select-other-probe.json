@@ -1,0 +1,42 @@
+{
+  "passed": true,
+  "method_doc": "getObjectsInfo(tuple(int,int), [pick_radius]) -> dictionary or None\n\nDoes the same as getObjectInfo() but returns a list of dictionaries or None.\n",
+  "pixel": [
+    701,
+    474
+  ],
+  "hits": [
+    {
+      "x": 15.020598411560059,
+      "y": 10.0,
+      "z": 5.0,
+      "Document": "SelectOtherProbe",
+      "Object": "FrontSolid",
+      "Component": "Face6"
+    },
+    {
+      "x": 15.020598411560059,
+      "y": 10.0,
+      "z": 0.0,
+      "Document": "SelectOtherProbe",
+      "Object": "FrontSolid",
+      "Component": "Face5"
+    },
+    {
+      "x": 15.020598411560059,
+      "y": 10.0,
+      "z": -5.0,
+      "Document": "SelectOtherProbe",
+      "Object": "RearSolid",
+      "Component": "Face6"
+    },
+    {
+      "x": 15.020598411560059,
+      "y": 10.0,
+      "z": -10.0,
+      "Document": "SelectOtherProbe",
+      "Object": "RearSolid",
+      "Component": "Face5"
+    }
+  ]
+}

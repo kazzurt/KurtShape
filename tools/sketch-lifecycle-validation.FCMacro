@@ -1,0 +1,201 @@
+"""Isolated hidden native GUI contract probe; never attaches to a live app."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+from unittest.mock import patch
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+ROOT = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(ROOT / "src"))
+from kurtshape.core import Controller, metadata
+
+REPORT = ROOT / "validation" / "sketch-lifecycle-result.json"
+report = {"pid": os.getpid(), "stages": [], "passed": False}
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1200, 800)
+main.show()
+
+def run():
+    core = Controller()
+    state = None
+    doc = None
+    def dispatch(op, **arguments):
+        nonlocal state
+        request = {"op":op, **arguments}
+        if op not in {"new", "open"}:
+            response = core.dispatch({"op":"inspect", "document_id":metadata(doc).DocumentId})
+            assert response["ok"], response
+            state = response["result"]
+            request.update(document_id=state["document_id"], expected_revision=state["revision"])
+        response = core.dispatch(request)
+        assert response["ok"], response
+        state = response["result"]
+        return state
+    def stage(name):
+        QtGui.QApplication.processEvents()
+        edit = Gui.getDocument(doc.Name).getInEdit()
+        report["stages"].append({"name":name, "pending_transaction":doc.HasPendingTransaction,
+            "undo_count":doc.UndoCount, "redo_count":doc.RedoCount,
+            "geometry_count":doc.Profile.GeometryCount,
+            "edit_type":str(getattr(edit,"TypeId",None)),
+            "edit_object_type":str(getattr(getattr(edit,"Object",None),"TypeId",None)),
+            "gui_modified":bool(Gui.getDocument(doc.Name).Modified),
+            "managed_edit":core.inspect(doc)["active_sketch_edit"]})
+        REPORT.write_text(json.dumps(report,indent=2),encoding="utf-8")
+    try:
+        dispatch("new", name="Isolated sketch lifecycle validation")
+        doc = core.documents[state["document_id"]]
+        report["gui_document_modified_api"] = {
+            "methods": [name for name in dir(Gui.getDocument(doc.Name)) if "odif" in name or "ave" in name],
+            "setModified_doc": getattr(getattr(Gui.getDocument(doc.Name), "setModified", None), "__doc__", None)}
+        dispatch("create_sketch", id="Profile", plane="XZ")
+        gui_doc = Gui.getDocument(doc.Name)
+        try:
+            report["modified_property_probe"] = {"before":bool(gui_doc.Modified), "undo_before":doc.UndoCount}
+            gui_doc.Modified = False
+            report["modified_property_probe"].update(after=bool(gui_doc.Modified), undo_after=doc.UndoCount)
+        except Exception:
+            report["modified_property_probe"]["exception"] = traceback.format_exc()
+        stage("created")
+        dispatch("begin_sketch_edit", feature="Profile")
+        stage("managed_begin")
+        Gui.activateWorkbench("SketcherWorkbench")
+        Gui.getDocument(doc.Name).setEdit("Profile")
+        stage("native_setEdit")
+        view = Gui.getDocument(doc.Name).activeView()
+        gl = next(widget for widget in main.findChildren(QtWidgets.QWidget)
+                  if widget.metaObject().className() == "QOpenGLWidget"
+                  and widget.parentWidget().metaObject().className() == "Gui::View3DInventorViewer"
+                  and widget.isVisible() and widget.width()>300 and widget.height()>300)
+        Gui.runCommand("Sketcher_CreateRectangle")
+        QtTest.QTest.qWait(100)
+        for local in [App.Vector(0,0,0), App.Vector(20,12,0)]:
+            pixel = view.getPointOnViewport(doc.Profile.Placement.multVec(local))
+            ratio = gl.devicePixelRatioF()
+            position = QtCore.QPoint(int(pixel[0]/ratio), gl.height()-1-int(pixel[1]/ratio))
+            event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(position),
+                                     QtCore.QPointF(gl.mapToGlobal(position)), QtCore.Qt.NoButton,
+                                     QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+            QtGui.QApplication.sendEvent(gl, event)
+            QtTest.QTest.qWait(100)
+            QtTest.QTest.mouseClick(gl, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, position)
+            QtTest.QTest.qWait(150)
+        QtTest.QTest.keyClick(gl, QtCore.Qt.Key_Escape)
+        QtTest.QTest.qWait(150)
+        assert doc.Profile.GeometryCount == 4, doc.Profile.GeometryCount
+        dispatch("inspect")
+        stage("actual_native_rectangle_mouse_command")
+        doc.Profile.addGeometry(Part.Circle(App.Vector(8,6,0), App.Vector(0,0,1), 2), True)
+        doc.recompute()
+        dispatch("inspect")
+        stage("native_circle")
+        dispatch("undo")
+        assert doc.Profile.GeometryCount == 4
+        stage("managed_undo_in_native_editor")
+        dispatch("redo")
+        assert doc.Profile.GeometryCount == 5
+        stage("managed_redo_in_native_editor")
+        Gui.getDocument(doc.Name).resetEdit()
+        stage("native_resetEdit_before_finish")
+        dispatch("finish_sketch_edit")
+        stage("managed_finish")
+        dispatch("undo")
+        assert doc.Profile.GeometryCount == 0
+        dispatch("redo")
+        assert doc.Profile.GeometryCount == 5
+        stage("document_undo_redo_after_finish")
+        dispatch("begin_sketch_edit", feature="Profile")
+        Gui.getDocument(doc.Name).setEdit("Profile")
+        dispatch("add_line", sketch="Profile", x1=1,y1=2,x2=4,y2=5,construction=True)
+        assert doc.Profile.GeometryCount == 6
+        stage("native_edit_before_cancel")
+        Gui.getDocument(doc.Name).resetEdit()
+        stage("native_resetEdit_before_cancel")
+        dispatch("finish_sketch_edit", cancel=True)
+        assert doc.Profile.GeometryCount == 5
+        assert not doc.HasPendingTransaction
+        stage("managed_cancel")
+        dispatch("undo")
+        assert doc.Profile.GeometryCount == 0
+        stage("undo_prior_accepted_edit_after_cancel")
+        dispatch("redo")
+        assert doc.Profile.GeometryCount == 5
+        stage("redo_prior_accepted_edit_does_not_resurrect_cancelled_line")
+        assert not doc.RedoCount
+        saved = ROOT / "validation" / "sketch-lifecycle-project.FCStd"
+        undo_before_save = doc.UndoCount
+        dispatch("save", path=str(saved))
+        assert not Gui.getDocument(doc.Name).Modified
+        assert doc.UndoCount == undo_before_save
+        stage("successful_staged_save_clears_modified_without_history_change")
+        doc.Profile.Label = "Unsaved sketch label"
+        assert Gui.getDocument(doc.Name).Modified
+        stage("new_native_model_edit_sets_modified_again")
+        accepted_bytes = saved.read_bytes()
+        accepted_filename = doc.FileName
+        with patch("kurtshape.core.os.replace", side_effect=OSError("intentional staged-save replacement rejection")):
+            response = core.dispatch({"op":"save", "path":str(saved), "document_id":state["document_id"],
+                                      "expected_revision":core.inspect(doc)["revision"]})
+        assert not response["ok"], response
+        assert saved.read_bytes() == accepted_bytes
+        assert doc.FileName == accepted_filename
+        assert Gui.getDocument(doc.Name).Modified
+        assert doc.UndoCount == undo_before_save
+        report["failed_save_error"] = response["error"]
+        stage("failed_staged_replace_preserves_file_modified_flag_and_history")
+        dispatch("save", path=str(saved))
+        assert not Gui.getDocument(doc.Name).Modified
+        assert doc.UndoCount == undo_before_save
+        stage("second_staged_save_clears_modified_and_preserves_history")
+        App.closeDocument(doc.Name)
+        state = dispatch("open", path=str(saved))
+        doc = core.documents[state["document_id"]]
+        assert not Gui.getDocument(doc.Name).Modified
+        assert doc.Profile.Label == "Unsaved sketch label"
+        stage("open_rebuild_and_fresh_session_metadata_leave_saved_tab_clean")
+        dispatch("pad", id="GuardPad", profile="Profile", length=6)
+        Gui.activateWorkbench("PartDesignWorkbench")
+        Gui.getDocument(doc.Name).setEdit("GuardPad")
+        edit = Gui.getDocument(doc.Name).getInEdit()
+        assert edit and edit.Object.TypeId == "PartDesign::Pad"
+        stage("native_solid_feature_task_is_in_graphical_edit")
+        existing_documents = set(App.listDocuments())
+        revision = core.inspect(doc)["revision"]
+        guards = []
+        for request in [{"op":"new", "name":"Blocked during graphical feature edit"},
+                        {"op":"open", "path":str(saved)},
+                        {"op":"rename_feature", "feature":"Body", "name":"Blocked rename",
+                         "document_id":state["document_id"], "expected_revision":revision}]:
+            response = core.dispatch(request)
+            assert not response["ok"] and response["error"]["code"] == "sketch_edit_active", response
+            assert "graphical editing" in response["error"]["message"], response
+            assert set(App.listDocuments()) == existing_documents
+            assert core.inspect(doc)["revision"] == revision
+            guards.append({"op":request["op"], "error":response["error"], "documents_preserved":True,
+                           "revision_preserved":True})
+        report["native_feature_edit_guards"] = guards
+        Gui.getDocument(doc.Name).resetEdit()
+        stage("graphical_feature_edit_closed_after_guard_checks")
+        report["passed"] = True
+    except Exception:
+        report["exception"] = traceback.format_exc()
+    finally:
+        REPORT.write_text(json.dumps(report,indent=2),encoding="utf-8")
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.getDocument(name).setClosable(True)
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+QtCore.QTimer.singleShot(500, run)

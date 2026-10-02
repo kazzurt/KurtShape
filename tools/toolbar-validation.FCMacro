@@ -1,0 +1,473 @@
+"""Bounded native toolbar smoke audit in a hidden, isolated KurtShape shell."""
+import os, sys, json, traceback, math
+from pathlib import Path
+sys.dont_write_bytecode = True
+ROOT = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(ROOT/'src'))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtWidgets, QtTest
+from kurtshape.core import native_intent
+from kurtshape import ui
+
+class NativeAuditTransport:
+    """No socket or bridge: native model tools do not use assistant transport."""
+    def __init__(self, *args): pass
+    def tick(self): return False
+    def close(self): pass
+
+ui.Bridge = NativeAuditTransport
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+MODE = os.environ.get('KURTSHAPE_TOOLBAR_MODE', 'toolbar')
+AUDIT_TOOLS = set(os.environ.get('KURTSHAPE_AUDIT_TOOLS','').split(','))-{''}
+AUDIT_MODE = os.environ.get('KURTSHAPE_AUDIT_MODE','both')
+output = ROOT/'validation'/('appearance-pass' if MODE in {'catalog', 'appearance'} else 'toolbar-pass')
+output.mkdir(parents=True, exist_ok=True)
+report = {'passed': False, 'version': App.Version(), 'method': 'Actual KurtShape toolbar buttons and native PartDesign Tasks; assistant transport excluded.', 'cases': [], 'native_warnings': []}
+panel = None if MODE == 'catalog' else ui.start()
+
+def wait(ms=200):
+    QtTest.QTest.qWait(ms)
+
+def dismiss_warning():
+    if MODE == 'appearance':
+        modal = QtWidgets.QApplication.activeModalWidget()
+        (output/'model-tools-live-widgets.json').write_text(json.dumps({
+            'active_modal':None if modal is None else {'class':modal.metaObject().className(),'title':modal.windowTitle()},
+            'widgets':[{'class':w.metaObject().className(),'title':w.windowTitle(),'modal':w.isModal() if hasattr(w,'isModal') else None} for w in QtWidgets.QApplication.topLevelWidgets() if w.isVisible()],
+            'active_dialog':bool(Gui.Control.activeDialog())},indent=2,default=str))
+    for widget in QtWidgets.QApplication.topLevelWidgets():
+        if isinstance(widget, QtWidgets.QMessageBox) and widget.isVisible():
+            report['native_warnings'].append({'title': widget.windowTitle(), 'text': widget.text(), 'detail': widget.detailedText()})
+            widget.reject()
+        elif MODE == 'appearance' and isinstance(widget, QtWidgets.QDialog) and widget.isVisible() and widget.isModal():
+            report['native_warnings'].append({'title':widget.windowTitle(), 'class':widget.metaObject().className(),
+                                              'text':'Unexpected native modal selection prompt dismissed to keep the audit bounded.'})
+            widget.reject()
+
+watchdog = QtCore.QTimer(main)
+watchdog.timeout.connect(dismiss_warning)
+watchdog.start(150)
+
+def operation(op, **args):
+    result = panel.operation(op, **args)
+    assert result, op + ': ' + panel.message.text()
+    return result
+
+def toolbar_click(name):
+    action = next(action for action in panel.model_bar.actions() if action.text() == name)
+    button = panel.model_bar.widgetForAction(action)
+    assert action.isEnabled() and button.isEnabled(), name + ' disabled'
+    QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
+    wait(450)
+
+def task_dock():
+    return main.findChild(QtWidgets.QDockWidget, 'Tasks')
+
+def dialog_button(role):
+    dock = task_dock()
+    for box in dock.findChildren(QtWidgets.QDialogButtonBox) if dock is not None else []:
+        button = box.button(role)
+        if button is not None and button.isVisible():
+            return button
+    raise AssertionError('Native task button not found: '+str(role))
+
+def cancel_dialog():
+    if Gui.Control.activeDialog():
+        try:
+            button=dialog_button(QtWidgets.QDialogButtonBox.Cancel)
+        except AssertionError:
+            button=dialog_button(QtWidgets.QDialogButtonBox.Close)
+        QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
+        wait(500)
+    assert not Gui.Control.activeDialog(), 'Native task dialog remains after Cancel'
+    assert not Gui.activeDocument().getInEdit(), 'Native object remains in edit after Cancel'
+
+def fixture(name, revolve=False):
+    operation('new', name=name)
+    operation('sketch_rectangle', id='Profile', width=5 if revolve else 30,
+              height=10 if revolve else 20, x=5 if revolve else 0, y=0, plane='XY')
+    if not revolve:
+        operation('pad', id='Pad', profile='Profile', length=10)
+    panel.refresh()
+    Gui.Selection.clearSelection()
+    panel.select_feature('Profile' if revolve else 'Pad')
+    return panel.document()
+
+def open_native(name, doc, edge=False):
+    Gui.Selection.clearSelection()
+    chosen = 'Profile' if name == 'Revolve' else 'Pad'
+    panel.select_feature(chosen)
+    Gui.Selection.addSelection(doc.Name, chosen, 'Edge1' if edge else '')
+    toolbar_click(name)
+    assert Gui.Control.activeDialog(), name + ': no native task dialog · '+panel.message.text()
+    dock = task_dock()
+    assert dock is not None and dock.isVisible(), name + ': native Tasks hidden'
+    assert panel.isVisible() and panel.features.isVisible(), name + ': custom history hidden'
+    return {'editing': Gui.activeDocument().getInEdit().Object.TypeId if Gui.activeDocument().getInEdit() else None,
+            'task_widgets': [{'class': w.metaObject().className(), 'name': w.objectName()} for w in dock.findChildren(QtWidgets.QWidget) if w.objectName()],
+            'custom_controls': {**{action.text(): action.isEnabled() for action in panel.document_bar.actions() if action.text() in {'New','Open','Save','Undo','Redo'}},
+                                'parameter_value': panel.value.isEnabled(), 'apply_parameter': panel.apply.isEnabled(), 'parameter_editor_visible': panel.editor.isVisible()},
+            'cancel_enabled': dialog_button(QtWidgets.QDialogButtonBox.Cancel).isEnabled(),
+            'accept_enabled': dialog_button(QtWidgets.QDialogButtonBox.Ok).isEnabled()}
+
+def check_case(name, accept=False):
+    case = {'tool': name, 'mode': 'accept' if accept else 'cancel', 'passed': False}
+    report['cases'].append(case)
+    doc = fixture('Toolbar '+name+(' accept' if accept else ' cancel'), name == 'Revolve')
+    case['document'] = doc.Name
+    before = native_intent(doc)
+    before_group = [obj.Name for obj in doc.Body.Group]
+    before_shape = doc.Body.Shape.exportBrepToString()
+    try:
+        case['dialog'] = open_native(name, doc, name in {'Fillet','Chamfer'})
+        if accept:
+            QtTest.QTest.mouseClick(dialog_button(QtWidgets.QDialogButtonBox.Ok), QtCore.Qt.LeftButton)
+            wait(600)
+            assert not Gui.Control.activeDialog(), name + ': accept kept dialog open'
+            doc.recompute()
+            panel.tick()
+            panel.refresh()
+            shape = doc.Body.Shape
+            tip = doc.Body.Tip
+            case['accepted'] = {'type': tip.TypeId, 'name': tip.Name, 'volume': shape.Volume,
+                                'valid': shape.isValid(), 'solid_count': len(shape.Solids),
+                                'history_present': tip.Name in panel.items, 'build_status': panel.state['build_status']}
+            assert shape.isValid() and len(shape.Solids) == 1 and shape.Volume > 0, name + ': invalid accepted shape'
+            assert tip.Name in panel.items and panel.isVisible(), name + ': accepted feature missing in custom history'
+            assert panel.state['build_status'] == 'valid', name + ': controller did not accept valid native feature'
+            assert tip.TypeId == {'Fillet':'PartDesign::Fillet','Chamfer':'PartDesign::Chamfer','Revolve':'PartDesign::Revolution'}[name]
+            if name == 'Revolve':
+                assert abs(shape.Volume-math.pi*75*10) < 0.01, 'Revolve volume differs from closed off-axis profile'
+            else:
+                assert shape.Volume < 6000, name + ': dress-up did not remove material'
+            doc.saveAs(str(output/(name.lower()+'-accepted.FCStd')))
+        else:
+            cancel_dialog()
+            panel.tick()
+            panel.refresh()
+            case['cancel_restoration'] = {'intent_equal': before == native_intent(doc),
+                                          'group_equal': before_group == [obj.Name for obj in doc.Body.Group],
+                                          'shape_equal': before_shape == doc.Body.Shape.exportBrepToString(),
+                                          'history_visible': panel.isVisible() and panel.features.isVisible()}
+            assert all(case['cancel_restoration'].values()), name + ': cancellation changed original model/history'
+        case['passed'] = True
+    except Exception:
+        case['error'] = traceback.format_exc()
+        try:
+            cancel_dialog()
+        except Exception:
+            case['cleanup_error'] = traceback.format_exc()
+    finally:
+        if App.listDocuments().get(doc.Name) is doc:
+            App.closeDocument(doc.Name)
+
+def catalog_click(key, grouped=False):
+    """Exercise actual custom QAction/menu wiring, not Gui.runCommand directly."""
+    from kurtshape.feature_tools import BY_KEY
+    tool = BY_KEY[key]
+    if not grouped:
+        label = 'Pattern' if key == 'linear_pattern' else tool.label
+        toolbar_click(label)
+        return {'path': 'Part Studio / '+label, 'command': tool.command}
+    labels = {'Add material':'Build', 'Remove material':'Cut', 'Modify':'Modify',
+              'Pattern':'Patterns', 'Reference':'Reference', 'Part tools':'Shape tools'}
+    menu = panel.tool_menus[labels[tool.category]]
+    menu.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+    action = next(action for action in menu.actions() if action.data() == tool.command)
+    assert action.isEnabled(), tool.label+' menu action disabled'
+    menu.popup(main.mapToGlobal(QtCore.QPoint(250, 130)))
+    wait(100)
+    rect = menu.actionGeometry(action)
+    assert not rect.isEmpty(), tool.label+' menu item not laid out'
+    QtTest.QTest.mouseClick(menu, QtCore.Qt.LeftButton, pos=rect.center())
+    wait(450)
+    return {'path': 'Part Studio / '+labels[tool.category]+' / '+tool.label, 'command': tool.command}
+
+def top_face(doc):
+    return 'Face'+str(max(range(len(doc.Pad.Shape.Faces)), key=lambda i: doc.Pad.Shape.Faces[i].CenterOfMass.z)+1)
+
+def catalog_fixture(key):
+    doc = fixture('Expanded '+key, revolve=key in {'loft','sweep','part_extrude'})
+    choices = []
+    if key in {'loft','part_loft'}:
+        if key == 'part_loft':
+            operation('new', name='Expanded '+key)
+            operation('sketch_rectangle', id='Profile', width=10, height=10, x=0, y=0, plane='XY')
+            doc = panel.document()
+        operation('sketch_rectangle', id='Section', width=5, height=10, x=5, y=0, plane='XY')
+        doc.Section.AttachmentOffset = App.Placement(App.Vector(0,0,15), App.Rotation())
+        doc.recompute()
+        choices = [('Profile',''), ('Section','')]
+    elif key == 'sweep':
+        operation('create_sketch', id='Path', plane='XZ')
+        operation('add_line', sketch='Path', x1=5, y1=0, x2=5, y2=20)
+        choices = [('Profile',''), ('Path','Edge1')]
+    elif key == 'hole':
+        operation('sketch_circle', id='HolePositions', x=10, y=10, diameter=5,
+                  support={'feature':'Pad','subelement':top_face(doc)})
+        choices = [('HolePositions','')]
+    elif key == 'groove':
+        operation('sketch_rectangle', id='GrooveProfile', width=5, height=10, x=5, y=0, plane='XY')
+        choices = [('GrooveProfile','')]
+    elif key in {'shell','part_thickness'}:
+        choices = [('Pad',top_face(doc))]
+    elif key == 'draft':
+        side = next(i+1 for i, face in enumerate(doc.Pad.Shape.Faces) if abs(face.CenterOfMass.x-30)<0.01)
+        choices = [('Pad','Face'+str(side))]
+    elif key == 'datum_line':
+        choices = [('Pad','Edge1')]
+    elif key == 'datum_point':
+        choices = [('Pad','Vertex1')]
+    elif key == 'datum_plane':
+        choices = [('Pad',top_face(doc))]
+    elif key == 'boolean':
+        body = doc.addObject('PartDesign::Body','ToolBody')
+        box = body.newObject('PartDesign::AdditiveBox','ToolBox')
+        box.Length = 10; box.Width = 10; box.Height = 10
+        box.Placement.Base = App.Vector(5,5,5)
+        doc.recompute()
+        Gui.activeDocument().activeView().setAnimationEnabled(False) if hasattr(Gui.activeDocument().activeView(),'setAnimationEnabled') else None
+        choices = [('Body',''), ('ToolBody','')]
+    elif key == 'part_extrude':
+        choices = [('Profile','')]
+    else:
+        choices = [('Pad','')]
+    panel.refresh()
+    Gui.Selection.clearSelection()
+    for name, sub in choices:
+        Gui.Selection.addSelection(doc.Name, name, sub)
+    return doc
+
+def catalog_case(key, grouped=False, accept=False):
+    case = {'tool': key, 'mode':'accept' if accept else 'cancel', 'passed':False}
+    report['cases'].append(case)
+    (output/'model-tools-progress.json').write_text(json.dumps(report,indent=2,default=str))
+    doc = None
+    try:
+        doc = catalog_fixture(key)
+        case['stage']='fixture_ready'
+        (output/'model-tools-progress.json').write_text(json.dumps(report,indent=2,default=str))
+        before = native_intent(doc)
+        before_group = [obj.Name for obj in doc.Body.Group]
+        before_shape = doc.Body.Shape.exportBrepToString()
+        case['action'] = catalog_click(key, grouped)
+        case['stage']='command_returned'
+        case['workbench'] = Gui.activeWorkbench().name()
+        assert Gui.Control.activeDialog(), key+': no native Tasks · '+panel.message.text()
+        dock = task_dock()
+        assert dock is not None and dock.isVisible(), key+': native Tasks hidden'
+        case['editing'] = Gui.activeDocument().getInEdit().Object.TypeId if Gui.activeDocument().getInEdit() else None
+        case['task_widgets'] = sorted(set(w.metaObject().className()+':'+w.objectName() for w in dock.findChildren(QtWidgets.QWidget) if w.objectName()))
+        case['task_buttons']=[{'text':button.text(),'visible':button.isVisible(),'enabled':button.isEnabled(),
+                               'standard':str(box.standardButton(button)),'role':str(box.buttonRole(button))}
+                              for box in dock.findChildren(QtWidgets.QDialogButtonBox) for button in box.buttons()]
+        case['history_visible'] = panel.isVisible() and panel.features.isVisible()
+        assert case['history_visible'], key+': custom history hidden'
+        if key == 'part_extrude':
+            inspected = panel.core.dispatch({'op':'inspect','document_id':doc.KurtShapeProject.DocumentId})
+            assert inspected['ok'], 'Core inspect failed during Part native Tasks'
+            identity={'document_id':inspected['result']['document_id'],'expected_revision':inspected['result']['revision']}
+            save_probe=output/'part-task-direct-core-save-probe.FCStd'
+            requests=[{'op':'new','name':'Part native dialog guard probe'},
+                      {'op':'open','path':str(output/'draft-accepted.FCStd')},
+                      {'op':'set_parameter',**identity,'feature':'Profile','parameter':'Width','value':6},
+                      {'op':'save',**identity,'path':str(save_probe)}]
+            case['direct_core_task_guards']=[]
+            for request in requests:
+                pending_documents=set(App.listDocuments())
+                pending_intent=native_intent(doc)
+                pending_shape=doc.Body.Shape.exportBrepToString()
+                response=panel.core.dispatch(request)
+                checks=[{'name':request['op']+'_rejects_with_sketch_edit_active','passed':not response['ok'] and response.get('error',{}).get('code')=='sketch_edit_active'},
+                        {'name':request['op']+'_creates_no_document','passed':pending_documents==set(App.listDocuments())},
+                        {'name':request['op']+'_creates_no_file','passed':not save_probe.exists()},
+                        {'name':request['op']+'_preserves_native_intent','passed':pending_intent==native_intent(doc)},
+                        {'name':request['op']+'_preserves_brep','passed':pending_shape==doc.Body.Shape.exportBrepToString()},
+                        {'name':request['op']+'_keeps_native_dialog_open','passed':bool(Gui.Control.activeDialog())}]
+                case['direct_core_task_guards'].append({'request':request,'response':response,'checks':checks,'passed':all(check['passed'] for check in checks)})
+                (output/'model-tools-progress.json').write_text(json.dumps(report,indent=2,default=str))
+                assert all(check['passed'] for check in checks), 'Direct-core '+request['op']+' guard failed during Part native Tasks'
+        if accept:
+            if key == 'part_extrude':
+                solid_box=task_dock().findChild(QtWidgets.QCheckBox,'chkSolid')
+                assert solid_box is not None, 'Native Part extrusion solid option missing'
+                if not solid_box.isChecked():
+                    QtTest.QTest.mouseClick(solid_box,QtCore.Qt.LeftButton); wait(100)
+            tip = doc.Body.Tip
+            case['preview'] = ({'tip':tip.Name, 'type':tip.TypeId, 'valid':not tip.Shape.isNull() and tip.Shape.isValid(),
+                                'solid_count':len(tip.Shape.Solids), 'volume':tip.Shape.Volume}
+                               if tip is not None else {'tip':None,'note':'Standalone Part result is created by native OK; no Body Tip preview.'})
+            try:
+                accept_button=dialog_button(QtWidgets.QDialogButtonBox.Ok)
+            except AssertionError:
+                accept_button=dialog_button(QtWidgets.QDialogButtonBox.Apply)
+            QtTest.QTest.mouseClick(accept_button, QtCore.Qt.LeftButton)
+            wait(600)
+            if key=='part_extrude' and Gui.Control.activeDialog():
+                QtTest.QTest.mouseClick(dialog_button(QtWidgets.QDialogButtonBox.Close),QtCore.Qt.LeftButton)
+                wait(300)
+            assert not Gui.Control.activeDialog(), key+': native accept kept dialog open'
+            doc.recompute(); panel.tick(); panel.refresh()
+            tip = next((obj for obj in doc.Objects if obj.TypeId=='Part::Extrusion'), None) if key=='part_extrude' else doc.Body.Tip
+            assert tip is not None, key+': accepted native feature missing'
+            shape = tip.Shape if key=='part_extrude' else doc.Body.Shape
+            case['accepted']={'name':tip.Name,'type':tip.TypeId,'valid':shape.isValid(),
+                              'solid_count':len(shape.Solids),'volume':shape.Volume,
+                              'history_present':tip.Name in panel.items,'build_status':panel.state['build_status']}
+            assert shape.isValid() and len(shape.Solids)==1 and shape.Volume>0, key+': invalid accepted Body'
+            assert tip.Name in panel.items, key+': accepted native feature missing in history'
+            if key!='part_extrude':
+                assert panel.state['build_status']=='valid', key+': accepted native Body build invalid'
+            case['accepted']['file']=str(output/(key+'-accepted.FCStd'))
+            doc.saveAs(case['accepted']['file'])
+        else:
+            cancel_dialog(); panel.tick(); panel.refresh()
+            case['cancel_restoration']={'intent_equal':before==native_intent(doc),
+                                        'group_equal':before_group==[obj.Name for obj in doc.Body.Group],
+                                        'shape_equal':before_shape==doc.Body.Shape.exportBrepToString(),
+                                        'history_visible':panel.isVisible() and panel.features.isVisible()}
+            assert all(case['cancel_restoration'].values()), key+': Cancel changed original model/history'
+        case['passed']=True
+    except Exception:
+        case['error']=traceback.format_exc()
+        try: cancel_dialog()
+        except Exception: case['cleanup_error']=traceback.format_exc()
+    finally:
+        if doc is not None and App.listDocuments().get(doc.Name) is doc:
+            App.closeDocument(doc.Name)
+        (output/'model-tools-progress.json').write_text(json.dumps(report,indent=2,default=str))
+
+def validate():
+    try:
+        if MODE == 'catalog':
+            from kurtshape.feature_tools import ALL_TOOLS, PRIMARY_TOOLS, MODEL_TOOLS, SKETCH_TOOLS, icon_name
+            Gui.activateWorkbench('PartDesignWorkbench')
+            Gui.activateWorkbench('SketcherWorkbench')
+            Gui.activateWorkbench('PartWorkbench')
+            registered = set(Gui.listCommands())
+            tools = []
+            for tool in ALL_TOOLS:
+                item = {'key': tool.key, 'command': tool.command, 'label': tool.label,
+                        'registered': tool.command in registered, 'pixmap': icon_name(tool)}
+                try:
+                    item['info'] = Gui.Command.get(tool.command).getInfo()
+                    item['icon_available'] = not Gui.getIcon(item['pixmap']).isNull()
+                except Exception:
+                    item['error'] = traceback.format_exc()
+                    item['icon_available'] = False
+                tools.append(item)
+            report.update(model_tool_count=len(MODEL_TOOLS), sketch_tool_count=len(SKETCH_TOOLS),
+                          primary_tool_count=len(PRIMARY_TOOLS), tools=tools,
+                          passed=all(item['registered'] and item['icon_available'] for item in tools))
+            return
+        initial = panel.document().Name
+        App.closeDocument(initial)
+        if MODE == 'appearance':
+            selected = AUDIT_TOOLS
+            for key in ['loft','sweep','hole','shell','draft','boolean']:
+                if selected and key not in selected: continue
+                if AUDIT_MODE == 'accept': continue
+                catalog_case(key)
+            for key in ['groove','circular_pattern','multi_transform','datum_plane','datum_line','datum_point','part_extrude','part_loft']:
+                if selected and key not in selected: continue
+                if AUDIT_MODE == 'accept': continue
+                catalog_case(key, grouped=True)
+            for key in ['loft','hole','shell','draft','part_extrude']:
+                if selected and key not in selected: continue
+                if AUDIT_MODE == 'cancel': continue
+                catalog_case(key, grouped=key.startswith('part_'), accept=True)
+            report['case_count']=len(report['cases'])
+            report['passed']=all(case['passed'] for case in report['cases'])
+            return
+        for name in ['Fillet', 'Chamfer', 'Revolve', 'Mirror', 'Pattern']:
+            check_case(name)
+        for name in ['Fillet', 'Chamfer', 'Revolve']:
+            check_case(name, accept=True)
+        # Disposable guard fixture: no accepted fixture or real user document.
+        doc = fixture('Native Tasks guard disposable')
+        before = native_intent(doc)
+        guard = {'dialog': open_native('Fillet', doc, True)}
+        report['native_edit_guard'] = guard
+        controls = guard['dialog']['custom_controls']
+        guard['custom_document_actions_disabled'] = not any(controls[name] for name in ['New','Open','Save','Undo','Redo'])
+        guard['custom_settings_hidden'] = not controls['parameter_editor_visible']
+        before_documents = set(App.listDocuments())
+        guard['start_sketch_result'] = bool(panel.start_sketch())
+        guard['sketch_placement_not_started'] = not panel.pending_sketch
+        guard['custom_extrude_result'] = bool(panel.extrude(False))
+        guard['custom_extrude_not_started'] = panel.task is None
+        guard['second_native_tool_result'] = bool(panel.native_command('PartDesign_Chamfer'))
+        guard['parameter_mutation_result'] = bool(panel.operation('set_parameter', feature='Pad', parameter='Length', value=11))
+        guard['base_parameter_unchanged'] = doc.Pad.Length.Value == 10
+        save_probe = output/'native-task-save-probe.FCStd'
+        guard['save_operation_result'] = bool(panel.operation('save', path=str(save_probe)))
+        guard['save_file_not_created'] = not save_probe.exists()
+        guard['new_operation_result'] = bool(panel.operation('new', name='Native task New guard probe'))
+        guard['created_documents'] = sorted(set(App.listDocuments())-before_documents)
+        guard['original_still_open'] = App.listDocuments().get(doc.Name) is doc
+        # Bypass Panel.operation guards: exercise the authoritative API directly.
+        inspected = panel.core.dispatch({'op': 'inspect', 'document_id': doc.KurtShapeProject.DocumentId})
+        assert inspected['ok'], 'Core inspect failed during native feature task'
+        identity = {'document_id': inspected['result']['document_id'],
+                    'expected_revision': inspected['result']['revision']}
+        direct_save = output/'native-task-direct-core-save-probe.FCStd'
+        requests = [{'op': 'new', 'name': 'Direct core native edit New probe'},
+                    {'op': 'open', 'path': str(output/'fillet-accepted.FCStd')},
+                    {'op': 'set_parameter', **identity, 'feature': 'Pad', 'parameter': 'Length', 'value': 11},
+                    {'op': 'save', **identity, 'path': str(direct_save)}]
+        direct_cases = []
+        guard['direct_core_cases'] = direct_cases
+        for request in requests:
+            pending_intent = native_intent(doc)
+            pending_brep = doc.Body.Shape.exportBrepToString()
+            pending_documents = set(App.listDocuments())
+            response = panel.core.dispatch(request)
+            checks = [{'name': request['op']+'_rejects_with_sketch_edit_active', 'passed': not response['ok'] and response.get('error', {}).get('code') == 'sketch_edit_active'},
+                      {'name': request['op']+'_creates_no_document', 'passed': pending_documents == set(App.listDocuments())},
+                      {'name': request['op']+'_creates_no_file', 'passed': not direct_save.exists()},
+                      {'name': request['op']+'_preserves_native_intent', 'passed': pending_intent == native_intent(doc)},
+                      {'name': request['op']+'_preserves_brep', 'passed': pending_brep == doc.Body.Shape.exportBrepToString()},
+                      {'name': request['op']+'_keeps_native_dialog_open', 'passed': bool(Gui.Control.activeDialog())}]
+            direct_cases.append({'request': request, 'response': response, 'checks': checks,
+                                 'passed': all(check['passed'] for check in checks)})
+        App.setActiveDocument(doc.Name)
+        Gui.ActiveDocument = Gui.getDocument(doc.Name)
+        cancel_dialog()
+        guard['original_intent_restored'] = before == native_intent(doc)
+        report['primary_toolbar_passed'] = all(case['passed'] for case in report['cases'])
+        guard['checks'] = ([{'name': key, 'passed': not guard[key]} for key in
+                            ['start_sketch_result','custom_extrude_result','second_native_tool_result','parameter_mutation_result','save_operation_result','new_operation_result']] +
+                           [{'name': key, 'passed': bool(guard[key])} for key in
+                            ['custom_document_actions_disabled','custom_settings_hidden','sketch_placement_not_started','custom_extrude_not_started','base_parameter_unchanged','save_file_not_created','original_still_open','original_intent_restored']] +
+                           [{'name': 'no_document_created_during_native_task', 'passed': not guard['created_documents']}])
+        report['ui_guard_check_count'] = len(guard['checks'])
+        for case in direct_cases:
+            guard['checks'].extend(case['checks'])
+        report['direct_core_guard_check_count'] = sum(len(case['checks']) for case in direct_cases)
+        guard['passed'] = all(check['passed'] for check in guard['checks'])
+        report['case_count'] = len(report['cases'])
+        report['guard_check_count'] = len(guard['checks'])
+        report['passed'] = report['primary_toolbar_passed'] and guard['passed']
+    except Exception:
+        report['error'] = traceback.format_exc()
+    finally:
+        if panel is not None:
+            panel.timer.stop()
+        watchdog.stop()
+        filename = 'feature-catalog-probe.json' if MODE == 'catalog' else 'model-tools-'+('_'.join(sorted(AUDIT_TOOLS)) if AUDIT_TOOLS else 'test-result')+('' if AUDIT_MODE=='both' else '_'+AUDIT_MODE)+'.json' if MODE == 'appearance' else 'toolbar-test-result.json'
+        (output/filename).write_text(json.dumps(report, indent=2, default=str))
+        try:
+            cancel_dialog()
+        except Exception:
+            pass
+        for name in list(App.listDocuments()):
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(250, main.close)
+
+QtCore.QTimer.singleShot(1000, validate)

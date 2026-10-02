@@ -1,0 +1,255 @@
+"""Hidden isolated GUI integration checks; preserves the user's running app."""
+import os, sys, json, traceback, time, math
+from pathlib import Path
+sys.dont_write_bytecode = True
+root = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(root/'src'))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440,920)
+main.show()
+report = {'passed':False,'checks':[], 'method':'Actual isolated Qt window, native viewport, keyboard and mouse events; user hands-on acceptance remains pending'}
+output = root/'validation'/'interface-pass'
+output.mkdir(parents=True, exist_ok=True)
+try:
+    from kurtshape.ui import start
+    panel = start()
+except Exception:
+    report['error'] = traceback.format_exc()
+    (output/'gui-test-result.json').write_text(json.dumps(report,indent=2,default=str))
+    QtCore.QTimer.singleShot(100, QtGui.QApplication.instance().quit)
+
+def wait(ms=100):
+    QtTest.QTest.qWait(ms)
+
+def viewport():
+    area=next(a for a in main.findChildren(QtWidgets.QMdiArea) if a.activeSubWindow())
+    return next(w for w in area.activeSubWindow().findChildren(QtWidgets.QWidget) if w.metaObject().className() == 'QOpenGLWidget' and w.parentWidget().metaObject().className() == 'Gui::View3DInventorViewer')
+
+def key(code, modifiers=QtCore.Qt.NoModifier):
+    gl = viewport()
+    gl.setFocus()
+    QtTest.QTest.keyClick(gl, code, modifiers)
+    wait()
+
+def check(name, condition=True):
+    assert condition, name + ' · ' + panel.message.text()
+    report['checks'].append(name)
+
+def tree_click(identifier):
+    item = panel.items[identifier]
+    panel.features.scrollToItem(item)
+    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier,
+                           panel.features.visualItemRect(item).center())
+    wait(200)
+
+def require(result):
+    assert result, panel.message.text()
+    return result
+
+def world_click(vector):
+    gl=viewport()
+    pixel=Gui.activeDocument().activeView().getPointOnViewport(vector)
+    ratio=gl.devicePixelRatioF()
+    point=QtCore.QPoint(int(pixel[0]/ratio),gl.height()-1-int(pixel[1]/ratio))
+    event=QtGui.QMouseEvent(QtCore.QEvent.MouseMove,QtCore.QPointF(point),QtCore.QPointF(gl.mapToGlobal(point)),QtCore.Qt.NoButton,QtCore.Qt.NoButton,QtCore.Qt.NoModifier)
+    QtGui.QApplication.sendEvent(gl,event);wait(100)
+    QtTest.QTest.mouseClick(gl,QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,point);wait(150)
+
+def bridge_call(request):
+    import concurrent.futures
+    sys.path.insert(0,str(root/'tools'))
+    from assistant_client import send
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future=pool.submit(send,request,root/'runtime'/'interface-validation'/'assistant-session.json')
+        for i in range(100):
+            if future.done():
+                return future.result()
+            wait(50)
+        raise AssertionError('Live bridge did not complete in five seconds')
+
+def validate():
+    began=time.perf_counter()
+    try:
+        wait(150)
+        check('Onshape shell: left history and parts, document/feature toolbar, native viewport',panel.features.isVisible() and panel.document_bar.isVisible() and panel.model_bar.isVisible())
+        view=Gui.activeDocument().activeView()
+        check('Exact native SolidWorks navigation selected',view.getNavigationType()=='Gui::SolidWorksNavigationStyle')
+        Gui.Selection.clearSelection()
+        key(QtCore.Qt.Key_S,QtCore.Qt.ShiftModifier)
+        check('Actual Shift+S starts one-click plane selection',panel.pending_sketch)
+        tree_click('plane:XY')
+        sketch=panel.active_sketch()
+        check('One tree-plane click creates native attached sketch and enters editing',bool(sketch) and not panel.pending_sketch)
+        name=sketch.Name
+        check('History remains visible in sketch context',panel.features.isVisible() and panel.sketch_bar.isVisible())
+        require(panel.operation('add_rectangle',sketch=name,x=0,y=0,width=60,height=40))
+        count=sketch.GeometryCount
+        key(QtCore.Qt.Key_Z,QtCore.Qt.ControlModifier)
+        check('Actual Ctrl+Z undoes geometry inside managed native sketch',sketch.GeometryCount==0 and bool(panel.active_sketch()))
+        key(QtCore.Qt.Key_Y,QtCore.Qt.ControlModifier)
+        check('Actual Ctrl+Y restores geometry inside managed native sketch',sketch.GeometryCount==count)
+        before=view.getCameraOrientation().Q
+        key(QtCore.Qt.Key_7,QtCore.Qt.ShiftModifier)
+        check('Isometric shortcut keeps sketch editing active',bool(panel.active_sketch()) and view.getCameraOrientation().Q != before)
+        main.grab().save(str(output/'sketch-in-3d.png'))
+        key(QtCore.Qt.Key_N)
+        check('N returns normal without leaving sketch',bool(panel.active_sketch()))
+        require(panel.finish_sketch())
+        check('Finish commits sketch transaction',not panel.active_sketch() and not panel.state['active_sketch_edit'])
+        panel.select_feature(name)
+        key(QtCore.Qt.Key_E,QtCore.Qt.ShiftModifier)
+        check('Shift+E opens contextual extrude settings',panel.task=='pad')
+        panel.depth.setValue(6)
+        QtTest.QTest.mouseClick(panel.confirm,QtCore.Qt.LeftButton)
+        wait()
+        check('Confirm creates valid native solid',panel.state['build_status']=='valid' and len(App.activeDocument().Body.Shape.Solids)==1)
+        pad=App.activeDocument().Body.Tip
+        panel.select_feature(name)
+        panel.parameter.setCurrentIndex(panel.parameter.findText('Width'))
+        panel.value.setValue(72)
+        panel.apply_parameter()
+        check('Dimension panel changes native width',abs(pad.Shape.BoundBox.XLength-72)<1e-6)
+        key(QtCore.Qt.Key_Z,QtCore.Qt.ControlModifier)
+        check('Document undo restores width',abs(pad.Shape.BoundBox.XLength-60)<1e-6)
+        # A real viewport face click, after Shift+S, enters an attached sketch.
+        view.viewTop();view.fitAll();wait(150)
+        Gui.Selection.clearSelection()
+        key(QtCore.Qt.Key_S,QtCore.Qt.ShiftModifier)
+        gl=viewport()
+        pixel=view.getPointOnViewport(App.Vector(30,20,6))
+        ratio=gl.devicePixelRatioF()
+        position=QtCore.QPoint(int(pixel[0]/ratio),gl.height()-1-int(pixel[1]/ratio))
+        hit=view.getObjectInfo((int(pixel[0]),int(pixel[1])))
+        report['face_click']={'pixel':list(pixel),'ratio':ratio,'qt_position':[position.x(),position.y()],
+                              'viewport':[gl.width(),gl.height()],'hit':{k:(v.Name if hasattr(v,'Name') else v) for k,v in (hit or {}).items()}}
+        event=QtGui.QMouseEvent(QtCore.QEvent.MouseMove,QtCore.QPointF(position),QtCore.QPointF(gl.mapToGlobal(position)),QtCore.Qt.NoButton,QtCore.Qt.NoButton,QtCore.Qt.NoModifier)
+        QtGui.QApplication.sendEvent(gl,event);wait(120)
+        QtTest.QTest.mouseClick(gl,QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,position)
+        wait(400)
+        face_sketch=panel.active_sketch()
+        report['face_selection']=[{'object':s.Object.Name,'subelements':list(s.SubElementNames)} for s in Gui.Selection.getSelectionEx()]
+        check('One real viewport surface click begins face-attached sketch',bool(face_sketch))
+        check('Sketch uses retained face support',bool(face_sketch.AttachmentSupport) and any(e.startswith('Face') for o,es in face_sketch.AttachmentSupport for e in es))
+        face_name=face_sketch.Name
+        local=face_sketch.getGlobalPlacement().inverse().multVec(App.Vector(30,20,6))
+        require(panel.operation('add_circle',sketch=face_name,x=local.x,y=local.y,diameter=8))
+        panel.isometric();wait()
+        main.grab().save(str(output/'face-sketch-in-3d.png'))
+        require(panel.finish_sketch())
+        # Cancel an edit must restore accepted geometry and keep the lease closed.
+        panel.select_feature(face_name)
+        require(panel.edit_sketch())
+        initial=face_sketch.GeometryCount
+        require(panel.operation('add_line',sketch=face_name,x1=0,y1=0,x2=2,y2=2,construction=True))
+        QtTest.QTest.mouseClick(panel.sketch_bar.widgetForAction(panel.sketch_cancel_action),QtCore.Qt.LeftButton);wait()
+        check('Cancel button rolls back whole native sketch edit',not panel.active_sketch() and face_sketch.GeometryCount==initial and not panel.state['active_sketch_edit'])
+        # Use profile-local centered circle, top face inward blind removal.
+        panel.select_feature(face_name)
+        panel.extrude(True)
+        panel.end_type.setCurrentIndex(0)
+        panel.depth.setValue(2)
+        before_volume=App.activeDocument().Body.Shape.Volume
+        require(panel.accept_task())
+        check('Blind face-pocket respects depth and automatic inward direction',abs((before_volume-App.activeDocument().Body.Shape.Volume)-math.pi*16*2)<1e-4)
+        pocket=App.activeDocument().Body.Tip
+        pocket.ViewObject.Visibility=False
+        require(panel.operation('rebuild'))
+        check('Rebuild preserves explicit visibility',not pocket.ViewObject.Visibility)
+        pocket.ViewObject.Visibility=True
+        panel.select_feature(pocket.Name)
+        Gui.Selection.clearSelection();Gui.Selection.addSelection(pad,'Face6')
+        before_selection=[(s.Object.Name,list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()]
+        panel.refresh()
+        check('History refresh preserves selected surface',before_selection==[(s.Object.Name,list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()])
+        path=output/'interface-plate.FCStd'
+        require(panel.operation('save',path=str(path)))
+        require(panel.operation('export',path=str(output/'interface-plate.step')))
+        require(panel.operation('export',path=str(output/'interface-plate.stl')))
+        # Close/open this process's own document; no live-user window is touched.
+        docname=App.activeDocument().Name
+        App.closeDocument(docname);panel.tick()
+        check('Native tab close clears stale UI state',panel.state is None)
+        require(panel.operation('open',path=str(path)))
+        check('Saved native features rebuild after close and reopen',panel.state['build_status']=='valid')
+        check('Successful save/reopen clears native modified indicator',not Gui.activeDocument().Modified)
+        plate_doc=App.activeDocument().Name
+        baseline=panel.state['revision']
+        change={'op':'set_parameter','document_id':panel.state['document_id'],'expected_revision':baseline,'feature':'Pad','parameter':'Length','value':8}
+        response=bridge_call(change)
+        check('Actual loopback assistant edits the displayed native document',response['ok'] and abs(App.activeDocument().Pad.Length.Value-8)<1e-6)
+        replay=bridge_call(change)
+        check('Live assistant stale replay is rejected',not replay['ok'] and replay['error']['code']=='stale_revision')
+        key(QtCore.Qt.Key_Z,QtCore.Qt.ControlModifier)
+        check('GUI undo restores actual assistant change',abs(App.activeDocument().Pad.Length.Value-6)<1e-6)
+        # Verify native geometry tools from the official shortcuts, not just typed fixtures.
+        panel.new();Gui.Selection.clearSelection()
+        report['new_document']={'active':App.activeDocument().Name,'state_document':panel.core.documents[panel.state['document_id']].Name}
+        key(QtCore.Qt.Key_S,QtCore.Qt.ShiftModifier);tree_click('plane:XZ')
+        drawing=panel.active_sketch()
+        require(drawing)
+        from kurtshape.navigation import normal_to_sketch
+        normal_to_sketch(drawing)
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(70)
+        wait(100)
+        key(QtCore.Qt.Key_G)
+        for point in [App.Vector(0,0,0),App.Vector(20,12,0)]:
+            world_click(drawing.getGlobalPlacement().multVec(point))
+        key(QtCore.Qt.Key_Escape)
+        report['native_rectangle']={'geometry_count':drawing.GeometryCount,'active_document':App.activeDocument().Name,'sketch_document':drawing.Document.Name,'in_edit':bool(panel.active_sketch())}
+        check('G and two real clicks draw native rectangle on Front plane',drawing.GeometryCount==4 and bool(panel.active_sketch()))
+        key(QtCore.Qt.Key_C)
+        for point in [App.Vector(8,6,0),App.Vector(10,6,0)]:
+            world_click(drawing.getGlobalPlacement().multVec(point))
+        key(QtCore.Qt.Key_Escape)
+        check('C and two real clicks draw native circle on Front plane',drawing.GeometryCount==5 and bool(panel.active_sketch()))
+        key(QtCore.Qt.Key_S,QtCore.Qt.ShiftModifier)
+        world_click(drawing.getGlobalPlacement().multVec(App.Vector(3,3,0)))
+        key(QtCore.Qt.Key_Escape)
+        check('Shift+S means native Point inside active sketch',drawing.GeometryCount==6 and bool(panel.active_sketch()))
+        key(QtCore.Qt.Key_Z,QtCore.Qt.ControlModifier)
+        check('Managed undo stops tool and reverses native point edit',drawing.GeometryCount==5 and bool(panel.active_sketch()))
+        # Native task Close must finalize the lease as well as the native editor.
+        Gui.activeDocument().resetEdit();panel.tick()
+        check('Native task Close finalizes managed edit lease',not panel.state['active_sketch_edit'])
+        drawing_name=drawing.Name
+        panel.select_feature(drawing_name)
+        require(panel.edit_sketch())
+        key(QtCore.Qt.Key_E,QtCore.Qt.ShiftModifier)
+        check('Shift+E from active sketch finishes it and opens Extrude',not panel.active_sketch() and panel.task=='pad')
+        panel.depth.lineEdit().setText('4')
+        QtTest.QTest.keyClick(panel.depth.lineEdit(),QtCore.Qt.Key_Return,QtCore.Qt.ShiftModifier);wait(180)
+        check('Shift+Enter in depth field accepts and repeats extrusion',panel.state['build_status']=='valid' and panel.task=='pad' and panel.task_profile is None)
+        new_doc=App.activeDocument().Name
+        App.setActiveDocument(plate_doc);panel.tick()
+        report['document_switch']={'task':panel.task,'native_file':panel.state['native_file'],'expected_file':str(path),'active_document':App.activeDocument().Name}
+        check('Switching documents cancels old unfinished feature task',panel.task is None and Path(panel.state['native_file']).resolve()==path.resolve())
+        count=len(panel.state['features'])
+        panel.accept_task()
+        check('Old task cannot mutate a different document',len(panel.state['features'])==count)
+        App.closeDocument(new_doc)
+        panel.isometric();panel.fit();panel.editor.hide();wait(200)
+        main.resize(1200,800);wait(150)
+        main.grab().save(str(output/'kurtshape-1200.png'))
+        check('Compact window keeps history and toolbar visible',panel.features.width()>=230 and panel.model_bar.isVisible())
+        main.resize(1600,1000);wait(150)
+        main.grab().save(str(output/'kurtshape-1600.png'))
+        report.update(passed=True,seconds=time.perf_counter()-began,state=panel.state,
+                      shortcut_coverage=panel.router.available_actions(),docks=[{'name':d.objectName(),'title':d.windowTitle(),'visible':d.isVisible()} for d in main.findChildren(QtGui.QDockWidget)])
+    except Exception:
+        report.update(error=traceback.format_exc(),message=panel.message.text(),seconds=time.perf_counter()-began)
+        main.grab().save(str(output/'failure.png'))
+    report['docks']=[{'name':d.objectName(),'title':d.windowTitle(),'visible':d.isVisible()} for d in main.findChildren(QtGui.QDockWidget)]
+    (output/'gui-test-result.json').write_text(json.dumps(report,indent=2,default=str))
+    panel.bridge.close()
+    for docname in list(App.listDocuments()):
+        App.closeDocument(docname)
+    QtCore.QTimer.singleShot(250, QtGui.QApplication.instance().quit)
+
+if 'panel' in globals():
+    QtCore.QTimer.singleShot(1800,validate)

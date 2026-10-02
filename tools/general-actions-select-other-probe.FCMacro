@@ -1,0 +1,49 @@
+"""Isolated native ray-hit semantics; records occluded faces without UI start."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1200, 800)
+main.show()
+report = {"passed": False}
+
+
+def probe():
+    try:
+        doc = App.newDocument("SelectOtherProbe")
+        front = doc.addObject("Part::Feature", "FrontSolid")
+        front.Shape = Part.makeBox(30, 20, 5)
+        rear = doc.addObject("Part::Feature", "RearSolid")
+        rear.Shape = Part.makeBox(30, 20, 5, App.Vector(0, 0, -10))
+        doc.recompute()
+        view = Gui.activeDocument().activeView()
+        view.viewTop()
+        view.fitAll()
+        QtTest.QTest.qWait(200)
+        pixel = view.getPointOnViewport(App.Vector(15, 10, 5))
+        report["method_doc"] = str(view.getObjectsInfo.__doc__)
+        report["pixel"] = list(pixel)
+        hits = view.getObjectsInfo((int(pixel[0]), int(pixel[1])))
+        report["hits"] = [{key: value.Name if hasattr(value, "Name") else value for key, value in hit.items()} for hit in hits or []]
+        report["passed"] = bool(hits) and any(hit.get("Object") == "RearSolid" for hit in hits)
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        (root / "validation" / "general-actions-select-other-probe.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        for doc in list(App.listDocuments().values()):
+            App.closeDocument(doc.Name)
+        QtCore.QTimer.singleShot(100, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(500, probe)

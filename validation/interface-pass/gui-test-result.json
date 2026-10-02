@@ -1,0 +1,1102 @@
+{
+  "passed": true,
+  "checks": [
+    "Onshape shell: left history and parts, document/feature toolbar, native viewport",
+    "Exact native SolidWorks navigation selected",
+    "Actual Shift+S starts one-click plane selection",
+    "One tree-plane click creates native attached sketch and enters editing",
+    "History remains visible in sketch context",
+    "Actual Ctrl+Z undoes geometry inside managed native sketch",
+    "Actual Ctrl+Y restores geometry inside managed native sketch",
+    "Isometric shortcut keeps sketch editing active",
+    "N returns normal without leaving sketch",
+    "Finish commits sketch transaction",
+    "Shift+E opens contextual extrude settings",
+    "Confirm creates valid native solid",
+    "Dimension panel changes native width",
+    "Document undo restores width",
+    "One real viewport surface click begins face-attached sketch",
+    "Sketch uses retained face support",
+    "Cancel button rolls back whole native sketch edit",
+    "Blind face-pocket respects depth and automatic inward direction",
+    "Rebuild preserves explicit visibility",
+    "History refresh preserves selected surface",
+    "Native tab close clears stale UI state",
+    "Saved native features rebuild after close and reopen",
+    "Successful save/reopen clears native modified indicator",
+    "Actual loopback assistant edits the displayed native document",
+    "Live assistant stale replay is rejected",
+    "GUI undo restores actual assistant change",
+    "G and two real clicks draw native rectangle on Front plane",
+    "C and two real clicks draw native circle on Front plane",
+    "Shift+S means native Point inside active sketch",
+    "Managed undo stops tool and reverses native point edit",
+    "Native task Close finalizes managed edit lease",
+    "Shift+E from active sketch finishes it and opens Extrude",
+    "Shift+Enter in depth field accepts and repeats extrusion",
+    "Switching documents cancels old unfinished feature task",
+    "Old task cannot mutate a different document",
+    "Compact window keeps history and toolbar visible"
+  ],
+  "method": "Actual isolated Qt window, native viewport, keyboard and mouse events; user hands-on acceptance remains pending",
+  "face_click": {
+    "pixel": [
+      607,
+      566
+    ],
+    "ratio": 1.5,
+    "qt_position": [
+      404,
+      376
+    ],
+    "viewport": [
+      809,
+      754
+    ],
+    "hit": {
+      "x": 30.031991958618164,
+      "y": 20.03199005126953,
+      "z": 6.0,
+      "ParentObject": "Body",
+      "SubName": "Pad.Face6",
+      "Document": "KurtShape",
+      "Object": "Pad",
+      "Component": "Face6"
+    }
+  },
+  "face_selection": [],
+  "new_document": {
+    "active": "KurtShape",
+    "state_document": "KurtShape"
+  },
+  "native_rectangle": {
+    "geometry_count": 4,
+    "active_document": "KurtShape",
+    "sketch_document": "KurtShape",
+    "in_edit": true
+  },
+  "document_switch": {
+    "task": null,
+    "native_file": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/validation/interface-pass/interface-plate.FCStd",
+    "expected_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\interface-pass\\interface-plate.FCStd",
+    "active_document": "interface_plate"
+  },
+  "seconds": 10.436117000179365,
+  "state": {
+    "document_id": "45e30da2-f98c-42a8-8056-808b6a98eed0",
+    "revision": "bf55508c-3c18-44c7-8ea3-b9aea03f40cf",
+    "name": "interface-plate",
+    "native_file": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/validation/interface-pass/interface-plate.FCStd",
+    "units": "mm",
+    "build_status": "valid",
+    "build_errors": [],
+    "features": [
+      {
+        "id": "Body",
+        "name": "Body",
+        "type": "PartDesign::Body",
+        "parameters": {},
+        "dependencies": [
+          "Pocket",
+          "Origin",
+          "Sketch",
+          "Pad",
+          "Sketch2",
+          "Pocket"
+        ],
+        "expressions": [],
+        "state": [
+          "Expanded",
+          "Up-to-date"
+        ]
+      },
+      {
+        "id": "Origin001",
+        "name": "Origin001",
+        "type": "App::Point",
+        "parameters": {},
+        "dependencies": [],
+        "expressions": [],
+        "state": [
+          "Up-to-date"
+        ]
+      },
+      {
+        "id": "Sketch",
+        "name": "Sketch",
+        "type": "Sketcher::SketchObject",
+        "parameters": {
+          "Width": {
+            "value": 60.0,
+            "unit": "mm",
+            "constraint_index": 9,
+            "constraint_type": "Distance",
+            "name": "Width",
+            "editable": true,
+            "expression": null
+          },
+          "Height": {
+            "value": 40.0,
+            "unit": "mm",
+            "constraint_index": 10,
+            "constraint_type": "Distance",
+            "name": "Height",
+            "editable": true,
+            "expression": null
+          }
+        },
+        "dependencies": [
+          "XY_Plane"
+        ],
+        "expressions": [],
+        "state": [
+          "Up-to-date"
+        ],
+        "fully_constrained": true,
+        "geometry_count": 4,
+        "constraint_count": 11,
+        "placement": {
+          "position_mm": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "support": [
+          {
+            "feature": "XY_Plane",
+            "subelements": [
+              ""
+            ]
+          }
+        ],
+        "map_mode": "FlatFace"
+      },
+      {
+        "id": "Pad",
+        "name": "Pad",
+        "type": "PartDesign::Pad",
+        "parameters": {
+          "Length": {
+            "value": 6.0,
+            "unit": "mm",
+            "editable": true,
+            "expression": null
+          }
+        },
+        "dependencies": [
+          "Sketch"
+        ],
+        "expressions": [],
+        "state": [
+          "Expanded",
+          "Up-to-date"
+        ],
+        "reversed": false
+      },
+      {
+        "id": "Sketch2",
+        "name": "Sketch2",
+        "type": "Sketcher::SketchObject",
+        "parameters": {
+          "CenterX": {
+            "value": 30.0,
+            "unit": "mm",
+            "constraint_index": 0,
+            "constraint_type": "DistanceX",
+            "name": "CenterX",
+            "editable": true,
+            "expression": null
+          },
+          "CenterY": {
+            "value": 20.0,
+            "unit": "mm",
+            "constraint_index": 1,
+            "constraint_type": "DistanceY",
+            "name": "CenterY",
+            "editable": true,
+            "expression": null
+          },
+          "Diameter": {
+            "value": 8.0,
+            "unit": "mm",
+            "constraint_index": 2,
+            "constraint_type": "Diameter",
+            "name": "Diameter",
+            "editable": true,
+            "expression": null
+          }
+        },
+        "dependencies": [
+          "Pad"
+        ],
+        "expressions": [],
+        "state": [
+          "Up-to-date"
+        ],
+        "fully_constrained": true,
+        "geometry_count": 1,
+        "constraint_count": 3,
+        "placement": {
+          "position_mm": [
+            0.0,
+            0.0,
+            6.0
+          ],
+          "rotation_xyzw": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "support": [
+          {
+            "feature": "Pad",
+            "subelements": [
+              "Face6"
+            ]
+          }
+        ],
+        "map_mode": "FlatFace"
+      },
+      {
+        "id": "Pocket",
+        "name": "Pocket",
+        "type": "PartDesign::Pocket",
+        "parameters": {
+          "Length": {
+            "value": 2.0,
+            "unit": "mm",
+            "editable": true,
+            "expression": null
+          }
+        },
+        "dependencies": [
+          "Sketch2",
+          "Pad"
+        ],
+        "expressions": [],
+        "state": [
+          "Up-to-date"
+        ],
+        "reversed": false
+      }
+    ],
+    "measurements": {
+      "valid": true,
+      "solid_count": 1,
+      "volume_mm3": 14299.469035085125,
+      "area_mm2": 6050.2654824574365,
+      "bbox_mm": {
+        "min": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max": [
+          60.0,
+          40.0,
+          6.0
+        ],
+        "size": [
+          60.0,
+          40.0,
+          6.0
+        ]
+      },
+      "center_of_mass_mm": [
+        30.0,
+        20.000000000000004,
+        2.985939203103527
+      ]
+    },
+    "retained_geometry_measurements": null,
+    "last_failed_attempt": null,
+    "active_sketch_edit": null,
+    "operations": [
+      "add_circle",
+      "add_line",
+      "add_rectangle",
+      "begin_sketch_edit",
+      "create_sketch",
+      "delete_feature",
+      "export",
+      "finish_sketch_edit",
+      "inspect",
+      "list_documents",
+      "new",
+      "open",
+      "pad",
+      "pocket",
+      "rebuild",
+      "redo",
+      "rename_feature",
+      "save",
+      "set_parameter",
+      "sketch_circle",
+      "sketch_rectangle",
+      "undo"
+    ],
+    "operation_ms": 26.76
+  },
+  "shortcut_coverage": [
+    {
+      "id": "feature.extrude",
+      "key": "Shift+E",
+      "contexts": [
+        "part_studio"
+      ],
+      "label": "Extrude",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "feature.fillet",
+      "key": "Shift+F",
+      "contexts": [
+        "part_studio"
+      ],
+      "label": "Edge fillet",
+      "status": "native",
+      "native_command": "PartDesign_Fillet",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.sketches",
+      "key": "Shift+H",
+      "contexts": [
+        "part_studio"
+      ],
+      "label": "Show or hide sketches",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "feature.revolve",
+      "key": "Shift+W",
+      "contexts": [
+        "part_studio"
+      ],
+      "label": "Revolve",
+      "status": "native",
+      "native_command": "PartDesign_Revolution",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "sketch.start",
+      "key": "Shift+S",
+      "contexts": [
+        "part_studio"
+      ],
+      "label": "Start sketch; select face or plane",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.back",
+      "key": "Shift+2",
+      "contexts": [
+        "view"
+      ],
+      "label": "Back view",
+      "status": "native",
+      "native_command": "Std_ViewRear",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.bottom",
+      "key": "Shift+6",
+      "contexts": [
+        "view"
+      ],
+      "label": "Bottom view",
+      "status": "native",
+      "native_command": "Std_ViewBottom",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.front",
+      "key": "Shift+1",
+      "contexts": [
+        "view"
+      ],
+      "label": "Front view",
+      "status": "native",
+      "native_command": "Std_ViewFront",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.construction",
+      "key": "Shift+P",
+      "contexts": [
+        "view"
+      ],
+      "label": "Hide construction geometry",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.hide",
+      "key": "Y",
+      "contexts": [
+        "view"
+      ],
+      "label": "Hide selected or hovered part",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.planes",
+      "key": "P",
+      "contexts": [
+        "view"
+      ],
+      "label": "Show or hide planes",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.isometric",
+      "key": "Shift+7",
+      "contexts": [
+        "view"
+      ],
+      "label": "Isometric view",
+      "status": "native",
+      "native_command": "Std_ViewIsometric",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.left",
+      "key": "Shift+3",
+      "contexts": [
+        "view"
+      ],
+      "label": "Left view",
+      "status": "native",
+      "native_command": "Std_ViewLeft",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.isolate",
+      "key": "Shift+I",
+      "contexts": [
+        "view"
+      ],
+      "label": "Isolate selection",
+      "status": "callback",
+      "note": "Local isolation may hide surroundings rather than apply Onshape temporary transparency.",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.transparent",
+      "key": "Shift+T",
+      "contexts": [
+        "view"
+      ],
+      "label": "Make selection transparent",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.named",
+      "key": "Shift+V",
+      "contexts": [
+        "view"
+      ],
+      "label": "Named views",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.pan_left",
+      "key": "Ctrl+Shift+Left",
+      "contexts": [
+        "view"
+      ],
+      "label": "Pan left",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.pan_right",
+      "key": "Ctrl+Shift+Right",
+      "contexts": [
+        "view"
+      ],
+      "label": "Pan right",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.pan_up",
+      "key": "Ctrl+Shift+Up",
+      "contexts": [
+        "view"
+      ],
+      "label": "Pan up",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.pan_down",
+      "key": "Ctrl+Shift+Down",
+      "contexts": [
+        "view"
+      ],
+      "label": "Pan down",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_left_5",
+      "key": "Ctrl+Left",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate left 5 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_right_5",
+      "key": "Ctrl+Right",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate right 5 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_up_5",
+      "key": "Ctrl+Up",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate up 5 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_down_5",
+      "key": "Ctrl+Down",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate down 5 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_left_90",
+      "key": "Shift+Left",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate left 90 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_right_90",
+      "key": "Shift+Right",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate right 90 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_up_90",
+      "key": "Shift+Up",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate up 90 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_down_90",
+      "key": "Shift+Down",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate down 90 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.right",
+      "key": "Shift+4",
+      "contexts": [
+        "view"
+      ],
+      "label": "Right view",
+      "status": "native",
+      "native_command": "Std_ViewRight",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.rotate_left_15",
+      "key": "Left",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate left 15 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_right_15",
+      "key": "Right",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate right 15 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_up_15",
+      "key": "Up",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate up 15 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.rotate_down_15",
+      "key": "Down",
+      "contexts": [
+        "view"
+      ],
+      "label": "Rotate down 15 degrees",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.section",
+      "key": "Shift+X",
+      "contexts": [
+        "view"
+      ],
+      "label": "Section view",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.select_through",
+      "key": "Alt+Click",
+      "contexts": [
+        "view"
+      ],
+      "label": "Select through transparent",
+      "status": "pass_through",
+      "note": "Exact Onshape transparent select-through gesture is not implemented.",
+      "resolved_status": "recorded gesture; compatibility unverified"
+    },
+    {
+      "id": "view.show_hidden",
+      "key": "Shift+Y",
+      "contexts": [
+        "view"
+      ],
+      "label": "Show hidden parts",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.top",
+      "key": "Shift+5",
+      "contexts": [
+        "view"
+      ],
+      "label": "Top view",
+      "status": "native",
+      "native_command": "Std_ViewTop",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.high_quality",
+      "key": "Shift+R",
+      "contexts": [
+        "view"
+      ],
+      "label": "High-quality view",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.normal",
+      "key": "N",
+      "contexts": [
+        "view"
+      ],
+      "label": "Normal to selected plane or face",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "view.zoom_in",
+      "key": "Shift+Z",
+      "contexts": [
+        "view"
+      ],
+      "label": "Zoom in",
+      "status": "native",
+      "native_command": "Std_ViewZoomIn",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.zoom_out",
+      "key": "Z",
+      "contexts": [
+        "view"
+      ],
+      "label": "Zoom out",
+      "status": "native",
+      "native_command": "Std_ViewZoomOut",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.fit",
+      "key": "F",
+      "contexts": [
+        "view"
+      ],
+      "label": "Zoom to fit",
+      "status": "native",
+      "native_command": "Std_ViewFitAll",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "view.box_zoom",
+      "key": "W",
+      "contexts": [
+        "view"
+      ],
+      "label": "Zoom window",
+      "status": "native",
+      "native_command": "Std_ViewBoxZoom",
+      "resolved_status": "native equivalent"
+    },
+    {
+      "id": "general.accept_repeat",
+      "key": "Shift+Enter",
+      "contexts": [
+        "general"
+      ],
+      "label": "Accept and repeat tool",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.accept",
+      "key": "Enter",
+      "contexts": [
+        "general"
+      ],
+      "label": "Accept tool",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.cancel",
+      "key": "Escape",
+      "contexts": [
+        "general"
+      ],
+      "label": "Cancel tool",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.clear_selection",
+      "key": "Space",
+      "contexts": [
+        "general"
+      ],
+      "label": "Clear selection",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.copy",
+      "key": "Ctrl+C",
+      "contexts": [
+        "general"
+      ],
+      "label": "Copy feature",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.curve_analysis",
+      "key": "Shift+C",
+      "contexts": [
+        "general"
+      ],
+      "label": "Curve and surface analysis",
+      "status": "unsupported",
+      "note": "Curve and surface analysis is not implemented.",
+      "resolved_status": "unavailable"
+    },
+    {
+      "id": "general.delete",
+      "key": "Delete",
+      "contexts": [
+        "general"
+      ],
+      "label": "Delete selection",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.delete_backspace",
+      "key": "Backspace",
+      "contexts": [
+        "general"
+      ],
+      "label": "Delete selection",
+      "status": "native",
+      "native_command": "Std_Delete",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.dihedral",
+      "key": "Shift+D",
+      "contexts": [
+        "general"
+      ],
+      "label": "Dihedral analysis",
+      "status": "unsupported",
+      "note": "Dihedral analysis is not implemented.",
+      "resolved_status": "unavailable"
+    },
+    {
+      "id": "general.feedback",
+      "key": "Ctrl+U",
+      "contexts": [
+        "general"
+      ],
+      "label": "Report a bug",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.mate_connectors",
+      "key": "K",
+      "contexts": [
+        "general"
+      ],
+      "label": "Show or hide mate connectors",
+      "status": "unsupported",
+      "note": "Mate connectors are not implemented.",
+      "resolved_status": "unavailable"
+    },
+    {
+      "id": "general.help",
+      "key": "Shift+/",
+      "contexts": [
+        "general"
+      ],
+      "label": "Keyboard shortcuts",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.mate_connector",
+      "key": "Ctrl+M",
+      "contexts": [
+        "general"
+      ],
+      "label": "Create mate connector",
+      "status": "unsupported",
+      "note": "Mate connectors are not implemented.",
+      "resolved_status": "unavailable"
+    },
+    {
+      "id": "general.measure",
+      "key": "[",
+      "contexts": [
+        "general"
+      ],
+      "label": "Measure",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.paste",
+      "key": "Ctrl+V",
+      "contexts": [
+        "general"
+      ],
+      "label": "Paste feature",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.tabs",
+      "key": "Ctrl+Space",
+      "contexts": [
+        "general"
+      ],
+      "label": "Switch recent document tabs",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.redo",
+      "key": "Ctrl+Y",
+      "contexts": [
+        "general"
+      ],
+      "label": "Redo",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.rename",
+      "key": "Shift+N",
+      "contexts": [
+        "general"
+      ],
+      "label": "Rename selection",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.search",
+      "key": "Alt+C",
+      "contexts": [
+        "general"
+      ],
+      "label": "Search tools",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.select_other",
+      "key": "`",
+      "contexts": [
+        "general"
+      ],
+      "label": "Select other entity",
+      "status": "callback",
+      "note": "Native getObjectsInfo ray hits under the pointer include occluded faces; the chooser highlights and selects the exact native document/object/subelement while preserving view and edit context.",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.palette",
+      "key": "S",
+      "contexts": [
+        "general"
+      ],
+      "label": "Shortcut tool palette",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.tab_manager",
+      "key": "Alt+T",
+      "contexts": [
+        "general"
+      ],
+      "label": "Document tab manager",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "general.undo",
+      "key": "Ctrl+Z",
+      "contexts": [
+        "general"
+      ],
+      "label": "Undo",
+      "status": "callback",
+      "resolved_status": "available"
+    },
+    {
+      "id": "local.save",
+      "key": "Ctrl+S",
+      "contexts": [
+        "general"
+      ],
+      "label": "Save native project (local extension)",
+      "status": "callback",
+      "origin": "local",
+      "resolved_status": "available"
+    },
+    {
+      "id": "local.new",
+      "key": "Ctrl+N",
+      "contexts": [
+        "general"
+      ],
+      "label": "New part (local extension)",
+      "status": "callback",
+      "origin": "local",
+      "resolved_status": "available"
+    },
+    {
+      "id": "local.open",
+      "key": "Ctrl+O",
+      "contexts": [
+        "general"
+      ],
+      "label": "Open native project (local extension)",
+      "status": "callback",
+      "origin": "local",
+      "resolved_status": "available"
+    }
+  ],
+  "docks": [
+    {
+      "name": "Selection view",
+      "title": "Selection View",
+      "visible": false
+    },
+    {
+      "name": "Model",
+      "title": "Model",
+      "visible": false
+    },
+    {
+      "name": "Python console",
+      "title": "Python Console",
+      "visible": false
+    },
+    {
+      "name": "Report view",
+      "title": "Report View",
+      "visible": false
+    },
+    {
+      "name": "KurtShapeEditor",
+      "title": "Feature settings",
+      "visible": false
+    },
+    {
+      "name": "KurtShapeHistory",
+      "title": "Feature history",
+      "visible": true
+    },
+    {
+      "name": "Tasks",
+      "title": "Tasks",
+      "visible": false
+    }
+  ]
+}

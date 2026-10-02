@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "seconds": 0.6160463001579046,
+  "document_id": "4b2865a5-3af4-4c73-b55b-fb905f21e2a1",
+  "baseline_volume_mm3": 14098.40710525538,
+  "edited_volume_mm3": 18797.876140340508,
+  "roundtrip_ms": 31.16,
+  "checks": [
+    "Codex CLI inspects live GUI native document",
+    "actual thickness edit to 8 mm",
+    "stale replay rejected",
+    "native undo restores baseline",
+    "unauthenticated request rejected"
+  ],
+  "Claude_client": "not configured or exercised; transport is reusable, acceptance remains pending"
+}

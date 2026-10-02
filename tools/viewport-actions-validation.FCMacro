@@ -1,0 +1,201 @@
+"""Exercise native view actions in an invisible isolated FreeCAD process."""
+import os
+import sys
+sys.dont_write_bytecode = True
+from pathlib import Path
+import json
+import re
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from pivy import coin
+from PySide import QtCore, QtGui
+from PySide6 import QtWidgets, QtTest
+ROOT = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(ROOT/'src'))
+from kurtshape.viewport_actions import callbacks, VISUAL_EXTENSION, _validate_views
+from kurtshape.navigation import apply_navigation, allow_sketch_3d
+from kurtshape.core import metadata, native_intent
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1200, 800)
+main.show()
+
+def validate():
+    report = {'passed': False, 'version': App.Version(), 'checks': []}
+    def check(name, condition, details=None):
+        report['checks'].append({'name': name, 'passed': bool(condition), 'details': details})
+        assert condition, name + ': ' + str(details)
+    def editable_intent(document):
+        # Native restore refreshes this display label from canonical AttacherType.
+        # Keep all actual geometry, constraints, expressions and attachment data.
+        return [{**item, 'properties': {key: value for key, value in item['properties'].items()
+                                       if key != 'AttacherEngine'}} for item in native_intent(document)]
+    try:
+        Gui.activateWorkbench('SketcherWorkbench')
+        doc = App.newDocument('ViewportActionsValidation')
+        doc.UndoMode = 1
+        part = doc.addObject('Part::Feature', 'Part')
+        part.Shape = Part.makeCylinder(10, 20)
+        sketch = doc.addObject('Sketcher::SketchObject', 'Sketch')
+        sketch.addGeometry(Part.LineSegment(App.Vector(0, 0, 0), App.Vector(5, 0, 0)), True)
+        sketch.addGeometry(Part.LineSegment(App.Vector(0, 2, 0), App.Vector(5, 2, 0)), False)
+        sketch.addGeometry(Part.LineSegment(App.Vector(0, 4, 0), App.Vector(5, 4, 0)), True)
+        import SketcherGui
+        original = list(sketch.Geometry)
+        ext = SketcherGui.ViewProviderSketchGeometryExtension()
+        ext.VisualLayerId = 1
+        original[2].setExtension(ext)
+        sketch.Geometry = original
+        doc.recompute()
+        view = Gui.activeDocument().activeView()
+        apply_navigation(view)
+        actions_map = callbacks()
+        actions = actions_map['view.named'].__self__
+        check('readonly_view_initialization_creates_no_metadata', doc.getObject('KurtShapeProject') is None and actions._state(doc)['views'] == {} and doc.getObject('KurtShapeProject') is None)
+        check('four_callback_ids', set(actions_map) == {'view.named', 'view.construction', 'view.section', 'view.high_quality'})
+        check('construction_requires_edit', actions_map['view.construction']() is False)
+        quality = (part.ViewObject.Deviation, part.ViewObject.AngularDeflection.Value)
+        shape = part.Shape.exportBrepToString()
+        check('high_quality_enabled', actions_map['view.high_quality']() is True)
+        check('native_tessellation_improved', part.ViewObject.Deviation <= 0.050001 and part.ViewObject.AngularDeflection.Value <= 10.00001)
+        check('quality_does_not_change_brep', shape == part.Shape.exportBrepToString())
+        check('high_quality_disabled', actions_map['view.high_quality']() is False)
+        check('exact_quality_restore', quality == (part.ViewObject.Deviation, part.ViewObject.AngularDeflection.Value))
+        Gui.activeDocument().setEdit(sketch.Name)
+        QtWidgets.QApplication.processEvents()
+        before = [geo.Content for geo in sketch.Geometry]
+        before_tags = [str(geo.Tag) for geo in sketch.Geometry]
+        flags = [sketch.getConstruction(i) for i in range(sketch.GeometryCount)]
+        geometry_shape = sketch.Shape.exportBrepToString()
+        check('construction_hidden', actions_map['view.construction']() is True)
+        check('native_construction_layers_hidden', all(sketch.Geometry[i].getExtensionOfType(VISUAL_EXTENSION).VisualLayerId == 2 for i in (0, 2)))
+        check('normal_geometry_visibility_unchanged', sketch.Geometry[1].Content == before[1])
+        check('construction_flags_and_shape_unchanged', flags == [sketch.getConstruction(i) for i in range(sketch.GeometryCount)] and geometry_shape == sketch.Shape.exportBrepToString())
+        check('construction_restored', actions_map['view.construction']() is False)
+        check('exact_construction_metadata_restore', before == [geo.Content for geo in sketch.Geometry], {'before': before, 'after': [geo.Content for geo in sketch.Geometry], 'before_tags': before_tags, 'after_tags': [str(geo.Tag) for geo in sketch.Geometry]})
+        actions.toggle_construction()
+        sketch.moveGeometry(0, 2, App.Vector(8, 0, 0), 0)
+        actions.toggle_construction()
+        check('visibility_restore_preserves_native_edits', abs(sketch.Geometry[0].EndPoint.x-8) < 1e-7)
+        view.setCameraType('Perspective')
+        view.viewAxonometric()
+        view.fitAll()
+        intent_before_views = native_intent(doc)
+        actions.save_view('Inspection')
+        check('named_views_written_to_native_metadata', 'NamedViews' in metadata(doc).PropertiesList and 'Inspection' in json.loads(metadata(doc).NamedViews)['views'])
+        check('named_save_preserves_geometry_intent', intent_before_views == native_intent(doc))
+        expected = view.getCamera()
+        expected_node = view.getCameraNode()
+        expected_pose = [list(expected_node.position.getValue()), list(view.getCameraOrientation().Q), float(expected_node.focalDistance.getValue()), float(expected_node.heightAngle.getValue())]
+        view.setCameraType('Orthographic')
+        view.viewTop()
+        view.fitAll()
+        actions.recall_view('Inspection')
+        check('named_camera_projection_restored', view.getCameraType() == 'Perspective')
+        restored_node = view.getCameraNode()
+        restored_pose = [list(restored_node.position.getValue()), list(view.getCameraOrientation().Q), float(restored_node.focalDistance.getValue()), float(restored_node.heightAngle.getValue())]
+        flat = lambda values: values[0]+values[1]+values[2:]
+        check('named_camera_pose_zoom_restore', max(abs(a-b) for a,b in zip(flat(expected_pose),flat(restored_pose))) < 0.0001, {'expected': expected_pose, 'actual': restored_pose, 'serialized_expected': expected, 'serialized_actual': view.getCamera()})
+        check('named_camera_keeps_native_sketch_edit', Gui.activeDocument().getInEdit().Object is sketch)
+        dialog = actions_map['view.named']()
+        check('named_dialog_available', dialog.objectName() == 'KurtShapeNamedViews')
+        naming = dialog.findChild(QtWidgets.QLineEdit, 'NamedViewName')
+        naming.setText('From dialog')
+        save_button = next(button for button in dialog.findChildren(QtWidgets.QPushButton) if button.text() == 'Save current')
+        QtTest.QTest.mouseClick(save_button, QtCore.Qt.LeftButton)
+        check('named_dialog_saves_camera', 'From dialog' in actions._state(doc)['views'])
+        Gui.activeDocument().resetEdit()
+        check('native_clipping_dock_opened', actions_map['view.section']() is True)
+        clipping = actions._state(doc)['clipping']
+        group = clipping.findChild(QtWidgets.QGroupBox, 'groupBoxZ')
+        check('native_section_plane_control', group is not None and group.isCheckable())
+        group.setChecked(True)
+        view.redraw()
+        search = coin.SoSearchAction()
+        search.setType(coin.SoClipPlane.getClassTypeId())
+        search.setInterest(coin.SoSearchAction.ALL)
+        search.apply(view.getSceneGraph())
+        clip_nodes = [search.getPaths()[i].getTail() for i in range(search.getPaths().getLength())]
+        check('actual_native_section_plane_enabled', any(node.on.getValue() for node in clip_nodes))
+        check('section_preserves_solid_brep', shape == part.Shape.exportBrepToString())
+        clipping.hide()
+        check('native_clipping_controls_reopen', actions_map['view.section']() is True and clipping.isVisible())
+        second = App.newDocument('ViewportSecondDocument')
+        Gui.activeDocument().activeView().viewTop()
+        actions.save_view('Other')
+        check('named_views_are_document_scoped', set(actions._state(second)['views']) == {'Other'} and set(actions._state(doc)['views']) == {'Inspection', 'From dialog'})
+        second_name = second.Name
+        App.closeDocument(second_name)
+        actions._state(doc)
+        check('closed_document_view_cache_removed', second_name not in actions._documents)
+        App.setActiveDocument(doc.Name)
+        allow_sketch_3d(sketch, view)
+        saved_intent = editable_intent(doc)
+        saved_flags = [sketch.getConstruction(i) for i in range(sketch.GeometryCount)]
+        roundtrip_path = ROOT/'validation'/'viewport-actions-named-view-roundtrip.FCStd'
+        doc.saveAs(str(roundtrip_path))
+        original_name = doc.Name
+        App.closeDocument(original_name)
+        reopened = App.openDocument(str(roundtrip_path))
+        reopened_view = Gui.activeDocument().activeView()
+        Gui.getDocument(reopened.Name).Modified = False
+        apply_navigation(reopened_view)
+        allow_sketch_3d(reopened.Sketch, reopened_view)
+        check('repeated_navigation_setup_does_not_dirty_saved_document', not Gui.getDocument(reopened.Name).Modified)
+        reopened_view.setCameraType('Orthographic')
+        reopened_view.viewTop()
+        modified_before_read = Gui.getDocument(reopened.Name).Modified
+        reopened_actions = callbacks()['view.named'].__self__
+        loaded = reopened_actions._state(reopened)['views']
+        check('named_views_survive_native_save_reopen', set(loaded) == {'Inspection', 'From dialog'})
+        check('loading_named_views_does_not_dirty_document', Gui.getDocument(reopened.Name).Modified == modified_before_read)
+        check('named_roundtrip_preserves_editable_geometry', saved_intent == editable_intent(reopened) and saved_flags == [reopened.Sketch.getConstruction(i) for i in range(reopened.Sketch.GeometryCount)], {'before': saved_intent, 'after': editable_intent(reopened), 'flags_before': saved_flags, 'flags_after': [reopened.Sketch.getConstruction(i) for i in range(reopened.Sketch.GeometryCount)]})
+        reopened_actions.recall_view('Inspection', reopened)
+        restored_camera = reopened_view.getCameraNode()
+        restored_pose = [list(restored_camera.position.getValue()), list(reopened_view.getCameraOrientation().Q), float(restored_camera.focalDistance.getValue()), float(restored_camera.heightAngle.getValue())]
+        check('persisted_camera_projection_pose_zoom_restore', reopened_view.getCameraType() == 'Perspective' and max(abs(a-b) for a,b in zip(flat(expected_pose),flat(restored_pose))) < 0.0001)
+        malformed_payloads = [
+            {'schema': True, 'views': loaded},
+            {'schema': 2, 'views': loaded},
+            {'schema': 1, 'views': {'bad': {'projection': 'Perspective', 'camera': loaded['Inspection']['camera'] + '\nFile { name "outside.iv" }'}}},
+            {'schema': 1, 'views': {'bad': {'projection': 'Perspective', 'camera': re.sub(r'focalDistance \S+', 'focalDistance nan', loaded['Inspection']['camera'])}}},
+            {'schema': 1, 'views': {'bad': {'projection': 'Orthographic', 'camera': loaded['Inspection']['camera']}}},
+        ]
+        rejected = []
+        for payload in malformed_payloads:
+            try:
+                _validate_views(payload)
+                rejected.append(False)
+            except (ValueError, TypeError):
+                rejected.append(True)
+        check('malformed_schema_and_camera_blocks_rejected', all(rejected), rejected)
+        original_serialized = reopened.KurtShapeProject.NamedViews
+        original_camera = reopened_view.getCamera()
+        reopened.KurtShapeProject.NamedViews = '{"schema":1,"schema":1,"views":{}}'
+        check('duplicate_metadata_keys_do_not_reach_camera', reopened_actions._state(reopened)['views'] == {} and original_camera == reopened_view.getCamera())
+        reopened.KurtShapeProject.NamedViews = original_serialized
+        check('valid_view_metadata_reload', set(reopened_actions._state(reopened)['views']) == {'Inspection', 'From dialog'})
+        Gui.getDocument(reopened.Name).Modified = False
+        check('named_delete_marks_native_document_modified', reopened_actions.delete_view('From dialog', reopened) and Gui.getDocument(reopened.Name).Modified)
+        check('named_delete_preserves_geometry_intent', saved_intent == editable_intent(reopened))
+        reopened.saveAs(str(roundtrip_path))
+        reopened_name = reopened.Name
+        App.closeDocument(reopened_name)
+        reopened = App.openDocument(str(roundtrip_path))
+        check('named_delete_survives_native_save_reopen', set(callbacks()['view.named'].__self__._state(reopened)['views']) == {'Inspection'})
+        report['passed'] = True
+    except Exception:
+        report['error'] = traceback.format_exc()
+    report['check_count'] = len(report['checks'])
+    (ROOT/'validation'/'viewport-actions-test-result.json').write_text(json.dumps(report, indent=2))
+    for widget in QtWidgets.QApplication.topLevelWidgets():
+        if isinstance(widget, QtWidgets.QDialog):
+            widget.close()
+    for name in list(App.listDocuments()):
+        App.closeDocument(name)
+    QtCore.QTimer.singleShot(250, main.close)
+
+QtCore.QTimer.singleShot(1000, validate)

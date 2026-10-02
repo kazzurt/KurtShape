@@ -1,0 +1,3807 @@
+[
+  {
+    "source_relative_path": "Onshape examples\\Dodec Hub Conformal.txt",
+    "source_sha256": "4207e6665f57724bd535ad619673e7f9b9b736dbc27570ee2c4ad64813264a7d",
+    "source_bytes": 646831,
+    "representation": "generated Part Studio FeatureScript, not API feature JSON",
+    "feature_script_version": "3083",
+    "imports": [
+      "import(path : \"onshape/std/geometry.fs\", version : \"3083.0\");\r"
+    ],
+    "default_units": "[\"cubicMillimeter\", \"degree\", \"degreePerSecond\", \"footPoundForce\", \"hertz\", \"inchPound\", \"megapascal\", \"meterPerSecondSquared\", \"millimeter\", \"pound\", \"poundForce\", \"poundPerCubicInch\", \"second\", \"squareMillimeter\"]",
+    "main_configuration": "{ \"List_ZbEDhDNx0XOm6R\" : List_ZbEDhDNx0XOm6R_conf.Switch }",
+    "configuration_names": [
+      "Default",
+      "FEA",
+      "DWG",
+      "3D print",
+      "Cap special",
+      "Cap std plastic"
+    ],
+    "feature_count": 145,
+    "families": {
+      "assignVariable": 10,
+      "booleanBodies": 10,
+      "cPlane": 20,
+      "cPoint": 18,
+      "circularPattern": 11,
+      "extrude": 14,
+      "fill": 2,
+      "fillet": 18,
+      "hole": 1,
+      "loft": 1,
+      "mirror": 1,
+      "moveFace": 4,
+      "newSketch": 28,
+      "offsetSurface": 2,
+      "revolve": 4,
+      "shell": 1,
+      "splitPart": 3,
+      "transform": 2
+    },
+    "sketch_entities": {
+      "skArc": 18,
+      "skCircle": 20,
+      "skLineSegment": 68,
+      "skPoint": 25
+    },
+    "constraint_types": {
+      "ANGLE": 4,
+      "CIRCULAR_PATTERN": 2,
+      "COINCIDENT": 129,
+      "CONCENTRIC": 2,
+      "DIAMETER": 14,
+      "DISTANCE": 15,
+      "EQUAL": 6,
+      "HORIZONTAL": 5,
+      "LENGTH": 6,
+      "MIDPOINT": 4,
+      "MIRROR": 2,
+      "PARALLEL": 5,
+      "PERPENDICULAR": 23,
+      "PIERCE": 1,
+      "PROJECTED": 45,
+      "RADIUS": 5,
+      "TANGENT": 27
+    },
+    "compressed_query_count": 439,
+    "features": [
+      {
+        "id": "FPm05objcHqMe8E",
+        "name": "###name = #value",
+        "line": 47,
+        "families": [
+          "assignVariable"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "2.03444394 rad",
+          "acos(-sqrt((5-sqrt(5))/10))"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FqbN50BJLNZlXeY_0",
+        "name": "Sketch 1",
+        "line": 60,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1,
+          "skLineSegment": 6,
+          "skPoint": 1
+        },
+        "constraints": {
+          "CIRCULAR_PATTERN": 1,
+          "COINCIDENT": 5,
+          "HORIZONTAL": 1,
+          "LENGTH": 1,
+          "MIDPOINT": 1,
+          "TANGENT": 1
+        },
+        "compressed_queries": 2,
+        "expressions": [
+          "",
+          "20.2 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FbsJ5ZcZwp0zJo1_0",
+        "name": "###name = #value",
+        "line": 118,
+        "families": [
+          "assignVariable"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "22.86 mm",
+          "0 deg",
+          "0",
+          "",
+          "0 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F1eRafQvlPZZlXh_1",
+        "name": "###name = #value",
+        "line": 131,
+        "families": [
+          "assignVariable"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "28 mm",
+          "0 deg",
+          "0",
+          "",
+          "0 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FLlvTlqGqg1M8dm_1",
+        "name": "###name = #value",
+        "line": 144,
+        "families": [
+          "assignVariable"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "0.75 in",
+          "0 deg",
+          "0",
+          "0 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FlJkQsfHEiidyqE_1",
+        "name": "###name = #value",
+        "line": 157,
+        "families": [
+          "assignVariable"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "47.75 mm",
+          "0 deg",
+          "0",
+          "",
+          "0 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FZog9CbyfPmaPHM_1",
+        "name": "###name = #value",
+        "line": 170,
+        "families": [
+          "assignVariable"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "30 mm",
+          "0 deg",
+          "0",
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FNQwPTqoDkjRFrj_1",
+        "name": "MID",
+        "line": 183,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "1 in",
+          "0 deg",
+          "6 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FRQWRJ9L9d5IjD0_0",
+        "name": "Plane 10",
+        "line": 198,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FDu2FPm1aAlUdBu_0",
+        "name": "Plane 1",
+        "line": 215,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "#snub",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FJuVxFi7dtyvDsx_0",
+        "name": "Sketch 2",
+        "line": 230,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1,
+          "skPoint": 1
+        },
+        "constraints": {
+          "COINCIDENT": 1,
+          "DIAMETER": 1,
+          "PROJECTED": 1
+        },
+        "compressed_queries": 2,
+        "expressions": [
+          "#OD"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FAYjrLUkzEiZw4V_0",
+        "name": "Sketch 3",
+        "line": 261,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 1
+        },
+        "constraints": {
+          "COINCIDENT": 2,
+          "TANGENT": 2
+        },
+        "compressed_queries": 5,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FBZuqgGBsve49pc_0",
+        "name": "Plane 13",
+        "line": 300,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "90 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FcaohTBYmSR3vb7_0",
+        "name": "Sketch 4",
+        "line": 317,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skLineSegment": 1
+        },
+        "constraints": {
+          "ANGLE": 1,
+          "COINCIDENT": 1,
+          "LENGTH": 1
+        },
+        "compressed_queries": 3,
+        "expressions": [
+          "#ang",
+          "#snub"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Ftr0NvUtiNZmIDC_0",
+        "name": "Plane 14",
+        "line": 349,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FjRF9yktPVfGXIY_0",
+        "name": "Plane 3",
+        "line": 366,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F228Ahe8Ytyxlkq_0",
+        "name": "Sketch 13",
+        "line": 383,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1
+        },
+        "constraints": {
+          "COINCIDENT": 1,
+          "DIAMETER": 1
+        },
+        "compressed_queries": 2,
+        "expressions": [
+          "#OD"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fj3o6qrvD1QHqQ9_0",
+        "name": "Plane 15",
+        "line": 410,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FldnSSiuiG0UAno_0",
+        "name": "Sketch 14",
+        "line": 429,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skLineSegment": 1
+        },
+        "constraints": {
+          "PROJECTED": 3
+        },
+        "compressed_queries": 6,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FS0TzRccfPfnOnX_0",
+        "name": "Plane 16",
+        "line": 467,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "90 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FqVu36DNBtBpvvQ_0",
+        "name": "Sketch 15",
+        "line": 484,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skLineSegment": 1
+        },
+        "constraints": {
+          "COINCIDENT": 1,
+          "LENGTH": 1,
+          "PERPENDICULAR": 1
+        },
+        "compressed_queries": 3,
+        "expressions": [
+          "21 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FOWH54LRvWttXGz_0",
+        "name": "Plane 17",
+        "line": 516,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FsMXxuBFQGhX6gk_0",
+        "name": "Sketch 16",
+        "line": 533,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1
+        },
+        "constraints": {
+          "COINCIDENT": 1,
+          "DIAMETER": 1
+        },
+        "compressed_queries": 2,
+        "expressions": [
+          "#OD"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FdqHVpdH9K5zNo9_0",
+        "name": "Loft 1",
+        "line": 560,
+        "families": [
+          "loft"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "1",
+          "10"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FXRsad002Edzhoj_1",
+        "name": "Plane 18",
+        "line": 581,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F7CxwjDRV1pzaRH_1",
+        "name": "Split 4",
+        "line": 598,
+        "families": [
+          "splitPart"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F7LiWuFs0KMf0aT_1",
+        "name": "Plane 19",
+        "line": 615,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FEJG4kDXa4QTpW0_1",
+        "name": "Split 5",
+        "line": 632,
+        "families": [
+          "splitPart"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FqJn3RoUjcS9YXv_1",
+        "name": "Mirror 2",
+        "line": 649,
+        "families": [
+          "mirror"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FxleGCVCi9Ar6FL_0",
+        "name": "Circular pattern 4",
+        "line": 668,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "360 deg",
+          "3"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FDi2bRhs0kntctg_1",
+        "name": "Boolean 3",
+        "line": 685,
+        "families": [
+          "booleanBodies"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FvWyxAa17b9Nw87_1",
+        "name": "Transform 1",
+        "line": 704,
+        "families": [
+          "transform"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "25 mm",
+          "1",
+          "30 deg",
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FWXO6BVgGc3gBH3_2",
+        "name": "###name = #value",
+        "line": 719,
+        "families": [
+          "assignVariable"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "22 mm",
+          "0 deg",
+          "0",
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FAj5c9unTh9iKYh_2",
+        "name": "###name = #value",
+        "line": 732,
+        "families": [
+          "assignVariable"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "15 mm",
+          "0 deg",
+          "0",
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FhVa5RtbZwryR42_1",
+        "name": "Hole revolve",
+        "line": 745,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 1,
+          "skLineSegment": 6,
+          "skPoint": 1
+        },
+        "constraints": {
+          "COINCIDENT": 9,
+          "DISTANCE": 2,
+          "PERPENDICULAR": 2,
+          "PROJECTED": 4,
+          "RADIUS": 1,
+          "TANGENT": 2
+        },
+        "compressed_queries": 7,
+        "expressions": [
+          "#cav_r",
+          "#cav_fil",
+          "4 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F2Sk4yYwaETsqyT_1",
+        "name": "Revolve 1",
+        "line": 843,
+        "families": [
+          "revolve"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 4,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "30 deg",
+          "0 deg",
+          "330 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FxvajFTOg6VP3Wg_1",
+        "name": "Boolean 5",
+        "line": 864,
+        "families": [
+          "booleanBodies"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FAIPZc0WU9k7Vme_1",
+        "name": "###name = #value",
+        "line": 881,
+        "families": [
+          "assignVariable"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "34.8 mm",
+          "0 deg",
+          "0",
+          "",
+          "0 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FkFKaa3yWQekT8Q_2",
+        "name": "Sketch 18",
+        "line": 894,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 3,
+          "skCircle": 2,
+          "skLineSegment": 4,
+          "skPoint": 1
+        },
+        "constraints": {
+          "ANGLE": 2,
+          "COINCIDENT": 12,
+          "DIAMETER": 2,
+          "DISTANCE": 1,
+          "EQUAL": 2,
+          "PERPENDICULAR": 1,
+          "PROJECTED": 2
+        },
+        "compressed_queries": 3,
+        "expressions": [
+          "#bore",
+          "#snout",
+          "6 mm",
+          "60 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F7wafN0IW57gq1y_2",
+        "name": "Snout",
+        "line": 992,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "#snout_L",
+          "25 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FITLzmfPt0v7qyO_2",
+        "name": "Sketch 19",
+        "line": 1009,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 3,
+          "skLineSegment": 3
+        },
+        "constraints": {
+          "COINCIDENT": 6,
+          "PROJECTED": 12
+        },
+        "compressed_queries": 31,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FEBoC4VMGWPU1BL_2",
+        "name": "Snout bore",
+        "line": 1147,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "50 mm",
+          "25 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FnoMioRXBV3kBT5_2",
+        "name": "Plane 20",
+        "line": 1164,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "35 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F7zbqT4Ap2q7RuH_2",
+        "name": "Split 7",
+        "line": 1179,
+        "families": [
+          "splitPart"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FhCe0L5oobMDE3i_3",
+        "name": "Offset surface 4",
+        "line": 1196,
+        "families": [
+          "offsetSurface"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F9qShFCVZLluQA4_4",
+        "name": "mid1",
+        "line": 1211,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FquD6dizTuHe7LB_4",
+        "name": "Sketch 22",
+        "line": 1230,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 1,
+          "skLineSegment": 3,
+          "skPoint": 1
+        },
+        "constraints": {
+          "COINCIDENT": 6,
+          "PERPENDICULAR": 1,
+          "PROJECTED": 6,
+          "TANGENT": 3
+        },
+        "compressed_queries": 16,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FmztwivicHTFGEG_4",
+        "name": "Offset surface 5",
+        "line": 1332,
+        "families": [
+          "offsetSurface"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fy3ahhO07dvp073_5",
+        "name": "Circular pattern 6",
+        "line": 1347,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "120 deg",
+          "2"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FFDiUXopdjivdah_5",
+        "name": "Fill 2",
+        "line": 1364,
+        "families": [
+          "fill"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 5,
+        "expressions": [
+          "5",
+          "10"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FPGf5UwUEYAdfkE_6",
+        "name": "Circular pattern 7",
+        "line": 1387,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "360 deg",
+          "3"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FNCFOvPfUISTLvf_6",
+        "name": "Fill 3",
+        "line": 1404,
+        "families": [
+          "fill"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "5",
+          "10"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F1iEtfxoOKXdPAN_7",
+        "name": "Boolean 6",
+        "line": 1423,
+        "families": [
+          "booleanBodies"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 4,
+        "expressions": [
+          "5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F1FqdtZIilrmcXt_6",
+        "name": "Plane 22",
+        "line": 1444,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FCl8M8phi6dx1fG_6",
+        "name": "###name = #value",
+        "line": 1461,
+        "families": [
+          "assignVariable"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "9 mm",
+          "0 deg",
+          "0",
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F8jukXmV2i1hmZu_6",
+        "name": "cap",
+        "line": 1474,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "#cap",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FBvXRsQ9VJArbH8_6",
+        "name": "Sketch 20",
+        "line": 1489,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1
+        },
+        "constraints": {
+          "COINCIDENT": 1,
+          "DIAMETER": 1
+        },
+        "compressed_queries": 2,
+        "expressions": [
+          "2*#cav_r"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FZGSJiMUIJEX5Po_6",
+        "name": "Extrude 4",
+        "line": 1516,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "25 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FaIeZQzsa7rqYrN_6",
+        "name": "Circular pattern 8",
+        "line": 1535,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "360 deg",
+          "3"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fb8k59LUw1luAz5_6",
+        "name": "Shell 1",
+        "line": 1550,
+        "families": [
+          "shell"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "2.5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fz4agya6Qx3jZWc_6",
+        "name": "Plane 24",
+        "line": 1565,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FBSZYtgYDjUPkSE_6",
+        "name": "Sketch 28",
+        "line": 1582,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 4
+        },
+        "constraints": {
+          "COINCIDENT": 3,
+          "CONCENTRIC": 1,
+          "DIAMETER": 4
+        },
+        "compressed_queries": 3,
+        "expressions": [
+          "1.88 in",
+          "38.5 mm",
+          "38 mm",
+          "35 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FeLpeEBvdX4AuY5_6",
+        "name": "Extrude 5",
+        "line": 1632,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "18.4 in",
+          "25 mm",
+          "1 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FGfZfEYlqpTir5G_13",
+        "name": "Edge point",
+        "line": 1651,
+        "families": [
+          "cPoint",
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 3,
+          "skLineSegment": 5,
+          "skPoint": 6
+        },
+        "constraints": {
+          "COINCIDENT": 16,
+          "DISTANCE": 2,
+          "EQUAL": 1,
+          "MIRROR": 1,
+          "PERPENDICULAR": 2,
+          "PROJECTED": 5,
+          "RADIUS": 1,
+          "TANGENT": 4
+        },
+        "compressed_queries": 14,
+        "expressions": [
+          "0.5",
+          "8 mm",
+          "12 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FaTNp1IiYCCCJIt",
+        "name": "Edge point",
+        "line": 1659,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FA5o1QabnDZYbRw",
+        "name": "Edge point",
+        "line": 1674,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FgIwYLF40EEKnQL",
+        "name": "Edge point",
+        "line": 1689,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F7nIEz6ZXt4kUnU",
+        "name": "Edge point",
+        "line": 1704,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FQokgMKOuLr2LqB_13",
+        "name": "Extrude 2",
+        "line": 1857,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "12 mm",
+          "25 mm",
+          "3 deg",
+          "2 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FQktrwDyPn1TyUV_14",
+        "name": "Circular pattern 10",
+        "line": 1876,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "360 deg",
+          "3"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F3IFYo1KMhv2Dgl_14",
+        "name": "intersect 1",
+        "line": 1893,
+        "families": [
+          "booleanBodies"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FlEB22OxwcMWLdO_15",
+        "name": "intersect 2",
+        "line": 1910,
+        "families": [
+          "booleanBodies"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F6lY4lAbC2JU2Nn_16",
+        "name": "intersect 3",
+        "line": 1927,
+        "families": [
+          "booleanBodies"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fo3vOcwtJbzLVoc_15",
+        "name": "Subtract from hub",
+        "line": 1944,
+        "families": [
+          "booleanBodies"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 4,
+        "expressions": [
+          "0.1 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fk3OP5PXMX0aK4Q_15",
+        "name": "Union cap",
+        "line": 1965,
+        "families": [
+          "booleanBodies"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 4,
+        "expressions": [
+          "5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F6xxOsfU9vCVngt_8",
+        "name": "Edge point",
+        "line": 1986,
+        "families": [
+          "cPoint",
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "0.5",
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FdwrVANZF41Puwg",
+        "name": "Edge point",
+        "line": 1993,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FNPTkNUkDsdeSD5",
+        "name": "Edge point",
+        "line": 2008,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FixdLyvRD9EyBTv",
+        "name": "Edge point",
+        "line": 2023,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F7X8NAJ5VU9IBMh_8",
+        "name": "Sketch 5",
+        "line": 2050,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1,
+          "skLineSegment": 1
+        },
+        "constraints": {
+          "COINCIDENT": 1,
+          "DIAMETER": 1,
+          "DISTANCE": 1,
+          "MIDPOINT": 1,
+          "PERPENDICULAR": 1
+        },
+        "compressed_queries": 3,
+        "expressions": [
+          "8 mm",
+          "12.5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fab2f23PR9DYaUS_8",
+        "name": "Extrude 1",
+        "line": 2089,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "25 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F1BOCAOLUIAoibq_8",
+        "name": "Circular pattern 1",
+        "line": 2106,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "360 deg",
+          "3"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F9u2aGIFmIQ1NoR_8",
+        "name": "Circular pattern 2",
+        "line": 2121,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "360 deg",
+          "3"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FQkcVUI7lmjGPcm_8",
+        "name": "Fillet 3",
+        "line": 2136,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 12,
+        "expressions": [
+          "1 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FdI7Lc8Rg7v4qN6_8",
+        "name": "Fillet 5",
+        "line": 2173,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 24,
+        "expressions": [
+          "1 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FGIccvenwm3iz44_8",
+        "name": "Extrude 3",
+        "line": 2234,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "25 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FuBux7cwyu2Y8OP_8",
+        "name": "Edge point",
+        "line": 2253,
+        "families": [
+          "cPoint",
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skLineSegment": 1,
+          "skPoint": 6
+        },
+        "constraints": {
+          "COINCIDENT": 3,
+          "DISTANCE": 1,
+          "PROJECTED": 5
+        },
+        "compressed_queries": 10,
+        "expressions": [
+          "0.5",
+          "2 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FlVL8NWcNNO7hqI",
+        "name": "Edge point",
+        "line": 2261,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FFurwy2pqQeKQ4h",
+        "name": "Edge point",
+        "line": 2276,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FbeuXbqPvR7ats5",
+        "name": "Edge point",
+        "line": 2291,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FrtzGqtJs5tZKUk",
+        "name": "Edge point",
+        "line": 2306,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FWX7OXFxwOAwe2w_8",
+        "name": "#featureName",
+        "line": 2375,
+        "families": [
+          "hole"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "2.4 mm",
+          "1.6 mm",
+          "0.1 mm",
+          "-0.1 mm",
+          "5 mm",
+          "4 mm",
+          "4.50 mm",
+          "90 degree",
+          "1 deg",
+          "-1 deg",
+          "2 mm",
+          "12 mm",
+          "10 mm",
+          "118 deg",
+          "1.789911 deg",
+          "15.0",
+          "{\\"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fo9cNAe3z4K8moc_8",
+        "name": "Extrude 6",
+        "line": 2394,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "0.1 mm",
+          "25 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FxpdNS448oslbZh_8",
+        "name": "Circular pattern 3",
+        "line": 2411,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "360 deg",
+          "3"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FHdpxRj1Pu8cEah_8",
+        "name": "Move face 1",
+        "line": 2426,
+        "families": [
+          "moveFace"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "5 mm",
+          "0 deg",
+          "0.15 mm",
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FDLMQHFuJxd8t5L_8",
+        "name": "Edge point",
+        "line": 2445,
+        "families": [
+          "cPoint",
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 2,
+          "skLineSegment": 11,
+          "skPoint": 1
+        },
+        "constraints": {
+          "COINCIDENT": 20,
+          "DISTANCE": 3,
+          "LENGTH": 1,
+          "PARALLEL": 2,
+          "PERPENDICULAR": 6,
+          "PIERCE": 1,
+          "RADIUS": 2,
+          "TANGENT": 4
+        },
+        "compressed_queries": 6,
+        "expressions": [
+          "0.5",
+          "2.1 mm",
+          "0.5 mm",
+          "3.6 mm",
+          "1.5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Ft7kmkrOgojlB67",
+        "name": "Edge point",
+        "line": 2453,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fb5xelD8BTBds2b_8",
+        "name": "Revolve 2",
+        "line": 2617,
+        "families": [
+          "revolve"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "30 deg",
+          "0 deg",
+          "330 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FppTnInJjK2AAuP_8",
+        "name": "Extrude 7",
+        "line": 2636,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "25 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F00duMs4MMScuU0_9",
+        "name": "Boolean 1",
+        "line": 2653,
+        "families": [
+          "booleanBodies"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FtCfNJTeKlyGwbF_9",
+        "name": "Boolean 2",
+        "line": 2670,
+        "families": [
+          "booleanBodies"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FjO66YOCBPmLlO5_9",
+        "name": "Fillet 10",
+        "line": 2687,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "2 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FkKRxhVOJlgeX7O_8",
+        "name": "Fillet 6",
+        "line": 2706,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 6,
+        "expressions": [
+          "1 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FKktAtBsQKNgPMz_9",
+        "name": "Fillet 11",
+        "line": 2731,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 6,
+        "expressions": [
+          "1 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FQWdJQMyPTmo4uv_9",
+        "name": "Screw landing",
+        "line": 2756,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 6,
+        "expressions": [
+          "1 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fv1NwoHI11eDqtL_8",
+        "name": "Lid edge",
+        "line": 2781,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 18,
+        "expressions": [
+          "0.5 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FknxGARfVx5oMfO_9",
+        "name": "Snout bore",
+        "line": 2830,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 18,
+        "expressions": [
+          "2 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F8cFuiJHA2X6iNH_9",
+        "name": "Fillet 7",
+        "line": 2879,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "1 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FGEFigzkAxPM59u_9",
+        "name": "Move face 2",
+        "line": 2898,
+        "families": [
+          "moveFace"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 6,
+        "expressions": [
+          "5 mm",
+          "0 deg",
+          "0.1 mm",
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FN6INK32J0UdQPg_9",
+        "name": "Sketch 6",
+        "line": 2923,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FWLHHKFnDTPn19G_9",
+        "name": "Move face 3",
+        "line": 2941,
+        "families": [
+          "moveFace"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "5 mm",
+          "0 deg",
+          "2 mm",
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FWeyFySe9CKv4Nz_9",
+        "name": "Fillet 2",
+        "line": 2956,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "2 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FAMsZgjejLDyDpL_9",
+        "name": "Fillet 4",
+        "line": 2975,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 6,
+        "expressions": [
+          "1 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FMvj1gvUrQQ0Kcm_9",
+        "name": "Sketch 8",
+        "line": 3000,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1,
+          "skLineSegment": 2
+        },
+        "constraints": {
+          "COINCIDENT": 2,
+          "LENGTH": 1,
+          "MIDPOINT": 1,
+          "PERPENDICULAR": 1,
+          "PROJECTED": 3
+        },
+        "compressed_queries": 7,
+        "expressions": [
+          "17.5 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FM1AyrxbdaDaAAF_9",
+        "name": "Plane 4",
+        "line": 3057,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F31BiBxoUNJnI9Q_9",
+        "name": "Sketch 9",
+        "line": 3074,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skLineSegment": 6
+        },
+        "constraints": {
+          "ANGLE": 1,
+          "COINCIDENT": 7,
+          "DISTANCE": 1,
+          "HORIZONTAL": 3,
+          "PERPENDICULAR": 2
+        },
+        "compressed_queries": 2,
+        "expressions": [
+          "(8.48/2) mm",
+          "20 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FC9T8vAOiXLU36z_9",
+        "name": "Revolve 4",
+        "line": 3142,
+        "families": [
+          "revolve"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "30 deg",
+          "0 deg",
+          "330 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FXlxGsCak38eZSS_9",
+        "name": "Circular pattern 5",
+        "line": 3161,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "360 deg",
+          "3"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FfaNqjyehukijbZ_9",
+        "name": "Sketch 10",
+        "line": 3176,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1,
+          "skLineSegment": 1
+        },
+        "constraints": {
+          "COINCIDENT": 2,
+          "PROJECTED": 1
+        },
+        "compressed_queries": 4,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FQHjAhPUlVmDSh1_9",
+        "name": "Plane 5",
+        "line": 3211,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FV8OL9P2HUtuZYf_9",
+        "name": "Sketch 11",
+        "line": 3228,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 4,
+          "skLineSegment": 6,
+          "skPoint": 4
+        },
+        "constraints": {
+          "COINCIDENT": 19,
+          "DISTANCE": 2,
+          "EQUAL": 3,
+          "LENGTH": 1,
+          "MIRROR": 1,
+          "PARALLEL": 1,
+          "PERPENDICULAR": 5,
+          "RADIUS": 1,
+          "TANGENT": 8
+        },
+        "compressed_queries": 3,
+        "expressions": [
+          "10 mm",
+          "6 mm",
+          "31 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FWGGj02Cqa5eWnY_9",
+        "name": "Extrude 8",
+        "line": 3387,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "25 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FpSd1AlQ1pf98O6_9",
+        "name": "Circular pattern 9",
+        "line": 3406,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "360 deg",
+          "3"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F0c2ErhsoN7PmpR_9",
+        "name": "Transform 2",
+        "line": 3421,
+        "families": [
+          "transform"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "25 mm",
+          "1",
+          "30 deg",
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FtIfG0qisk7FczZ_10",
+        "name": "Sketch 12",
+        "line": 3436,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 2,
+          "skPoint": 1
+        },
+        "constraints": {
+          "COINCIDENT": 2,
+          "DIAMETER": 1,
+          "DISTANCE": 1,
+          "PROJECTED": 1
+        },
+        "compressed_queries": 2,
+        "expressions": [
+          "12.5 mm",
+          "4 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FfFwgl2IOmOB9Ng_10",
+        "name": "Extrude 9",
+        "line": 3474,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "25 mm",
+          "2 mm",
+          "8 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FXaRXJ8m5nVdlmk_10",
+        "name": "Sketch 17",
+        "line": 3493,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1,
+          "skPoint": 1
+        },
+        "constraints": {
+          "COINCIDENT": 1,
+          "DIAMETER": 1,
+          "PROJECTED": 1
+        },
+        "compressed_queries": 2,
+        "expressions": [
+          "15 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FCXUgY4dNGBiM5T_10",
+        "name": "Extrude 10",
+        "line": 3524,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "25 mm",
+          "3 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FGbb5yooLlzCRqL_10",
+        "name": "Fillet 8",
+        "line": 3541,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "3 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FtQbWPI01glQP78_10",
+        "name": "Fillet 9",
+        "line": 3560,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "3 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F9ZXhNm2Dq3Malc_10",
+        "name": "Fillet 12",
+        "line": 3579,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 8,
+        "expressions": [
+          "0.5 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FkIp9i2JpSqia3o_10",
+        "name": "Fillet 13",
+        "line": 3608,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 4,
+        "expressions": [
+          "0.5 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FXtnqrxbfCQgJgM_10",
+        "name": "Edge point",
+        "line": 3629,
+        "families": [
+          "cPoint",
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1,
+          "skLineSegment": 4
+        },
+        "constraints": {
+          "COINCIDENT": 5,
+          "CONCENTRIC": 1,
+          "PARALLEL": 2,
+          "PERPENDICULAR": 1,
+          "PROJECTED": 1,
+          "TANGENT": 2
+        },
+        "compressed_queries": 11,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FsVgj1T8M7TZrpu",
+        "name": "Edge point",
+        "line": 3637,
+        "families": [
+          "cPoint"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FFbpj5YKkP0zNLS_10",
+        "name": "Extrude 11",
+        "line": 3721,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "1.6 mm",
+          "25 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FbZNJOscA3YNXaF_10",
+        "name": "Fillet 14",
+        "line": 3738,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "0.8 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FaBODNTkQ8rUetn_10",
+        "name": "Circular pattern 11",
+        "line": 3755,
+        "families": [
+          "circularPattern"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "360 deg",
+          "3"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FkmGrGbOEbW6Ugk_10",
+        "name": "Plane 6",
+        "line": 3770,
+        "families": [
+          "cPlane"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "25 mm",
+          "0 deg",
+          "150 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F9wvTagkjsY8KAM_10",
+        "name": "Sketch 24",
+        "line": 3787,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1,
+          "skLineSegment": 6,
+          "skPoint": 1
+        },
+        "constraints": {
+          "CIRCULAR_PATTERN": 1,
+          "COINCIDENT": 2,
+          "DISTANCE": 1,
+          "HORIZONTAL": 1,
+          "MIDPOINT": 1,
+          "TANGENT": 1
+        },
+        "compressed_queries": 1,
+        "expressions": [
+          "",
+          "1.6 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FyhZdHne2BuqJy7_10",
+        "name": "Extrude 12",
+        "line": 3834,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "25 mm",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FYRK32eGSediMAZ_11",
+        "name": "Sketch 26",
+        "line": 3849,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1
+        },
+        "constraints": {
+          "DIAMETER": 1
+        },
+        "compressed_queries": 1,
+        "expressions": [
+          "2.6 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FCi9jkEnKBUmyQA_11",
+        "name": "Revolve 5",
+        "line": 3871,
+        "families": [
+          "revolve"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "5 mm",
+          "0 mm",
+          "30 deg",
+          "0 deg",
+          "330 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fi8BOCaXvf50c4R_12",
+        "name": "Move face 4",
+        "line": 3888,
+        "families": [
+          "moveFace"
+        ],
+        "guard": "false",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "5 mm",
+          "0 deg",
+          "1.5 mm",
+          "0 mm"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FQGZr68nkoL0stg_12",
+        "name": "Fillet 15",
+        "line": 3907,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "3 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FNBgFlLTyU0PYr1_12",
+        "name": "Fillet 1",
+        "line": 3926,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "15 mm",
+          "0.2 in",
+          "0.5",
+          "5 mm",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      }
+    ],
+    "step": {
+      "relative_path": "Onshape examples\\Dodec Hub Conformal.step",
+      "sha256": "ed9949c937ccaa768d018038cebcbab6638c9af48223b684dd7ace235389a3fc",
+      "header": "ISO-10303-21;\nHEADER;\n/* Generated by software containing ST-Developer\n * from STEP Tools, Inc. (www.steptools.com) \n */\n/* OPTION: using custom renumber hook */\n\nFILE_DESCRIPTION(\n/* description */ ('STEP AP242 Edition 2',\n'CAx-IF Rec.Pracs.---Representation and Presentation of Product Manufa\ncturing Information (PMI)---4.0---2014-10-13',\n'CAx-IF Rec.Pracs.---3D Tessellated Geometry---0.4---2014-09-14','2;1',\n'CAx-IF Rec.Pracs.---User Defined Attributes---1.5---2016-08-15'),\n/* implementation_level */ '2;1');\n\nFILE_NAME(\n/* name */ 'Dodec Hub Conformal',\n/* time_stamp */ '2026-10-02T05:55:29Z',\n/* author */ (''),\n/* organization */ (''),\n/* preprocessor_version */ 'ST-DEVELOPER v20',\n/* originating_system */ 'ONSHAPE BY PTC INC, 1.221',\n/* authorisation */ '  ');\n\nFILE_SCHEMA (('AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF { 1 0 10303 442 3 1 4 }'));\nENDSEC;\n\n",
+      "lexical_manifold_brep_count": 3,
+      "si_units": [
+        "SI_UNIT($,.STERADIAN.)\nSOLID_ANGLE_UNIT()\n)",
+        "SI_UNIT($,.STERADIAN.)\nSOLID_ANGLE_UNIT()\n)",
+        "SI_UNIT($,.STERADIAN.)\nSOLID_ANGLE_UNIT()\n)",
+        "SI_UNIT($,.RADIAN.)\n)",
+        "SI_UNIT($,.RADIAN.)\n)",
+        "SI_UNIT($,.RADIAN.)\n)",
+        "SI_UNIT($,.METRE.)\n)",
+        "SI_UNIT($,.METRE.)\n)",
+        "SI_UNIT($,.METRE.)\n)"
+      ]
+    },
+    "provenance_gaps": [
+      "confirmed Onshape link-to-file binding",
+      "frozen source revision",
+      "STEP configuration binding",
+      "two edited STEP references (Kurt deferred them)",
+      "critical dimension acceptance from Kurt"
+    ],
+    "correspondence": "Filename pairing only; geometry and same-revision/configuration correspondence unverified",
+    "count_caveat": "Static definitions across conditional branches; not necessarily the active configuration feature count",
+    "native_conversion": {
+      "status": "rejected",
+      "editable_conversion_count": 0,
+      "reasons": [
+        "Generated FeatureScript execution/translation is not implemented",
+        "Sketch planes, projected topology and compressed queries cannot be mapped by guessing",
+        "Full feature order/constraints/expressions/configuration must survive conversion; no supported-looking subset is silently extracted"
+      ],
+      "feature_families_beyond_first_slice": [
+        "assignVariable",
+        "booleanBodies",
+        "cPlane",
+        "cPoint",
+        "circularPattern",
+        "fill",
+        "fillet",
+        "hole",
+        "loft",
+        "mirror",
+        "moveFace",
+        "offsetSurface",
+        "revolve",
+        "shell",
+        "splitPart",
+        "transform"
+      ],
+      "subset_caveat": "Presence of newSketch/extrude is not evidence that their geometry, constraints, booleans or references meet the declared subset"
+    }
+  },
+  {
+    "source_relative_path": "Onshape examples\\Dodec pipe mount.txt",
+    "source_sha256": "28f354129add3780c98affe6a5cfe2d67789c0734726d73b07bb305322595a13",
+    "source_bytes": 155727,
+    "representation": "generated Part Studio FeatureScript, not API feature JSON",
+    "feature_script_version": "3083",
+    "imports": [
+      "import(path : \"onshape/std/geometry.fs\", version : \"3083.0\");\r"
+    ],
+    "default_units": "[\"cubicInch\", \"degree\", \"degreePerSecond\", \"footPoundForce\", \"hertz\", \"inch\", \"inchPound\", \"meterPerSecondSquared\", \"pound\", \"poundForce\", \"poundPerCubicInch\", \"poundPerSquareInch\", \"second\", \"squareInch\"]",
+    "main_configuration": "{}",
+    "configuration_names": [],
+    "feature_count": 28,
+    "families": {
+      "chamfer": 4,
+      "extrude": 8,
+      "fillet": 3,
+      "hole": 1,
+      "mirror": 2,
+      "newSketch": 10
+    },
+    "sketch_entities": {
+      "skArc": 6,
+      "skCircle": 5,
+      "skLineSegment": 22,
+      "skPoint": 6
+    },
+    "constraint_types": {
+      "ANGLE": 2,
+      "CENTERLINE_DIMENSION": 1,
+      "CIRCULAR_PATTERN": 1,
+      "COINCIDENT": 41,
+      "CONCENTRIC": 2,
+      "DIAMETER": 3,
+      "DISTANCE": 9,
+      "EQUAL": 2,
+      "HORIZONTAL": 3,
+      "LENGTH": 1,
+      "MIDPOINT": 2,
+      "PARALLEL": 2,
+      "PERPENDICULAR": 3,
+      "PROJECTED": 3,
+      "RADIUS": 1,
+      "TANGENT": 10,
+      "VERTICAL": 7
+    },
+    "compressed_query_count": 98,
+    "features": [
+      {
+        "id": "FkCN4OkUvQV0XVN_0",
+        "name": "Sketch 1",
+        "line": 29,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 2,
+          "skCircle": 1,
+          "skLineSegment": 5
+        },
+        "constraints": {
+          "CENTERLINE_DIMENSION": 1,
+          "COINCIDENT": 9,
+          "CONCENTRIC": 1,
+          "DIAMETER": 1,
+          "DISTANCE": 2,
+          "EQUAL": 1,
+          "LENGTH": 1,
+          "PERPENDICULAR": 1,
+          "TANGENT": 1,
+          "VERTICAL": 5
+        },
+        "compressed_queries": 4,
+        "expressions": [
+          "1.85 in",
+          "2.1 in",
+          "0.375 in",
+          "0.15 in",
+          "1.25 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F8YAwT7gJOR5lq7_0",
+        "name": "Extrude 1",
+        "line": 130,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 0,
+        "expressions": [
+          "0.25 in",
+          "0 in",
+          "4 in",
+          "1 in",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F0syuZdHkdsDhVo_1",
+        "name": "Fillet 1",
+        "line": 145,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.5 in",
+          "0.2 in",
+          "0.5",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FRGPCCJA5elhtoS_1",
+        "name": "Mirror 1",
+        "line": 160,
+        "families": [
+          "mirror"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FHrPtfDrUhsSTYp_1",
+        "name": "Sketch 2",
+        "line": 179,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fdf89t31Bm6ZprD_1",
+        "name": "Sketch 3",
+        "line": 197,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 1,
+          "skLineSegment": 4
+        },
+        "constraints": {
+          "COINCIDENT": 8,
+          "DISTANCE": 3,
+          "MIDPOINT": 1,
+          "PARALLEL": 1,
+          "PERPENDICULAR": 1,
+          "TANGENT": 2
+        },
+        "compressed_queries": 9,
+        "expressions": [
+          "0.39 in",
+          "0.7 in",
+          "1.25 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FJvNI6QmWc9aBXw_1",
+        "name": "Extrude 2",
+        "line": 284,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.25 in",
+          "0 in",
+          "1 in",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fy2Ap4TRDj5xp0a_1",
+        "name": "Sketch 4",
+        "line": 301,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1,
+          "skLineSegment": 6,
+          "skPoint": 2
+        },
+        "constraints": {
+          "CIRCULAR_PATTERN": 1,
+          "COINCIDENT": 3,
+          "DISTANCE": 1,
+          "MIDPOINT": 1,
+          "PARALLEL": 1,
+          "PROJECTED": 1,
+          "TANGENT": 1
+        },
+        "compressed_queries": 4,
+        "expressions": [
+          "",
+          "0.6 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FUBsqFkbWQTqplE_1",
+        "name": "Extrude 3",
+        "line": 361,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.25 in",
+          "0 in",
+          "1 in",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FXtnU3FKmvYDEun_1",
+        "name": "Sketch 5",
+        "line": 378,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1,
+          "skPoint": 1
+        },
+        "constraints": {
+          "COINCIDENT": 1,
+          "DIAMETER": 1,
+          "PROJECTED": 1
+        },
+        "compressed_queries": 2,
+        "expressions": [
+          "0.39 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FdMDf6PF8Vx1bvh_1",
+        "name": "Extrude 4",
+        "line": 409,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.25 in",
+          "0 in",
+          "1 in",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Ft9fjP46eddC0b9_1",
+        "name": "Mirror 2",
+        "line": 426,
+        "families": [
+          "mirror"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FvFf1NRs1rfuLL2_1",
+        "name": "Sketch 6",
+        "line": 441,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1
+        },
+        "constraints": {
+          "COINCIDENT": 2
+        },
+        "compressed_queries": 4,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FnurvFVMbTpTorZ_1",
+        "name": "Extrude 5",
+        "line": 472,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.25 in",
+          "0 in",
+          "12 in",
+          "1 in",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FDBu5pkR5jFK2nT_2",
+        "name": "Sketch 7",
+        "line": 489,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 1,
+          "skLineSegment": 3
+        },
+        "constraints": {
+          "COINCIDENT": 6,
+          "DISTANCE": 2,
+          "HORIZONTAL": 3,
+          "PERPENDICULAR": 1,
+          "TANGENT": 2,
+          "VERTICAL": 1
+        },
+        "compressed_queries": 9,
+        "expressions": [
+          "0.95 in",
+          "0.8 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FZqlCZeHyV8prj2_2",
+        "name": "Extrude 6",
+        "line": 572,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "0.25 in",
+          "0 in",
+          "1 in",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FZcCIocFxfJUiFt_2",
+        "name": "Sketch 8",
+        "line": 589,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skPoint": 1
+        },
+        "constraints": {
+          "PROJECTED": 1
+        },
+        "compressed_queries": 2,
+        "expressions": [],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F9Ez89jLKUOUQT5_2",
+        "name": "#featureName",
+        "line": 613,
+        "families": [
+          "hole"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "[{\\",
+          "0.257 in",
+          "0.0890 in",
+          "0.1 in",
+          "-0.1 in",
+          "0.25 in",
+          "0.45 in",
+          "0.531 in",
+          "82 degree",
+          "1 deg",
+          "-1 deg",
+          "0.1120 in",
+          "0.5 in",
+          "118 deg",
+          "1.789911 deg",
+          "2.5",
+          "{\\"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FPCrsYBCZcg6oVu_2",
+        "name": "Sketch 9",
+        "line": 630,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skCircle": 1
+        },
+        "constraints": {
+          "CONCENTRIC": 1,
+          "DIAMETER": 1
+        },
+        "compressed_queries": 2,
+        "expressions": [
+          "0.9 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FAdcznxfP4yULH4_2",
+        "name": "Extrude 7",
+        "line": 657,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 1,
+        "expressions": [
+          "0.25 in",
+          "0 in",
+          "6 in",
+          "1 in",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Fwi3A8a82nwvilp_3",
+        "name": "Sketch 10",
+        "line": 674,
+        "families": [
+          "newSketch"
+        ],
+        "guard": "true",
+        "entities": {
+          "skArc": 2,
+          "skLineSegment": 4,
+          "skPoint": 2
+        },
+        "constraints": {
+          "ANGLE": 2,
+          "COINCIDENT": 12,
+          "DISTANCE": 1,
+          "EQUAL": 1,
+          "RADIUS": 1,
+          "TANGENT": 4,
+          "VERTICAL": 1
+        },
+        "compressed_queries": 4,
+        "expressions": [
+          "30 deg",
+          "0.2 in"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FRNuZ9k7e1DChKi_3",
+        "name": "Extrude 8",
+        "line": 772,
+        "families": [
+          "extrude"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "0.25 in",
+          "0 in",
+          "1 in",
+          "3 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "Foir87ZHu4j7t18_3",
+        "name": "Fillet 3",
+        "line": 791,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 10,
+        "expressions": [
+          "0.07 in",
+          "0.2 in",
+          "0.5",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FU6zbt4nMT4ZmZD_3",
+        "name": "Chamfer 1",
+        "line": 824,
+        "families": [
+          "chamfer"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 2,
+        "expressions": [
+          "0.03 in",
+          "0.2 in",
+          "60 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FDO5HVxpsnM58l3_3",
+        "name": "Chamfer 2",
+        "line": 841,
+        "families": [
+          "chamfer"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 3,
+        "expressions": [
+          "0.04 in",
+          "0.2 in",
+          "45 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FjXuDSQ8U21wWrm_3",
+        "name": "Chamfer 3",
+        "line": 860,
+        "families": [
+          "chamfer"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 5,
+        "expressions": [
+          "0.02 in",
+          "0.2 in",
+          "45 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "FMOvIZR3jDLqRDq_3",
+        "name": "Chamfer 4",
+        "line": 883,
+        "families": [
+          "chamfer"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 12,
+        "expressions": [
+          "0.04 in",
+          "0.2 in",
+          "45 deg"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      },
+      {
+        "id": "F5EVDC0iXn5LKS7_2",
+        "name": "Fillet 2",
+        "line": 921,
+        "families": [
+          "fillet"
+        ],
+        "guard": "true",
+        "entities": {},
+        "constraints": {},
+        "compressed_queries": 8,
+        "expressions": [
+          "0.1 in",
+          "0.2 in",
+          "0.5",
+          "0.01",
+          "0.99"
+        ],
+        "conversion_status": "unsupported_source_representation",
+        "native_feature_id": null
+      }
+    ],
+    "step": {
+      "relative_path": "Onshape examples\\Dodec pipe mount.step",
+      "sha256": "0d83f47ae66ddf23de94c7cadc56ac1634ee1c5583f5a6895af3d569fe1957f0",
+      "header": "ISO-10303-21;\nHEADER;\n/* Generated by software containing ST-Developer\n * from STEP Tools, Inc. (www.steptools.com) \n */\n/* OPTION: using custom renumber hook */\n\nFILE_DESCRIPTION(\n/* description */ ('STEP AP242 Edition 2',\n'CAx-IF Rec.Pracs.---Representation and Presentation of Product Manufa\ncturing Information (PMI)---4.0---2014-10-13',\n'CAx-IF Rec.Pracs.---3D Tessellated Geometry---0.4---2014-09-14','2;1',\n'CAx-IF Rec.Pracs.---User Defined Attributes---1.5---2016-08-15'),\n/* implementation_level */ '2;1');\n\nFILE_NAME(\n/* name */ 'Dodec pipe mount',\n/* time_stamp */ '2026-10-02T05:57:00Z',\n/* author */ (''),\n/* organization */ (''),\n/* preprocessor_version */ 'ST-DEVELOPER v20',\n/* originating_system */ 'ONSHAPE BY PTC INC, 1.221',\n/* authorisation */ '  ');\n\nFILE_SCHEMA (('AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF { 1 0 10303 442 3 1 4 }'));\nENDSEC;\n\n",
+      "lexical_manifold_brep_count": 3,
+      "si_units": [
+        "SI_UNIT($,.STERADIAN.)\nSOLID_ANGLE_UNIT()\n)",
+        "SI_UNIT($,.STERADIAN.)\nSOLID_ANGLE_UNIT()\n)",
+        "SI_UNIT($,.STERADIAN.)\nSOLID_ANGLE_UNIT()\n)",
+        "SI_UNIT($,.RADIAN.)\n)",
+        "SI_UNIT($,.RADIAN.)\n)",
+        "SI_UNIT($,.RADIAN.)\n)",
+        "SI_UNIT($,.METRE.)\n)",
+        "SI_UNIT($,.METRE.)\n)",
+        "SI_UNIT($,.METRE.)\n)"
+      ]
+    },
+    "provenance_gaps": [
+      "confirmed Onshape link-to-file binding",
+      "frozen source revision",
+      "STEP configuration binding",
+      "two edited STEP references (Kurt deferred them)",
+      "critical dimension acceptance from Kurt"
+    ],
+    "correspondence": "Filename pairing only; geometry and same-revision/configuration correspondence unverified",
+    "count_caveat": "Static definitions across conditional branches; not necessarily the active configuration feature count",
+    "native_conversion": {
+      "status": "rejected",
+      "editable_conversion_count": 0,
+      "reasons": [
+        "Generated FeatureScript execution/translation is not implemented",
+        "Sketch planes, projected topology and compressed queries cannot be mapped by guessing",
+        "Full feature order/constraints/expressions/configuration must survive conversion; no supported-looking subset is silently extracted"
+      ],
+      "feature_families_beyond_first_slice": [
+        "chamfer",
+        "fillet",
+        "hole",
+        "mirror"
+      ],
+      "subset_caveat": "Presence of newSketch/extrude is not evidence that their geometry, constraints, booleans or references meet the declared subset"
+    }
+  }
+]

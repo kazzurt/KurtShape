@@ -1,0 +1,39 @@
+{
+  "document_id": "4b2865a5-3af4-4c73-b55b-fb905f21e2a1",
+  "revision": "a9ca439e-f4cd-4b00-8516-3675cd5c8f73",
+  "units": "mm",
+  "sha256": "5444c845ca19667389c6cdaf9d9c6f266ae44cf059996f56c9a08043db876543",
+  "native_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\examples\\acceptance-plate.FCStd",
+  "format": ".step",
+  "shape": {
+    "valid": true,
+    "solid_count": 1,
+    "volume_mm3": 14098.40710525538,
+    "area_mm2": 6050.265482457437,
+    "bbox_mm": {
+      "min": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max": [
+        60.0,
+        40.0,
+        6.0
+      ],
+      "size": [
+        60.0,
+        40.0,
+        6.0
+      ]
+    },
+    "center_of_mass_mm": [
+      29.999999999999996,
+      20.0,
+      2.9999999999999996
+    ]
+  },
+  "settings": {
+    "writer": "FreeCAD Part/OCCT"
+  }
+}

@@ -1,0 +1,1772 @@
+{
+  "passed": true,
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "method": "Actual KurtShape toolbar buttons and native PartDesign Tasks; assistant transport excluded.",
+  "cases": [],
+  "native_warnings": [],
+  "model_tool_count": 39,
+  "sketch_tool_count": 64,
+  "primary_tool_count": 11,
+  "tools": [
+    {
+      "key": "pad",
+      "command": "PartDesign_Pad",
+      "label": "Extrude",
+      "registered": true,
+      "pixmap": "PartDesign_Pad",
+      "info": {
+        "name": "PartDesign_Pad",
+        "menuText": "Pad",
+        "toolTip": "Extrudes the selected sketch or profile and adds it to the body",
+        "whatsThis": "PartDesign_Pad",
+        "statusTip": "Extrudes the selected sketch or profile and adds it to the body",
+        "pixmap": "PartDesign_Pad",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "revolve",
+      "command": "PartDesign_Revolution",
+      "label": "Revolve",
+      "registered": true,
+      "pixmap": "PartDesign_Revolution",
+      "info": {
+        "name": "PartDesign_Revolution",
+        "menuText": "Revolve",
+        "toolTip": "Revolves the selected sketch or profile around a line or axis and adds it to the body",
+        "whatsThis": "PartDesign_Revolution",
+        "statusTip": "Revolves the selected sketch or profile around a line or axis and adds it to the body",
+        "pixmap": "PartDesign_Revolution",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sweep",
+      "command": "PartDesign_AdditivePipe",
+      "label": "Sweep",
+      "registered": true,
+      "pixmap": "PartDesign_AdditivePipe",
+      "info": {
+        "name": "PartDesign_AdditivePipe",
+        "menuText": "Additive Pipe",
+        "toolTip": "Sweeps the selected sketch or profile along a path and adds it to the body",
+        "whatsThis": "PartDesign_AdditivePipe",
+        "statusTip": "Sweeps the selected sketch or profile along a path and adds it to the body",
+        "pixmap": "PartDesign_AdditivePipe",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "loft",
+      "command": "PartDesign_AdditiveLoft",
+      "label": "Loft",
+      "registered": true,
+      "pixmap": "PartDesign_AdditiveLoft",
+      "info": {
+        "name": "PartDesign_AdditiveLoft",
+        "menuText": "Additive Loft",
+        "toolTip": "Lofts the selected sketch or profile along a path and adds it to the body",
+        "whatsThis": "PartDesign_AdditiveLoft",
+        "statusTip": "Lofts the selected sketch or profile along a path and adds it to the body",
+        "pixmap": "PartDesign_AdditiveLoft",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "additive_helix",
+      "command": "PartDesign_AdditiveHelix",
+      "label": "Helical sweep",
+      "registered": true,
+      "pixmap": "PartDesign_AdditiveHelix",
+      "info": {
+        "name": "PartDesign_AdditiveHelix",
+        "menuText": "Additive Helix",
+        "toolTip": "Sweeps the selected sketch or profile along a helix and adds it to the body",
+        "whatsThis": "PartDesign_AdditiveHelix",
+        "statusTip": "Sweeps the selected sketch or profile along a helix and adds it to the body",
+        "pixmap": "PartDesign_AdditiveHelix",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "additive_primitive",
+      "command": "PartDesign_CompPrimitiveAdditive",
+      "label": "Additive primitives",
+      "registered": true,
+      "pixmap": "PartDesign_AdditiveBox",
+      "info": {
+        "name": "PartDesign_CompPrimitiveAdditive",
+        "menuText": "Additive Primitive",
+        "toolTip": "Creates an additive primitive",
+        "whatsThis": "PartDesign_CompPrimitiveAdditive",
+        "statusTip": "Creates an additive primitive",
+        "pixmap": "",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "pocket",
+      "command": "PartDesign_Pocket",
+      "label": "Extrude remove",
+      "registered": true,
+      "pixmap": "PartDesign_Pocket",
+      "info": {
+        "name": "PartDesign_Pocket",
+        "menuText": "Pocket",
+        "toolTip": "Extrudes the selected sketch or profile and removes it from the body",
+        "whatsThis": "PartDesign_Pocket",
+        "statusTip": "Extrudes the selected sketch or profile and removes it from the body",
+        "pixmap": "PartDesign_Pocket",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "groove",
+      "command": "PartDesign_Groove",
+      "label": "Revolve remove",
+      "registered": true,
+      "pixmap": "PartDesign_Groove",
+      "info": {
+        "name": "PartDesign_Groove",
+        "menuText": "Groove",
+        "toolTip": "Revolves the sketch or profile around a line or axis and removes it from the body",
+        "whatsThis": "PartDesign_Groove",
+        "statusTip": "Revolves the sketch or profile around a line or axis and removes it from the body",
+        "pixmap": "PartDesign_Groove",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "subtractive_sweep",
+      "command": "PartDesign_SubtractivePipe",
+      "label": "Sweep remove",
+      "registered": true,
+      "pixmap": "PartDesign_SubtractivePipe",
+      "info": {
+        "name": "PartDesign_SubtractivePipe",
+        "menuText": "Subtractive Pipe",
+        "toolTip": "Sweeps the selected sketch or profile along a path and removes it from the body",
+        "whatsThis": "PartDesign_SubtractivePipe",
+        "statusTip": "Sweeps the selected sketch or profile along a path and removes it from the body",
+        "pixmap": "PartDesign_SubtractivePipe",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "subtractive_loft",
+      "command": "PartDesign_SubtractiveLoft",
+      "label": "Loft remove",
+      "registered": true,
+      "pixmap": "PartDesign_SubtractiveLoft",
+      "info": {
+        "name": "PartDesign_SubtractiveLoft",
+        "menuText": "Subtractive Loft",
+        "toolTip": "Lofts the selected sketch or profile along a path and removes it from the body",
+        "whatsThis": "PartDesign_SubtractiveLoft",
+        "statusTip": "Lofts the selected sketch or profile along a path and removes it from the body",
+        "pixmap": "PartDesign_SubtractiveLoft",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "subtractive_helix",
+      "command": "PartDesign_SubtractiveHelix",
+      "label": "Helical remove",
+      "registered": true,
+      "pixmap": "PartDesign_SubtractiveHelix",
+      "info": {
+        "name": "PartDesign_SubtractiveHelix",
+        "menuText": "Subtractive Helix",
+        "toolTip": "Sweeps the selected sketch or profile along a helix and removes it from the body",
+        "whatsThis": "PartDesign_SubtractiveHelix",
+        "statusTip": "Sweeps the selected sketch or profile along a helix and removes it from the body",
+        "pixmap": "PartDesign_SubtractiveHelix",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "subtractive_primitive",
+      "command": "PartDesign_CompPrimitiveSubtractive",
+      "label": "Subtractive primitives",
+      "registered": true,
+      "pixmap": "PartDesign_SubtractiveBox",
+      "info": {
+        "name": "PartDesign_CompPrimitiveSubtractive",
+        "menuText": "Subtractive Primitive",
+        "toolTip": "Creates a subtractive primitive",
+        "whatsThis": "PartDesign_CompPrimitiveSubtractive",
+        "statusTip": "Creates a subtractive primitive",
+        "pixmap": "",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "hole",
+      "command": "PartDesign_Hole",
+      "label": "Hole",
+      "registered": true,
+      "pixmap": "PartDesign_Hole",
+      "info": {
+        "name": "PartDesign_Hole",
+        "menuText": "Hole",
+        "toolTip": "Creates holes in the active body at the center points of circles or arcs of the selected sketch or profile",
+        "whatsThis": "PartDesign_Hole",
+        "statusTip": "Creates holes in the active body at the center points of circles or arcs of the selected sketch or profile",
+        "pixmap": "PartDesign_Hole",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "fillet",
+      "command": "PartDesign_Fillet",
+      "label": "Fillet",
+      "registered": true,
+      "pixmap": "PartDesign_Fillet",
+      "info": {
+        "name": "PartDesign_Fillet",
+        "menuText": "Fillet",
+        "toolTip": "Applies a fillet to the selected edges or faces",
+        "whatsThis": "PartDesign_Fillet",
+        "statusTip": "Applies a fillet to the selected edges or faces",
+        "pixmap": "PartDesign_Fillet",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "chamfer",
+      "command": "PartDesign_Chamfer",
+      "label": "Chamfer",
+      "registered": true,
+      "pixmap": "PartDesign_Chamfer",
+      "info": {
+        "name": "PartDesign_Chamfer",
+        "menuText": "Chamfer",
+        "toolTip": "Applies a chamfer to the selected edges or faces",
+        "whatsThis": "PartDesign_Chamfer",
+        "statusTip": "Applies a chamfer to the selected edges or faces",
+        "pixmap": "PartDesign_Chamfer",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "shell",
+      "command": "PartDesign_Thickness",
+      "label": "Shell",
+      "registered": true,
+      "pixmap": "PartDesign_Thickness",
+      "info": {
+        "name": "PartDesign_Thickness",
+        "menuText": "Thickness",
+        "toolTip": "Applies thickness and removes the selected faces",
+        "whatsThis": "PartDesign_Thickness",
+        "statusTip": "Applies thickness and removes the selected faces",
+        "pixmap": "PartDesign_Thickness",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "draft",
+      "command": "PartDesign_Draft",
+      "label": "Draft",
+      "registered": true,
+      "pixmap": "PartDesign_Draft",
+      "info": {
+        "name": "PartDesign_Draft",
+        "menuText": "Draft",
+        "toolTip": "Applies a draft to the selected faces",
+        "whatsThis": "PartDesign_Draft",
+        "statusTip": "Applies a draft to the selected faces",
+        "pixmap": "PartDesign_Draft",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "boolean",
+      "command": "PartDesign_Boolean",
+      "label": "Boolean",
+      "registered": true,
+      "pixmap": "PartDesign_Boolean",
+      "info": {
+        "name": "PartDesign_Boolean",
+        "menuText": "Boolean Operation",
+        "toolTip": "Applies boolean operations with the selected objects and the active body",
+        "whatsThis": "PartDesign_Boolean",
+        "statusTip": "Applies boolean operations with the selected objects and the active body",
+        "pixmap": "PartDesign_Boolean",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "mirror",
+      "command": "PartDesign_Mirrored",
+      "label": "Mirror",
+      "registered": true,
+      "pixmap": "PartDesign_Mirrored",
+      "info": {
+        "name": "PartDesign_Mirrored",
+        "menuText": "Mirror",
+        "toolTip": "Mirrors the selected features or active body",
+        "whatsThis": "PartDesign_Mirrored",
+        "statusTip": "Mirrors the selected features or active body",
+        "pixmap": "PartDesign_Mirrored",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "linear_pattern",
+      "command": "PartDesign_LinearPattern",
+      "label": "Linear pattern",
+      "registered": true,
+      "pixmap": "PartDesign_LinearPattern",
+      "info": {
+        "name": "PartDesign_LinearPattern",
+        "menuText": "Linear Pattern",
+        "toolTip": "Duplicates the selected features or the active body in a linear pattern",
+        "whatsThis": "PartDesign_LinearPattern",
+        "statusTip": "Duplicates the selected features or the active body in a linear pattern",
+        "pixmap": "PartDesign_LinearPattern",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "circular_pattern",
+      "command": "PartDesign_PolarPattern",
+      "label": "Circular pattern",
+      "registered": true,
+      "pixmap": "PartDesign_PolarPattern",
+      "info": {
+        "name": "PartDesign_PolarPattern",
+        "menuText": "Polar Pattern",
+        "toolTip": "Duplicates the selected features or the active body in a circular pattern",
+        "whatsThis": "PartDesign_PolarPattern",
+        "statusTip": "Duplicates the selected features or the active body in a circular pattern",
+        "pixmap": "PartDesign_PolarPattern",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "multi_transform",
+      "command": "PartDesign_MultiTransform",
+      "label": "Multiple transforms",
+      "registered": true,
+      "pixmap": "PartDesign_MultiTransform",
+      "info": {
+        "name": "PartDesign_MultiTransform",
+        "menuText": "Multi-Transform",
+        "toolTip": "Applies multiple transformations to the selected features or active body",
+        "whatsThis": "PartDesign_MultiTransform",
+        "statusTip": "Applies multiple transformations to the selected features or active body",
+        "pixmap": "PartDesign_MultiTransform",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "datum_plane",
+      "command": "PartDesign_Plane",
+      "label": "Plane",
+      "registered": true,
+      "pixmap": "PartDesign_Plane",
+      "info": {
+        "name": "PartDesign_Plane",
+        "menuText": "Datum Plane",
+        "toolTip": "Creates a new datum plane",
+        "whatsThis": "PartDesign_Plane",
+        "statusTip": "Creates a new datum plane",
+        "pixmap": "PartDesign_Plane",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "datum_line",
+      "command": "PartDesign_Line",
+      "label": "Axis",
+      "registered": true,
+      "pixmap": "PartDesign_Line",
+      "info": {
+        "name": "PartDesign_Line",
+        "menuText": "Datum Line",
+        "toolTip": "Creates a new datum line",
+        "whatsThis": "PartDesign_Line",
+        "statusTip": "Creates a new datum line",
+        "pixmap": "PartDesign_Line",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "datum_point",
+      "command": "PartDesign_Point",
+      "label": "Point",
+      "registered": true,
+      "pixmap": "PartDesign_Point",
+      "info": {
+        "name": "PartDesign_Point",
+        "menuText": "Datum Point",
+        "toolTip": "Creates a new datum point",
+        "whatsThis": "PartDesign_Point",
+        "statusTip": "Creates a new datum point",
+        "pixmap": "PartDesign_Point",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "datum_coordinates",
+      "command": "PartDesign_CoordinateSystem",
+      "label": "Coordinate system",
+      "registered": true,
+      "pixmap": "PartDesign_CoordinateSystem",
+      "info": {
+        "name": "PartDesign_CoordinateSystem",
+        "menuText": "Local Coordinate System",
+        "toolTip": "Creates a new local coordinate system",
+        "whatsThis": "PartDesign_CoordinateSystem",
+        "statusTip": "Creates a new local coordinate system",
+        "pixmap": "PartDesign_CoordinateSystem",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "shape_binder",
+      "command": "PartDesign_ShapeBinder",
+      "label": "Shape binder",
+      "registered": true,
+      "pixmap": "PartDesign_ShapeBinder",
+      "info": {
+        "name": "PartDesign_ShapeBinder",
+        "menuText": "Shape Binder",
+        "toolTip": "Creates a new shape binder",
+        "whatsThis": "PartDesign_ShapeBinder",
+        "statusTip": "Creates a new shape binder",
+        "pixmap": "PartDesign_ShapeBinder",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "subshape_binder",
+      "command": "PartDesign_SubShapeBinder",
+      "label": "Subshape binder",
+      "registered": true,
+      "pixmap": "PartDesign_SubShapeBinder",
+      "info": {
+        "name": "PartDesign_SubShapeBinder",
+        "menuText": "Sub-Shape Binder",
+        "toolTip": "Creates a reference to geometry from one or more objects, allowing it to be used inside or outside a body. It tracks relative placements, supports multiple geometry types (solids, faces, edges, vertices), and can work with objects in the same or external documents.",
+        "whatsThis": "PartDesign_SubShapeBinder",
+        "statusTip": "Creates a reference to geometry from one or more objects, allowing it to be used inside or outside a body. It tracks relative placements, supports multiple geometry types (solids, faces, edges, vertices), and can work with objects in the same or external documents.",
+        "pixmap": "PartDesign_SubShapeBinder",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "part_extrude",
+      "command": "Part_Extrude",
+      "label": "Part extrude",
+      "registered": true,
+      "pixmap": "Part_Extrude",
+      "info": {
+        "name": "Part_Extrude",
+        "menuText": "Extrude",
+        "toolTip": "Extrudes the selected sketch or profile",
+        "whatsThis": "Part_Extrude",
+        "statusTip": "Extrudes the selected sketch or profile",
+        "pixmap": "Part_Extrude",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "part_revolve",
+      "command": "Part_Revolve",
+      "label": "Part revolve",
+      "registered": true,
+      "pixmap": "Part_Revolve",
+      "info": {
+        "name": "Part_Revolve",
+        "menuText": "Revolve",
+        "toolTip": "Revolves the selected shape",
+        "whatsThis": "Part_Revolve",
+        "statusTip": "Revolves the selected shape",
+        "pixmap": "Part_Revolve",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "part_sweep",
+      "command": "Part_Sweep",
+      "label": "Part sweep",
+      "registered": true,
+      "pixmap": "Part_Sweep",
+      "info": {
+        "name": "Part_Sweep",
+        "menuText": "Sweep",
+        "toolTip": "Sweeps profiles along a wire",
+        "whatsThis": "Part_Sweep",
+        "statusTip": "Sweeps profiles along a wire",
+        "pixmap": "Part_Sweep",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "part_loft",
+      "command": "Part_Loft",
+      "label": "Part loft",
+      "registered": true,
+      "pixmap": "Part_Loft",
+      "info": {
+        "name": "Part_Loft",
+        "menuText": "Loft",
+        "toolTip": "Lofts the selected profiles",
+        "whatsThis": "Part_Loft",
+        "statusTip": "Lofts the selected profiles",
+        "pixmap": "Part_Loft",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "part_boolean",
+      "command": "Part_Boolean",
+      "label": "Part Boolean",
+      "registered": true,
+      "pixmap": "Part_Booleans",
+      "info": {
+        "name": "Part_Boolean",
+        "menuText": "Boolean Operation",
+        "toolTip": "Applies a boolean operations with the selected shapes",
+        "whatsThis": "Part_Boolean",
+        "statusTip": "Applies a boolean operations with the selected shapes",
+        "pixmap": "Part_Booleans",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "part_offset",
+      "command": "Part_Offset",
+      "label": "Offset surface",
+      "registered": true,
+      "pixmap": "Part_Offset",
+      "info": {
+        "name": "Part_Offset",
+        "menuText": "3D Offset",
+        "toolTip": "Offsets shapes in 3D",
+        "whatsThis": "Part_Offset",
+        "statusTip": "Offsets shapes in 3D",
+        "pixmap": "Part_Offset",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "part_offset_2d",
+      "command": "Part_Offset2D",
+      "label": "Offset wire",
+      "registered": true,
+      "pixmap": "Part_Offset2D",
+      "info": {
+        "name": "Part_Offset2D",
+        "menuText": "2D Offset",
+        "toolTip": "Offsets planar shapes in 2D",
+        "whatsThis": "Part_Offset2D",
+        "statusTip": "Offsets planar shapes in 2D",
+        "pixmap": "Part_Offset2D",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "ruled_surface",
+      "command": "Part_RuledSurface",
+      "label": "Ruled surface",
+      "registered": true,
+      "pixmap": "Part_RuledSurface",
+      "info": {
+        "name": "Part_RuledSurface",
+        "menuText": "Ruled Surface",
+        "toolTip": "Creates a ruled surface between 2 selected wires",
+        "whatsThis": "Part_RuledSurface",
+        "statusTip": "Creates a ruled surface between 2 selected wires",
+        "pixmap": "Part_RuledSurface",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "part_thickness",
+      "command": "Part_Thickness",
+      "label": "Part thickness",
+      "registered": true,
+      "pixmap": "Part_Thickness",
+      "info": {
+        "name": "Part_Thickness",
+        "menuText": "Thickness",
+        "toolTip": "Removes the selected faces and offsets the remaining shape outward to add thickness",
+        "whatsThis": "Part_Thickness",
+        "statusTip": "Removes the selected faces and offsets the remaining shape outward to add thickness",
+        "pixmap": "Part_Thickness",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "part_section",
+      "command": "Part_Section",
+      "label": "Intersect shapes",
+      "registered": true,
+      "pixmap": "Part_Section",
+      "info": {
+        "name": "Part_Section",
+        "menuText": "Section",
+        "toolTip": "Sections 2 selected shapes",
+        "whatsThis": "Part_Section",
+        "statusTip": "Sections 2 selected shapes",
+        "pixmap": "Part_Section",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "part_check",
+      "command": "Part_CheckGeometry",
+      "label": "Check geometry",
+      "registered": true,
+      "pixmap": "Part_CheckGeometry",
+      "info": {
+        "name": "Part_CheckGeometry",
+        "menuText": "Check Geometry",
+        "toolTip": "Analyzes the selected shapes for errors",
+        "whatsThis": "Part_CheckGeometry",
+        "statusTip": "Analyzes the selected shapes for errors",
+        "pixmap": "Part_CheckGeometry",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_line",
+      "command": "Sketcher_CreateLine",
+      "label": "Line",
+      "registered": true,
+      "pixmap": "Sketcher_CreateLine",
+      "info": {
+        "name": "Sketcher_CreateLine",
+        "menuText": "Line",
+        "toolTip": "Creates a line",
+        "whatsThis": "Sketcher_CreateLine",
+        "statusTip": "Creates a line",
+        "pixmap": "Sketcher_CreateLine",
+        "shortcut": "G, L"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_polyline",
+      "command": "Sketcher_CreatePolyline",
+      "label": "Polyline",
+      "registered": true,
+      "pixmap": "Sketcher_CreatePolyline",
+      "info": {
+        "name": "Sketcher_CreatePolyline",
+        "menuText": "Polyline",
+        "toolTip": "Creates a continuous polyline. Press the 'M' key to switch segment modes",
+        "whatsThis": "Sketcher_CreatePolyline",
+        "statusTip": "Creates a continuous polyline. Press the 'M' key to switch segment modes",
+        "pixmap": "Sketcher_CreatePolyline",
+        "shortcut": "G, M"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_point",
+      "command": "Sketcher_CreatePoint",
+      "label": "Point",
+      "registered": true,
+      "pixmap": "Sketcher_CreatePoint",
+      "info": {
+        "name": "Sketcher_CreatePoint",
+        "menuText": "Point",
+        "toolTip": "Creates a point",
+        "whatsThis": "Sketcher_CreatePoint",
+        "statusTip": "Creates a point",
+        "pixmap": "Sketcher_CreatePoint",
+        "shortcut": "G, Y"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_circle",
+      "command": "Sketcher_CreateCircle",
+      "label": "Circle",
+      "registered": true,
+      "pixmap": "Sketcher_CreateCircle",
+      "info": {
+        "name": "Sketcher_CreateCircle",
+        "menuText": "Circle From Center",
+        "toolTip": "Creates a circle from a center and rim point",
+        "whatsThis": "Sketcher_CreateCircle",
+        "statusTip": "Creates a circle from a center and rim point",
+        "pixmap": "Sketcher_CreateCircle",
+        "shortcut": "G, C"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_three_point_circle",
+      "command": "Sketcher_Create3PointCircle",
+      "label": "Three-point circle",
+      "registered": true,
+      "pixmap": "Sketcher_Create3PointCircle",
+      "info": {
+        "name": "Sketcher_Create3PointCircle",
+        "menuText": "Circle From 3 Points",
+        "toolTip": "Creates a circle from 3 perimeter points",
+        "whatsThis": "Sketcher_Create3PointCircle",
+        "statusTip": "Creates a circle from 3 perimeter points",
+        "pixmap": "Sketcher_Create3PointCircle",
+        "shortcut": "G, 3, C"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_arc",
+      "command": "Sketcher_CreateArc",
+      "label": "Center arc",
+      "registered": true,
+      "pixmap": "Sketcher_CreateArc",
+      "info": {
+        "name": "Sketcher_CreateArc",
+        "menuText": "Arc From Center",
+        "toolTip": "Creates an arc defined by a center point and an end point",
+        "whatsThis": "Sketcher_CreateArc",
+        "statusTip": "Creates an arc defined by a center point and an end point",
+        "pixmap": "Sketcher_CreateArc",
+        "shortcut": "G, A"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_three_point_arc",
+      "command": "Sketcher_Create3PointArc",
+      "label": "Three-point arc",
+      "registered": true,
+      "pixmap": "Sketcher_Create3PointArc",
+      "info": {
+        "name": "Sketcher_Create3PointArc",
+        "menuText": "Arc From 3 Points",
+        "toolTip": "Creates an arc defined by 2 end points and 1 point on the arc",
+        "whatsThis": "Sketcher_Create3PointArc",
+        "statusTip": "Creates an arc defined by 2 end points and 1 point on the arc",
+        "pixmap": "Sketcher_Create3PointArc",
+        "shortcut": "G, 3, A"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_rectangle",
+      "command": "Sketcher_CreateRectangle",
+      "label": "Rectangle",
+      "registered": true,
+      "pixmap": "Sketcher_CreateRectangle",
+      "info": {
+        "name": "Sketcher_CreateRectangle",
+        "menuText": "Rectangle",
+        "toolTip": "Creates a rectangle from 2 corner points",
+        "whatsThis": "Sketcher_CreateRectangle",
+        "statusTip": "Creates a rectangle from 2 corner points",
+        "pixmap": "Sketcher_CreateRectangle",
+        "shortcut": "G, R"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_center_rectangle",
+      "command": "Sketcher_CreateRectangle_Center",
+      "label": "Center rectangle",
+      "registered": true,
+      "pixmap": "Sketcher_CreateRectangle_Center",
+      "info": {
+        "name": "Sketcher_CreateRectangle_Center",
+        "menuText": "Centered Rectangle",
+        "toolTip": "Creates a centered rectangle from a center and a corner point",
+        "whatsThis": "Sketcher_CreateRectangle_Center",
+        "statusTip": "Creates a centered rectangle from a center and a corner point",
+        "pixmap": "Sketcher_CreateRectangle_Center",
+        "shortcut": "G, V"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_ellipse",
+      "command": "Sketcher_CreateEllipseByCenter",
+      "label": "Center ellipse",
+      "registered": true,
+      "pixmap": "Sketcher_CreateEllipseByCenter",
+      "info": {
+        "name": "Sketcher_CreateEllipseByCenter",
+        "menuText": "Ellipse From Center",
+        "toolTip": "Creates an ellipse from a center and rim point",
+        "whatsThis": "Sketcher_CreateEllipseByCenter",
+        "statusTip": "Creates an ellipse from a center and rim point",
+        "pixmap": "Sketcher_CreateEllipseByCenter",
+        "shortcut": "G, E, E"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_three_point_ellipse",
+      "command": "Sketcher_CreateEllipseBy3Points",
+      "label": "Three-point ellipse",
+      "registered": true,
+      "pixmap": "Sketcher_CreateEllipse_3points",
+      "info": {
+        "name": "Sketcher_CreateEllipseBy3Points",
+        "menuText": "Ellipse From 3 Points",
+        "toolTip": "Creates an ellipse from 3 points on its perimeter",
+        "whatsThis": "Sketcher_CreateEllipseBy3Points",
+        "statusTip": "Creates an ellipse from 3 points on its perimeter",
+        "pixmap": "Sketcher_CreateEllipse_3points",
+        "shortcut": "G, 3, E"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_ellipse_arc",
+      "command": "Sketcher_CreateArcOfEllipse",
+      "label": "Elliptical arc",
+      "registered": true,
+      "pixmap": "Sketcher_CreateElliptical_Arc",
+      "info": {
+        "name": "Sketcher_CreateArcOfEllipse",
+        "menuText": "Elliptical Arc",
+        "toolTip": "Creates an elliptical arc",
+        "whatsThis": "Sketcher_CreateArcOfEllipse",
+        "statusTip": "Creates an elliptical arc",
+        "pixmap": "Sketcher_CreateElliptical_Arc",
+        "shortcut": "G, E, A"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_hyperbola_arc",
+      "command": "Sketcher_CreateArcOfHyperbola",
+      "label": "Hyperbolic arc",
+      "registered": true,
+      "pixmap": "Sketcher_CreateHyperbolic_Arc",
+      "info": {
+        "name": "Sketcher_CreateArcOfHyperbola",
+        "menuText": "Hyperbolic Arc",
+        "toolTip": "Creates a hyperbolic arc",
+        "whatsThis": "Sketcher_CreateArcOfHyperbola",
+        "statusTip": "Creates a hyperbolic arc",
+        "pixmap": "Sketcher_CreateHyperbolic_Arc",
+        "shortcut": "G, H"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_parabola_arc",
+      "command": "Sketcher_CreateArcOfParabola",
+      "label": "Parabolic arc",
+      "registered": true,
+      "pixmap": "Sketcher_CreateParabolic_Arc",
+      "info": {
+        "name": "Sketcher_CreateArcOfParabola",
+        "menuText": "Parabolic Arc",
+        "toolTip": "Creates a parabolic arc",
+        "whatsThis": "Sketcher_CreateArcOfParabola",
+        "statusTip": "Creates a parabolic arc",
+        "pixmap": "Sketcher_CreateParabolic_Arc",
+        "shortcut": "G, J"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_bspline",
+      "command": "Sketcher_CreateBSpline",
+      "label": "Spline control points",
+      "registered": true,
+      "pixmap": "Sketcher_CreateBSpline",
+      "info": {
+        "name": "Sketcher_CreateBSpline",
+        "menuText": "B-Spline",
+        "toolTip": "Creates a B-spline curve defined by control points",
+        "whatsThis": "Sketcher_CreateBSpline",
+        "statusTip": "Creates a B-spline curve defined by control points",
+        "pixmap": "Sketcher_CreateBSpline",
+        "shortcut": "G, B, B"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_interpolated_spline",
+      "command": "Sketcher_CreateBSplineByInterpolation",
+      "label": "Spline through points",
+      "registered": true,
+      "pixmap": "Sketcher_CreateBSplineByInterpolation",
+      "info": {
+        "name": "Sketcher_CreateBSplineByInterpolation",
+        "menuText": "B-Spline From Knots",
+        "toolTip": "Creates a B-spline from knots, i.e. from interpolation",
+        "whatsThis": "Sketcher_CreateBSplineByInterpolation",
+        "statusTip": "Creates a B-spline from knots, i.e. from interpolation",
+        "pixmap": "Sketcher_CreateBSplineByInterpolation",
+        "shortcut": "G, B, I"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_periodic_spline",
+      "command": "Sketcher_CreatePeriodicBSpline",
+      "label": "Closed spline control points",
+      "registered": true,
+      "pixmap": "Sketcher_Create_Periodic_BSpline",
+      "info": {
+        "name": "Sketcher_CreatePeriodicBSpline",
+        "menuText": "Periodic B-Spline",
+        "toolTip": "Creates a periodic B-spline curve defined by control points",
+        "whatsThis": "Sketcher_CreatePeriodicBSpline",
+        "statusTip": "Creates a periodic B-spline curve defined by control points",
+        "pixmap": "Sketcher_Create_Periodic_BSpline",
+        "shortcut": "G, B, P"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_periodic_interpolated_spline",
+      "command": "Sketcher_CreatePeriodicBSplineByInterpolation",
+      "label": "Closed spline through points",
+      "registered": true,
+      "pixmap": "Sketcher_CreatePeriodicBSplineByInterpolation",
+      "info": {
+        "name": "Sketcher_CreatePeriodicBSplineByInterpolation",
+        "menuText": "Periodic B-Spline From Knots",
+        "toolTip": "Creates a periodic B-spline defined by knots using interpolation",
+        "whatsThis": "Sketcher_CreatePeriodicBSplineByInterpolation",
+        "statusTip": "Creates a periodic B-spline defined by knots using interpolation",
+        "pixmap": "Sketcher_CreatePeriodicBSplineByInterpolation",
+        "shortcut": "G, B, O"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_slot",
+      "command": "Sketcher_CreateSlot",
+      "label": "Slot",
+      "registered": true,
+      "pixmap": "Sketcher_CreateSlot",
+      "info": {
+        "name": "Sketcher_CreateSlot",
+        "menuText": "Slot",
+        "toolTip": "Creates a slot",
+        "whatsThis": "Sketcher_CreateSlot",
+        "statusTip": "Creates a slot",
+        "pixmap": "Sketcher_CreateSlot",
+        "shortcut": "G, S"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_arc_slot",
+      "command": "Sketcher_CreateArcSlot",
+      "label": "Arc slot",
+      "registered": true,
+      "pixmap": "Sketcher_CreateArcSlot",
+      "info": {
+        "name": "Sketcher_CreateArcSlot",
+        "menuText": "Arc Slot",
+        "toolTip": "Creates an arc slot",
+        "whatsThis": "Sketcher_CreateArcSlot",
+        "statusTip": "Creates an arc slot",
+        "pixmap": "Sketcher_CreateArcSlot",
+        "shortcut": "G, S, 2"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_oblong",
+      "command": "Sketcher_CreateOblong",
+      "label": "Oblong",
+      "registered": true,
+      "pixmap": "Sketcher_CreateOblong",
+      "info": {
+        "name": "Sketcher_CreateOblong",
+        "menuText": "Rounded Rectangle",
+        "toolTip": "Creates a rounded rectangle from 2 corner points",
+        "whatsThis": "Sketcher_CreateOblong",
+        "statusTip": "Creates a rounded rectangle from 2 corner points",
+        "pixmap": "Sketcher_CreateOblong",
+        "shortcut": "G, O"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_polygon",
+      "command": "Sketcher_CreateRegularPolygon",
+      "label": "Regular polygon",
+      "registered": true,
+      "pixmap": "Sketcher_CreateRegularPolygon",
+      "info": {
+        "name": "Sketcher_CreateRegularPolygon",
+        "menuText": "Polygon",
+        "toolTip": "Creates a regular polygon from a center and corner point",
+        "whatsThis": "Sketcher_CreateRegularPolygon",
+        "statusTip": "Creates a regular polygon from a center and corner point",
+        "pixmap": "Sketcher_CreateRegularPolygon",
+        "shortcut": "G, P, R"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_square",
+      "command": "Sketcher_CreateSquare",
+      "label": "Square",
+      "registered": true,
+      "pixmap": "Sketcher_CreateSquare",
+      "info": {
+        "name": "Sketcher_CreateSquare",
+        "menuText": "Square",
+        "toolTip": "Creates a square from a center and corner point",
+        "whatsThis": "Sketcher_CreateSquare",
+        "statusTip": "Creates a square from a center and corner point",
+        "pixmap": "Sketcher_CreateSquare",
+        "shortcut": "G, P, 4"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_triangle",
+      "command": "Sketcher_CreateTriangle",
+      "label": "Triangle",
+      "registered": true,
+      "pixmap": "Sketcher_CreateTriangle",
+      "info": {
+        "name": "Sketcher_CreateTriangle",
+        "menuText": "Triangle",
+        "toolTip": "Creates an equilateral triangle from a center and corner point",
+        "whatsThis": "Sketcher_CreateTriangle",
+        "statusTip": "Creates an equilateral triangle from a center and corner point",
+        "pixmap": "Sketcher_CreateTriangle",
+        "shortcut": "G, P, 3"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_pentagon",
+      "command": "Sketcher_CreatePentagon",
+      "label": "Pentagon",
+      "registered": true,
+      "pixmap": "Sketcher_CreatePentagon",
+      "info": {
+        "name": "Sketcher_CreatePentagon",
+        "menuText": "Pentagon",
+        "toolTip": "Creates a pentagon from a center and corner point",
+        "whatsThis": "Sketcher_CreatePentagon",
+        "statusTip": "Creates a pentagon from a center and corner point",
+        "pixmap": "Sketcher_CreatePentagon",
+        "shortcut": "G, P, 5"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_hexagon",
+      "command": "Sketcher_CreateHexagon",
+      "label": "Hexagon",
+      "registered": true,
+      "pixmap": "Sketcher_CreateHexagon",
+      "info": {
+        "name": "Sketcher_CreateHexagon",
+        "menuText": "Hexagon",
+        "toolTip": "Creates a hexagon from a center and corner point",
+        "whatsThis": "Sketcher_CreateHexagon",
+        "statusTip": "Creates a hexagon from a center and corner point",
+        "pixmap": "Sketcher_CreateHexagon",
+        "shortcut": "G, P, 6"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_heptagon",
+      "command": "Sketcher_CreateHeptagon",
+      "label": "Heptagon",
+      "registered": true,
+      "pixmap": "Sketcher_CreateHeptagon",
+      "info": {
+        "name": "Sketcher_CreateHeptagon",
+        "menuText": "Heptagon",
+        "toolTip": "Creates a heptagon from a center and corner point",
+        "whatsThis": "Sketcher_CreateHeptagon",
+        "statusTip": "Creates a heptagon from a center and corner point",
+        "pixmap": "Sketcher_CreateHeptagon",
+        "shortcut": "G, P, 7"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_octagon",
+      "command": "Sketcher_CreateOctagon",
+      "label": "Octagon",
+      "registered": true,
+      "pixmap": "Sketcher_CreateOctagon",
+      "info": {
+        "name": "Sketcher_CreateOctagon",
+        "menuText": "Octagon",
+        "toolTip": "Creates an octagon from a center and corner point",
+        "whatsThis": "Sketcher_CreateOctagon",
+        "statusTip": "Creates an octagon from a center and corner point",
+        "pixmap": "Sketcher_CreateOctagon",
+        "shortcut": "G, P, 8"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_dimension",
+      "command": "Sketcher_Dimension",
+      "label": "Dimension",
+      "registered": true,
+      "pixmap": "Constraint_Dimension",
+      "info": {
+        "name": "Sketcher_Dimension",
+        "menuText": "Dimension",
+        "toolTip": "Constrains contextually based on the selection. The type can be changed with the M key.",
+        "whatsThis": "Sketcher_Dimension",
+        "statusTip": "Constrains contextually based on the selection. The type can be changed with the M key.",
+        "pixmap": "Constraint_Dimension",
+        "shortcut": "D"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_horizontal",
+      "command": "Sketcher_ConstrainHorizontal",
+      "label": "Horizontal",
+      "registered": true,
+      "pixmap": "Constraint_Horizontal",
+      "info": {
+        "name": "Sketcher_ConstrainHorizontal",
+        "menuText": "Horizontal Constraint",
+        "toolTip": "Constrains the selected elements horizontally",
+        "whatsThis": "Sketcher_ConstrainHorizontal",
+        "statusTip": "Constrains the selected elements horizontally",
+        "pixmap": "Constraint_Horizontal",
+        "shortcut": "H"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_vertical",
+      "command": "Sketcher_ConstrainVertical",
+      "label": "Vertical",
+      "registered": true,
+      "pixmap": "Constraint_Vertical",
+      "info": {
+        "name": "Sketcher_ConstrainVertical",
+        "menuText": "Vertical Constraint",
+        "toolTip": "Constrains the selected elements vertically",
+        "whatsThis": "Sketcher_ConstrainVertical",
+        "statusTip": "Constrains the selected elements vertically",
+        "pixmap": "Constraint_Vertical",
+        "shortcut": "V"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_coincident",
+      "command": "Sketcher_ConstrainCoincident",
+      "label": "Coincident",
+      "registered": true,
+      "pixmap": "Constraint_PointOnPoint",
+      "info": {
+        "name": "Sketcher_ConstrainCoincident",
+        "menuText": "Coincident Constraint",
+        "toolTip": "Constrains the selected elements to be coincident",
+        "whatsThis": "Sketcher_ConstrainCoincident",
+        "statusTip": "Constrains the selected elements to be coincident",
+        "pixmap": "Constraint_PointOnPoint",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_point_on_object",
+      "command": "Sketcher_ConstrainPointOnObject",
+      "label": "Point on object",
+      "registered": true,
+      "pixmap": "Constraint_PointOnObject",
+      "info": {
+        "name": "Sketcher_ConstrainPointOnObject",
+        "menuText": "Point-On-Object Constraint",
+        "toolTip": "Constrains the selected point onto the selected object",
+        "whatsThis": "Sketcher_ConstrainPointOnObject",
+        "statusTip": "Constrains the selected point onto the selected object",
+        "pixmap": "Constraint_PointOnObject",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_parallel",
+      "command": "Sketcher_ConstrainParallel",
+      "label": "Parallel",
+      "registered": true,
+      "pixmap": "Constraint_Parallel",
+      "info": {
+        "name": "Sketcher_ConstrainParallel",
+        "menuText": "Parallel Constraint",
+        "toolTip": "Constrains the selected lines to be parallel",
+        "whatsThis": "Sketcher_ConstrainParallel",
+        "statusTip": "Constrains the selected lines to be parallel",
+        "pixmap": "Constraint_Parallel",
+        "shortcut": "P"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_perpendicular",
+      "command": "Sketcher_ConstrainPerpendicular",
+      "label": "Perpendicular",
+      "registered": true,
+      "pixmap": "Constraint_Perpendicular",
+      "info": {
+        "name": "Sketcher_ConstrainPerpendicular",
+        "menuText": "Perpendicular Constraint",
+        "toolTip": "Constrains the selected lines to be perpendicular",
+        "whatsThis": "Sketcher_ConstrainPerpendicular",
+        "statusTip": "Constrains the selected lines to be perpendicular",
+        "pixmap": "Constraint_Perpendicular",
+        "shortcut": "N"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_tangent",
+      "command": "Sketcher_ConstrainTangent",
+      "label": "Tangent",
+      "registered": true,
+      "pixmap": "Constraint_Tangent",
+      "info": {
+        "name": "Sketcher_ConstrainTangent",
+        "menuText": "Tangent/Collinear Constraint",
+        "toolTip": "Constrains the selected elements to be tangent or collinear",
+        "whatsThis": "Sketcher_ConstrainTangent",
+        "statusTip": "Constrains the selected elements to be tangent or collinear",
+        "pixmap": "Constraint_Tangent",
+        "shortcut": "T"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_equal",
+      "command": "Sketcher_ConstrainEqual",
+      "label": "Equal",
+      "registered": true,
+      "pixmap": "Constraint_EqualLength",
+      "info": {
+        "name": "Sketcher_ConstrainEqual",
+        "menuText": "Equal Constraint",
+        "toolTip": "Constrains the selected edges or circles to be equal",
+        "whatsThis": "Sketcher_ConstrainEqual",
+        "statusTip": "Constrains the selected edges or circles to be equal",
+        "pixmap": "Constraint_EqualLength",
+        "shortcut": "E"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_symmetric",
+      "command": "Sketcher_ConstrainSymmetric",
+      "label": "Symmetric",
+      "registered": true,
+      "pixmap": "Constraint_Symmetric",
+      "info": {
+        "name": "Sketcher_ConstrainSymmetric",
+        "menuText": "Symmetric Constraint",
+        "toolTip": "Constrains the selected elements to be symmetric",
+        "whatsThis": "Sketcher_ConstrainSymmetric",
+        "statusTip": "Constrains the selected elements to be symmetric",
+        "pixmap": "Constraint_Symmetric",
+        "shortcut": "S"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_block",
+      "command": "Sketcher_ConstrainBlock",
+      "label": "Fix geometry",
+      "registered": true,
+      "pixmap": "Constraint_Block",
+      "info": {
+        "name": "Sketcher_ConstrainBlock",
+        "menuText": "Block Constraint",
+        "toolTip": "Constrains the selected edges as fixed",
+        "whatsThis": "Sketcher_ConstrainBlock",
+        "statusTip": "Constrains the selected edges as fixed",
+        "pixmap": "Constraint_Block",
+        "shortcut": "K, B"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_distance",
+      "command": "Sketcher_ConstrainDistance",
+      "label": "Distance",
+      "registered": true,
+      "pixmap": "Constraint_Length",
+      "info": {
+        "name": "Sketcher_ConstrainDistance",
+        "menuText": "Distance Dimension",
+        "toolTip": "Constrains the vertical distance between two points, or from a point to the origin if one is selected",
+        "whatsThis": "Sketcher_ConstrainDistance",
+        "statusTip": "Constrains the vertical distance between two points, or from a point to the origin if one is selected",
+        "pixmap": "Constraint_Length",
+        "shortcut": "K, D"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_distance_x",
+      "command": "Sketcher_ConstrainDistanceX",
+      "label": "Horizontal distance",
+      "registered": true,
+      "pixmap": "Constraint_HorizontalDistance",
+      "info": {
+        "name": "Sketcher_ConstrainDistanceX",
+        "menuText": "Horizontal Dimension",
+        "toolTip": "Constrains the horizontal distance between two points, or from a point to the origin if only one is selected",
+        "whatsThis": "Sketcher_ConstrainDistanceX",
+        "statusTip": "Constrains the horizontal distance between two points, or from a point to the origin if only one is selected",
+        "pixmap": "Constraint_HorizontalDistance",
+        "shortcut": "L"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_distance_y",
+      "command": "Sketcher_ConstrainDistanceY",
+      "label": "Vertical distance",
+      "registered": true,
+      "pixmap": "Constraint_VerticalDistance",
+      "info": {
+        "name": "Sketcher_ConstrainDistanceY",
+        "menuText": "Vertical Dimension",
+        "toolTip": "Constrains the vertical distance between the selected elements",
+        "whatsThis": "Sketcher_ConstrainDistanceY",
+        "statusTip": "Constrains the vertical distance between the selected elements",
+        "pixmap": "Constraint_VerticalDistance",
+        "shortcut": "I"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_angle",
+      "command": "Sketcher_ConstrainAngle",
+      "label": "Angle",
+      "registered": true,
+      "pixmap": "Constraint_InternalAngle",
+      "info": {
+        "name": "Sketcher_ConstrainAngle",
+        "menuText": "Angle Dimension",
+        "toolTip": "Constrains the angle between two straight lines or between one line and the X-axis of the sketch if only one is selected",
+        "whatsThis": "Sketcher_ConstrainAngle",
+        "statusTip": "Constrains the angle between two straight lines or between one line and the X-axis of the sketch if only one is selected",
+        "pixmap": "Constraint_InternalAngle",
+        "shortcut": "K, A"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_radius",
+      "command": "Sketcher_ConstrainRadius",
+      "label": "Radius",
+      "registered": true,
+      "pixmap": "Constraint_Radius",
+      "info": {
+        "name": "Sketcher_ConstrainRadius",
+        "menuText": "Radius Dimension",
+        "toolTip": "Constrains the radius of the selected circle or arc",
+        "whatsThis": "Sketcher_ConstrainRadius",
+        "statusTip": "Constrains the radius of the selected circle or arc",
+        "pixmap": "Constraint_Radius",
+        "shortcut": "K, R"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_diameter",
+      "command": "Sketcher_ConstrainDiameter",
+      "label": "Diameter",
+      "registered": true,
+      "pixmap": "Constraint_Diameter",
+      "info": {
+        "name": "Sketcher_ConstrainDiameter",
+        "menuText": "Diameter Dimension",
+        "toolTip": "Constrains the diameter of the selected circle or arc",
+        "whatsThis": "Sketcher_ConstrainDiameter",
+        "statusTip": "Constrains the diameter of the selected circle or arc",
+        "pixmap": "Constraint_Diameter",
+        "shortcut": "K, O"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_reference_dimension",
+      "command": "Sketcher_ToggleDrivingConstraint",
+      "label": "Driving / reference",
+      "registered": true,
+      "pixmap": "Sketcher_ToggleConstraint",
+      "info": {
+        "name": "Sketcher_ToggleDrivingConstraint",
+        "menuText": "Toggle Driving/Reference Constraints",
+        "toolTip": "Toggles between driving and reference mode of the selected constraints and commands",
+        "whatsThis": "Sketcher_ToggleDrivingConstraint",
+        "statusTip": "Toggles between driving and reference mode of the selected constraints and commands",
+        "pixmap": "Sketcher_ToggleConstraint",
+        "shortcut": "K, X"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_active_constraint",
+      "command": "Sketcher_ToggleActiveConstraint",
+      "label": "Enable / disable constraint",
+      "registered": true,
+      "pixmap": "Sketcher_ToggleActiveConstraint",
+      "info": {
+        "name": "Sketcher_ToggleActiveConstraint",
+        "menuText": "Toggle Constraints",
+        "toolTip": "Toggles the state of the selected constraints",
+        "whatsThis": "Sketcher_ToggleActiveConstraint",
+        "statusTip": "Toggles the state of the selected constraints",
+        "pixmap": "Sketcher_ToggleActiveConstraint",
+        "shortcut": "K, Z"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_construction",
+      "command": "Sketcher_ToggleConstruction",
+      "label": "Construction",
+      "registered": true,
+      "pixmap": "Sketcher_ToggleConstruction",
+      "info": {
+        "name": "Sketcher_ToggleConstruction",
+        "menuText": "Toggle Construction Geometry",
+        "toolTip": "Toggles between defining geometry and construction geometry modes",
+        "whatsThis": "Sketcher_ToggleConstruction",
+        "statusTip": "Toggles between defining geometry and construction geometry modes",
+        "pixmap": "Sketcher_ToggleConstruction",
+        "shortcut": "G, N"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_trim",
+      "command": "Sketcher_Trimming",
+      "label": "Trim",
+      "registered": true,
+      "pixmap": "Sketcher_Trimming",
+      "info": {
+        "name": "Sketcher_Trimming",
+        "menuText": "Trim Edge",
+        "toolTip": "Trims an edge with respect to the selected position",
+        "whatsThis": "Sketcher_Trimming",
+        "statusTip": "Trims an edge with respect to the selected position",
+        "pixmap": "Sketcher_Trimming",
+        "shortcut": "G, T"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_extend",
+      "command": "Sketcher_Extend",
+      "label": "Extend",
+      "registered": true,
+      "pixmap": "Sketcher_Extend",
+      "info": {
+        "name": "Sketcher_Extend",
+        "menuText": "Extend Edge",
+        "toolTip": "Extends an edge with respect to the selected position",
+        "whatsThis": "Sketcher_Extend",
+        "statusTip": "Extends an edge with respect to the selected position",
+        "pixmap": "Sketcher_Extend",
+        "shortcut": "G, Q"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_split",
+      "command": "Sketcher_Split",
+      "label": "Split",
+      "registered": true,
+      "pixmap": "Sketcher_Split",
+      "info": {
+        "name": "Sketcher_Split",
+        "menuText": "Split Edge",
+        "toolTip": "Splits an edge into 2 segments while preserving constraints",
+        "whatsThis": "Sketcher_Split",
+        "statusTip": "Splits an edge into 2 segments while preserving constraints",
+        "pixmap": "Sketcher_Split",
+        "shortcut": "G, Z"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_offset",
+      "command": "Sketcher_Offset",
+      "label": "Offset",
+      "registered": true,
+      "pixmap": "Sketcher_Offset",
+      "info": {
+        "name": "Sketcher_Offset",
+        "menuText": "Offset",
+        "toolTip": "Adds an equidistant closed contour around selected geometry: positive values offset outward, negative values inward",
+        "whatsThis": "Sketcher_Offset",
+        "statusTip": "Adds an equidistant closed contour around selected geometry: positive values offset outward, negative values inward",
+        "pixmap": "Sketcher_Offset",
+        "shortcut": "Z, T"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_fillet",
+      "command": "Sketcher_CreateFillet",
+      "label": "Sketch fillet",
+      "registered": true,
+      "pixmap": "Sketcher_CreateFillet",
+      "info": {
+        "name": "Sketcher_CreateFillet",
+        "menuText": "Fillet",
+        "toolTip": "Creates a fillet between 2 selected lines or at coincident points",
+        "whatsThis": "Sketcher_CreateFillet",
+        "statusTip": "Creates a fillet between 2 selected lines or at coincident points",
+        "pixmap": "Sketcher_CreateFillet",
+        "shortcut": "G, F, F"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_chamfer",
+      "command": "Sketcher_CreateChamfer",
+      "label": "Sketch chamfer",
+      "registered": true,
+      "pixmap": "Sketcher_CreateChamfer",
+      "info": {
+        "name": "Sketcher_CreateChamfer",
+        "menuText": "Chamfer",
+        "toolTip": "Creates a chamfer between 2 selected lines or at coincident points",
+        "whatsThis": "Sketcher_CreateChamfer",
+        "statusTip": "Creates a chamfer between 2 selected lines or at coincident points",
+        "pixmap": "Sketcher_CreateChamfer",
+        "shortcut": "G, F, C"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_join",
+      "command": "Sketcher_JoinCurves",
+      "label": "Join curves",
+      "registered": true,
+      "pixmap": "Sketcher_JoinCurves",
+      "info": {
+        "name": "Sketcher_JoinCurves",
+        "menuText": "Join Curves",
+        "toolTip": "Joins 2 curves at selected end points",
+        "whatsThis": "Sketcher_JoinCurves",
+        "statusTip": "Joins 2 curves at selected end points",
+        "pixmap": "Sketcher_JoinCurves",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_projection",
+      "command": "Sketcher_Projection",
+      "label": "Project external geometry",
+      "registered": true,
+      "pixmap": "Sketcher_Projection",
+      "info": {
+        "name": "Sketcher_Projection",
+        "menuText": "External Projection",
+        "toolTip": "Creates the projection of external geometry in the sketch plane",
+        "whatsThis": "Sketcher_Projection",
+        "statusTip": "Creates the projection of external geometry in the sketch plane",
+        "pixmap": "Sketcher_Projection",
+        "shortcut": "G, X"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_intersection",
+      "command": "Sketcher_Intersection",
+      "label": "Intersect external geometry",
+      "registered": true,
+      "pixmap": "Sketcher_Intersection",
+      "info": {
+        "name": "Sketcher_Intersection",
+        "menuText": "External Intersection",
+        "toolTip": "Creates the intersection of external geometry with the sketch plane",
+        "whatsThis": "Sketcher_Intersection",
+        "statusTip": "Creates the intersection of external geometry with the sketch plane",
+        "pixmap": "Sketcher_Intersection",
+        "shortcut": "G, I"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_carbon_copy",
+      "command": "Sketcher_CarbonCopy",
+      "label": "Carbon copy",
+      "registered": true,
+      "pixmap": "Sketcher_CarbonCopy",
+      "info": {
+        "name": "Sketcher_CarbonCopy",
+        "menuText": "Carbon Copy",
+        "toolTip": "Copies the geometry of another sketch",
+        "whatsThis": "Sketcher_CarbonCopy",
+        "statusTip": "Copies the geometry of another sketch",
+        "pixmap": "Sketcher_CarbonCopy",
+        "shortcut": "G, W"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_mirror",
+      "command": "Sketcher_Symmetry",
+      "label": "Mirror geometry",
+      "registered": true,
+      "pixmap": "Sketcher_Symmetry",
+      "info": {
+        "name": "Sketcher_Symmetry",
+        "menuText": "Mirror",
+        "toolTip": "Creates a mirrored copy of the selected geometry",
+        "whatsThis": "Sketcher_Symmetry",
+        "statusTip": "Creates a mirrored copy of the selected geometry",
+        "pixmap": "Sketcher_Symmetry",
+        "shortcut": "Z, S"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_move",
+      "command": "Sketcher_Move",
+      "label": "Move geometry",
+      "registered": true,
+      "pixmap": "Sketcher_Move",
+      "info": {
+        "name": "Sketcher_Move",
+        "menuText": "Move",
+        "toolTip": "Moves the geometry taking as reference the last selected point",
+        "whatsThis": "Sketcher_Move",
+        "statusTip": "Moves the geometry taking as reference the last selected point",
+        "pixmap": "Sketcher_Move",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_rotate",
+      "command": "Sketcher_Rotate",
+      "label": "Rotate geometry",
+      "registered": true,
+      "pixmap": "Sketcher_Rotate",
+      "info": {
+        "name": "Sketcher_Rotate",
+        "menuText": "Rotate / Polar Transform",
+        "toolTip": "Rotates the selected geometry by creating 'n' copies, enabling circular pattern creation",
+        "whatsThis": "Sketcher_Rotate",
+        "statusTip": "Rotates the selected geometry by creating 'n' copies, enabling circular pattern creation",
+        "pixmap": "Sketcher_Rotate",
+        "shortcut": "Z, P"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_scale",
+      "command": "Sketcher_Scale",
+      "label": "Scale geometry",
+      "registered": true,
+      "pixmap": "Sketcher_Scale",
+      "info": {
+        "name": "Sketcher_Scale",
+        "menuText": "Scale",
+        "toolTip": "Scales the selected geometries",
+        "whatsThis": "Sketcher_Scale",
+        "statusTip": "Scales the selected geometries",
+        "pixmap": "Sketcher_Scale",
+        "shortcut": "Z, P, S"
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_array",
+      "command": "Sketcher_RectangularArray",
+      "label": "Rectangular array",
+      "registered": true,
+      "pixmap": "Sketcher_RectangularArray",
+      "info": {
+        "name": "Sketcher_RectangularArray",
+        "menuText": "Rectangular Array",
+        "toolTip": "Creates a rectangular array pattern of the geometry taking as reference the last selected point",
+        "whatsThis": "Sketcher_RectangularArray",
+        "statusTip": "Creates a rectangular array pattern of the geometry taking as reference the last selected point",
+        "pixmap": "Sketcher_RectangularArray",
+        "shortcut": ""
+      },
+      "icon_available": true
+    },
+    {
+      "key": "sk_validate",
+      "command": "Sketcher_ValidateSketch",
+      "label": "Validate sketch",
+      "registered": true,
+      "pixmap": "Sketcher_ValidateSketch",
+      "info": {
+        "name": "Sketcher_ValidateSketch",
+        "menuText": "Validate Sketch",
+        "toolTip": "Validates a sketch by checking for missing coincidences,\ninvalid constraints, and degenerate geometry",
+        "whatsThis": "Sketcher_ValidateSketch",
+        "statusTip": "Validates a sketch by checking for missing coincidences,\ninvalid constraints, and degenerate geometry",
+        "pixmap": "Sketcher_ValidateSketch",
+        "shortcut": ""
+      },
+      "icon_available": true
+    }
+  ]
+}

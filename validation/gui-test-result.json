@@ -1,0 +1,215 @@
+{
+  "graphical_validation": "Programmatic native UI/click-path exercise; Kurt's hands-on usability gate is pending",
+  "passed": true,
+  "state": {
+    "document_id": "4b2865a5-3af4-4c73-b55b-fb905f21e2a1",
+    "revision": "a9ca439e-f4cd-4b00-8516-3675cd5c8f73",
+    "name": "gui-close-reopen",
+    "native_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\examples\\acceptance-plate.FCStd",
+    "units": "mm",
+    "build_status": "valid",
+    "build_errors": [],
+    "features": [
+      {
+        "id": "Body",
+        "name": "Body",
+        "type": "PartDesign::Body",
+        "parameters": {},
+        "dependencies": [
+          "Pocket",
+          "Origin",
+          "Rectangle",
+          "Pad",
+          "Circle",
+          "Pocket"
+        ],
+        "expressions": [],
+        "state": [
+          "Expanded",
+          "Up-to-date"
+        ]
+      },
+      {
+        "id": "Origin001",
+        "name": "Origin001",
+        "type": "App::Point",
+        "parameters": {},
+        "dependencies": [],
+        "expressions": [],
+        "state": [
+          "Up-to-date"
+        ]
+      },
+      {
+        "id": "Rectangle",
+        "name": "Rectangle",
+        "type": "Sketcher::SketchObject",
+        "parameters": {
+          "Width": {
+            "value": 60.0,
+            "unit": "mm",
+            "constraint_index": 9,
+            "editable": true,
+            "expression": null
+          },
+          "Height": {
+            "value": 40.0,
+            "unit": "mm",
+            "constraint_index": 10,
+            "editable": true,
+            "expression": null
+          }
+        },
+        "dependencies": [],
+        "expressions": [],
+        "state": [
+          "Up-to-date"
+        ],
+        "fully_constrained": true,
+        "geometry_count": 4,
+        "constraint_count": 11
+      },
+      {
+        "id": "Pad",
+        "name": "Pad",
+        "type": "PartDesign::Pad",
+        "parameters": {
+          "Length": {
+            "value": 6.0,
+            "unit": "mm",
+            "editable": true,
+            "expression": null
+          }
+        },
+        "dependencies": [
+          "Rectangle"
+        ],
+        "expressions": [],
+        "state": [
+          "Up-to-date"
+        ]
+      },
+      {
+        "id": "Circle",
+        "name": "Circle",
+        "type": "Sketcher::SketchObject",
+        "parameters": {
+          "CenterX": {
+            "value": 30.0,
+            "unit": "mm",
+            "constraint_index": 0,
+            "editable": false,
+            "expression": "Rectangle.Constraints.Width / 2"
+          },
+          "CenterY": {
+            "value": 20.0,
+            "unit": "mm",
+            "constraint_index": 1,
+            "editable": false,
+            "expression": "Rectangle.Constraints.Height / 2"
+          },
+          "Diameter": {
+            "value": 8.0,
+            "unit": "mm",
+            "constraint_index": 2,
+            "editable": true,
+            "expression": null
+          }
+        },
+        "dependencies": [
+          "Rectangle",
+          "Rectangle"
+        ],
+        "expressions": [
+          [
+            ".Constraints.CenterX",
+            "Rectangle.Constraints.Width / 2"
+          ],
+          [
+            ".Constraints.CenterY",
+            "Rectangle.Constraints.Height / 2"
+          ]
+        ],
+        "state": [
+          "Up-to-date"
+        ],
+        "fully_constrained": true,
+        "geometry_count": 1,
+        "constraint_count": 3
+      },
+      {
+        "id": "Pocket",
+        "name": "Pocket",
+        "type": "PartDesign::Pocket",
+        "parameters": {},
+        "dependencies": [
+          "Circle",
+          "Pad"
+        ],
+        "expressions": [],
+        "state": [
+          "Up-to-date"
+        ]
+      }
+    ],
+    "measurements": {
+      "valid": true,
+      "solid_count": 1,
+      "volume_mm3": 14098.40710525538,
+      "area_mm2": 6050.265482457437,
+      "bbox_mm": {
+        "min": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max": [
+          60.0,
+          40.0,
+          6.0
+        ],
+        "size": [
+          60.0,
+          40.0,
+          6.0
+        ]
+      },
+      "center_of_mass_mm": [
+        29.999999999999996,
+        20.0,
+        2.9999999999999996
+      ]
+    },
+    "retained_geometry_measurements": null,
+    "last_failed_attempt": null,
+    "operations": [
+      "export",
+      "inspect",
+      "list_documents",
+      "new",
+      "open",
+      "pad",
+      "pocket",
+      "rebuild",
+      "redo",
+      "save",
+      "set_parameter",
+      "sketch_circle",
+      "sketch_rectangle",
+      "undo"
+    ],
+    "operation_ms": 24.11
+  },
+  "seconds": 3.3021490001119673,
+  "user_data": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\user-data\\",
+  "config": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\user-data\\user.cfg",
+  "checks": [
+    "graphical two-click rectangle/circle path",
+    "native Sketcher enter/finish",
+    "parameter panel width edit moves centered hole and undo restores it",
+    "active native tab close/reopen cleanup",
+    "viewport mouse event coordinate conversion",
+    "shared pad/pocket API",
+    "native save and STEP/STL export"
+  ]
+}

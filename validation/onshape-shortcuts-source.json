@@ -1,0 +1,945 @@
+{
+  "verified_date": "2026-10-02",
+  "official_source": {
+    "url": "https://cad.onshape.com/help/Content/Home/keyboard_shortcuts_and_hotkeys.htm",
+    "verified_date": "2026-10-02",
+    "page_updated": "2026-09-24",
+    "platform": "Windows",
+    "notes": "All official default table entries recorded; arrows expanded per direction. Native equivalents share the editable FreeCAD document. Unsupported meanings remain explicitly unavailable. Mouse/held-modifier gestures recorded without substitute actions. Ctrl+S/N/O local file extensions labeled separately."
+  },
+  "representation": "Normalized Windows key-to-action facts, manually checked against all official categories; not an Onshape account export. Duplicate general/sketch construction meaning deduplicated; directional groups expanded.",
+  "sources": [
+    {
+      "url": "https://cad.onshape.com/help/Content/Home/keyboard_shortcuts_and_hotkeys.htm",
+      "role": "Official Onshape Windows default keys and contexts"
+    },
+    {
+      "url": "https://github.com/FreeCAD/FreeCAD-documentation/blob/main/wiki/Sketcher_ConstrainCoincident.md",
+      "role": "Native concentric equivalent uses circle/arc/ellipse center coincidence"
+    },
+    {
+      "url": "https://github.com/FreeCAD/FreeCAD-documentation/blob/main/wiki/Sketcher_ConstrainSymmetric.md",
+      "role": "Native midpoint equivalent uses line endpoints symmetric about the selected point"
+    }
+  ],
+  "counts": {
+    "official_normalized_records": 126,
+    "local_extensions": 3,
+    "registry_backend_categories": {
+      "callback": 50,
+      "unsupported": 35,
+      "native": 38,
+      "pass_through": 6
+    }
+  },
+  "all_default_categories": [
+    "General",
+    "Part Studio",
+    "Assembly",
+    "3D View",
+    "Sketch",
+    "Feature Studio",
+    "Drawings"
+  ],
+  "registry_sha256": "a1be985894fe89840f9c543d27e846fd951eaed9c79a18f120cb85939bbd6d65",
+  "native_command_evidence": "onshape-shortcuts-command-probe.json",
+  "native_command_probe_runtime": "FreeCAD 1.1.4 portable, separate hidden process/config; did not import/start KurtShape UI",
+  "validation": {
+    "command": "bundled python -B -m unittest discover -s tests -p test_shortcuts.py -v",
+    "tests_passed": 21,
+    "scope": "context routing, native Qt shortcut interception, text undo/typing, global application save/new/open from text fields, modal dialog shortcut ownership, dimension dialog Return, shifted digit view, unavailable feedback, verified native IDs, palette arrow/Escape isolation, shortcut-help typing/toggling, same-tool restart after native right-click cancellation"
+  },
+  "acceptance_boundary": "Registry completeness is not full Onshape function equivalence. Unimplemented assembly/drawing/FeatureScript and advanced sketch operations are labeled unavailable; native equivalents use FreeCAD interactions and solver.",
+  "default_facts": [
+    {
+      "id": "general.accept_repeat",
+      "key": "Shift+Enter",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.accept",
+      "key": "Enter",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.cancel",
+      "key": "Escape",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.clear_selection",
+      "key": "Space",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.copy",
+      "key": "Ctrl+C",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.curve_analysis",
+      "key": "Shift+C",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.delete",
+      "key": "Delete",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.delete_backspace",
+      "key": "Backspace",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.dihedral",
+      "key": "Shift+D",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "feature_studio.find",
+      "key": "Ctrl+Shift+F",
+      "contexts": [
+        "feature_studio"
+      ]
+    },
+    {
+      "id": "general.feedback",
+      "key": "Ctrl+U",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "mate.flip_axis",
+      "key": "A",
+      "contexts": [
+        "mate_edit"
+      ]
+    },
+    {
+      "id": "general.mate_connectors",
+      "key": "K",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.help",
+      "key": "Shift+/",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "mate.inference_lock",
+      "key": "Shift",
+      "contexts": [
+        "assembly"
+      ]
+    },
+    {
+      "id": "general.mate_connector",
+      "key": "Ctrl+M",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.measure",
+      "key": "[",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "document.open_tab",
+      "key": "Ctrl+Click",
+      "contexts": [
+        "document_browser"
+      ]
+    },
+    {
+      "id": "document.open_window",
+      "key": "Shift+Click",
+      "contexts": [
+        "document_browser"
+      ]
+    },
+    {
+      "id": "general.paste",
+      "key": "Ctrl+V",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.tabs",
+      "key": "Ctrl+Space",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.redo",
+      "key": "Ctrl+Y",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.rename",
+      "key": "Shift+N",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.search",
+      "key": "Alt+C",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.select_other",
+      "key": "`",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.palette",
+      "key": "S",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.tab_manager",
+      "key": "Alt+T",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "general.undo",
+      "key": "Ctrl+Z",
+      "contexts": [
+        "general"
+      ]
+    },
+    {
+      "id": "feature.extrude",
+      "key": "Shift+E",
+      "contexts": [
+        "part_studio"
+      ]
+    },
+    {
+      "id": "feature.fillet",
+      "key": "Shift+F",
+      "contexts": [
+        "part_studio"
+      ]
+    },
+    {
+      "id": "view.sketches",
+      "key": "Shift+H",
+      "contexts": [
+        "part_studio"
+      ]
+    },
+    {
+      "id": "history.rollback_up",
+      "key": "Up",
+      "contexts": [
+        "rollback"
+      ]
+    },
+    {
+      "id": "history.rollback_down",
+      "key": "Down",
+      "contexts": [
+        "rollback"
+      ]
+    },
+    {
+      "id": "feature.revolve",
+      "key": "Shift+W",
+      "contexts": [
+        "part_studio"
+      ]
+    },
+    {
+      "id": "sketch.start",
+      "key": "Shift+S",
+      "contexts": [
+        "part_studio"
+      ]
+    },
+    {
+      "id": "assembly.mates",
+      "key": "J",
+      "contexts": [
+        "assembly"
+      ]
+    },
+    {
+      "id": "assembly.insert",
+      "key": "I",
+      "contexts": [
+        "assembly"
+      ]
+    },
+    {
+      "id": "assembly.fasten",
+      "key": "M",
+      "contexts": [
+        "assembly"
+      ]
+    },
+    {
+      "id": "assembly.show_mates",
+      "key": "H",
+      "contexts": [
+        "assembly"
+      ]
+    },
+    {
+      "id": "assembly.snap",
+      "key": "Shift+S",
+      "contexts": [
+        "assembly"
+      ]
+    },
+    {
+      "id": "view.back",
+      "key": "Shift+2",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.bottom",
+      "key": "Shift+6",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.front",
+      "key": "Shift+1",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.construction",
+      "key": "Shift+P",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.hide",
+      "key": "Y",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.planes",
+      "key": "P",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.isometric",
+      "key": "Shift+7",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.left",
+      "key": "Shift+3",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.isolate",
+      "key": "Shift+I",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.transparent",
+      "key": "Shift+T",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.named",
+      "key": "Shift+V",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.pan_left",
+      "key": "Ctrl+Shift+Left",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.pan_right",
+      "key": "Ctrl+Shift+Right",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.pan_up",
+      "key": "Ctrl+Shift+Up",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.pan_down",
+      "key": "Ctrl+Shift+Down",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_left_5",
+      "key": "Ctrl+Left",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_right_5",
+      "key": "Ctrl+Right",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_up_5",
+      "key": "Ctrl+Up",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_down_5",
+      "key": "Ctrl+Down",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_left_90",
+      "key": "Shift+Left",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_right_90",
+      "key": "Shift+Right",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_up_90",
+      "key": "Shift+Up",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_down_90",
+      "key": "Shift+Down",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.right",
+      "key": "Shift+4",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_left_15",
+      "key": "Left",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_right_15",
+      "key": "Right",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_up_15",
+      "key": "Up",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.rotate_down_15",
+      "key": "Down",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.section",
+      "key": "Shift+X",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.select_through",
+      "key": "Alt+Click",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.show_hidden",
+      "key": "Shift+Y",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.top",
+      "key": "Shift+5",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.high_quality",
+      "key": "Shift+R",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.normal",
+      "key": "N",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.zoom_in",
+      "key": "Shift+Z",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.zoom_out",
+      "key": "Z",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.fit",
+      "key": "F",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "view.box_zoom",
+      "key": "W",
+      "contexts": [
+        "view"
+      ]
+    },
+    {
+      "id": "sketch.arc",
+      "key": "A",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.circle",
+      "key": "C",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.center_rectangle",
+      "key": "R",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.coincident",
+      "key": "I",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.concentric",
+      "key": "Shift+O",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.corner_rectangle",
+      "key": "G",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.curvature",
+      "key": "Shift+U",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.dimension",
+      "key": "D",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.equal",
+      "key": "E",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.extend",
+      "key": "X",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.fix",
+      "key": "Shift+J",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.horizontal",
+      "key": "H",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.line",
+      "key": "L",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.line_arc_switch",
+      "key": "Shift+A",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.midpoint",
+      "key": "Shift+M",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.normal",
+      "key": "Shift+K",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.offset",
+      "key": "O",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.parallel",
+      "key": "B",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.perpendicular",
+      "key": "Shift+L",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.pierce",
+      "key": "Shift+G",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.point",
+      "key": "Shift+S",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.fillet",
+      "key": "Shift+F",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.inference_suppress",
+      "key": "Shift",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.symmetric",
+      "key": "Shift+Q",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.tangent",
+      "key": "T",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.construction",
+      "key": "Q",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.trim",
+      "key": "M",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.project",
+      "key": "U",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "sketch.vertical",
+      "key": "V",
+      "contexts": [
+        "sketch"
+      ]
+    },
+    {
+      "id": "feature_studio.cursor_previous",
+      "key": "Ctrl+]",
+      "contexts": [
+        "feature_studio"
+      ]
+    },
+    {
+      "id": "feature_studio.commit",
+      "key": "Ctrl+S",
+      "contexts": [
+        "feature_studio"
+      ]
+    },
+    {
+      "id": "feature_studio.commit_all",
+      "key": "Ctrl+Shift+S",
+      "contexts": [
+        "feature_studio"
+      ]
+    },
+    {
+      "id": "feature_studio.dismiss",
+      "key": "Escape",
+      "contexts": [
+        "feature_studio"
+      ]
+    },
+    {
+      "id": "feature_studio.cursor_next",
+      "key": "Ctrl+[",
+      "contexts": [
+        "feature_studio"
+      ]
+    },
+    {
+      "id": "feature_studio.outline",
+      "key": "Ctrl+Shift+O",
+      "contexts": [
+        "feature_studio"
+      ]
+    },
+    {
+      "id": "drawing.copy_annotation",
+      "key": "Alt+LeftDrag",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.diameter",
+      "key": "Shift+D",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.sheets",
+      "key": "Ctrl+S",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.first_sheet",
+      "key": "Home",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.last_sheet",
+      "key": "End",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.minmax_dimension",
+      "key": "Ctrl+M",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.next_sheet",
+      "key": "PageDown",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.note",
+      "key": "N",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.previous_sheet",
+      "key": "PageUp",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.projected_view",
+      "key": "P",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.midpoint_quad",
+      "key": "Shift+Q",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.radial_dimension",
+      "key": "Shift+R",
+      "contexts": [
+        "drawing"
+      ]
+    },
+    {
+      "id": "drawing.update",
+      "key": "Ctrl+Q",
+      "contexts": [
+        "drawing"
+      ]
+    }
+  ],
+  "additional_native_api_evidence": {
+    "action": "general.select_other",
+    "report": "general-actions-select-other-result.json",
+    "checks_passed": 8,
+    "dpi_scale": 1.5,
+    "verified_api": "getObjectsInfo((physical_x,physical_y)); Selection.setPreselection(native_object,subName,x,y,z); Selection.clearPreselection()",
+    "scope": "Native occluded ray hits, exact face selection, hover highlighting, additive selection, context/camera/revision preservation, cancellation and stale revision rejection"
+  }
+}

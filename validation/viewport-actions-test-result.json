@@ -1,0 +1,483 @@
+{
+  "passed": true,
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "checks": [
+    {
+      "name": "readonly_view_initialization_creates_no_metadata",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "four_callback_ids",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "construction_requires_edit",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "high_quality_enabled",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "native_tessellation_improved",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "quality_does_not_change_brep",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "high_quality_disabled",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "exact_quality_restore",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "construction_hidden",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "native_construction_layers_hidden",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "normal_geometry_visibility_unchanged",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "construction_flags_and_shape_unchanged",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "construction_restored",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "exact_construction_metadata_restore",
+      "passed": true,
+      "details": {
+        "before": [
+          "<GeoExtensions count=\"1\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"1\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000010\" geometryLayer=\"0\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"0\" StartZ=\"0\" EndX=\"5\" EndY=\"0\" EndZ=\"0\"/>\n",
+          "<GeoExtensions count=\"1\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"2\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"2\" StartZ=\"0\" EndX=\"5\" EndY=\"2\" EndZ=\"0\"/>\n",
+          "<GeoExtensions count=\"2\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"3\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000010\" geometryLayer=\"0\"/>\n    <GeoExtension type=\"SketcherGui::ViewProviderSketchGeometryExtension\" visualLayerId=\"1\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"4\" StartZ=\"0\" EndX=\"5\" EndY=\"4\" EndZ=\"0\"/>\n"
+        ],
+        "after": [
+          "<GeoExtensions count=\"1\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"1\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000010\" geometryLayer=\"0\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"0\" StartZ=\"0\" EndX=\"5\" EndY=\"0\" EndZ=\"0\"/>\n",
+          "<GeoExtensions count=\"1\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"2\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"2\" StartZ=\"0\" EndX=\"5\" EndY=\"2\" EndZ=\"0\"/>\n",
+          "<GeoExtensions count=\"2\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"3\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000010\" geometryLayer=\"0\"/>\n    <GeoExtension type=\"SketcherGui::ViewProviderSketchGeometryExtension\" visualLayerId=\"1\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"4\" StartZ=\"0\" EndX=\"5\" EndY=\"4\" EndZ=\"0\"/>\n"
+        ],
+        "before_tags": [
+          "c6959754-58cd-46c9-804f-49c992458af8",
+          "d4395304-b4ee-4ce6-9757-330dfb271824",
+          "c685e88c-ee22-4a98-a54f-0121d3f8c8f9"
+        ],
+        "after_tags": [
+          "c6959754-58cd-46c9-804f-49c992458af8",
+          "d4395304-b4ee-4ce6-9757-330dfb271824",
+          "c685e88c-ee22-4a98-a54f-0121d3f8c8f9"
+        ]
+      }
+    },
+    {
+      "name": "visibility_restore_preserves_native_edits",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_views_written_to_native_metadata",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_save_preserves_geometry_intent",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_camera_projection_restored",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_camera_pose_zoom_restore",
+      "passed": true,
+      "details": {
+        "expected": [
+          [
+            24.126272201538086,
+            -24.12626075744629,
+            34.126277923583984
+          ],
+          [
+            0.4247081321999479,
+            0.1759200437218226,
+            0.339851090706265,
+            0.8204732639190053
+          ],
+          41.787925720214844,
+          0.7853981852531433
+        ],
+        "actual": [
+          [
+            24.126272201538086,
+            -24.12626075744629,
+            34.126277923583984
+          ],
+          [
+            0.4247081131882081,
+            0.1759200332902716,
+            0.3398510695385579,
+            0.8204732847648121
+          ],
+          41.787925720214844,
+          0.7853981852531433
+        ],
+        "serialized_expected": "#Inventor V2.1 ascii\n\n\nPerspectiveCamera {\n  viewportMapping ADJUST_CAMERA\n  position 24.126272 -24.126261 34.126278\n  orientation 0.74290609 0.30772209 0.59447283  1.2171158\n  nearDistance 24.478802\n  farDistance 59.09705\n  aspectRatio 1\n  focalDistance 41.787926\n  heightAngle 0.78539819\n\n}\n",
+        "serialized_actual": "#Inventor V2.1 ascii\n\n\nPerspectiveCamera {\n  viewportMapping ADJUST_CAMERA\n  position 24.126272 -24.126261 34.126278\n  orientation 0.74290603 0.30772206 0.59447277  1.2171158\n  nearDistance 24.478802\n  farDistance 59.09705\n  aspectRatio 1\n  focalDistance 41.787926\n  heightAngle 0.78539819\n\n}\n"
+      }
+    },
+    {
+      "name": "named_camera_keeps_native_sketch_edit",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_dialog_available",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_dialog_saves_camera",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "native_clipping_dock_opened",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "native_section_plane_control",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "actual_native_section_plane_enabled",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "section_preserves_solid_brep",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "native_clipping_controls_reopen",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_views_are_document_scoped",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "closed_document_view_cache_removed",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "repeated_navigation_setup_does_not_dirty_saved_document",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_views_survive_native_save_reopen",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "loading_named_views_does_not_dirty_document",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_roundtrip_preserves_editable_geometry",
+      "passed": true,
+      "details": {
+        "before": [
+          {
+            "id": "Part",
+            "type": "Part::Feature",
+            "label": "Part",
+            "properties": {
+              "Label": "Part",
+              "Label2": "",
+              "Placement": {
+                "base": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              "ShapeMaterial": {
+                "object": "Default"
+              },
+              "_ElementMapVersion": "15.70200.5"
+            },
+            "expressions": []
+          },
+          {
+            "id": "Sketch",
+            "type": "Sketcher::SketchObject",
+            "label": "Sketch",
+            "properties": {
+              "ArcFitTolerance": 1e-06,
+              "AttacherType": "Attacher::AttachEnginePlane",
+              "AttachmentOffset": {
+                "base": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              "AttachmentSupport": [],
+              "Exports": [],
+              "ExternalGeo": [
+                "<Line segment (0,0,0) (1,0,0) >",
+                "<Line segment (0,0,0) (0,1,0) >"
+              ],
+              "ExternalGeometry": [],
+              "ExternalTypes": [
+                0
+              ],
+              "FullyConstrained": false,
+              "Label": "Sketch",
+              "Label2": "",
+              "MakeInternals": false,
+              "MapMode": "Deactivated",
+              "MapPathParameter": 0.0,
+              "MapReversed": false,
+              "Placement": {
+                "base": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              "ShapeMaterial": {
+                "object": "Default"
+              },
+              "_ElementMapVersion": "15.70200.5",
+              "_ExternalGeoVersion": 1
+            },
+            "expressions": [],
+            "geometry": [
+              "<GeoExtensions count=\"1\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"1\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000010\" geometryLayer=\"0\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"0\" StartZ=\"0\" EndX=\"8\" EndY=\"0\" EndZ=\"0\"/>\n",
+              "<GeoExtensions count=\"1\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"2\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"2\" StartZ=\"0\" EndX=\"5\" EndY=\"2\" EndZ=\"0\"/>\n",
+              "<GeoExtensions count=\"2\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"3\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000010\" geometryLayer=\"0\"/>\n    <GeoExtension type=\"SketcherGui::ViewProviderSketchGeometryExtension\" visualLayerId=\"1\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"4\" StartZ=\"0\" EndX=\"5\" EndY=\"4\" EndZ=\"0\"/>\n"
+            ],
+            "construction": [
+              true,
+              false,
+              true
+            ],
+            "constraints": []
+          }
+        ],
+        "after": [
+          {
+            "id": "Part",
+            "type": "Part::Feature",
+            "label": "Part",
+            "properties": {
+              "Label": "Part",
+              "Label2": "",
+              "Placement": {
+                "base": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              "ShapeMaterial": {
+                "object": "Default"
+              },
+              "_ElementMapVersion": "15.70200.5"
+            },
+            "expressions": []
+          },
+          {
+            "id": "Sketch",
+            "type": "Sketcher::SketchObject",
+            "label": "Sketch",
+            "properties": {
+              "ArcFitTolerance": 1e-06,
+              "AttacherType": "Attacher::AttachEnginePlane",
+              "AttachmentOffset": {
+                "base": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              "AttachmentSupport": [],
+              "Exports": [],
+              "ExternalGeo": [
+                "<Line segment (0,0,0) (1,0,0) >",
+                "<Line segment (0,0,0) (0,1,0) >"
+              ],
+              "ExternalGeometry": [],
+              "ExternalTypes": [
+                0
+              ],
+              "FullyConstrained": false,
+              "Label": "Sketch",
+              "Label2": "",
+              "MakeInternals": false,
+              "MapMode": "Deactivated",
+              "MapPathParameter": 0.0,
+              "MapReversed": false,
+              "Placement": {
+                "base": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "rotation": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              "ShapeMaterial": {
+                "object": "Default"
+              },
+              "_ElementMapVersion": "15.70200.5",
+              "_ExternalGeoVersion": 1
+            },
+            "expressions": [],
+            "geometry": [
+              "<GeoExtensions count=\"1\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"1\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000010\" geometryLayer=\"0\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"0\" StartZ=\"0\" EndX=\"8\" EndY=\"0\" EndZ=\"0\"/>\n",
+              "<GeoExtensions count=\"1\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"2\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"2\" StartZ=\"0\" EndX=\"5\" EndY=\"2\" EndZ=\"0\"/>\n",
+              "<GeoExtensions count=\"2\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"3\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000010\" geometryLayer=\"0\"/>\n    <GeoExtension type=\"SketcherGui::ViewProviderSketchGeometryExtension\" visualLayerId=\"1\"/>\n</GeoExtensions>\n<LineSegment StartX=\"0\" StartY=\"4\" StartZ=\"0\" EndX=\"5\" EndY=\"4\" EndZ=\"0\"/>\n"
+            ],
+            "construction": [
+              true,
+              false,
+              true
+            ],
+            "constraints": []
+          }
+        ],
+        "flags_before": [
+          true,
+          false,
+          true
+        ],
+        "flags_after": [
+          true,
+          false,
+          true
+        ]
+      }
+    },
+    {
+      "name": "persisted_camera_projection_pose_zoom_restore",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "malformed_schema_and_camera_blocks_rejected",
+      "passed": true,
+      "details": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "duplicate_metadata_keys_do_not_reach_camera",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "valid_view_metadata_reload",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_delete_marks_native_document_modified",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_delete_preserves_geometry_intent",
+      "passed": true,
+      "details": null
+    },
+    {
+      "name": "named_delete_survives_native_save_reopen",
+      "passed": true,
+      "details": null
+    }
+  ],
+  "check_count": 40
+}

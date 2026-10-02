@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-02T07:59:03.262689+00:00",
+  "description": "Automated validation report: native copy/paste and document switching",
+  "freecad_version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "document": {
+    "document_id": "a972d1ae-dc68-447b-a7d2-106b5f3bbdef",
+    "revision": "da13324d-8b63-41a0-b3f1-d99dba69f9b3",
+    "name": "Second managed document",
+    "build_status": "sketch_only",
+    "build_errors": []
+  },
+  "feature_count": 3,
+  "active_sketch": null,
+  "selection": [
+    {
+      "feature": "ClipboardSketch",
+      "subelements": []
+    }
+  ],
+  "status_message": "Finish or cancel the current tool before switching documents."
+}

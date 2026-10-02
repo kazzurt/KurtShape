@@ -1,0 +1,117 @@
+{
+  "passed": true,
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "method": "Actual KurtShape toolbar buttons and native PartDesign Tasks; assistant transport excluded.",
+  "cases": [
+    {
+      "tool": "draft",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Draft",
+        "command": "PartDesign_Draft"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Draft",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:draftAngle",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkReverse",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QLabel:label",
+        "QLineEdit:lineLine",
+        "QLineEdit:linePlane",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listWidgetReferences",
+        "QToolButton:buttonLine",
+        "QToolButton:buttonPlane",
+        "QToolButton:buttonRefSel",
+        "QWidget:PartDesignGui__TaskDraftParameters",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      }
+    },
+    {
+      "tool": "draft",
+      "mode": "accept",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Draft",
+        "command": "PartDesign_Draft"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Draft",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:draftAngle",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkReverse",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QLabel:label",
+        "QLineEdit:lineLine",
+        "QLineEdit:linePlane",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listWidgetReferences",
+        "QToolButton:buttonLine",
+        "QToolButton:buttonPlane",
+        "QToolButton:buttonRefSel",
+        "QWidget:PartDesignGui__TaskDraftParameters",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "preview": {
+        "tip": "Draft",
+        "type": "PartDesign::Draft",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 6052.371843138374
+      },
+      "accepted": {
+        "name": "Draft",
+        "type": "PartDesign::Draft",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 6052.371843138374,
+        "history_present": true,
+        "build_status": "valid",
+        "file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\draft-accepted.FCStd"
+      }
+    }
+  ],
+  "native_warnings": [],
+  "case_count": 2
+}

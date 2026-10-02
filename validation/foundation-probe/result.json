@@ -1,0 +1,29 @@
+{
+  "FreeCAD": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "OCCT": "7.8.1",
+  "baseline_volume_mm3": 14098.40710525538,
+  "edited_volume_mm3": 18797.876140340504,
+  "valid": true,
+  "solids": 1,
+  "plate_dof": true,
+  "hole_dof": true,
+  "seconds": 2.6244739999528974,
+  "checks": [
+    "real constraint solver",
+    "pad",
+    "through pocket",
+    "transaction undo/redo",
+    "native save/reopen",
+    "fresh feature recompute",
+    "STEP/STL export"
+  ]
+}

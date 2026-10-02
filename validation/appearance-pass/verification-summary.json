@@ -1,0 +1,138 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-02T16:03:33.9169584Z",
+  "engine": "FreeCAD 1.1.4 / OCCT 7.8.1",
+  "engine_revision": "4fd3bf320d9566a27e60069fc8387448aaa3a094",
+  "scope": "Appearance and expanded-toolbar follow-up",
+  "model_catalog": 39,
+  "sketch_catalog": 64,
+  "theme_checks": 72,
+  "layout_checks": 133,
+  "layout_screenshots": 21,
+  "integrated_gui_checks": 36,
+  "native_scenarios": 17,
+  "native_task_core_guards": 48,
+  "unit_suites": {
+    "offline_native": 47,
+    "qt_shortcuts": 21,
+    "bridge_timeout": 2,
+    "total": 70
+  },
+  "minimum_checked_text_contrast": 4.703,
+  "source_hashes": {
+    "src/kurtshape/ui.py": "82e151f793ded45d52d1ae9298f674ead01f22ad1401b47996b84553dbe0aab2",
+    "src/kurtshape/core.py": "46f50893e13d8622d890e539404bcc6c7b779faaead1c80d7861e4baff479694",
+    "src/kurtshape/theme.py": "cd397b2f4e6f4e9ed7c90dae39c7a1cac7de99a8139db762826c618204cccaa8",
+    "src/kurtshape/feature_tools.py": "34ae398f955376ea1a4b3f17583416eacd679ec9bb4180e634d37883cb0f3f6d",
+    "src/kurtshape/shortcuts.py": "9a74c1b2350316b574e15c2ac23516ed6e48a1f0db21ed19901a070331094222",
+    "tools/appearance-validation.FCMacro": "e84e88dca3fded02d4f42e34996756a8ce82bbb6abfad80f4104a77fb89c2d84",
+    "tools/theme-validation.FCMacro": "9040d3652127692138c03abb5357dfe5ecdbaf7fbb56337f394eae728bb2758c",
+    "tools/toolbar-validation.FCMacro": "5d85636d21c753b9fd39da13fffeab7f161c8804f1615f0afca3e0ad2eb961ad",
+    "tools/gui-validation.FCMacro": "8943a63cbf01b40742b61fea523d12c06cfa6bb707e41c87eb4ce8c404038f73"
+  },
+  "reports": {
+    "validation/appearance-pass/theme-result.json": {
+      "passed": true,
+      "sha256": "29cc617a9feafb5a7c75395fd4b3334e5135c7b94c312797a69bf8ed1e8d7eba",
+      "modified_utc": "2026-10-02T15:41:44.2757566Z",
+      "checks": 72,
+      "tests": null,
+      "scenarios": null
+    },
+    "validation/appearance-pass/layout-test-result.json": {
+      "passed": true,
+      "sha256": "f6ddc2eedc6e72f0087ac2440560b62d1f96db4cf695b9a918aebd22604551d1",
+      "modified_utc": "2026-10-02T16:01:44.9958161Z",
+      "checks": 133,
+      "tests": null,
+      "scenarios": null
+    },
+    "validation/appearance-pass/feature-catalog-probe.json": {
+      "passed": true,
+      "sha256": "52f7b1574c802dd0442a7d58dff3bde9bfeb6816b9dafd3c51b4244afa4dec1c",
+      "modified_utc": "2026-10-02T15:26:55.4109066Z",
+      "checks": 0,
+      "tests": null,
+      "scenarios": null
+    },
+    "validation/appearance-pass/native-model-tools-final-result.json": {
+      "passed": true,
+      "sha256": "ac9dd4a36d1e0a6361822c6932014cf3f9b69e2c0ff7edfff45ae87852e8f3b5",
+      "modified_utc": "2026-10-02T15:51:18.3544823Z",
+      "checks": 0,
+      "tests": null,
+      "scenarios": 17
+    },
+    "validation/interface-pass/gui-test-result.json": {
+      "passed": true,
+      "sha256": "974b5719ccf001c94279889c1d87a5ce38573704486486d11abc81aaca6b3082",
+      "modified_utc": "2026-10-02T15:58:15.6300711Z",
+      "checks": 36,
+      "tests": null,
+      "scenarios": null
+    },
+    "validation/offline-test-result.json": {
+      "passed": true,
+      "sha256": "5773843e99b6fe2453903a2f9ee058e6e0a9c9c0b39194412c0307c5f0c019a1",
+      "modified_utc": "2026-10-02T15:42:38.3960432Z",
+      "checks": 0,
+      "tests": 47,
+      "scenarios": null
+    },
+    "validation/appearance-pass/model-tools-circular_pattern_groove_multi_transform_sweep_cancel.json": {
+      "passed": true,
+      "sha256": "579aacd8e517c901509a023a4712a064b2a6247d25c1760542c67782536d216f",
+      "scenarios": 4
+    },
+    "validation/appearance-pass/model-tools-datum_line_datum_plane_datum_point_cancel.json": {
+      "passed": true,
+      "sha256": "f40626880a189834aa2c5eaa6b54b0099751a5d6ad6cf6816e6c4ce9fe27d179",
+      "scenarios": 3
+    },
+    "validation/appearance-pass/model-tools-draft.json": {
+      "passed": true,
+      "sha256": "750f47071d8675211f212e0b8e99fe4cf1e040d701a9a51352808f7814315543",
+      "scenarios": 2
+    },
+    "validation/appearance-pass/model-tools-hole_accept.json": {
+      "passed": true,
+      "sha256": "4d73af41fd3bc595f4850141fec1f0d84b22d0afb570ea80f7e175ffca57e1c8",
+      "scenarios": 1
+    },
+    "validation/appearance-pass/model-tools-hole_loft_shell_cancel.json": {
+      "passed": true,
+      "sha256": "23fa8cf87c99ae241a0b5ead0bdc63ed82586850bb6b9feda5baf0b60e716087",
+      "scenarios": 3
+    },
+    "validation/appearance-pass/model-tools-loft_accept.json": {
+      "passed": true,
+      "sha256": "e63b0eb552cae5c9b80513227aaa7961fb894324468ab86bca1288c7ea77d090",
+      "scenarios": 1
+    },
+    "validation/appearance-pass/model-tools-part_extrude.json": {
+      "passed": true,
+      "sha256": "f1477cf84d62d64b323356e29b48f5ec2b829db8702396c73fc0e7d517aca6f5",
+      "scenarios": 2
+    },
+    "validation/appearance-pass/model-tools-shell_accept.json": {
+      "passed": true,
+      "sha256": "1e40d08df068b7e846d148b676cd5c0e8415cd4b8c8fb8f1995e86264e3a07de",
+      "scenarios": 1
+    }
+  },
+  "recipes": [
+    "run-checks.ps1",
+    "launch-kurtshape.ps1 -Validation",
+    "docs/INTERFACE_PASS.md",
+    "docs/NATIVE_TOOL_CATALOG.md"
+  ],
+  "limits": [
+    "103 registered commands/icons and toolbar routes do not prove every native parameter combination.",
+    "Standalone Part results remain outside managed Body export scope.",
+    "Qt file dialogs were used for reproducible hidden capture.",
+    "Earlier rapid mixed native task/document stress hit a caught C++ access violation; bounded acceptance passed in separate isolated fixtures.",
+    "Actual Onshape conversions remain 0/2; deferred dimension variants remain outstanding.",
+    "Hands-on usability acceptance remains with the user."
+  ],
+  "preserved_failure_report": "validation/appearance-pass/model-tools-hole_loft_part_extrude_shell.json"
+}

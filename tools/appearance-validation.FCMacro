@@ -1,0 +1,540 @@
+"""Actual isolated Qt appearance, layout, popup and native-tool regression pass."""
+import os, sys, json, traceback, time
+from pathlib import Path
+from collections import Counter
+sys.dont_write_bytecode = True
+ROOT = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(ROOT/'src'))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtWidgets, QtTest
+from kurtshape.core import native_intent
+from kurtshape import ui
+
+OUT = ROOT/'validation'/'appearance-pass'
+OUT.mkdir(parents=True, exist_ok=True)
+REPORT = OUT/'layout-test-result.json'
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+app.setAttribute(QtCore.Qt.AA_DontUseNativeDialogs, True)
+
+class KeepProbeHidden(QtCore.QObject):
+    def eventFilter(self, obj, event):
+        if event.type() in (QtCore.QEvent.Show, QtCore.QEvent.Polish) and isinstance(obj, QtWidgets.QWidget) and obj.isWindow():
+            obj.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+hide_filter = KeepProbeHidden(app)
+app.installEventFilter(hide_filter)
+
+# A hostile inherited palette and stylesheet recreate the original white-text
+# on light custom widgets. The application must establish its own coherent theme.
+dark = QtGui.QPalette()
+for group in (QtGui.QPalette.Active, QtGui.QPalette.Inactive, QtGui.QPalette.Disabled):
+    for role in (QtGui.QPalette.Window, QtGui.QPalette.Base, QtGui.QPalette.Button, QtGui.QPalette.AlternateBase):
+        dark.setColor(group, role, QtGui.QColor('#161b22'))
+    for role in (QtGui.QPalette.WindowText, QtGui.QPalette.Text, QtGui.QPalette.ButtonText, QtGui.QPalette.ToolTipText):
+        dark.setColor(group, role, QtGui.QColor('#f6f8fa'))
+    dark.setColor(group, QtGui.QPalette.Highlight, QtGui.QColor('#245789'))
+    dark.setColor(group, QtGui.QPalette.HighlightedText, QtGui.QColor('#ffffff'))
+app.setPalette(dark)
+app.setStyleSheet('QWidget { color:#f6f8fa; background:#161b22; } QLineEdit, QComboBox, QAbstractSpinBox { color:#ffffff; background:#0d1117; }')
+report = {'passed': False, 'version': App.Version(), 'checks': [], 'screenshots': [], 'contrast': [],
+          'method': 'Actual isolated Qt window, dark inherited palette/style, rendered widget pixels, toolbar/menu clicks and safely cancelled native Tasks/file dialogs. Qt file dialogs are forced for reproducible off-screen capture.',
+          'seed_palette': {'Window':'#161b22', 'WindowText':'#f6f8fa'}, 'started':time.time()}
+
+class NoAssistantTransport:
+    def __init__(self, *args): pass
+    def tick(self): return False
+    def close(self): pass
+ui.Bridge = NoAssistantTransport
+panel = None
+
+def write_report():
+    REPORT.write_text(json.dumps(report, indent=2, default=str), encoding='utf-8')
+
+def wait(ms=200):
+    QtTest.QTest.qWait(ms)
+
+def check(name, value=True):
+    if not value:
+        raise AssertionError(name + (' · '+panel.message.text() if panel else ''))
+    report['checks'].append(name)
+    write_report()
+
+def shot(name, widget=None):
+    widget = widget or main
+    wait(100)
+    path = OUT/(name+'.png')
+    check('Rendered screenshot '+name, widget.grab().save(str(path)))
+    report['screenshots'].append({'name':name, 'path':str(path), 'size':[widget.width(),widget.height()]})
+    write_report()
+
+def luminance(color):
+    def channel(value):
+        value /= 255.
+        return value/12.92 if value <= .04045 else ((value+.055)/1.055)**2.4
+    return .2126*channel(color.red()) + .7152*channel(color.green()) + .0722*channel(color.blue())
+
+def ratio(first, second):
+    a,b = sorted((luminance(first),luminance(second)))
+    return (b+.05)/(a+.05)
+
+def roles(widget):
+    if isinstance(widget, (QtWidgets.QLineEdit,QtWidgets.QAbstractSpinBox,QtWidgets.QComboBox,QtWidgets.QAbstractItemView)):
+        return QtGui.QPalette.Text,QtGui.QPalette.Base
+    if isinstance(widget,QtWidgets.QAbstractButton):
+        return QtGui.QPalette.ButtonText,QtGui.QPalette.Button
+    return QtGui.QPalette.WindowText,QtGui.QPalette.Window
+
+def contrast_probe(name, widget, minimum=4.5, rendered=True):
+    widget.ensurePolished()
+    fg_role,bg_role = roles(widget)
+    palette = widget.palette()
+    fg,bg = palette.color(QtGui.QPalette.Active,fg_role),palette.color(QtGui.QPalette.Active,bg_role)
+    item = {'name':name,'class':widget.metaObject().className(),'object_name':widget.objectName(),
+            'visible':widget.isVisible(),'enabled':widget.isEnabled(),'foreground':fg.name(),'background':bg.name(),
+            'palette_ratio':round(ratio(fg,bg),3),'minimum':minimum}
+    if rendered and widget.isVisible() and widget.width()>15 and widget.height()>8:
+        image = widget.grab().toImage().convertToFormat(QtGui.QImage.Format_RGB32)
+        margin = 5 if isinstance(widget,(QtWidgets.QLineEdit,QtWidgets.QAbstractSpinBox,QtWidgets.QComboBox)) else 2
+        crop = image.copy(margin,margin,max(1,image.width()-2*margin),max(1,image.height()-2*margin))
+        colors = Counter(crop.pixel(x,y)&0xffffff for x in range(crop.width()) for y in range(crop.height()))
+        popular = colors.most_common(12)
+        item['rendered_colors'] = [{'color':'#%06x'%rgb,'pixels':count} for rgb,count in popular]
+        # Background and fully rendered glyph pixels must be distinguishable.
+        # Antialiasing creates many intermediate shades; count reliable pixels.
+        actual_bg = QtGui.QColor(popular[0][0])
+        candidates = [(ratio(QtGui.QColor(rgb),actual_bg),count,rgb) for rgb,count in colors.items() if count >= 4]
+        best = max(candidates, default=(1.,0,0))
+        item['rendered_max_ratio'] = round(best[0],3)
+        item['rendered_glyph_color'] = '#%06x'%best[2]
+    report['contrast'].append(item)
+    write_report()
+    check('Readable foreground/background: '+name, item['palette_ratio'] >= minimum)
+    if rendered and 'rendered_max_ratio' in item:
+        check('Visible rendered text/glyph pixels: '+name, item['rendered_max_ratio'] >= minimum)
+    return item
+
+def operation(op, **args):
+    result = panel.operation(op, **args)
+    check('Operation '+op, bool(result))
+    return result
+
+def viewport():
+    area = next(a for a in main.findChildren(QtWidgets.QMdiArea) if a.activeSubWindow())
+    return next(w for w in area.activeSubWindow().findChildren(QtWidgets.QWidget)
+                if w.metaObject().className()=='QOpenGLWidget' and w.parentWidget().metaObject().className()=='Gui::View3DInventorViewer' and w.width()>300)
+
+def normalized(text):
+    return text.replace('&','').split('\t')[0].strip()
+
+def action_menu(action,bar=None):
+    if action.menu(): return action.menu()
+    widget=bar.widgetForAction(action) if bar else None
+    return widget.menu() if isinstance(widget,QtWidgets.QToolButton) else None
+
+def action_paths(bar):
+    results=[]
+    def walk(actions, trail):
+        for action in actions:
+            if action.isSeparator() or not action.text():
+                continue
+            path=trail+[action]
+            menu=action_menu(action,bar if not trail else None)
+            if menu:
+                walk(menu.actions(),path)
+            else:
+                results.append(path)
+    walk(bar.actions(),[])
+    return results
+
+def toolbar_inventory(bar):
+    extension = bar.findChild(QtWidgets.QToolButton,'qt_toolbar_ext_button')
+    paths=[]
+    for path in action_paths(bar):
+        top=path[0]
+        button=bar.widgetForAction(top)
+        direct=bool(button and button.isVisible() and bar.rect().intersects(button.geometry()))
+        overflow=bool(extension and extension.isVisible() and top.isVisible())
+        paths.append({'path':[normalized(a.text()) for a in path], 'enabled':all(a.isEnabled() for a in path),
+                      'accessible':bool(bar.isVisible() and (direct or overflow)), 'direct':direct,'overflow':overflow,
+                      'icon':not path[-1].icon().isNull()})
+    return {'name':bar.objectName(),'visible':bar.isVisible(),'size':[bar.width(),bar.height()],
+            'overflow_visible':bool(extension and extension.isVisible()),'tools':paths}
+
+def menu_bindings(stage):
+    record={'stage':stage,'buttons':[]}
+    for bar in (panel.model_bar,panel.sketch_bar):
+        for action in bar.actions():
+            expected=action_menu(action,bar)
+            if not expected: continue
+            button=bar.widgetForAction(action)
+            default=button.defaultAction() if button else None
+            record['buttons'].append({'bar':bar.objectName(),'label':normalized(action.text()),'button_repr':repr(button),
+                'name':button.objectName(),'parent':button.parentWidget().metaObject().className(),'visible':button.isVisible(),
+                'geometry':[button.x(),button.y(),button.width(),button.height()],'bar_size':[bar.width(),bar.height()],
+                'button_menu_matches':button.menu()==expected,'default_action':normalized(default.text()) if default else None,
+                'default_menu_matches':default.menu()==expected if default else None,
+                'actions':[normalized(a.text()) for a in button.actions()]})
+    report.setdefault('menu_bindings',[]).append(record)
+    write_report()
+
+def inspect_layout(name,width,height,sketch=False):
+    main.resize(width,height)
+    wait(350)
+    menu_bindings(name)
+    bars=[panel.document_bar,panel.sketch_bar if sketch else panel.model_bar]
+    record={'name':name,'requested':[width,height],'actual':[main.width(),main.height()],
+            'history_width':panel.width(),'viewport':[viewport().width(),viewport().height()],
+            'bars':[toolbar_inventory(bar) for bar in bars]}
+    area=next(a for a in main.findChildren(QtWidgets.QMdiArea) if a.activeSubWindow())
+    record['mdi_size']=[area.width(),area.height()]
+    record['document_maximized']=area.activeSubWindow().isMaximized()
+    report.setdefault('layouts',[]).append(record)
+    check(name+': history and viewport remain visible',panel.features.isVisible() and viewport().isVisible())
+    check(name+': native viewport retains useful width',viewport().width()>=300)
+    # The native document tab strip occupies 36 logical pixels below the GL view.
+    check(name+': native document fills the workspace',record['document_maximized'] and viewport().width()>=area.width()-12 and viewport().height()>=area.height()-50)
+    for bar in record['bars']:
+        check(name+': all '+bar['name']+' tools have a button/menu/overflow route',all(t['accessible'] for t in bar['tools']))
+    shot(name)
+    return record
+
+def close_popups():
+    for popup in app.topLevelWidgets():
+        if isinstance(popup,QtWidgets.QMenu) and popup.isVisible(): popup.close()
+    wait(80)
+
+def visible_menu(expected=None):
+    # Native-window popup tracking is intentionally absent for off-screen
+    # windows. QWidget visibility/grab still exercises the actual rendered menu.
+    if expected and expected.isVisible(): return expected
+    popup=app.activePopupWidget()
+    if isinstance(popup,QtWidgets.QMenu): return popup
+    return next((w for w in app.topLevelWidgets() if isinstance(w,QtWidgets.QMenu) and w.isVisible()),None)
+
+def reveal_menu(expected=None):
+    popup=visible_menu(expected)
+    if expected and popup and popup is not expected:
+        wrapper=next((a for a in popup.actions() if a.menu() is expected),None)
+        if wrapper:
+            QtTest.QTest.mouseMove(popup,popup.actionGeometry(wrapper).center())
+            wait(350)
+            if not expected.isVisible():
+                QtTest.QTest.mouseClick(popup,QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,popup.actionGeometry(wrapper).center())
+                wait(250)
+            if expected.isVisible(): popup=expected
+    return popup
+
+def find_tool(bar,label,group=None):
+    for path in action_paths(bar):
+        if normalized(path[-1].text()).lower()==label.lower() and (group is None or len(path)>1 and normalized(path[0].text())==group): return path
+    raise AssertionError('Toolbar has no '+label)
+
+def click_tool(bar,label,group=None):
+    path=find_tool(bar,label,group)
+    action=path[0]
+    button=bar.widgetForAction(action)
+    check(label+': tool enabled',all(a.isEnabled() for a in path))
+    direct=bool(button and button.isVisible())
+    if direct and len(path)==1:
+        QtTest.QTest.mouseClick(button,QtCore.Qt.LeftButton)
+        wait(250)
+        return path
+    extension=bar.findChild(QtWidgets.QToolButton,'qt_toolbar_ext_button')
+    check(label+': button or overflow accessible',direct or bool(extension and extension.isVisible()))
+    original_height=bar.height()
+    captured={}
+    def select_from_menu(expected,remaining,strict_direct):
+        try:
+            for item in remaining:
+                popup=visible_menu(expected) if strict_direct else reveal_menu(expected)
+                check(label+': actual popup available',isinstance(popup,QtWidgets.QMenu))
+                check(label+': direct dropdown opens its tools without a wrapper',not strict_direct or popup==expected)
+                match=next((a for a in popup.actions() if a is item or normalized(a.text())==normalized(item.text())),None)
+                check(label+': action exposed by actual menu',bool(match))
+                point=popup.actionGeometry(match).center()
+                if match.menu():
+                    QtTest.QTest.mouseMove(popup,point)
+                    wait(300)
+                    if not match.menu().isVisible():
+                        QtTest.QTest.mouseClick(popup,QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,point)
+                        wait(180)
+                    expected=match.menu()
+                else:
+                    QtTest.QTest.mouseClick(popup,QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,point)
+                    wait(200)
+            captured['passed']=True
+        except Exception:
+            captured['error']=traceback.format_exc()
+        finally:
+            close_popups()
+    def choose():
+        try:
+            if not direct and visible_menu() is None:
+                revealed=bar.widgetForAction(action)
+                check(label+': overflow exposes an expanded toolbar row',bool(revealed and revealed.isVisible()))
+                if len(path)==1:
+                    QtTest.QTest.mouseClick(revealed,QtCore.Qt.LeftButton)
+                    captured['passed']=True
+                else:
+                    QtCore.QTimer.singleShot(200,lambda:select_from_menu(action_menu(action,bar),path[1:],True))
+                    QtTest.QTest.mouseClick(revealed,QtCore.Qt.LeftButton)
+                return
+            select_from_menu(action_menu(action,bar) if direct else extension.menu(),path[1:] if direct else path,direct)
+        except Exception:
+            captured['error']=traceback.format_exc()
+            close_popups()
+    QtCore.QTimer.singleShot(250,choose)
+    chosen=button if direct else extension
+    point=QtCore.QPoint(chosen.width()-4,chosen.height()//2) if direct and chosen.popupMode()==QtWidgets.QToolButton.MenuButtonPopup else chosen.rect().center()
+    QtTest.QTest.mouseClick(chosen,QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,point)
+    wait(500)
+    if bar.height()>original_height and extension and extension.isVisible():
+        QtTest.QTest.mouseClick(extension,QtCore.Qt.LeftButton)
+        wait(150)
+    if not captured.get('passed'): raise AssertionError(captured.get('error',label+': menu click did not complete'))
+    return path
+
+def popup_probe(bar,name,menu_label=None):
+    action=next((a for a in bar.actions() if action_menu(a,bar) and (menu_label is None or normalized(a.text())==menu_label)),None)
+    top_button=bar.widgetForAction(action) if action else None
+    direct=bool(top_button and top_button.isVisible())
+    original_height=bar.height()
+    extension=bar.findChild(QtWidgets.QToolButton,'qt_toolbar_ext_button')
+    captured={}
+    def capture():
+        try:
+            expected=panel.tool_menus.get(normalized(action.text()),action_menu(action,bar)) if action else None
+            if not direct and visible_menu() is None and not captured.get('expanded_toolbar'):
+                revealed=bar.widgetForAction(action)
+                check(name+': overflow exposes an expanded toolbar row',bool(revealed and revealed.isVisible()))
+                captured['expanded_toolbar']=True
+                QtCore.QTimer.singleShot(200,capture)
+                QtTest.QTest.mouseClick(revealed,QtCore.Qt.LeftButton)
+                return
+            strict_direct=direct or captured.get('expanded_toolbar',False)
+            menu=visible_menu(expected) if strict_direct else reveal_menu(expected)
+            check(name+': real menu rendered',isinstance(menu,QtWidgets.QMenu))
+            report.setdefault('popup_probe_debug',[]).append({'name':name,'direct':direct,
+                'expected_visible':expected.isVisible() if expected else None,
+                'actual_title':menu.title(),'expected_title':expected.title() if expected else None,
+                'actual_class':menu.metaObject().className(),'button_class':top_button.metaObject().className() if top_button else None,
+                'button_name':top_button.objectName() if top_button else None,'button_repr':repr(top_button),
+                'button_geometry':[top_button.x(),top_button.y(),top_button.width(),top_button.height()] if top_button else None,
+                'button_parent':top_button.parentWidget().metaObject().className() if top_button else None,
+                'menu_identical':menu is expected,'menu_equal':menu==expected,
+                'button_menu_matches':top_button.menu()==expected if top_button else None,
+                'button_menu_items':[normalized(a.text()) for a in top_button.menu().actions()] if top_button and top_button.menu() else None,
+                'default_action':normalized(top_button.defaultAction().text()) if top_button and top_button.defaultAction() else None,
+                'default_action_menu_matches':top_button.defaultAction().menu()==expected if top_button and top_button.defaultAction() else None,
+                'default_action_menu_items':[normalized(a.text()) for a in top_button.defaultAction().menu().actions()] if top_button and top_button.defaultAction() and top_button.defaultAction().menu() else None,
+                'button_actions':[normalized(a.text()) for a in top_button.actions()] if top_button else [],
+                'button_action_menus':[{'text':normalized(a.text()),'menu_matches':a.menu()==expected,'items':[normalized(b.text()) for b in a.menu().actions()] if a.menu() else None} for a in top_button.actions()] if top_button else [],
+                'actual_items':[{'text':normalized(a.text()),'menu_matches':a.menu()==expected,'items':[normalized(b.text()) for b in a.menu().actions()] if a.menu() else None} for a in menu.actions()],
+                'visible_menus':[{'title':w.title(),'items':[normalized(a.text()) for a in w.actions()]} for w in app.topLevelWidgets() if isinstance(w,QtWidgets.QMenu) and w.isVisible()]})
+            shot(name,menu)
+            check(name+': one click opens its tools without a wrapper',not strict_direct or menu==expected)
+            report.setdefault('popup_contents',[]).append({'name':name,'expected_menu':menu==expected,
+                    'actions':[normalized(a.text()) for a in menu.actions() if not a.isSeparator()]})
+            check(name+': expanded catalog menu rendered',menu==expected and len(menu.actions())>=3)
+            contrast_probe(name,menu)
+            captured['passed']=True
+        except Exception:
+            captured['error']=traceback.format_exc()
+        finally:
+            close_popups()
+    QtCore.QTimer.singleShot(250,capture)
+    if action is None:
+        extension=bar.findChild(QtWidgets.QToolButton,'qt_toolbar_ext_button')
+        check(name+': popup entry exists',bool(extension and extension.isVisible()))
+        QtTest.QTest.mouseClick(extension,QtCore.Qt.LeftButton)
+    else:
+        button=bar.widgetForAction(action)
+        if not button.isVisible():
+            extension=bar.findChild(QtWidgets.QToolButton,'qt_toolbar_ext_button')
+            QtTest.QTest.mouseClick(extension,QtCore.Qt.LeftButton)
+        else:
+            point=QtCore.QPoint(button.width()-4,button.height()//2) if button.popupMode()==QtWidgets.QToolButton.MenuButtonPopup else button.rect().center()
+            QtTest.QTest.mouseClick(button,QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,point)
+    wait(500)
+    if bar.height()>original_height and extension and extension.isVisible():
+        QtTest.QTest.mouseClick(extension,QtCore.Qt.LeftButton)
+        wait(150)
+    if not captured.get('passed'): raise AssertionError(captured.get('error',name+': menu capture did not complete'))
+
+def cancel_native():
+    if Gui.Control.activeDialog():
+        dock=main.findChild(QtWidgets.QDockWidget,'Tasks')
+        buttons=[box.button(QtWidgets.QDialogButtonBox.Cancel) for box in dock.findChildren(QtWidgets.QDialogButtonBox)]
+        button=next(b for b in buttons if b and b.isVisible())
+        QtTest.QTest.mouseClick(button,QtCore.Qt.LeftButton)
+        wait(350)
+    check('Native Tasks safely cancelled',not Gui.Control.activeDialog() and not Gui.activeDocument().getInEdit())
+
+def modal_probe(callback,name):
+    captured={}
+    before=native_intent(panel.document())
+    def capture():
+        try:
+            dialog=next(w for w in app.topLevelWidgets() if isinstance(w,QtWidgets.QFileDialog) and w.isVisible())
+            captured['title']=dialog.windowTitle()
+            shot(name,dialog)
+            label=next(w for w in dialog.findChildren(QtWidgets.QLabel) if w.isVisible() and w.text())
+            contrast_probe(name+' label',label)
+            line=next(w for w in dialog.findChildren(QtWidgets.QLineEdit) if w.isVisible())
+            line.setText('appearance-validation-cancelled')
+            contrast_probe(name+' input',line)
+            views=[w for w in dialog.findChildren(QtWidgets.QAbstractItemView) if w.isVisible()]
+            check(name+': native file list is visible',bool(views))
+            contrast_probe(name+' file list',views[0],rendered=False)
+            captured['passed']=True
+        except Exception:
+            captured['error']=traceback.format_exc()
+        finally:
+            for w in app.topLevelWidgets():
+                if isinstance(w,QtWidgets.QFileDialog) and w.isVisible(): w.reject()
+    QtCore.QTimer.singleShot(450,capture)
+    callback()
+    wait(150)
+    report.setdefault('file_dialogs',[]).append({'name':name,**captured})
+    check(name+': actual modal captured and readable',captured.get('passed',False))
+    check(name+': cancel preserves native model',before==native_intent(panel.document()))
+
+def run():
+    global panel
+    try:
+        panel=ui.start()
+        menu_bindings('startup-immediate')
+        main.show()
+        wait(400)
+        menu_bindings('startup-settled')
+        operation('sketch_rectangle',id='AppearanceProfile',width=40,height=24,plane='XY')
+        operation('pad',id='AppearancePad',profile='AppearanceProfile',length=8)
+        menu_bindings('after-model-operations')
+        panel.isometric();panel.fit()
+        large=inspect_layout('model-large',1440,920)
+        def icon_pixels(icon):
+            image=icon.pixmap(24,24).toImage().convertToFormat(QtGui.QImage.Format_ARGB32)
+            return [image.pixel(x,y) for y in range(image.height()) for x in range(image.width())]
+        fallback=icon_pixels(Gui.getIcon('__appearance_missing_icon__'))
+        for label in ('Rebuild','Fit','Normal','3D','Planes'):
+            action=find_tool(panel.model_bar,label)[-1]
+            check(label+': native icon is not a generic missing-icon fallback',not action.icon().isNull() and icon_pixels(action.icon())!=fallback)
+            shot('view-icon-'+label.lower(),panel.model_bar.widgetForAction(action))
+        check('Expanded model toolbar exposes at least 20 tools',len(large['bars'][1]['tools'])>=20)
+        from kurtshape.feature_tools import available_catalog
+        catalog=available_catalog()
+        report['catalog_counts']={key:len(value) for key,value in catalog.items() if key in {'primary','all'}}
+        model_labels={normalized(path[-1].text()) for path in action_paths(panel.model_bar)}
+        expected_model={tool.label for _,tools in catalog['groups'] for tool in tools}
+        check('Every installed model catalog entry appears in a toolbar/menu',expected_model.issubset(model_labels))
+        compact=inspect_layout('model-compact',1100,760)
+        popup_probe(panel.model_bar,'model-menu')
+        inspect_layout('model-narrow-overflow',800,760)
+        shape_action=next(a for a in panel.model_bar.actions() if normalized(a.text())=='Shape tools')
+        check('Narrow layout exercises a real group overflow route',not panel.model_bar.widgetForAction(shape_action).isVisible())
+        popup_probe(panel.model_bar,'shape-tools-overflow','Shape tools')
+        plane_action=find_tool(panel.model_bar,'Planes')[0]
+        check('Narrow layout exercises a real utility overflow route',not panel.model_bar.widgetForAction(plane_action).isVisible())
+        planes=[o for o in panel.document().Body.Origin.OriginFeatures if o.TypeId=='App::Plane']
+        initial_plane_visibility=[o.ViewObject.Visibility for o in planes]
+        click_tool(panel.model_bar,'Planes')
+        check('Actual overflow utility toggles native datum visibility',[o.ViewObject.Visibility for o in planes]!=initial_plane_visibility)
+        click_tool(panel.model_bar,'Planes')
+        check('Second overflow utility click restores native datum visibility',[o.ViewObject.Visibility for o in planes]==initial_plane_visibility)
+        main.resize(1440,920);wait(250)
+        panel.select_feature('AppearanceProfile')
+        panel.parameters(show=True)
+        wait(250)
+        check('Feature settings visible',panel.editor.isVisible())
+        contrast_probe('Custom settings title',panel.editor_title)
+        contrast_probe('Custom dimension input',panel.value)
+        contrast_probe('Custom dimension combo',panel.parameter)
+        shot('custom-settings')
+        panel.parameter.showPopup();wait(250)
+        contrast_probe('Dimension popup view',panel.parameter.view(),rendered=False)
+        shot('dimension-dropdown',panel.parameter.view().window())
+        panel.parameter.hidePopup();wait(100)
+        panel.editor.hide()
+        Gui.Selection.clearSelection()
+        panel.select_feature('AppearancePad')
+        Gui.Selection.addSelection(panel.document().Name,'AppearancePad','Edge1')
+        before=native_intent(panel.document())
+        click_tool(panel.model_bar,'Fillet')
+        check('Fillet button/menu activates a native feature dialog',bool(Gui.Control.activeDialog()))
+        dock=main.findChild(QtWidgets.QDockWidget,'Tasks')
+        check('Native Tasks and feature history visible together',dock and dock.isVisible() and panel.features.isVisible())
+        labels=[w for w in dock.findChildren(QtWidgets.QLabel) if w.isVisible() and w.isEnabled() and w.text() and w.width()>15]
+        for i,label in enumerate(labels[:5]): contrast_probe('Native Tasks label '+str(i),label)
+        inputs=[w for w in dock.findChildren(QtWidgets.QAbstractSpinBox) if w.isVisible() and w.isEnabled()]
+        check('Native feature inputs exposed',bool(inputs))
+        contrast_probe('Native Tasks radius input',inputs[0])
+        shot('native-fillet-tasks')
+        cancel_native()
+        check('Native feature cancellation preserves exact model',before==native_intent(panel.document()))
+        panel.select_feature('AppearanceProfile')
+        check('Native sketch edit begins',bool(panel.edit_sketch()))
+        wait(350)
+        large=inspect_layout('sketch-large',1440,920,True)
+        check('Expanded sketch toolbar exposes at least 25 tools/constraints',len(large['bars'][1]['tools'])>=25)
+        sketch_labels={normalized(path[-1].text()) for path in action_paths(panel.sketch_bar)}
+        expected_sketch={tool.label for _,tools in catalog['sketch_groups'] for tool in tools}
+        check('Every installed sketch catalog entry appears in a toolbar/menu',expected_sketch.issubset(sketch_labels))
+        inspect_layout('sketch-compact',1100,760,True)
+        popup_probe(panel.sketch_bar,'sketch-menu')
+        initial_geometry=panel.active_sketch().GeometryCount
+        click_tool(panel.sketch_bar,'Point','Geometry')
+        check('Expanded sketch geometry command starts with native editor intact',bool(panel.active_sketch()))
+        gl=viewport();gl.setFocus()
+        point=QtCore.QPoint(int(gl.width()*.8),int(gl.height()*.35))
+        QtTest.QTest.mouseMove(gl,point);wait(150)
+        QtTest.QTest.mouseClick(gl,QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,point);wait(300)
+        check('Expanded Point tool creates native sketch geometry',panel.active_sketch().GeometryCount==initial_geometry+1)
+        QtTest.QTest.keyClick(gl,QtCore.Qt.Key_Escape);wait(150)
+        main.resize(1440,920);wait(250)
+        # Show constraint menu rather than manufacturing contradictory constraints
+        # on the already dimensioned fixture. Native command dispatch is audited
+        # separately; this checks reachable expanded groups with real Qt events.
+        popup_probe(panel.sketch_bar,'sketch-constraints','Constraints')
+        shot('sketch-expanded-tools')
+        sketch_tasks=main.findChild(QtWidgets.QDockWidget,'Tasks')
+        report['native_sketch_widget_inventory']=[{'class':w.metaObject().className(),'name':w.objectName(),
+            'size':[w.width(),w.height()],'style':w.styleSheet(),'button':w.palette().color(QtGui.QPalette.Button).name(),
+            'text':w.palette().color(QtGui.QPalette.ButtonText).name(),'menu':bool(w.menu()) if isinstance(w,QtWidgets.QToolButton) else None}
+            for w in sketch_tasks.findChildren(QtWidgets.QWidget) if w.isVisible() and (isinstance(w,(QtWidgets.QToolButton,QtWidgets.QComboBox)) or bool(w.styleSheet()))]
+        check('Sketch edit safely cancelled',bool(panel.finish_sketch(cancel=True)))
+        panel.router.show_help(main);wait(350)
+        help_dialog=panel.router._dialogs['help']
+        check('Shortcut help is a visible actual dialog',help_dialog.isVisible())
+        table=help_dialog.findChild(QtWidgets.QTreeWidget)
+        contrast_probe('Shortcut help table',table,rendered=False)
+        shot('shortcut-help',help_dialog)
+        help_dialog.close();wait(100)
+        modal_probe(lambda:panel.save(save_as=True),'save-modal')
+        modal_probe(panel.open,'open-modal')
+        report['passed']=True
+    except Exception:
+        report['error']=traceback.format_exc()
+        try: shot('failure')
+        except Exception: pass
+    finally:
+        report['finished']=time.time()
+        write_report()
+        try:
+            close_popups()
+            if panel and panel.active_sketch(): panel.finish_sketch(cancel=True)
+            if Gui.Control.activeDialog(): cancel_native()
+            if panel: panel.shutdown()
+            for name in list(App.listDocuments()):
+                App.getDocument(name).abortTransaction()
+                App.closeDocument(name)
+        except Exception:
+            report['cleanup_error']=traceback.format_exc()
+            write_report()
+        QtCore.QTimer.singleShot(0,app.quit)
+
+QtCore.QTimer.singleShot(500,run)

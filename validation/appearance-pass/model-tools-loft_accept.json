@@ -1,0 +1,73 @@
+{
+  "passed": true,
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "method": "Actual KurtShape toolbar buttons and native PartDesign Tasks; assistant transport excluded.",
+  "cases": [
+    {
+      "tool": "loft",
+      "mode": "accept",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Loft",
+        "command": "PartDesign_AdditiveLoft"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::AdditiveLoft",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkBoxClosed",
+        "QCheckBox:checkBoxRuled",
+        "QCheckBox:checkBoxUpdateView",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QFrame:line",
+        "QGroupBox:groupprofile",
+        "QLineEdit:profileBaseEdit",
+        "QListWidget:listWidgetReferences",
+        "QToolButton:buttonProfileBase",
+        "QToolButton:buttonRefAdd",
+        "QToolButton:buttonRefRemove",
+        "QWidget:PartDesignGui__TaskLoftParameters",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "preview": {
+        "tip": "AdditiveLoft",
+        "type": "PartDesign::AdditiveLoft",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 750.0
+      },
+      "accepted": {
+        "name": "AdditiveLoft",
+        "type": "PartDesign::AdditiveLoft",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 750.0,
+        "history_present": true,
+        "build_status": "valid",
+        "file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\loft-accepted.FCStd"
+      }
+    }
+  ],
+  "native_warnings": [],
+  "case_count": 1
+}

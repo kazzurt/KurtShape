@@ -1,0 +1,58 @@
+{
+  "schema": "kurtshape.onshape-subset/1",
+  "name": "Synthetic centered plate with hole",
+  "units": "mm",
+  "provenance": {
+    "kind": "synthetic_fixture",
+    "description": "Development fixture for native dimension editing; not a captured Onshape Part Studio or supplied example."
+  },
+  "features": [
+    {
+      "featureId": "fixture-plate-profile",
+      "name": "Plate rectangle",
+      "featureType": "newSketch",
+      "plane": "XY",
+      "profile": "rectangle",
+      "parameters": [
+        {"btType": "BTMParameterQuantity-147", "parameterId": "x", "expression": "0 mm"},
+        {"btType": "BTMParameterQuantity-147", "parameterId": "y", "expression": "0 mm"},
+        {"btType": "BTMParameterQuantity-147", "parameterId": "width", "expression": "60 mm"},
+        {"btType": "BTMParameterQuantity-147", "parameterId": "height", "expression": "40 mm"}
+      ]
+    },
+    {
+      "featureId": "fixture-plate-extrusion",
+      "name": "Plate thickness",
+      "featureType": "extrude",
+      "direction": "+Z",
+      "entities": [{"btType": "BTMIndividualSketchRegionQuery-140", "featureId": "fixture-plate-profile"}],
+      "parameters": [
+        {"btType": "BTMParameterEnum-145", "parameterId": "operationType", "enumName": "NewBodyOperationType", "value": "NEW"},
+        {"btType": "BTMParameterEnum-145", "parameterId": "endBound", "enumName": "BoundingType", "value": "BLIND"},
+        {"btType": "BTMParameterQuantity-147", "parameterId": "depth", "expression": "6 mm"}
+      ]
+    },
+    {
+      "featureId": "fixture-hole-profile",
+      "name": "Centered hole circle",
+      "featureType": "newSketch",
+      "plane": "XY",
+      "profile": "circle",
+      "centerOn": "fixture-plate-profile",
+      "parameters": [
+        {"btType": "BTMParameterQuantity-147", "parameterId": "diameter", "expression": "8 mm"}
+      ]
+    },
+    {
+      "featureId": "fixture-hole-cut",
+      "name": "Through hole",
+      "featureType": "extrude",
+      "direction": "+Z",
+      "entities": [{"btType": "BTMIndividualSketchRegionQuery-140", "featureId": "fixture-hole-profile"}],
+      "parameters": [
+        {"btType": "BTMParameterEnum-145", "parameterId": "operationType", "enumName": "NewBodyOperationType", "value": "REMOVE"},
+        {"btType": "BTMParameterEnum-145", "parameterId": "endBound", "enumName": "BoundingType", "value": "THROUGH_ALL"}
+      ]
+    }
+  ]
+}

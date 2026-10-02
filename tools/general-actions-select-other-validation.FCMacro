@@ -1,0 +1,143 @@
+"""Real native occluded-face chooser checks in a separate hidden GUI."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape.core import Controller
+from kurtshape.general_actions import GeneralActions
+
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1200, 800)
+main.show()
+report = {"passed": False, "checks": [], "method": "Native ray hits and actual Qt menu activation on occluded faces; separate hidden GUI/config"}
+
+
+class TestPanel(QtCore.QObject):
+    def __init__(self):
+        super().__init__()
+        self.main, self.core = main, Controller()
+        self.message = QtGui.QLabel()
+        self.task = self.pending_sketch = False
+    def active_sketch(self):
+        obj = Gui.activeDocument().getInEdit() if Gui.activeDocument() else None
+        return obj.Object if obj and hasattr(obj, "Object") else None
+    def notify(self, value):
+        self.message.setText(str(value))
+
+
+panel = TestPanel()
+actions = GeneralActions(panel)
+
+
+def check(name, condition):
+    assert condition, name + ": " + panel.message.text()
+    report["checks"].append(name)
+
+
+def selection():
+    return [(item.DocumentName, item.ObjectName, list(item.SubElementNames)) for item in Gui.Selection.getSelectionEx()]
+
+
+def chooser():
+    # WA_DontShowOnScreen menus do not become a platform activePopupWidget.
+    return next((menu for menu in main.findChildren(QtGui.QMenu)
+                 if menu.isVisible() and any(isinstance(action.data(), dict) and "Object" in action.data() for action in menu.actions())), None)
+
+
+def menu_watchdog():
+    menu = chooser()
+    if menu:
+        report["watchdog_closed_menu"] = True
+        menu.close()
+
+
+def validate():
+    try:
+        result = panel.core.dispatch({"op": "new", "name": "Native select-other acceptance"})
+        assert result["ok"], result
+        doc = App.activeDocument()
+        front = doc.addObject("Part::Feature", "FrontSolid")
+        front.Shape = Part.makeBox(30, 20, 5)
+        rear = doc.addObject("Part::Feature", "RearSolid")
+        rear.Shape = Part.makeBox(30, 20, 5, App.Vector(0, 0, -10))
+        doc.recompute()
+        view = Gui.activeDocument().activeView()
+        view.viewTop()
+        view.fitAll()
+        QtTest.QTest.qWait(200)
+        gl = next(widget for widget in main.findChildren(QtWidgets.QWidget)
+                  if widget.isVisible() and widget.metaObject().className() == "QOpenGLWidget"
+                  and widget.parentWidget().metaObject().className() == "Gui::View3DInventorViewer")
+        ratio = gl.devicePixelRatioF()
+        pixel = view.getPointOnViewport(App.Vector(15, 10, 5))
+        position = gl.mapToGlobal(QtCore.QPoint(round(pixel[0] / ratio), round((view.getSize()[1] - 1 - pixel[1]) / ratio)))
+        hits = actions.hits_at_pointer(position)
+        report["selection_methods"] = [name for name in dir(Gui.Selection) if "reselection" in name]
+        report["set_preselection_doc"] = str(Gui.Selection.setPreselection.__doc__)
+        report["hit_list"] = hits
+        report["pixel_ratio"] = ratio
+        check("Qt pointer conversion obtains actual front and occluded native faces", any(hit["Object"] == "FrontSolid" and hit["Component"] == "Face6" for hit in hits) and any(hit["Object"] == "RearSolid" and hit["Component"] == "Face6" for hit in hits))
+        Gui.Selection.addSelection(doc.Name, front.Name, "Face6")
+        camera, revision = view.getCamera(), panel.core.inspect(doc)["revision"]
+        def choose_rear():
+            menu = chooser()
+            assert menu is not None
+            choice = next(action for action in menu.actions() if action.data()["Object"] == "RearSolid" and action.data()["Component"] == "Face6")
+            menu.setActiveAction(choice)
+            menu.hovered.emit(choice)
+            preselection = Gui.Selection.getPreselection()
+            report["hovered_native_object"] = preselection.ObjectName
+            QtTest.QTest.keyClick(menu, QtCore.Qt.Key_Return)
+        QtCore.QTimer.singleShot(0, choose_rear)
+        QtCore.QTimer.singleShot(1500, menu_watchdog)
+        actions.select_other(position)
+        check("Chooser selects exact occluded native face", any(item[1] == "RearSolid" and item[2] == ["Face6"] for item in selection()))
+        check("Existing selection remains when choosing another entity", any(item[1] == "FrontSolid" and item[2] == ["Face6"] for item in selection()))
+        check("Hover highlights the real occluded object", report.get("hovered_native_object") == "RearSolid")
+        check("Select other preserves native document, camera, revision, and edit context", App.activeDocument() == doc and view.getCamera() == camera and panel.core.inspect(doc)["revision"] == revision and panel.active_sketch() is None)
+        before = selection()
+        def cancel():
+            menu = chooser()
+            QtTest.QTest.keyClick(menu, QtCore.Qt.Key_Escape)
+        QtCore.QTimer.singleShot(0, cancel)
+        QtCore.QTimer.singleShot(1500, menu_watchdog)
+        actions.select_other(position)
+        check("Cancel leaves native selection unchanged", selection() == before)
+        Gui.Selection.clearSelection()
+        before = selection()
+        def mutate_then_choose():
+            menu = chooser()
+            rear.Label = "Rear renamed during chooser"
+            choice = next(action for action in menu.actions() if action.data()["Object"] == "RearSolid")
+            menu.setActiveAction(choice)
+            QtTest.QTest.keyClick(menu, QtCore.Qt.Key_Return)
+        QtCore.QTimer.singleShot(0, mutate_then_choose)
+        QtCore.QTimer.singleShot(1500, menu_watchdog)
+        actions.select_other(position)
+        check("Changed native revision rejects stale face selection", selection() == before and "changed" in panel.message.text())
+        actions.select_other(gl.mapToGlobal(QtCore.QPoint(-10, -10)))
+        check("Pointer outside viewport reports a clear selection boundary", "pointer" in panel.message.text() and selection() == before)
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["status_message"] = panel.message.text()
+    finally:
+        actions.close()
+        (root / "validation" / "general-actions-select-other-result.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        for doc in list(App.listDocuments().values()):
+            App.closeDocument(doc.Name)
+        QtCore.QTimer.singleShot(100, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(500, validate)

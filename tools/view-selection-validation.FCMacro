@@ -1,0 +1,158 @@
+"""Actual N/Y keyboard regressions in an isolated invisible KurtShape GUI."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+
+sys.dont_write_bytecode = True
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+report = {
+    "passed": False, "checks": [], "normals": [],
+    "method": "Actual isolated KurtShape Panel, native Qt tree clicks/keyboard/mouse hover; separate hidden native GUI/config/session",
+}
+panel = None
+
+
+def wait(ms=100):
+    QtTest.QTest.qWait(ms)
+
+
+def check(name, condition):
+    assert condition, name + (" · " + panel.message.text() if panel else "")
+    report["checks"].append(name)
+
+
+def viewport():
+    area = next(area for area in main.findChildren(QtWidgets.QMdiArea) if area.activeSubWindow())
+    return next(widget for widget in area.activeSubWindow().findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget"
+                and widget.parentWidget().metaObject().className() == "Gui::View3DInventorViewer")
+
+
+def key(code):
+    gl = viewport()
+    gl.setFocus()
+    QtTest.QTest.keyClick(gl, code)
+    wait()
+
+
+def camera_normal(view):
+    return view.getCameraOrientation().multVec(App.Vector(0, 0, 1))
+
+
+def normal_keys(view, target, expected):
+    panel.isometric()
+    wait()
+    key(QtCore.Qt.Key_N)
+    first = camera_normal(view)
+    check("N aligns to " + target, first.dot(expected) > 1 - 1e-6)
+    key(QtCore.Qt.Key_N)
+    second = camera_normal(view)
+    check("Repeated N flips " + target, second.dot(expected) < -1 + 1e-6)
+    report["normals"].append({"target": target, "expected": list(expected), "first": list(first), "second": list(second)})
+
+
+def tree_click(identifier):
+    item = panel.items[identifier]
+    panel.features.scrollToItem(item)
+    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier,
+                           panel.features.visualItemRect(item).center())
+    wait()
+
+
+def validate():
+    global panel
+    try:
+        from kurtshape.ui import start, native_plane
+        panel = start()
+        wait(200)
+        doc = App.activeDocument()
+        view = Gui.activeDocument().activeView()
+        panel.timer.stop()  # Keep this short event regression independent of polling cadence.
+        for title, plane, axis in [("Top datum", "XY", App.Vector(0, 0, 1)),
+                                   ("Front datum", "XZ", App.Vector(0, 1, 0)),
+                                   ("Right datum", "YZ", App.Vector(1, 0, 0))]:
+            tree_click("plane:" + plane)
+            native = native_plane(doc, plane)
+            expected = native.getGlobalPlacement().Rotation.multVec(App.Vector(0, 0, 1))
+            check("History click selects " + title, Gui.Selection.getSelection() == [native])
+            check(title + " uses its native datum axis", abs(expected.dot(axis)) > 1 - 1e-6)
+            normal_keys(view, title, expected)
+
+        result = panel.operation("sketch_rectangle", id="ViewPlateSketch", plane="XY", x=0, y=0, width=30, height=20)
+        assert result, panel.message.text()
+        result = panel.operation("pad", id="ViewPlate", profile="ViewPlateSketch", length=6)
+        assert result, panel.message.text()
+        plate = doc.getObject("ViewPlate")
+        doc.getObject("ViewPlateSketch").ViewObject.Visibility = False
+        plate.ViewObject.Visibility = True
+        face_number, face = next((index + 1, face) for index, face in enumerate(plate.Shape.Faces)
+                                 if face.normalAt(0, 0).y < -.9)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, plate.Name, "Face" + str(face_number))
+        normal_keys(view, "selected planar model face", face.normalAt(0, 0))
+
+        hover = doc.addObject("Part::Feature", "HoverSolid")
+        hover.Label = "Hover visibility acceptance"
+        hover.Shape = Part.makeBox(12, 12, 6, App.Vector(42, 0, 0))
+        hover.ViewObject.Visibility = True
+        doc.recompute()
+        panel.refresh()
+        Gui.Selection.clearSelection()
+        Gui.Selection.clearPreselection()
+        Gui.Selection.addSelection(plate)
+        key(QtCore.Qt.Key_Y)
+        check("Y hides selected native object", not plate.ViewObject.Visibility)
+        check("Selected Y leaves the other solid visible", hover.ViewObject.Visibility)
+
+        Gui.Selection.clearSelection()
+        Gui.Selection.clearPreselection()
+        view.viewTop()
+        view.fitAll()
+        wait(180)
+        gl = viewport()
+        gl.setFocus()
+        ratio = gl.devicePixelRatioF()
+        pixel = view.getPointOnViewport(App.Vector(48, 6, 6))
+        position = QtCore.QPoint(round(pixel[0] / ratio), round((view.getSize()[1] - 1 - pixel[1]) / ratio))
+        event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(position),
+                                 QtCore.QPointF(gl.mapToGlobal(position)), QtCore.Qt.NoButton,
+                                 QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+        QtGui.QApplication.sendEvent(gl, event)
+        wait(180)
+        preselection = Gui.Selection.getPreselection()
+        report["hover"] = {"pixel_ratio": ratio, "qt_position": [position.x(), position.y()],
+                           "object": preselection.ObjectName if preselection else None,
+                           "subelements": list(preselection.SubElementNames) if preselection else None}
+        check("Real native mouse hover preselects the second solid", preselection and preselection.Object == hover and not Gui.Selection.getSelection())
+        key(QtCore.Qt.Key_Y)
+        check("Y hides the hover-only native object", not hover.ViewObject.Visibility)
+        check("Hover Y preserves previously hidden selection", not plate.ViewObject.Visibility)
+        check("N/Y keep the same native document and edit context", App.activeDocument() == doc and panel.active_sketch() is None)
+        report.update(passed=True, freecad_version=App.Version())
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["status_message"] = panel.message.text() if panel else "Panel initialization failed"
+    finally:
+        (root / "validation" / "view-selection-result.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        if panel:
+            panel.shutdown()
+        for doc in list(App.listDocuments().values()):
+            App.closeDocument(doc.Name)
+        QtCore.QTimer.singleShot(100, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(700, validate)

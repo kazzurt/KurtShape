@@ -1,0 +1,1147 @@
+"""Onshape-style desktop organization around one native FreeCAD document."""
+from __future__ import annotations
+import os
+from pathlib import Path
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from .core import Controller, ROOT, METADATA
+from .bridge import Bridge
+from . import navigation
+from .shortcuts import ShortcutRouter
+from .general_actions import GeneralActions
+from .viewport_actions import callbacks as viewport_callbacks
+from .theme import apply_theme
+from .feature_tools import available_catalog
+
+def metadata_id(doc):
+    return doc.getObject(METADATA).DocumentId
+
+def native_plane(doc, plane):
+    body = doc.getObject("Body") if doc else None
+    if body:
+        return next((o for o in body.Origin.OriginFeatures if o.Name.startswith(plane + "_Plane")), None)
+
+def hide_native_panels():
+    main = Gui.getMainWindow()
+    for dock in main.findChildren(QtGui.QDockWidget):
+        if dock.objectName() in {"Combo View", "Tree view", "Property view", "Report view", "Python console"} or dock.windowTitle() in {"Model", "Combo View", "Property view", "Report view", "Python console"}:
+            dock.hide()
+        elif dock.windowTitle() == "Tasks":
+            if main.dockWidgetArea(dock) != QtCore.Qt.RightDockWidgetArea:
+                main.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+            if not Gui.Control.activeDialog():
+                dock.hide()
+    for bar in main.findChildren(QtGui.QToolBar):
+        if not bar.objectName().startswith("KurtShape"):
+            bar.hide()
+
+class SelectionObserver:
+    def __init__(self, panel):
+        self.panel = panel
+
+    def addSelection(self, document, object_name, subelement, *args):
+        p = self.panel
+        if p.pending_sketch and not p.selecting_support:
+            obj = App.getDocument(document).getObject(object_name)
+            if obj and (obj.TypeId in {"App::Plane", "PartDesign::Plane"} or subelement.startswith("Face")):
+                p.selecting_support = True
+                QtCore.QTimer.singleShot(0, lambda: p.choose_support(document, object_name, subelement))
+
+class Panel(QtGui.QDockWidget):
+    def __init__(self, controller):
+        super().__init__("Feature history")
+        self.setObjectName("KurtShapeHistory")
+        self.setFeatures(QtGui.QDockWidget.NoDockWidgetFeatures)
+        self.setMinimumWidth(235)
+        self.setMaximumWidth(430)
+        self.core, self.state = controller, None
+        self.pending_sketch = self.selecting_support = self.refreshing = False
+        self.plane_visibility, self.items = {}, {}
+        self.task = self.task_profile = self.last_document = self.last_status = None
+        self.finishing_sketch = False
+        self.entering_sketch = False
+        self.placement_document = self.task_document = None
+        self.main = Gui.getMainWindow()
+        self.main.installEventFilter(self)
+        self.main.menuBar().hide()
+        self.main.statusBar().show()
+        self.make_history()
+        self.make_editor()
+        self.model_actions = []
+        self.tool_menus = {}
+        self.make_toolbars()
+        self.observer = SelectionObserver(self)
+        Gui.Selection.addObserver(self.observer)
+        self.general_actions = GeneralActions(self)
+        self.router = ShortcutRouter(QtGui.QApplication.instance(), self.shortcut_callbacks(), self.context,
+                                     self.notify, native_runner=self.native_command)
+        self.router.install()
+        session_dir = Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime")))
+        session_dir.mkdir(parents=True, exist_ok=True)
+        self.bridge = Bridge(controller, session_dir)
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.tick)
+        self.timer.start(350)
+
+    def make_history(self):
+        container = QtGui.QWidget()
+        layout = QtGui.QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self.filter = QtGui.QLineEdit()
+        self.filter.setPlaceholderText("Filter features")
+        self.filter.setClearButtonEnabled(True)
+        self.filter.textChanged.connect(self.filter_features)
+        layout.addWidget(self.filter)
+        self.features_title = QtGui.QLabel("Features")
+        self.features_title.setObjectName("SectionTitle")
+        layout.addWidget(self.features_title)
+        self.features = QtGui.QTreeWidget()
+        self.features.setHeaderHidden(True)
+        self.features.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.features.customContextMenuRequested.connect(self.history_menu)
+        self.features.currentItemChanged.connect(self.history_selection)
+        self.features.itemClicked.connect(self.history_click)
+        self.features.itemDoubleClicked.connect(self.history_double_click)
+        layout.addWidget(self.features, 1)
+        self.parts_title = QtGui.QLabel("Parts (0)")
+        self.parts_title.setObjectName("SectionTitle")
+        layout.addWidget(self.parts_title)
+        self.parts = QtGui.QTreeWidget()
+        self.parts.setHeaderHidden(True)
+        self.parts.setMaximumHeight(145)
+        self.parts.setMinimumHeight(58)
+        self.parts.itemClicked.connect(self.part_selection)
+        layout.addWidget(self.parts)
+        self.status = QtGui.QLabel("Create or open a part studio")
+        self.status.setWordWrap(True)
+        self.status.setMargin(9)
+        self.status.setStyleSheet("color:#586679; border-top:1px solid #d1d8e1")
+        layout.addWidget(self.status)
+        self.setWidget(container)
+
+    def make_editor(self):
+        self.editor = QtGui.QDockWidget("Feature settings", self.main)
+        self.editor.setObjectName("KurtShapeEditor")
+        self.editor.setFeatures(QtGui.QDockWidget.DockWidgetClosable)
+        self.editor.setMinimumWidth(265)
+        self.editor.setMaximumWidth(420)
+        widget = QtGui.QWidget()
+        layout = QtGui.QVBoxLayout(widget)
+        layout.setContentsMargins(12, 12, 12, 12)
+        self.editor_title = QtGui.QLabel("Select a feature")
+        self.editor_title.setStyleSheet("font-size:15px;font-weight:600")
+        layout.addWidget(self.editor_title)
+        self.editor_help = QtGui.QLabel("")
+        self.editor_help.setWordWrap(True)
+        layout.addWidget(self.editor_help)
+        self.form = QtGui.QFormLayout()
+        self.parameter = QtGui.QComboBox()
+        self.parameter.currentIndexChanged.connect(self.parameter_value)
+        self.value = QtGui.QDoubleSpinBox()
+        self.value.setRange(-100000, 100000)
+        self.value.setDecimals(4)
+        self.value.setSuffix(" mm")
+        self.depth = QtGui.QDoubleSpinBox()
+        self.depth.setRange(0.01, 100000)
+        self.depth.setValue(6)
+        self.depth.setDecimals(3)
+        self.depth.setSuffix(" mm")
+        self.end_type = QtGui.QComboBox()
+        self.end_type.addItems(["Blind", "Through all"])
+        self.end_type.currentIndexChanged.connect(lambda: self.depth.setEnabled(self.end_type.currentIndex() == 0))
+        self.reverse = QtGui.QCheckBox("Reverse direction")
+        self.depth.lineEdit().installEventFilter(self)
+        self.value.lineEdit().installEventFilter(self)
+        for label, control in [("Dimension", self.parameter), ("Value", self.value), ("End condition", self.end_type), ("Depth", self.depth), ("", self.reverse)]:
+            self.form.addRow(label, control)
+        layout.addLayout(self.form)
+        self.apply = QtGui.QPushButton("Apply dimension")
+        self.apply.clicked.connect(self.apply_parameter)
+        layout.addWidget(self.apply)
+        self.edit_button = QtGui.QPushButton("Edit sketch")
+        self.edit_button.clicked.connect(self.edit_sketch)
+        layout.addWidget(self.edit_button)
+        self.normal_button = QtGui.QPushButton("Normal to sketch   N")
+        self.normal_button.clicked.connect(self.normal)
+        layout.addWidget(self.normal_button)
+        self.iso_button = QtGui.QPushButton("Isometric view   Shift+7")
+        self.iso_button.clicked.connect(self.isometric)
+        layout.addWidget(self.iso_button)
+        self.task_buttons = QtGui.QWidget()
+        row = QtGui.QHBoxLayout(self.task_buttons)
+        row.setContentsMargins(0, 8, 0, 0)
+        self.confirm = QtGui.QPushButton("Confirm")
+        self.confirm.setObjectName("Confirm")
+        self.confirm.clicked.connect(self.accept_task)
+        self.cancel = QtGui.QPushButton("Cancel")
+        self.cancel.setObjectName("Cancel")
+        self.cancel.clicked.connect(lambda: self.finish_sketch(cancel=True) if self.active_sketch() else self.cancel_task())
+        row.addWidget(self.confirm)
+        row.addWidget(self.cancel)
+        layout.addWidget(self.task_buttons)
+        layout.addStretch()
+        self.editor.setWidget(widget)
+        self.main.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.editor)
+        self.editor.hide()
+        self.configure_editor(None)
+
+    def tool_icon(self, icon, command=None):
+        result = QtGui.QIcon()
+        if command:
+            try:
+                info = Gui.Command.get(command).getInfo()
+                if info.get("pixmap"):
+                    return Gui.getIcon(info["pixmap"])
+            except Exception:
+                pass
+        if icon:
+            result = QtGui.QIcon(icon) if str(icon).startswith(":/") else Gui.getIcon(icon)
+        return result
+
+    def tool(self, bar, text, callback, tip="", icon=None, modeling=False, command=None):
+        action = QtGui.QAction(self.tool_icon(icon, command), text, self)
+        action.setObjectName("KurtShapeTool_" + text.replace(" ", "_"))
+        action.setToolTip(tip or text)
+        action.setStatusTip(tip or text)
+        action.triggered.connect(lambda checked=False: callback())
+        bar.addAction(action)
+        if modeling:
+            self.model_actions.append(action)
+        if action.icon().isNull():
+            bar.widgetForAction(action).setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
+        return action
+
+    def tool_menu(self, bar, label, tools, modeling=False):
+        menu = QtGui.QMenu(label, self.main)
+        for native in tools:
+            action = QtGui.QAction(self.tool_icon(native.icon, native.command), native.label, menu)
+            action.setData(native.command)
+            action.setToolTip(native.tip)
+            action.setStatusTip(native.tip)
+            action.triggered.connect(lambda checked=False, tool=native: self.native_command(tool.command, tool.workbench))
+            menu.addAction(action)
+            if modeling:
+                self.model_actions.append(action)
+        action = menu.menuAction()
+        bar.addAction(action)
+        button = bar.widgetForAction(action)
+        button.setAccessibleName(label + " tools")
+        button.setToolTip(label + " tools")
+        self.bind_tool_menu(button, menu)
+        if modeling:
+            self.model_actions.append(action)
+        self.tool_menus[label] = menu
+        return menu
+
+    def bind_tool_menu(self, button, menu):
+        # The default action already owns this menu. Calling setMenu with the
+        # same menu action re-adds it and clears QToolButton's action binding.
+        if button.defaultAction() != menu.menuAction():
+            button.setDefaultAction(menu.menuAction())
+        button.setPopupMode(QtGui.QToolButton.InstantPopup)
+        button.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
+
+    def make_toolbars(self):
+        self.catalog = available_catalog()
+        self.catalog_model_commands = {tool.command for tool in self.catalog["all"] if tool.workbench != "SketcherWorkbench"}
+        self.document_bar = QtGui.QToolBar("Document", self.main)
+        self.document_bar.setObjectName("KurtShapeDocumentBar")
+        self.document_bar.setMovable(False)
+        self.document_bar.setIconSize(QtCore.QSize(20, 20))
+        logo = QtGui.QLabel("  KurtShape  ")
+        logo.setStyleSheet("font-size:17px;font-weight:700;color:#1c5fa8;padding-right:8px")
+        self.document_bar.addWidget(logo)
+        self.document_name = QtGui.QLabel("New part studio")
+        self.document_name.setStyleSheet("font-weight:600;padding:0 14px")
+        self.document_name.setMinimumWidth(160)
+        self.document_bar.addWidget(self.document_name)
+        for name, callback, tip in [("New", self.new, "New part studio · Ctrl+N"), ("Open", self.open, "Open native project · Ctrl+O"), ("Save", self.save, "Save project · Ctrl+S"), ("Export", self.export, "Export current solid · STEP / STL")]:
+            self.tool(self.document_bar, name, callback, tip)
+        self.document_bar.addSeparator()
+        self.tool(self.document_bar, "Undo", lambda: self.history_move("undo"), "Undo · Ctrl+Z", ":/icons/edit-undo.svg")
+        self.tool(self.document_bar, "Redo", lambda: self.history_move("redo"), "Redo · Ctrl+Y", ":/icons/edit-redo.svg")
+        spacer = QtGui.QWidget()
+        spacer.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Preferred)
+        self.document_bar.addWidget(spacer)
+        self.tool(self.document_bar, "Search", lambda: self.router.show_search(self.main), "Search commands · Alt+C")
+        self.tool(self.document_bar, "Shortcuts", lambda: self.router.show_help(self.main), "Keyboard shortcuts · Shift+/")
+        self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.document_bar)
+        self.main.addToolBarBreak(QtCore.Qt.TopToolBarArea)
+        self.model_bar = QtGui.QToolBar("Part Studio", self.main)
+        self.model_bar.setObjectName("KurtShapeModelBar")
+        self.model_bar.setMovable(False)
+        self.model_bar.setIconSize(QtCore.QSize(24, 24))
+        self.model_bar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
+        for name, callback, tip, icon in [
+            ("Sketch", self.start_sketch, "Create sketch · Shift+S", "Sketcher_NewSketch"),
+            ("Extrude", lambda: self.extrude(False), "Extrude sketch · Shift+E", "PartDesign_Pad"),
+            ("Remove", lambda: self.extrude(True), "Remove material with a sketch", "PartDesign_Pocket")]:
+            self.tool(self.model_bar, name, callback, tip, ":/icons/" + icon + ".svg", modeling=True, command=icon)
+        self.model_bar.addSeparator()
+        for native in self.catalog["primary"]:
+            label = "Pattern" if native.key == "linear_pattern" else native.label
+            self.tool(self.model_bar, label, lambda tool=native: self.native_command(tool.command, tool.workbench),
+                      native.tip, native.icon, modeling=True, command=native.command)
+        self.model_bar.addSeparator()
+        group_labels = {"Add material":"Build", "Remove material":"Cut", "Modify":"Modify", "Pattern":"Patterns", "Reference":"Reference", "Part tools":"Shape tools"}
+        for category, tools in self.catalog["groups"]:
+            self.tool_menu(self.model_bar, group_labels[category], tools, modeling=True)
+        self.model_bar.addSeparator()
+        for name, callback, tip, icon in [("Rebuild", lambda: self.operation("rebuild"), "Recompute native model", "Std_Refresh"), ("Fit", self.fit, "Fit · F", "Std_ViewFitAll"), ("Normal", self.normal, "Normal · N", "Std_ViewTop"), ("3D", self.isometric, "Isometric · Shift+7", "Std_ViewIsometric"), ("Planes", self.toggle_planes, "Show / hide planes · P", "PartDesign_Plane")]:
+            self.tool(self.model_bar, name, callback, tip, icon, modeling=name == "Rebuild", command=icon)
+        self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.model_bar)
+        self.sketch_bar = QtGui.QToolBar("Sketch", self.main)
+        self.sketch_bar.setObjectName("KurtShapeSketchBar")
+        self.sketch_bar.setMovable(False)
+        self.sketch_bar.setIconSize(QtCore.QSize(24, 24))
+        self.sketch_bar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
+        for name, command, key in [("Line", "Sketcher_CreateLine", "L"), ("Rectangle", "Sketcher_CreateRectangle", "G"), ("Circle", "Sketcher_CreateCircle", "C"), ("Arc", "Sketcher_Create3PointArc", "A"), ("Spline", "Sketcher_CreateBSpline", ""), ("Point", "Sketcher_CreatePoint", "Shift+S"), ("Dimension", "Sketcher_Dimension", "D"), ("Trim", "Sketcher_Trimming", "M"), ("Construction", "Sketcher_ToggleConstruction", "Q")]:
+            self.tool(self.sketch_bar, name, lambda c=command: self.native_command(c), name + (" · " + key if key else ""), ":/icons/" + command + ".svg", command=command)
+        self.sketch_bar.addSeparator()
+        for category, tools in self.catalog["sketch_groups"]:
+            self.tool_menu(self.sketch_bar, category, tools)
+        self.sketch_bar.addSeparator()
+        self.tool(self.sketch_bar, "Extrude", lambda: self.extrude(False), "Finish this sketch and extrude · Shift+E", "PartDesign_Pad")
+        self.tool(self.sketch_bar, "Revolve", lambda: self.feature_from_sketch("PartDesign_Revolution"), "Finish this sketch and revolve", "PartDesign_Revolution")
+        self.sketch_bar.addSeparator()
+        self.tool(self.sketch_bar, "Normal", self.normal, "Normal to sketch · N")
+        self.tool(self.sketch_bar, "3D", self.isometric, "Sketch in 3D · Shift+7")
+        finish = self.tool(self.sketch_bar, "Finish sketch", self.finish_sketch, "Commit changes", ":/icons/dialog-ok.svg")
+        self.sketch_bar.widgetForAction(finish).setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self.sketch_cancel_action = self.tool(self.sketch_bar, "Cancel sketch", lambda: self.finish_sketch(cancel=True), "Discard this edit session", ":/icons/dialog-cancel.svg")
+        self.sketch_bar.widgetForAction(self.sketch_cancel_action).setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.sketch_bar)
+        self.sketch_bar.hide()
+        self.message = QtGui.QLabel("Ready · Middle drag: orbit · Ctrl+middle: pan · Shift+middle: zoom")
+        self.main.statusBar().insertPermanentWidget(0, self.message, 1)
+
+    def notify(self, message, *args):
+        self.message.setStyleSheet("color:#a2322c" if args and args[0] == "error" else "color:#405267")
+        self.message.setText(str(message))
+        self.message.setToolTip(str(message))
+
+    def context(self):
+        return "sketch" if self.active_sketch() else "part_studio"
+
+    def document(self):
+        return App.activeDocument()
+
+    def maximize_document_view(self):
+        for area in self.main.findChildren(QtGui.QMdiArea):
+            if area.activeSubWindow():
+                area.activeSubWindow().showMaximized()
+
+    def active_sketch(self):
+        obj = Gui.activeDocument().getInEdit() if Gui.activeDocument() else None
+        if obj and hasattr(obj, "Object"):
+            obj = obj.Object
+        return obj if obj and obj.TypeId == "Sketcher::SketchObject" else None
+
+    def native_feature_task_active(self):
+        return bool(Gui.Control.activeDialog()) and not bool(self.active_sketch())
+
+    def tick(self):
+        processed = self.bridge.tick()
+        doc = self.document()
+        for identifier in list(self.core.sketch_edits):
+            owner = self.core.documents.get(identifier)
+            if owner and self.core._is_open(owner) and (doc is None or doc.Name != owner.Name) and not self.finishing_sketch:
+                App.setActiveDocument(owner.Name)
+                doc = owner
+                self.notify("Finish or cancel the active sketch before switching documents.")
+        if (self.task_document and (not doc or doc.Name != self.task_document)) or (self.placement_document and (not doc or doc.Name != self.placement_document)):
+            self.cancel_task()
+        if doc and doc.getObject(METADATA) and metadata_id(doc) in self.core.documents:
+            previous = (self.state or {}).get("revision")
+            result = self.core.dispatch({"op": "inspect", "document_id": metadata_id(doc)})
+            if result["ok"]:
+                self.state = result["result"]
+                if processed or previous != self.state["revision"] or self.last_document != doc.Name or self.last_status != self.state["build_status"]:
+                    self.refresh()
+                if self.last_document != doc.Name:
+                    self.maximize_document_view()
+                self.last_document, self.last_status = doc.Name, self.state["build_status"]
+                if self.state.get("active_sketch_edit") and not self.active_sketch() and not self.finishing_sketch and not self.entering_sketch:
+                    self.operation("finish_sketch_edit", cancel=False)
+                self.sync_edit_ui()
+        elif self.state is not None:
+            self.cancel_placement()
+            self.state = None
+            self.features.clear()
+            self.parts.clear()
+            self.items.clear()
+            self.parameter.clear()
+            self.status.setText("Create or open a part studio")
+            self.document_name.setText("New part studio")
+            self.editor.hide()
+            self.sync_edit_ui()
+
+    def operation(self, op, **args):
+        if op != "inspect" and self.native_feature_task_active():
+            self.notify("Finish or cancel the current feature before another operation.")
+            return None
+        if op in {"new", "open"}:
+            self.cancel_task()
+        if op not in {"new", "open"}:
+            doc = self.document()
+            if not doc or not doc.getObject(METADATA):
+                self.notify("Create or open a project first.", "error")
+                return None
+            response = self.core.dispatch({"op": "inspect", "document_id": metadata_id(doc)})
+            if not response["ok"]:
+                self.notify(response["error"]["message"], "error")
+                return None
+            self.state = response["result"]
+            args.update(document_id=self.state["document_id"], expected_revision=self.state["revision"])
+        response = self.core.dispatch({"op": op, **args})
+        if not response["ok"]:
+            if self.active_sketch() and metadata_id(self.document()) not in self.core.sketch_edits:
+                Gui.activeDocument().resetEdit()
+                self.sync_edit_ui()
+            self.notify(response["error"]["message"], "error")
+            return None
+        self.state = response["result"]
+        if op in {"new", "open"}:
+            owner = self.core.documents[self.state["document_id"]]
+            App.setActiveDocument(owner.Name)
+            Gui.ActiveDocument = Gui.getDocument(owner.Name)
+            self.maximize_document_view()
+        self.refresh()
+        self.sync_edit_ui()
+        navigation.apply_navigation()
+        self.notify(op.replace("_", " ").capitalize() + " complete")
+        return self.state
+
+    def refresh(self):
+        if not self.state:
+            return
+        doc, selected = self.document(), self.selected()
+        expanded = {key for key, item in self.items.items() if item.isExpanded()}
+        if not self.items:
+            expanded.add("origin")
+        self.refreshing = True
+        self.features.blockSignals(True)
+        self.features.clear()
+        self.items = {}
+        origin = QtGui.QTreeWidgetItem(["Origin"])
+        origin.setData(0, QtCore.Qt.UserRole, "origin")
+        self.features.addTopLevelItem(origin)
+        self.items["origin"] = origin
+        for name, plane in [("Top", "XY"), ("Front", "XZ"), ("Right", "YZ")]:
+            obj = native_plane(doc, plane)
+            item = QtGui.QTreeWidgetItem(origin, [name])
+            item.setData(0, QtCore.Qt.UserRole, "plane:" + plane)
+            if obj:
+                item.setIcon(0, obj.ViewObject.Icon)
+            item.setToolTip(0, name + " (" + plane + ") · select after Shift+S to start a sketch")
+            self.items["plane:" + plane] = item
+        features = [f for f in self.state["features"] if f["type"] not in {"PartDesign::Body", "App::Point"}]
+        for feature in features:
+            obj = doc.getObject(feature["id"])
+            failed = any(flag in feature["state"] for flag in ["Invalid", "Error"])
+            item = QtGui.QTreeWidgetItem([feature["name"] + ("  !" if failed else "")])
+            item.setData(0, QtCore.Qt.UserRole, feature["id"])
+            if obj and hasattr(obj, "ViewObject"):
+                item.setIcon(0, obj.ViewObject.Icon)
+            item.setToolTip(0, feature["type"].split("::")[-1] + " · " + feature["id"])
+            if failed or (obj and not obj.ViewObject.Visibility):
+                item.setForeground(0, QtGui.QBrush(QtGui.QColor("#a2322c" if failed else "#748292")))
+            self.features.addTopLevelItem(item)
+            self.items[feature["id"]] = item
+        for key in expanded:
+            if key in self.items:
+                self.items[key].setExpanded(True)
+        if selected in self.items:
+            self.features.setCurrentItem(self.items[selected])
+        self.features.blockSignals(False)
+        self.refreshing = False
+        self.features_title.setText(f"Features ({len(features)})")
+        self.filter_features()
+        self.parts.clear()
+        body = doc.getObject("Body")
+        solids = body.Shape.Solids if body and not body.Shape.isNull() else []
+        for i, solid in enumerate(solids):
+            item = QtGui.QTreeWidgetItem([body.Label if len(solids) == 1 else f"{body.Label} · solid {i + 1}"])
+            item.setData(0, QtCore.Qt.UserRole, body.Name)
+            item.setIcon(0, body.ViewObject.Icon)
+            self.parts.addTopLevelItem(item)
+        self.parts_title.setText(f"Parts ({len(solids)})")
+        geometry = self.state["measurements"]
+        detail = "Rebuild required · retained geometry" if self.state["build_status"] in {"failed", "needs_rebuild"} else (f"{geometry['solid_count']} solid · {geometry['volume_mm3']:,.2f} mm³" if geometry else "Sketches only · mm")
+        self.status.setText(detail)
+        self.document_name.setText(self.state["name"])
+        self.main.setWindowTitle(self.state["name"] + " — KurtShape")
+        if not self.task and not self.active_sketch():
+            self.parameters()
+
+    def filter_features(self, *args):
+        text = self.filter.text().lower()
+        for i in range(self.features.topLevelItemCount()):
+            item = self.features.topLevelItem(i)
+            item.setHidden(bool(text and item.data(0, QtCore.Qt.UserRole) != "origin" and text not in item.text(0).lower()))
+
+    def selected(self):
+        item = self.features.currentItem()
+        return item.data(0, QtCore.Qt.UserRole) if item else None
+
+    def select_feature(self, key):
+        if key in self.items:
+            self.features.setCurrentItem(self.items[key])
+            self.features.scrollToItem(self.items[key])
+
+    def history_selection(self, *args):
+        if not self.refreshing and not self.pending_sketch and not self.active_sketch():
+            self.parameters()
+
+    def history_click(self, item, column=0):
+        key = item.data(0, QtCore.Qt.UserRole)
+        if key.startswith("plane:"):
+            if self.pending_sketch:
+                self.begin_sketch(plane=key.split(":")[1])
+                return
+            obj = native_plane(self.document(), key.split(":")[1])
+        else:
+            obj = self.document().getObject(key) if self.document() else None
+        if obj and not self.active_sketch():
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(obj)
+            if self.task and not self.task_profile and obj.TypeId == "Sketcher::SketchObject":
+                self.task_profile = obj.Name
+                self.editor_help.setText(obj.Label + " · native " + ("Pocket" if self.task == "pocket" else "Pad"))
+                self.confirm.setEnabled(True)
+
+    def history_double_click(self, item, column=0):
+        key = item.data(0, QtCore.Qt.UserRole)
+        if key.startswith("plane:"):
+            if not self.pending_sketch:
+                self.start_sketch()
+            if self.pending_sketch:
+                self.begin_sketch(plane=key.split(":")[1])
+        else:
+            obj = self.document().getObject(key)
+            if obj and obj.TypeId == "Sketcher::SketchObject":
+                self.edit_sketch()
+            else:
+                self.parameters(show=True)
+
+    def part_selection(self, item, column=0):
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(self.document().getObject(item.data(0, QtCore.Qt.UserRole)))
+
+    def parameters(self, *args, show=False):
+        feature = next((f for f in (self.state or {}).get("features", []) if f["id"] == self.selected()), None)
+        if not feature or self.task or self.active_sketch():
+            if not self.task and not self.active_sketch():
+                self.editor.hide()
+            return
+        previous = self.parameter.currentText()
+        self.parameter.blockSignals(True)
+        self.parameter.clear()
+        self.parameter.addItems(list(feature["parameters"]))
+        index = self.parameter.findText(previous)
+        if index >= 0:
+            self.parameter.setCurrentIndex(index)
+        self.parameter.blockSignals(False)
+        self.editor_title.setText(feature["name"])
+        self.editor_help.setText(feature["type"].split("::")[-1] + " · native feature")
+        self.configure_editor("parameters", feature["type"] == "Sketcher::SketchObject")
+        self.parameter_value()
+        if feature["parameters"] or show:
+            self.editor.show()
+
+    def configure_editor(self, mode, sketch=False):
+        for control in [self.parameter, self.value, self.depth, self.end_type, self.reverse]:
+            visible = (mode == "parameters" and control in [self.parameter, self.value]) or (mode == "extrude" and control in [self.depth, self.end_type, self.reverse])
+            if control == self.end_type and self.task != "pocket":
+                visible = False
+            control.setVisible(visible)
+            label = self.form.labelForField(control)
+            if label:
+                label.setVisible(visible)
+        self.apply.setVisible(mode == "parameters" and self.parameter.count() > 0)
+        self.edit_button.setVisible(mode == "parameters" and sketch)
+        self.normal_button.setVisible(sketch)
+        self.iso_button.setVisible(mode == "sketch")
+        self.task_buttons.setVisible(mode in {"sketch", "placement", "extrude"})
+        self.confirm.setVisible(mode != "placement")
+        self.confirm.setEnabled(mode != "extrude" or bool(self.task_profile))
+        self.confirm.setText("Finish sketch" if mode == "sketch" else "Confirm")
+
+    def parameter_value(self, *args):
+        feature = next((f for f in (self.state or {}).get("features", []) if f["id"] == self.selected()), None)
+        info = feature and feature["parameters"].get(self.parameter.currentText())
+        if info:
+            self.value.setValue(info["value"])
+            self.value.setSuffix(" " + info["unit"])
+            self.value.setEnabled(info.get("editable", True))
+            self.apply.setEnabled(info.get("editable", True))
+            self.value.setToolTip("Driven by " + info["expression"] if info.get("expression") else "Driving dimension")
+
+    def apply_parameter(self):
+        if self.selected() and self.parameter.currentText():
+            self.operation("set_parameter", feature=self.selected(), parameter=self.parameter.currentText(), value=self.value.value())
+
+    def unique(self, base):
+        doc = self.document()
+        n, key = 1, base
+        while doc.getObject(key):
+            n += 1
+            key = base + str(n)
+        return key
+
+    def new(self):
+        self.cancel_placement()
+        if self.operation("new", name="Untitled part"):
+            self.isometric()
+            Gui.activeDocument().activeView().setAxisCross(True)
+            self.editor.hide()
+
+    def open(self):
+        if self.active_sketch() or self.native_feature_task_active():
+            self.notify("Finish or cancel the current edit before opening a project.")
+            return
+        path = QtGui.QFileDialog.getOpenFileName(self, "Open native project", str(ROOT / "examples"), "FreeCAD project (*.FCStd)")[0]
+        if path and self.operation("open", path=path):
+            self.isometric()
+            self.fit()
+
+    def save(self, save_as=False):
+        if not self.state:
+            return
+        if self.active_sketch() or self.native_feature_task_active():
+            self.notify("Finish or cancel the current edit before saving the project.")
+            return
+        path = self.state.get("native_file") if not save_as else None
+        if not path:
+            path = QtGui.QFileDialog.getSaveFileName(self, "Save native project", self.state.get("native_file") or str(ROOT / "examples" / "my-part.FCStd"), "FreeCAD project (*.FCStd)")[0]
+        if path:
+            return self.operation("save", path=path)
+
+    def export(self):
+        if not self.state:
+            return
+        if self.active_sketch() or self.native_feature_task_active():
+            self.notify("Finish or cancel the current edit before exporting the solid.")
+            return
+        path = QtGui.QFileDialog.getSaveFileName(self, "Export current solid", str(ROOT / "examples" / "my-part.step"), "STEP (*.step);;STL (*.stl)")[0]
+        if path:
+            self.operation("export", path=path)
+
+    def start_sketch(self):
+        if self.active_sketch():
+            self.notify("A sketch is already being edited.")
+            return
+        if self.native_feature_task_active():
+            self.notify("Finish or cancel the current feature before starting a sketch.")
+            return
+        if not self.state:
+            self.new()
+        if not self.state:
+            return
+        self.cancel_task()
+        for selected in Gui.Selection.getSelectionEx():
+            for sub in selected.SubElementNames:
+                if sub.startswith("Face"):
+                    return self.begin_sketch(support={"feature": selected.Object.Name, "subelement": sub})
+            if selected.Object.TypeId in {"App::Plane", "PartDesign::Plane"}:
+                return self.begin_sketch(support={"feature": selected.Object.Name})
+        Gui.Selection.clearSelection()
+        self.pending_sketch, self.selecting_support = True, False
+        doc = self.document()
+        self.placement_document = doc.Name
+        origin = doc.Body.Origin
+        self.plane_visibility = {origin.Name: origin.ViewObject.Visibility}
+        origin.ViewObject.Visibility = True
+        for plane in ["XY", "XZ", "YZ"]:
+            obj = native_plane(doc, plane)
+            self.plane_visibility[obj.Name] = obj.ViewObject.Visibility
+            obj.ViewObject.Visibility = True
+        self.items["origin"].setExpanded(True)
+        self.editor_title.setText("New sketch")
+        self.editor_help.setText("Click a planar face in the model, or Top, Front or Right in the history. One click starts the sketch.")
+        self.configure_editor("placement")
+        self.editor.show()
+        self.notify("Select a face or plane for the sketch · Escape cancels")
+
+    def cancel_placement(self):
+        doc = App.listDocuments().get(self.placement_document) if self.placement_document else None
+        if doc:
+            for name, visible in self.plane_visibility.items():
+                obj = doc.getObject(name)
+                if obj:
+                    obj.ViewObject.Visibility = visible
+        self.plane_visibility = {}
+        self.placement_document = None
+        self.pending_sketch = self.selecting_support = False
+        if not self.active_sketch() and not self.task:
+            self.editor.hide()
+
+    def choose_support(self, document, identifier, subelement):
+        if not self.pending_sketch or not self.document() or self.document().Name != document:
+            self.selecting_support = False
+            return
+        support = {"feature": identifier}
+        if subelement:
+            support["subelement"] = subelement
+        if not self.begin_sketch(support=support):
+            self.selecting_support = False
+
+    def begin_sketch(self, **attachment):
+        identifier = self.unique("Sketch")
+        if not self.operation("create_sketch", id=identifier, **attachment):
+            return None
+        self.cancel_placement()
+        self.select_feature(identifier)
+        return self.edit_sketch()
+
+    def edit_sketch(self):
+        obj = self.document().getObject(self.selected() or "") if self.document() else None
+        if not obj or obj.TypeId != "Sketcher::SketchObject":
+            self.notify("Select a sketch in the feature history.")
+            return None
+        if self.active_sketch():
+            return None
+        self.entering_sketch = True
+        try:
+            if not self.operation("begin_sketch_edit", feature=obj.Name):
+                return None
+            self.cancel_placement()
+            Gui.Selection.clearSelection()
+            Gui.activateWorkbench("SketcherWorkbench")
+            view = Gui.activeDocument().activeView()
+            camera = view.getCamera()
+            navigation.allow_sketch_3d(obj, view)
+            Gui.getDocument(obj.Document.Name).setEdit(obj.Name)
+            navigation.allow_sketch_3d(obj, view, camera=camera)
+            navigation.apply_navigation(view)
+        except Exception as exc:
+            self.operation("finish_sketch_edit", cancel=True)
+            self.notify(str(exc), "error")
+            return None
+        finally:
+            self.entering_sketch = False
+        self.sync_edit_ui()
+        self.notify("Sketch editing · middle drag orbits · N returns normal · G rectangle · C circle")
+        return obj
+
+    def finish_sketch(self, cancel=False):
+        if not self.active_sketch():
+            return None
+        self.finishing_sketch = True
+        try:
+            Gui.activeDocument().resetEdit()
+            result = self.operation("finish_sketch_edit", cancel=bool(cancel))
+        finally:
+            self.finishing_sketch = False
+        if not result:
+            self.tick()
+            feature = (self.state or {}).get("active_sketch_edit")
+            if feature and self.document().getObject(feature):
+                Gui.activeDocument().setEdit(feature)
+        self.sync_edit_ui()
+        hide_native_panels()
+        return result
+
+    def sync_edit_ui(self):
+        sketch = self.active_sketch()
+        native_task = self.native_feature_task_active()
+        for action in self.document_bar.actions():
+            if action.text() in {"New", "Open", "Save", "Export"}:
+                action.setEnabled(not bool(sketch) and not native_task)
+            elif action.text() in {"Undo", "Redo"}:
+                action.setEnabled(not native_task)
+        for action in self.model_actions:
+            action.setEnabled(not native_task)
+        self.model_bar.setVisible(not bool(sketch))
+        self.sketch_bar.setVisible(bool(sketch))
+        hide_native_panels()
+        if sketch:
+            self.task = None
+            self.editor_title.setText(sketch.Label)
+            self.editor_help.setText("Orbit to inspect this sketch in 3D. N returns normal. Finish commits changes; Cancel restores the sketch from before this edit.")
+            self.configure_editor("sketch", True)
+            self.editor.hide()
+        elif native_task:
+            self.editor.hide()
+
+    def extrude(self, cut=False, choose_new=False):
+        if self.native_feature_task_active():
+            self.notify("Finish or cancel the current feature before starting another tool.")
+            return
+        if self.active_sketch():
+            profile = self.active_sketch().Name
+            if not self.finish_sketch():
+                return
+            self.select_feature(profile)
+        selected = Gui.Selection.getSelection()
+        profile = None if choose_new else (selected[0].Name if selected and selected[0].TypeId == "Sketcher::SketchObject" else self.selected())
+        obj = self.document().getObject(profile or "") if self.document() else None
+        if not self.document():
+            self.notify("Create or open a project first.")
+            return
+        self.cancel_placement()
+        self.task, self.task_profile = ("pocket" if cut else "pad"), (obj.Name if obj and obj.TypeId == "Sketcher::SketchObject" else None)
+        self.task_document = self.document().Name
+        self.editor_title.setText("Remove material" if cut else "Extrude")
+        self.editor_help.setText(obj.Label + " · native " + ("Pocket" if cut else "Pad") if self.task_profile else "Select a closed sketch profile from the history.")
+        self.end_type.setCurrentIndex(1 if cut else 0)
+        self.depth.setEnabled(not cut)
+        self.reverse.setChecked(False)
+        self.configure_editor("extrude")
+        self.editor.show()
+        self.depth.setFocus()
+        self.depth.selectAll()
+
+    def accept_task(self):
+        if self.active_sketch():
+            return self.finish_sketch()
+        if self.task in {"pad", "pocket"}:
+            if not self.document() or self.document().Name != self.task_document:
+                self.cancel_task()
+                self.notify("Feature canceled because its source document is no longer active.")
+                return False
+            kind, profile = self.task, self.task_profile
+            if not profile:
+                self.notify("Select a closed sketch profile from the history.")
+                return False
+            args = {"id": self.unique("Pocket" if kind == "pocket" else "Pad"), "profile": profile,
+                    "length": self.depth.value()}
+            if kind == "pad" or self.reverse.isChecked():
+                args["reversed"] = self.reverse.isChecked()
+            if kind == "pocket":
+                args["through_all"] = self.end_type.currentIndex() == 1
+            result = self.operation(kind, **args)
+            if result:
+                obj = self.document().getObject(args["id"])
+                self.document().getObject(profile).ViewObject.Visibility = False
+                obj.ViewObject.Visibility = True
+                self.task = self.task_profile = self.task_document = None
+                self.select_feature(obj.Name)
+                self.parameters(show=True)
+            return result
+        return False
+
+    def accept_repeat(self):
+        kind = self.task
+        result = self.accept_task() if kind else False
+        if result and kind in {"pad", "pocket"}:
+            self.extrude(kind == "pocket", choose_new=True)
+        return result
+
+    def cancel_task(self):
+        if self.pending_sketch:
+            self.cancel_placement()
+            self.notify("Sketch placement canceled")
+            return True
+        if self.task:
+            self.task = self.task_profile = self.task_document = None
+            self.editor.hide()
+            self.notify("Feature canceled")
+            return True
+        return False
+
+    def fit(self):
+        if Gui.activeDocument():
+            Gui.activeDocument().activeView().fitAll()
+
+    def history_move(self, op):
+        if self.active_sketch():
+            Gui.runCommand("Sketcher_StopOperation")
+            self.router._last_native = None
+        return self.operation(op)
+
+    def isometric(self):
+        return navigation.view_isometric_keep_sketch()
+
+    def normal(self):
+        obj = self.active_sketch()
+        selection = Gui.Selection.getSelectionEx()
+        placement = None
+        if not obj and selection:
+            obj = selection[0].Object
+            if selection[0].SubObjects and hasattr(selection[0].SubObjects[0], "normalAt"):
+                normal = selection[0].SubObjects[0].normalAt(0, 0)
+                placement = App.Placement(App.Vector(), App.Rotation(App.Vector(0, 0, 1), normal))
+        if not obj and self.document():
+            key = self.selected() or ""
+            obj = native_plane(self.document(), key.split(":")[1]) if key.startswith("plane:") else self.document().getObject(key)
+        if placement is None and obj and obj.TypeId in {"Sketcher::SketchObject", "App::Plane", "PartDesign::Plane"}:
+            placement = obj.getGlobalPlacement()
+        if placement is not None:
+            camera = Gui.activeDocument().activeView().getCameraOrientation()
+            if abs(sum(a*b for a,b in zip(camera.Q, placement.Rotation.Q))) > 1-1e-6:
+                placement.Rotation = placement.Rotation * App.Rotation(App.Vector(1, 0, 0), 180)
+            return navigation.normal_to_sketch(placement)
+        if Gui.activeDocument():
+            Gui.activeDocument().activeView().viewTop()
+        return True
+
+    def toggle_planes(self):
+        doc = self.document()
+        if doc and doc.getObject("Body"):
+            planes = [native_plane(doc, key) for key in ["XY", "XZ", "YZ"]]
+            visible = not any(obj.ViewObject.Visibility for obj in planes)
+            doc.Body.Origin.ViewObject.Visibility = visible
+            for obj in planes:
+                obj.ViewObject.Visibility = visible
+
+    def toggle_sketches(self):
+        if self.document():
+            sketches = [o for o in self.document().Objects if o.TypeId == "Sketcher::SketchObject"]
+            visible = not any(o.ViewObject.Visibility for o in sketches)
+            for obj in sketches:
+                obj.ViewObject.Visibility = visible
+            self.refresh()
+
+    def hide_selected(self):
+        selected = Gui.Selection.getSelection()
+        if not selected:
+            hovered = Gui.Selection.getPreselection()
+            if hovered and hovered.Object:
+                selected = [hovered.Object]
+        for obj in selected:
+            obj.ViewObject.Visibility = False
+        self.refresh()
+
+    def show_hidden(self):
+        if self.document():
+            body = self.document().getObject("Body")
+            for obj in self.document().Objects:
+                if obj.TypeId == "Sketcher::SketchObject" or (body and obj == body.Tip):
+                    obj.ViewObject.Visibility = True
+            if body:
+                body.ViewObject.Visibility = True
+            self.refresh()
+
+    def rename_selected(self):
+        selected = Gui.Selection.getSelection()
+        obj = selected[0] if len(selected) == 1 else (self.document().getObject(self.selected() or "") if self.document() else None)
+        if obj:
+            name, accepted = QtGui.QInputDialog.getText(self, "Rename feature", "Name", text=obj.Label)
+            if accepted:
+                self.operation("rename_feature", feature=obj.Name, name=name)
+
+    def delete_selected(self):
+        if self.active_sketch():
+            return self.native_command("Std_Delete")
+        key = self.selected()
+        if key and key != "origin" and not key.startswith("plane:"):
+            return self.operation("delete_feature", feature=key)
+        self.notify("Select a feature to delete.")
+
+    def history_menu(self, position):
+        item = self.features.itemAt(position)
+        if not item:
+            return
+        self.features.setCurrentItem(item)
+        key = item.data(0, QtCore.Qt.UserRole)
+        obj = native_plane(self.document(), key.split(":")[1]) if key.startswith("plane:") else self.document().getObject(key)
+        if not obj:
+            return
+        menu = QtGui.QMenu(self)
+        menu.addAction("Hide" if obj.ViewObject.Visibility else "Show", lambda: self.set_visibility(obj, not obj.ViewObject.Visibility))
+        if obj.TypeId == "Sketcher::SketchObject":
+            menu.addAction("Edit sketch", self.edit_sketch)
+        if not key.startswith("plane:"):
+            if obj.TypeId.startswith("PartDesign::"):
+                menu.addAction("Edit feature", self.edit_native_feature)
+            menu.addAction("Rename", self.rename_selected)
+            menu.addAction("Delete", self.delete_selected)
+            menu.addAction("Feature settings", lambda: self.parameters(show=True))
+        menu.exec_(self.features.mapToGlobal(position))
+
+    def set_visibility(self, obj, visible):
+        obj.ViewObject.Visibility = visible
+        if obj.TypeId == "App::Plane":
+            self.document().Body.Origin.ViewObject.Visibility = True
+        self.refresh()
+
+    def feature_from_sketch(self, command):
+        sketch = self.active_sketch()
+        if sketch:
+            name = sketch.Name
+            if not self.finish_sketch():
+                return False
+            self.select_feature(name)
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(self.document().getObject(name))
+        return self.native_command(command)
+
+    def native_command(self, command, workbench=None):
+        if command not in Gui.listCommands():
+            self.notify("Native command unavailable: " + command, "error")
+            return False
+
+        if command.startswith("Sketcher_") and not self.active_sketch():
+            self.notify("Start or edit a sketch before using this tool.")
+            return False
+        modeling = command.startswith("PartDesign_") or command in self.catalog_model_commands
+        if modeling and self.active_sketch():
+            self.notify("Finish the sketch before creating a solid feature.")
+            return False
+        if modeling and self.native_feature_task_active():
+            self.notify("Finish or cancel the current feature before starting another tool.")
+            return False
+        try:
+            if modeling:
+                if not self.document():
+                    return False
+                Gui.activateWorkbench(workbench or "PartDesignWorkbench")
+                obj = self.document().getObject(self.selected() or "")
+                if obj and not Gui.Selection.getSelection():
+                    Gui.Selection.addSelection(obj)
+            Gui.runCommand(command)
+            self.sync_edit_ui()
+            hide_native_panels()
+            return True
+        except Exception as exc:
+            self.notify(str(exc), "error")
+            return False
+
+    def edit_native_feature(self):
+        obj = self.document().getObject(self.selected() or "") if self.document() else None
+        if obj and obj.TypeId.startswith("PartDesign::") and not self.active_sketch():
+            Gui.activateWorkbench("PartDesignWorkbench")
+            self.editor.hide()
+            Gui.activeDocument().setEdit(obj.Name)
+            hide_native_panels()
+
+    def measure(self):
+        selections = Gui.Selection.getSelectionEx()
+        shapes = [shape for s in selections for shape in s.SubObjects]
+        if not shapes:
+            shapes = [s.Object.Shape for s in selections if hasattr(s.Object, "Shape")]
+        if len(shapes) >= 2:
+            self.notify(f"Minimum distance: {shapes[0].distToShape(shapes[1])[0]:.4f} mm")
+        elif shapes:
+            shape = shapes[0]
+            if shape.ShapeType == "Edge":
+                self.notify(f"Edge length: {shape.Length:.4f} mm")
+            elif shape.ShapeType == "Face":
+                self.notify(f"Face area: {shape.Area:.4f} mm²")
+            else:
+                self.notify(f"Volume: {shape.Volume:.4f} mm³ · area: {shape.Area:.4f} mm²")
+        else:
+            self.notify("Select an edge, face, part, or two shapes to measure.")
+
+    def view_step(self, axis, degrees=15, pan=False):
+        if not Gui.activeDocument():
+            return
+        view = Gui.activeDocument().activeView()
+        camera = view.getCameraOrientation()
+        if pan:
+            node = view.getCameraNode()
+            if hasattr(node, "height"):
+                span = float(node.height.getValue())
+            else:
+                import math
+                span = float(node.focalDistance.getValue()) * 2 * math.tan(float(node.heightAngle.getValue()) / 2)
+            offset = camera.multVec(App.Vector(*axis)) * (span * .06)
+            pos = node.position.getValue().getValue()
+            node.position.setValue(pos[0] + offset.x, pos[1] + offset.y, pos[2] + offset.z)
+        else:
+            view.setCameraOrientation((camera * App.Rotation(App.Vector(*axis), degrees)).Q)
+
+    def isolate(self):
+        selected = {o.Name for o in Gui.Selection.getSelection()}
+        if not selected or not self.document():
+            self.notify("Select a part or feature to isolate.")
+            return
+        if getattr(self, "isolated_visibility", None):
+            for key, visible in self.isolated_visibility.items():
+                obj = self.document().getObject(key)
+                if obj:
+                    obj.ViewObject.Visibility = visible
+            self.isolated_visibility = None
+        else:
+            self.isolated_visibility = {}
+            for obj in self.document().Objects:
+                if obj.TypeId.startswith(("Sketcher::", "PartDesign::")) and obj.TypeId != "PartDesign::Body":
+                    self.isolated_visibility[obj.Name] = obj.ViewObject.Visibility
+                    obj.ViewObject.Visibility = obj.Name in selected
+        self.refresh()
+
+    def transparent(self):
+        for obj in Gui.Selection.getSelection():
+            if hasattr(obj.ViewObject, "Transparency"):
+                obj.ViewObject.Transparency = 0 if obj.ViewObject.Transparency else 75
+
+    def shortcut_callbacks(self):
+        callbacks = {
+            "local.new": self.new, "local.open": self.open, "local.save": self.save,
+            "sketch.start": self.start_sketch, "feature.extrude": lambda: self.extrude(False),
+            "general.cancel": self.cancel_task, "general.accept": lambda: self.accept_task() if self.task else False,
+            "general.accept_repeat": self.accept_repeat,
+            "general.undo": lambda: self.history_move("undo"), "general.redo": lambda: self.history_move("redo"),
+            "general.delete": self.delete_selected, "general.delete_backspace": self.delete_selected,
+            "general.rename": self.rename_selected, "general.measure": self.measure,
+            "general.clear_selection": Gui.Selection.clearSelection,
+            "general.tabs": lambda: Gui.runCommand("Std_Windows"), "general.tab_manager": lambda: Gui.runCommand("Std_Windows"),
+            "view.normal": self.normal, "view.planes": self.toggle_planes, "view.sketches": self.toggle_sketches,
+            "view.hide": self.hide_selected, "view.show_hidden": self.show_hidden,
+            "view.isolate": self.isolate, "view.transparent": self.transparent,
+        }
+        rotations = {"left": (0, 1, 0), "right": (0, -1, 0), "up": (1, 0, 0), "down": (-1, 0, 0)}
+        pans = {"left": (-1, 0, 0), "right": (1, 0, 0), "up": (0, 1, 0), "down": (0, -1, 0)}
+        for direction in rotations:
+            for degrees in [5, 15, 90]:
+                callbacks[f"view.rotate_{direction}_{degrees}"] = lambda a=rotations[direction], d=degrees: self.view_step(a, d)
+            callbacks[f"view.pan_{direction}"] = lambda a=pans[direction]: self.view_step(a, pan=True)
+        callbacks.update(self.general_actions.callbacks())
+        callbacks.update(viewport_callbacks(self))
+        return callbacks
+
+    def eventFilter(self, watched, event):
+        if event.type() == QtCore.QEvent.KeyPress and event.key() in {QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter}:
+            if watched is self.depth.lineEdit() and self.task:
+                self.depth.interpretText()
+                if event.modifiers() & QtCore.Qt.ShiftModifier:
+                    self.accept_repeat()
+                else:
+                    self.accept_task()
+                return True
+            if watched is self.value.lineEdit() and not self.active_sketch():
+                self.value.interpretText()
+                self.apply_parameter()
+                return True
+        if watched is self.main and event.type() == QtCore.QEvent.Close and self.active_sketch():
+            if not self.finish_sketch():
+                event.ignore()
+                return True
+        return False
+
+    def shutdown(self):
+        self.timer.stop()
+        self.router.uninstall()
+        self.general_actions.close()
+        Gui.Selection.removeObserver(self.observer)
+        self.bridge.close()
+
+def start():
+    main = Gui.getMainWindow()
+    Gui.activateWorkbench("PartDesignWorkbench")
+    apply_theme(main)
+    screen = QtGui.QApplication.primaryScreen().availableGeometry()
+    main.resize(min(1440, int(screen.width() * .94)), min(920, int(screen.height() * .9)))
+    panel = Panel(Controller())
+    main.addDockWidget(QtCore.Qt.LeftDockWidgetArea, panel)
+    main.resizeDocks([panel], [265], QtCore.Qt.Horizontal)
+    panel.show()
+    hide_native_panels()
+    Gui.kurtshape_panel = panel
+    main.destroyed.connect(panel.shutdown)
+    demo = ROOT / "examples" / "acceptance-plate.FCStd"
+    if demo.exists() and not os.environ.get("KURTSHAPE_NO_DEMO"):
+        panel.operation("open", path=str(demo))
+        panel.isometric()
+        panel.fit()
+    else:
+        panel.new()
+    navigation.apply_navigation()
+    for area in main.findChildren(QtGui.QMdiArea):
+        for sub in area.subWindowList():
+            if sub.windowTitle() in {"Start", "Start page"}:
+                sub.close()
+    return panel

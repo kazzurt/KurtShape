@@ -1,0 +1,26 @@
+"""Isolated command inventory; never imports or starts the KurtShape UI."""
+import json
+import os
+from pathlib import Path
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+
+def inventory():
+    try:
+        results = {}
+        for workbench in ("PartDesignWorkbench", "SketcherWorkbench", "PartWorkbench", "DraftWorkbench", "TechDrawWorkbench"):
+            try:
+                Gui.activateWorkbench(workbench)
+                results[workbench] = {"commands": sorted(Gui.listCommands())}
+            except Exception as exc:
+                results[workbench] = {"error": str(exc)}
+        payload = {"freecad_version": App.Version(), "workbenches": results}
+        (root / "validation" / "onshape-shortcuts-command-probe.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    finally:
+        Gui.getMainWindow().close()
+
+Gui.getMainWindow().hide()
+QtCore.QTimer.singleShot(500, inventory)

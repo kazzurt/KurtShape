@@ -1,0 +1,1892 @@
+{
+  "passed": true,
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "method": "Actual KurtShape toolbar buttons and native PartDesign Tasks; assistant transport excluded.",
+  "cases": [
+    {
+      "tool": "Fillet",
+      "mode": "cancel",
+      "passed": true,
+      "document": "KurtShape",
+      "dialog": {
+        "editing": "PartDesign::Fillet",
+        "task_widgets": [
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_floatbutton"
+          },
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_closebutton"
+          },
+          {
+            "class": "Gui::TaskView::TaskView",
+            "name": "Tasks"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskFilletParameters"
+          },
+          {
+            "class": "QToolButton",
+            "name": "buttonRefSel"
+          },
+          {
+            "class": "QListWidget",
+            "name": "listWidgetReferences"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "label"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "filletRadius"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxUseAllEdges"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskPreviewParameters"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showFinalCheckBox"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showTransparentPreviewCheckBox"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "Gui::OverlayTitleBar",
+            "name": "OverlayTitle"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Overlay"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Float"
+          }
+        ],
+        "custom_controls": {
+          "New": false,
+          "Open": false,
+          "Save": false,
+          "Undo": false,
+          "Redo": false,
+          "parameter_value": true,
+          "apply_parameter": true,
+          "parameter_editor_visible": false
+        },
+        "cancel_enabled": true,
+        "accept_enabled": true
+      },
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      }
+    },
+    {
+      "tool": "Chamfer",
+      "mode": "cancel",
+      "passed": true,
+      "document": "KurtShape",
+      "dialog": {
+        "editing": "PartDesign::Chamfer",
+        "task_widgets": [
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_floatbutton"
+          },
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_closebutton"
+          },
+          {
+            "class": "Gui::TaskView::TaskView",
+            "name": "Tasks"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskChamferParameters"
+          },
+          {
+            "class": "QToolButton",
+            "name": "buttonRefSel"
+          },
+          {
+            "class": "QListWidget",
+            "name": "listWidgetReferences"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "typeLabel"
+          },
+          {
+            "class": "QComboBox",
+            "name": "chamferType"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QToolButton",
+            "name": "flipDirection"
+          },
+          {
+            "class": "QLabel",
+            "name": "sizeLabel"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "chamferSize"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxUseAllEdges"
+          },
+          {
+            "class": "QStackedWidget",
+            "name": "stackedWidget"
+          },
+          {
+            "class": "QWidget",
+            "name": "page_3"
+          },
+          {
+            "class": "QLabel",
+            "name": "angleLabel"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "chamferAngle"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QWidget",
+            "name": "page_2"
+          },
+          {
+            "class": "QLabel",
+            "name": "size2Label"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "chamferSize2"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QWidget",
+            "name": "page_1"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskPreviewParameters"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showFinalCheckBox"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showTransparentPreviewCheckBox"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "Gui::OverlayTitleBar",
+            "name": "OverlayTitle"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Overlay"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Float"
+          }
+        ],
+        "custom_controls": {
+          "New": false,
+          "Open": false,
+          "Save": false,
+          "Undo": false,
+          "Redo": false,
+          "parameter_value": true,
+          "apply_parameter": true,
+          "parameter_editor_visible": false
+        },
+        "cancel_enabled": true,
+        "accept_enabled": true
+      },
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      }
+    },
+    {
+      "tool": "Revolve",
+      "mode": "cancel",
+      "passed": true,
+      "document": "KurtShape",
+      "dialog": {
+        "editing": "PartDesign::Revolution",
+        "task_widgets": [
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_floatbutton"
+          },
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_closebutton"
+          },
+          {
+            "class": "Gui::TaskView::TaskView",
+            "name": "Tasks"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskRevolutionParameters"
+          },
+          {
+            "class": "QLabel",
+            "name": "textLabelMode"
+          },
+          {
+            "class": "QComboBox",
+            "name": "changeMode"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "textLabel1"
+          },
+          {
+            "class": "QComboBox",
+            "name": "axis"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelAngle"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "revolveAngle"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelAngle2"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "revolveAngle2"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxMidplane"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxReversed"
+          },
+          {
+            "class": "QPushButton",
+            "name": "buttonFace"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "lineFaceName"
+          },
+          {
+            "class": "QFrame",
+            "name": "line"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxUpdateView"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskPreviewParameters"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showFinalCheckBox"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showTransparentPreviewCheckBox"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "Gui::OverlayTitleBar",
+            "name": "OverlayTitle"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Overlay"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Float"
+          }
+        ],
+        "custom_controls": {
+          "New": false,
+          "Open": false,
+          "Save": false,
+          "Undo": false,
+          "Redo": false,
+          "parameter_value": true,
+          "apply_parameter": true,
+          "parameter_editor_visible": false
+        },
+        "cancel_enabled": true,
+        "accept_enabled": true
+      },
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      }
+    },
+    {
+      "tool": "Mirror",
+      "mode": "cancel",
+      "passed": true,
+      "document": "KurtShape",
+      "dialog": {
+        "editing": "PartDesign::Mirrored",
+        "task_widgets": [
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_floatbutton"
+          },
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_closebutton"
+          },
+          {
+            "class": "Gui::TaskView::TaskView",
+            "name": "Tasks"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskTransformedParameters"
+          },
+          {
+            "class": "QWidget",
+            "name": "widget"
+          },
+          {
+            "class": "QRadioButton",
+            "name": "radioTransformBody"
+          },
+          {
+            "class": "QRadioButton",
+            "name": "radioTransformToolShapes"
+          },
+          {
+            "class": "QWidget",
+            "name": "groupFeatureList"
+          },
+          {
+            "class": "QPushButton",
+            "name": "buttonAddFeature"
+          },
+          {
+            "class": "QPushButton",
+            "name": "buttonRemoveFeature"
+          },
+          {
+            "class": "QListWidget",
+            "name": "listWidgetFeatures"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "featureUI"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelPlane"
+          },
+          {
+            "class": "QComboBox",
+            "name": "comboPlane"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxUpdateView"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskPreviewParameters"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showFinalCheckBox"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showTransparentPreviewCheckBox"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "Gui::OverlayTitleBar",
+            "name": "OverlayTitle"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Overlay"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Float"
+          }
+        ],
+        "custom_controls": {
+          "New": false,
+          "Open": false,
+          "Save": false,
+          "Undo": false,
+          "Redo": false,
+          "parameter_value": true,
+          "apply_parameter": true,
+          "parameter_editor_visible": false
+        },
+        "cancel_enabled": true,
+        "accept_enabled": true
+      },
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      }
+    },
+    {
+      "tool": "Pattern",
+      "mode": "cancel",
+      "passed": true,
+      "document": "KurtShape",
+      "dialog": {
+        "editing": "PartDesign::LinearPattern",
+        "task_widgets": [
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_floatbutton"
+          },
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_closebutton"
+          },
+          {
+            "class": "Gui::TaskView::TaskView",
+            "name": "Tasks"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskTransformedParameters"
+          },
+          {
+            "class": "QWidget",
+            "name": "widget"
+          },
+          {
+            "class": "QRadioButton",
+            "name": "radioTransformBody"
+          },
+          {
+            "class": "QRadioButton",
+            "name": "radioTransformToolShapes"
+          },
+          {
+            "class": "QWidget",
+            "name": "groupFeatureList"
+          },
+          {
+            "class": "QPushButton",
+            "name": "buttonAddFeature"
+          },
+          {
+            "class": "QPushButton",
+            "name": "buttonRemoveFeature"
+          },
+          {
+            "class": "QListWidget",
+            "name": "listWidgetFeatures"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "featureUI"
+          },
+          {
+            "class": "QWidget",
+            "name": "parametersWidgetPlaceholder"
+          },
+          {
+            "class": "PartGui::PatternParametersWidget",
+            "name": "PartGui__PatternParametersWidget"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "enableCheckbox"
+          },
+          {
+            "class": "QGroupBox",
+            "name": "groupBox"
+          },
+          {
+            "class": "QToolButton",
+            "name": "PushButtonReverse"
+          },
+          {
+            "class": "QComboBox",
+            "name": "comboDirection"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelMode"
+          },
+          {
+            "class": "QComboBox",
+            "name": "comboMode"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelLength"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "spinExtent"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelOffset"
+          },
+          {
+            "class": "QWidget",
+            "name": "spacingControlsWidget"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "spinSpacing"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QToolButton",
+            "name": "addSpacingButton"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelOccurrences"
+          },
+          {
+            "class": "Gui::UIntSpinBox",
+            "name": "spinOccurrences"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QWidget",
+            "name": "parametersWidgetPlaceholder2"
+          },
+          {
+            "class": "PartGui::PatternParametersWidget",
+            "name": "PartGui__PatternParametersWidget"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "enableCheckbox"
+          },
+          {
+            "class": "QGroupBox",
+            "name": "groupBox"
+          },
+          {
+            "class": "QToolButton",
+            "name": "PushButtonReverse"
+          },
+          {
+            "class": "QComboBox",
+            "name": "comboDirection"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelMode"
+          },
+          {
+            "class": "QComboBox",
+            "name": "comboMode"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelLength"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "spinExtent"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelOffset"
+          },
+          {
+            "class": "QWidget",
+            "name": "spacingControlsWidget"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "spinSpacing"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QToolButton",
+            "name": "addSpacingButton"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelOccurrences"
+          },
+          {
+            "class": "Gui::UIntSpinBox",
+            "name": "spinOccurrences"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxUpdateView"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskPreviewParameters"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showFinalCheckBox"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showTransparentPreviewCheckBox"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "Gui::OverlayTitleBar",
+            "name": "OverlayTitle"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Overlay"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Float"
+          }
+        ],
+        "custom_controls": {
+          "New": false,
+          "Open": false,
+          "Save": false,
+          "Undo": false,
+          "Redo": false,
+          "parameter_value": true,
+          "apply_parameter": true,
+          "parameter_editor_visible": false
+        },
+        "cancel_enabled": true,
+        "accept_enabled": true
+      },
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      }
+    },
+    {
+      "tool": "Fillet",
+      "mode": "accept",
+      "passed": true,
+      "document": "KurtShape",
+      "dialog": {
+        "editing": "PartDesign::Fillet",
+        "task_widgets": [
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_floatbutton"
+          },
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_closebutton"
+          },
+          {
+            "class": "Gui::TaskView::TaskView",
+            "name": "Tasks"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskFilletParameters"
+          },
+          {
+            "class": "QToolButton",
+            "name": "buttonRefSel"
+          },
+          {
+            "class": "QListWidget",
+            "name": "listWidgetReferences"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "label"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "filletRadius"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxUseAllEdges"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskPreviewParameters"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showFinalCheckBox"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showTransparentPreviewCheckBox"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "Gui::OverlayTitleBar",
+            "name": "OverlayTitle"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Overlay"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Float"
+          }
+        ],
+        "custom_controls": {
+          "New": false,
+          "Open": false,
+          "Save": false,
+          "Undo": false,
+          "Redo": false,
+          "parameter_value": true,
+          "apply_parameter": true,
+          "parameter_editor_visible": false
+        },
+        "cancel_enabled": true,
+        "accept_enabled": true
+      },
+      "accepted": {
+        "type": "PartDesign::Fillet",
+        "name": "Fillet",
+        "volume": 5997.853981633974,
+        "valid": true,
+        "solid_count": 1,
+        "history_present": true,
+        "build_status": "valid"
+      }
+    },
+    {
+      "tool": "Chamfer",
+      "mode": "accept",
+      "passed": true,
+      "document": "KurtShape",
+      "dialog": {
+        "editing": "PartDesign::Chamfer",
+        "task_widgets": [
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_floatbutton"
+          },
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_closebutton"
+          },
+          {
+            "class": "Gui::TaskView::TaskView",
+            "name": "Tasks"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskChamferParameters"
+          },
+          {
+            "class": "QToolButton",
+            "name": "buttonRefSel"
+          },
+          {
+            "class": "QListWidget",
+            "name": "listWidgetReferences"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "typeLabel"
+          },
+          {
+            "class": "QComboBox",
+            "name": "chamferType"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QToolButton",
+            "name": "flipDirection"
+          },
+          {
+            "class": "QLabel",
+            "name": "sizeLabel"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "chamferSize"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxUseAllEdges"
+          },
+          {
+            "class": "QStackedWidget",
+            "name": "stackedWidget"
+          },
+          {
+            "class": "QWidget",
+            "name": "page_3"
+          },
+          {
+            "class": "QLabel",
+            "name": "angleLabel"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "chamferAngle"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QWidget",
+            "name": "page_2"
+          },
+          {
+            "class": "QLabel",
+            "name": "size2Label"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "chamferSize2"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QWidget",
+            "name": "page_1"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskPreviewParameters"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showFinalCheckBox"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showTransparentPreviewCheckBox"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "Gui::OverlayTitleBar",
+            "name": "OverlayTitle"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Overlay"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Float"
+          }
+        ],
+        "custom_controls": {
+          "New": false,
+          "Open": false,
+          "Save": false,
+          "Undo": false,
+          "Redo": false,
+          "parameter_value": true,
+          "apply_parameter": true,
+          "parameter_editor_visible": false
+        },
+        "cancel_enabled": true,
+        "accept_enabled": true
+      },
+      "accepted": {
+        "type": "PartDesign::Chamfer",
+        "name": "Chamfer",
+        "volume": 5995.0,
+        "valid": true,
+        "solid_count": 1,
+        "history_present": true,
+        "build_status": "valid"
+      }
+    },
+    {
+      "tool": "Revolve",
+      "mode": "accept",
+      "passed": true,
+      "document": "KurtShape",
+      "dialog": {
+        "editing": "PartDesign::Revolution",
+        "task_widgets": [
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_floatbutton"
+          },
+          {
+            "class": "QDockWidgetTitleButton",
+            "name": "qt_dockwidget_closebutton"
+          },
+          {
+            "class": "Gui::TaskView::TaskView",
+            "name": "Tasks"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskRevolutionParameters"
+          },
+          {
+            "class": "QLabel",
+            "name": "textLabelMode"
+          },
+          {
+            "class": "QComboBox",
+            "name": "changeMode"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "textLabel1"
+          },
+          {
+            "class": "QComboBox",
+            "name": "axis"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_viewport"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelAngle"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "revolveAngle"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QLabel",
+            "name": "labelAngle2"
+          },
+          {
+            "class": "Gui::QuantitySpinBox",
+            "name": "revolveAngle2"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "qt_spinbox_lineedit"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxMidplane"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxReversed"
+          },
+          {
+            "class": "QPushButton",
+            "name": "buttonFace"
+          },
+          {
+            "class": "QLineEdit",
+            "name": "lineFaceName"
+          },
+          {
+            "class": "QFrame",
+            "name": "line"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "checkBoxUpdateView"
+          },
+          {
+            "class": "QWidget",
+            "name": "PartDesignGui__TaskPreviewParameters"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showFinalCheckBox"
+          },
+          {
+            "class": "QCheckBox",
+            "name": "showTransparentPreviewCheckBox"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_hcontainer"
+          },
+          {
+            "class": "QWidget",
+            "name": "qt_scrollarea_vcontainer"
+          },
+          {
+            "class": "Gui::OverlayTitleBar",
+            "name": "OverlayTitle"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Overlay"
+          },
+          {
+            "class": "Gui::OverlayToolButton",
+            "name": "OBTN Float"
+          }
+        ],
+        "custom_controls": {
+          "New": false,
+          "Open": false,
+          "Save": false,
+          "Undo": false,
+          "Redo": false,
+          "parameter_value": true,
+          "apply_parameter": true,
+          "parameter_editor_visible": false
+        },
+        "cancel_enabled": true,
+        "accept_enabled": true
+      },
+      "accepted": {
+        "type": "PartDesign::Revolution",
+        "name": "Revolution",
+        "volume": 2356.194490192345,
+        "valid": true,
+        "solid_count": 1,
+        "history_present": true,
+        "build_status": "valid"
+      }
+    }
+  ],
+  "native_warnings": [],
+  "native_edit_guard": {
+    "dialog": {
+      "editing": "PartDesign::Fillet",
+      "task_widgets": [
+        {
+          "class": "QDockWidgetTitleButton",
+          "name": "qt_dockwidget_floatbutton"
+        },
+        {
+          "class": "QDockWidgetTitleButton",
+          "name": "qt_dockwidget_closebutton"
+        },
+        {
+          "class": "Gui::TaskView::TaskView",
+          "name": "Tasks"
+        },
+        {
+          "class": "QWidget",
+          "name": "qt_scrollarea_viewport"
+        },
+        {
+          "class": "QWidget",
+          "name": "PartDesignGui__TaskFilletParameters"
+        },
+        {
+          "class": "QToolButton",
+          "name": "buttonRefSel"
+        },
+        {
+          "class": "QListWidget",
+          "name": "listWidgetReferences"
+        },
+        {
+          "class": "QWidget",
+          "name": "qt_scrollarea_viewport"
+        },
+        {
+          "class": "QWidget",
+          "name": "qt_scrollarea_hcontainer"
+        },
+        {
+          "class": "QWidget",
+          "name": "qt_scrollarea_vcontainer"
+        },
+        {
+          "class": "QLabel",
+          "name": "label"
+        },
+        {
+          "class": "Gui::QuantitySpinBox",
+          "name": "filletRadius"
+        },
+        {
+          "class": "QLineEdit",
+          "name": "qt_spinbox_lineedit"
+        },
+        {
+          "class": "QCheckBox",
+          "name": "checkBoxUseAllEdges"
+        },
+        {
+          "class": "QWidget",
+          "name": "PartDesignGui__TaskPreviewParameters"
+        },
+        {
+          "class": "QCheckBox",
+          "name": "showFinalCheckBox"
+        },
+        {
+          "class": "QCheckBox",
+          "name": "showTransparentPreviewCheckBox"
+        },
+        {
+          "class": "QWidget",
+          "name": "qt_scrollarea_hcontainer"
+        },
+        {
+          "class": "QWidget",
+          "name": "qt_scrollarea_vcontainer"
+        },
+        {
+          "class": "Gui::OverlayTitleBar",
+          "name": "OverlayTitle"
+        },
+        {
+          "class": "Gui::OverlayToolButton",
+          "name": "OBTN Overlay"
+        },
+        {
+          "class": "Gui::OverlayToolButton",
+          "name": "OBTN Float"
+        }
+      ],
+      "custom_controls": {
+        "New": false,
+        "Open": false,
+        "Save": false,
+        "Undo": false,
+        "Redo": false,
+        "parameter_value": true,
+        "apply_parameter": true,
+        "parameter_editor_visible": false
+      },
+      "cancel_enabled": true,
+      "accept_enabled": true
+    },
+    "custom_document_actions_disabled": true,
+    "custom_settings_hidden": true,
+    "start_sketch_result": false,
+    "sketch_placement_not_started": true,
+    "custom_extrude_result": false,
+    "custom_extrude_not_started": true,
+    "second_native_tool_result": false,
+    "parameter_mutation_result": false,
+    "base_parameter_unchanged": true,
+    "save_operation_result": false,
+    "save_file_not_created": true,
+    "new_operation_result": false,
+    "created_documents": [],
+    "original_still_open": true,
+    "direct_core_cases": [
+      {
+        "request": {
+          "op": "new",
+          "name": "Direct core native edit New probe"
+        },
+        "response": {
+          "ok": false,
+          "error": {
+            "code": "sketch_edit_active",
+            "message": "Finish or cancel graphical editing before changing documents"
+          }
+        },
+        "checks": [
+          {
+            "name": "new_rejects_with_sketch_edit_active",
+            "passed": true
+          },
+          {
+            "name": "new_creates_no_document",
+            "passed": true
+          },
+          {
+            "name": "new_creates_no_file",
+            "passed": true
+          },
+          {
+            "name": "new_preserves_native_intent",
+            "passed": true
+          },
+          {
+            "name": "new_preserves_brep",
+            "passed": true
+          },
+          {
+            "name": "new_keeps_native_dialog_open",
+            "passed": true
+          }
+        ],
+        "passed": true
+      },
+      {
+        "request": {
+          "op": "open",
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\toolbar-pass\\fillet-accepted.FCStd"
+        },
+        "response": {
+          "ok": false,
+          "error": {
+            "code": "sketch_edit_active",
+            "message": "Finish or cancel graphical editing before changing documents"
+          }
+        },
+        "checks": [
+          {
+            "name": "open_rejects_with_sketch_edit_active",
+            "passed": true
+          },
+          {
+            "name": "open_creates_no_document",
+            "passed": true
+          },
+          {
+            "name": "open_creates_no_file",
+            "passed": true
+          },
+          {
+            "name": "open_preserves_native_intent",
+            "passed": true
+          },
+          {
+            "name": "open_preserves_brep",
+            "passed": true
+          },
+          {
+            "name": "open_keeps_native_dialog_open",
+            "passed": true
+          }
+        ],
+        "passed": true
+      },
+      {
+        "request": {
+          "op": "set_parameter",
+          "document_id": "1604c1bd-1fb8-4e0d-988a-45c2f672d647",
+          "expected_revision": "53a60966-c504-4234-a2ae-67d83e70f0b4",
+          "feature": "Pad",
+          "parameter": "Length",
+          "value": 11
+        },
+        "response": {
+          "ok": false,
+          "error": {
+            "code": "sketch_edit_active",
+            "message": "Finish or cancel graphical editing before another operation"
+          }
+        },
+        "checks": [
+          {
+            "name": "set_parameter_rejects_with_sketch_edit_active",
+            "passed": true
+          },
+          {
+            "name": "set_parameter_creates_no_document",
+            "passed": true
+          },
+          {
+            "name": "set_parameter_creates_no_file",
+            "passed": true
+          },
+          {
+            "name": "set_parameter_preserves_native_intent",
+            "passed": true
+          },
+          {
+            "name": "set_parameter_preserves_brep",
+            "passed": true
+          },
+          {
+            "name": "set_parameter_keeps_native_dialog_open",
+            "passed": true
+          }
+        ],
+        "passed": true
+      },
+      {
+        "request": {
+          "op": "save",
+          "document_id": "1604c1bd-1fb8-4e0d-988a-45c2f672d647",
+          "expected_revision": "53a60966-c504-4234-a2ae-67d83e70f0b4",
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\toolbar-pass\\native-task-direct-core-save-probe.FCStd"
+        },
+        "response": {
+          "ok": false,
+          "error": {
+            "code": "sketch_edit_active",
+            "message": "Finish or cancel graphical editing before another operation"
+          }
+        },
+        "checks": [
+          {
+            "name": "save_rejects_with_sketch_edit_active",
+            "passed": true
+          },
+          {
+            "name": "save_creates_no_document",
+            "passed": true
+          },
+          {
+            "name": "save_creates_no_file",
+            "passed": true
+          },
+          {
+            "name": "save_preserves_native_intent",
+            "passed": true
+          },
+          {
+            "name": "save_preserves_brep",
+            "passed": true
+          },
+          {
+            "name": "save_keeps_native_dialog_open",
+            "passed": true
+          }
+        ],
+        "passed": true
+      }
+    ],
+    "original_intent_restored": true,
+    "checks": [
+      {
+        "name": "start_sketch_result",
+        "passed": true
+      },
+      {
+        "name": "custom_extrude_result",
+        "passed": true
+      },
+      {
+        "name": "second_native_tool_result",
+        "passed": true
+      },
+      {
+        "name": "parameter_mutation_result",
+        "passed": true
+      },
+      {
+        "name": "save_operation_result",
+        "passed": true
+      },
+      {
+        "name": "new_operation_result",
+        "passed": true
+      },
+      {
+        "name": "custom_document_actions_disabled",
+        "passed": true
+      },
+      {
+        "name": "custom_settings_hidden",
+        "passed": true
+      },
+      {
+        "name": "sketch_placement_not_started",
+        "passed": true
+      },
+      {
+        "name": "custom_extrude_not_started",
+        "passed": true
+      },
+      {
+        "name": "base_parameter_unchanged",
+        "passed": true
+      },
+      {
+        "name": "save_file_not_created",
+        "passed": true
+      },
+      {
+        "name": "original_still_open",
+        "passed": true
+      },
+      {
+        "name": "original_intent_restored",
+        "passed": true
+      },
+      {
+        "name": "no_document_created_during_native_task",
+        "passed": true
+      },
+      {
+        "name": "new_rejects_with_sketch_edit_active",
+        "passed": true
+      },
+      {
+        "name": "new_creates_no_document",
+        "passed": true
+      },
+      {
+        "name": "new_creates_no_file",
+        "passed": true
+      },
+      {
+        "name": "new_preserves_native_intent",
+        "passed": true
+      },
+      {
+        "name": "new_preserves_brep",
+        "passed": true
+      },
+      {
+        "name": "new_keeps_native_dialog_open",
+        "passed": true
+      },
+      {
+        "name": "open_rejects_with_sketch_edit_active",
+        "passed": true
+      },
+      {
+        "name": "open_creates_no_document",
+        "passed": true
+      },
+      {
+        "name": "open_creates_no_file",
+        "passed": true
+      },
+      {
+        "name": "open_preserves_native_intent",
+        "passed": true
+      },
+      {
+        "name": "open_preserves_brep",
+        "passed": true
+      },
+      {
+        "name": "open_keeps_native_dialog_open",
+        "passed": true
+      },
+      {
+        "name": "set_parameter_rejects_with_sketch_edit_active",
+        "passed": true
+      },
+      {
+        "name": "set_parameter_creates_no_document",
+        "passed": true
+      },
+      {
+        "name": "set_parameter_creates_no_file",
+        "passed": true
+      },
+      {
+        "name": "set_parameter_preserves_native_intent",
+        "passed": true
+      },
+      {
+        "name": "set_parameter_preserves_brep",
+        "passed": true
+      },
+      {
+        "name": "set_parameter_keeps_native_dialog_open",
+        "passed": true
+      },
+      {
+        "name": "save_rejects_with_sketch_edit_active",
+        "passed": true
+      },
+      {
+        "name": "save_creates_no_document",
+        "passed": true
+      },
+      {
+        "name": "save_creates_no_file",
+        "passed": true
+      },
+      {
+        "name": "save_preserves_native_intent",
+        "passed": true
+      },
+      {
+        "name": "save_preserves_brep",
+        "passed": true
+      },
+      {
+        "name": "save_keeps_native_dialog_open",
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "primary_toolbar_passed": true,
+  "ui_guard_check_count": 15,
+  "direct_core_guard_check_count": 24,
+  "case_count": 8,
+  "guard_check_count": 39
+}

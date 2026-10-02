@@ -1,0 +1,39 @@
+{
+  "document_id": "2f240ae0-5d0a-4a8d-bcad-b8ec82f60e61",
+  "revision": "aa4ac76f-4be9-4fc6-9442-72da52c22e56",
+  "units": "mm",
+  "sha256": "b5e6fd7970fbfa928cc6ce46cd8003aa3b5b78f370b7685654a09a30e9eba0fa",
+  "native_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\core-acceptance\\plate.FCStd",
+  "format": ".step",
+  "shape": {
+    "valid": true,
+    "solid_count": 1,
+    "volume_mm3": 18728.761101961525,
+    "area_mm2": 7871.415926535896,
+    "bbox_mm": {
+      "min": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max": [
+        80.0,
+        40.0,
+        6.0
+      ],
+      "size": [
+        80.0,
+        40.0,
+        6.0
+      ]
+    },
+    "center_of_mass_mm": [
+      40.000000000000014,
+      20.000000000000004,
+      3.0000000000000004
+    ]
+  },
+  "settings": {
+    "writer": "FreeCAD Part/OCCT"
+  }
+}

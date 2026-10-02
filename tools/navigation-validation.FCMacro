@@ -1,0 +1,184 @@
+"""Isolated, hidden viewport event exercise; does not start KurtShape's bridge."""
+import os
+import sys
+sys.dont_write_bytecode = True
+from pathlib import Path
+import json
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from pivy import coin
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+ROOT = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(ROOT / 'src'))
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1200, 800)
+main.show()
+
+def snapshot(view):
+    camera = view.getCameraOrientation().Q
+    cam = view.getCameraNode()
+    return {'orientation': list(camera), 'position': list(cam.position.getValue().getValue()),
+            'height': float(cam.height.getValue()) if hasattr(cam, 'height') else float(cam.heightAngle.getValue()),
+            'focal_distance': float(cam.focalDistance.getValue())}
+
+def same_camera(left, right):
+    return all(abs(a-b)<1e-4 for key in ('orientation','position') for a,b in zip(left[key],right[key])) and all(abs(left[key]-right[key])<1e-4 for key in ('height','focal_distance'))
+
+def move_event(widget, pos, buttons=QtCore.Qt.MiddleButton, modifiers=QtCore.Qt.NoModifier):
+    local = QtCore.QPointF(pos)
+    screen = QtCore.QPointF(widget.mapToGlobal(pos))
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, local, screen,
+                            QtCore.Qt.NoButton, buttons, modifiers)
+    QtWidgets.QApplication.sendEvent(widget, event)
+    QtWidgets.QApplication.processEvents()
+
+def drag(widget, modifiers, begin=None):
+    begin = begin or QtCore.QPoint(widget.width() // 2, widget.height() // 2)
+    QtTest.QTest.mousePress(widget, QtCore.Qt.MiddleButton, modifiers, begin)
+    for i in range(1, 7):
+        move_event(widget, begin + QtCore.QPoint(12 * i, 7 * i), modifiers=modifiers)
+    QtTest.QTest.mouseRelease(widget, QtCore.Qt.MiddleButton, modifiers, begin + QtCore.QPoint(72, 42))
+    QtWidgets.QApplication.processEvents()
+
+def validate():
+    report = {'version': App.Version(), 'passed': False, 'checks': [],
+              'method': 'QtTest presses/releases and direct Qt move events to the native Coin viewport; hidden independent GUI process'}
+    try:
+        Gui.activateWorkbench('SketcherWorkbench')
+        doc = App.newDocument('NavigationValidation')
+        box = doc.addObject('Part::Feature', 'Box')
+        box.Shape = Part.makeBox(50, 35, 12)
+        sketch = doc.addObject('Sketcher::SketchObject', 'Sketch')
+        sketch.Placement.Base = App.Vector(0,0,12)
+        sketch.addGeometry(Part.LineSegment(App.Vector(0,0,0), App.Vector(30,0,0)), False)
+        sketch.Visibility = False
+        doc.recompute()
+        view = Gui.activeDocument().activeView()
+        from kurtshape.navigation import apply_navigation, normal_to_sketch, view_isometric_keep_sketch, allow_sketch_3d, sketch_plane_point
+        report['view_methods'] = [name for name in dir(view) if any(term in name.lower() for term in ('navigation', 'viewer', 'size', 'camera', 'point'))]
+        report['projection_docs'] = {name: getattr(view,name).__doc__ for name in ['projectPointToLine','getPointOnScreen','getPointOnViewport','getSize']}
+        viewer = view.getViewer()
+        report['viewer_type'] = str(type(viewer))
+        report['viewer_methods'] = [name for name in dir(viewer) if any(term in name.lower() for term in ('navigation', 'animation', 'rotation', 'widget'))]
+        navigation = viewer.getNavigationStyle()
+        report['navigation_methods'] = {name: str(getattr(navigation,name).__doc__) for name in dir(navigation) if not name.startswith('_')}
+        report['projection_test'] = str(view.projectPointToLine(400,300))
+        apply_navigation(view)
+        report['native_style'] = view.getNavigationType()
+        view.viewAxonometric()
+        view.fitAll()
+        QtTest.QTest.qWait(700)
+        report['widgets'] = [{'class': widget.metaObject().className(), 'name': widget.objectName(), 'size':[widget.width(),widget.height()]} for widget in main.findChildren(QtWidgets.QWidget) if 'GL' in widget.metaObject().className() or 'Inventor' in widget.metaObject().className()]
+        gl = next(widget for widget in main.findChildren(QtWidgets.QWidget) if widget.metaObject().className() == 'QOpenGLWidget' and widget.parentWidget().metaObject().className() == 'Gui::View3DInventorViewer')
+        report['viewport_size'] = [gl.width(), gl.height()]
+        report['viewport_native_size'] = list(view.getSize())
+        report['device_pixel_ratio'] = gl.devicePixelRatioF()
+        pivot = App.Vector(12,11,12)
+        pixels = view.getPointOnViewport(pivot)
+        before = list(pixels)
+        hit = view.getObjectInfo((pixels[0],pixels[1]))
+        assert hit and hit['Object'] == 'Box',hit
+        ratio = gl.devicePixelRatioF()
+        drag(gl,QtCore.Qt.NoModifier,QtCore.QPoint(int(pixels[0]/ratio),gl.height()-1-int(pixels[1]/ratio)))
+        after = list(view.getPointOnViewport(pivot))
+        assert abs(before[0]-after[0]) <= 2 and abs(before[1]-after[1]) <= 2, (before,after,hit)
+        report['checks'].append({'mode':'hovered_surface_pivot','before_pixels':before,'after_pixels':after,'hit_object':hit['Object']})
+        for mode, modifier in [('orbit', QtCore.Qt.NoModifier), ('pan', QtCore.Qt.ControlModifier), ('zoom', QtCore.Qt.ShiftModifier)]:
+            before = snapshot(view)
+            drag(gl, modifier)
+            after = snapshot(view)
+            report['checks'].append({'mode':mode, 'before':before, 'after':after})
+            if mode == 'orbit':
+                assert before['orientation'] != after['orientation'] and before['height'] == after['height']
+            elif mode == 'pan':
+                assert before['position'] != after['position'] and before['orientation'] == after['orientation'] and before['height'] == after['height']
+            else:
+                assert before['height'] != after['height'] and before['orientation'] == after['orientation']
+        before = snapshot(view)
+        center = QtCore.QPoint(gl.width()//2, gl.height()//2)
+        event = QtGui.QWheelEvent(QtCore.QPointF(center), QtCore.QPointF(gl.mapToGlobal(center)), QtCore.QPoint(0,0), QtCore.QPoint(0,120), QtCore.Qt.NoButton, QtCore.Qt.NoModifier, QtCore.Qt.NoScrollPhase, False)
+        QtWidgets.QApplication.sendEvent(gl.parentWidget(),event)
+        QtWidgets.QApplication.processEvents()
+        after = snapshot(view)
+        report['checks'].append({'mode':'wheel_forward_zoom_out', 'before':before,'after':after})
+        assert after['height'] > before['height'] and after['orientation'] == before['orientation']
+        before = snapshot(view)
+        QtTest.QTest.mouseDClick(gl,QtCore.Qt.MiddleButton,QtCore.Qt.NoModifier,center)
+        QtTest.QTest.mouseRelease(gl,QtCore.Qt.MiddleButton,QtCore.Qt.NoModifier,center)
+        QtTest.QTest.qWait(700)
+        after = snapshot(view)
+        assert after['height'] != before['height'] and after['orientation'] == before['orientation']
+        report['checks'].append({'mode':'double_middle_fit', 'before':before,'after':after})
+        allow_sketch_3d(sketch,view)
+        camera = view.getCamera()
+        before = snapshot(view)
+        Gui.activeDocument().setEdit(sketch.Name)
+        allow_sketch_3d(sketch,view,camera)
+        report['checks'].append({'mode':'preserve_camera_on_sketch_entry','before':before,'after':snapshot(view)})
+        assert same_camera(snapshot(view),before)
+        QtTest.QTest.qWait(700)
+        assert same_camera(snapshot(view),before)
+        before = snapshot(view)
+        drag(gl, QtCore.Qt.NoModifier)
+        after = snapshot(view)
+        report['checks'].append({'mode':'sketch_edit_orbit', 'before':before, 'after':after, 'still_in_edit':bool(Gui.activeDocument().getInEdit())})
+        assert before['orientation'] != after['orientation'] and Gui.activeDocument().getInEdit()
+        for mode, modifier in [('sketch_edit_pan',QtCore.Qt.ControlModifier),('sketch_edit_zoom',QtCore.Qt.ShiftModifier)]:
+            before = snapshot(view)
+            drag(gl,modifier)
+            after = snapshot(view)
+            assert before['orientation'] == after['orientation'] and Gui.activeDocument().getInEdit()
+            assert before['position'] != after['position'] if mode.endswith('pan') else before['height'] != after['height']
+            report['checks'].append({'mode':mode, 'before':before,'after':after,'still_in_edit':bool(Gui.activeDocument().getInEdit())})
+        before = snapshot(view)
+        normal_to_sketch(sketch,view)
+        after = snapshot(view)
+        assert App.Rotation(*after['orientation']).isSame(sketch.Placement.Rotation,1e-6)
+        assert after['height'] == before['height'] and Gui.activeDocument().getInEdit()
+        report['checks'].append({'mode':'normal_while_editing', 'before':before,'after':after})
+        before = snapshot(view)
+        view_isometric_keep_sketch(view)
+        after = snapshot(view)
+        assert before['orientation'] != after['orientation'] and after['height'] == before['height'] and Gui.activeDocument().getInEdit()
+        report['checks'].append({'mode':'isometric_while_editing', 'before':before,'after':after})
+        point = App.Vector(13,0,0)
+        pixels = view.getPointOnViewport(sketch.Placement.multVec(point))
+        actual = sketch_plane_point(view,pixels,sketch)
+        assert actual is not None and (actual-point).Length < 0.5, (actual,point,pixels)
+        report['checks'].append({'mode':'orbit_plane_projection', 'expected':list(point),'actual':list(actual),'pixels':list(pixels)})
+        before = snapshot(view)
+        QtTest.QTest.mouseDClick(gl,QtCore.Qt.MiddleButton,QtCore.Qt.NoModifier,center)
+        QtTest.QTest.mouseRelease(gl,QtCore.Qt.MiddleButton,QtCore.Qt.NoModifier,center)
+        QtWidgets.QApplication.processEvents()
+        after = snapshot(view)
+        assert Gui.activeDocument().getInEdit() and after['orientation'] == before['orientation'] and after['height'] > 0
+        report['checks'].append({'mode':'double_middle_fit_while_editing','before':before,'after':after})
+        view.saveImage(str(ROOT / 'validation' / 'navigation-sketch-3d.png'),1000,700,'White')
+        Gui.activeDocument().resetEdit()
+        sketch.Placement.Rotation = App.Rotation(App.Vector(1,0,0),37)
+        doc.recompute()
+        view.setCameraType('Perspective')
+        view_isometric_keep_sketch(view)
+        point = App.Vector(13,8,0)
+        pixels = view.getPointOnViewport(sketch.Placement.multVec(point))
+        actual = sketch_plane_point(view,pixels,sketch)
+        assert actual is not None and (actual-point).Length < 0.5, (actual,point,pixels)
+        report['checks'].append({'mode':'perspective_tilted_plane_projection','expected':list(point),'actual':list(actual),'pixels':list(pixels)})
+        normal_to_sketch(sketch,view)
+        assert view.getCameraOrientation().isSame(sketch.Placement.Rotation,1e-6)
+        report['checks'].append({'mode':'tilted_sketch_normal','sketch_rotation':list(sketch.Placement.Rotation.Q),'camera_rotation':list(view.getCameraOrientation().Q)})
+        report['passed'] = True
+    except Exception:
+        report['error'] = traceback.format_exc()
+    (ROOT / 'validation' / 'navigation-test-result.json').write_text(json.dumps(report, indent=2))
+    for name in list(App.listDocuments()):
+        App.closeDocument(name)
+    QtCore.QTimer.singleShot(250, main.close)
+
+QtCore.QTimer.singleShot(1000, validate)

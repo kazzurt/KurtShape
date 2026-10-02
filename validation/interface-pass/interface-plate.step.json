@@ -1,0 +1,39 @@
+{
+  "document_id": "45e30da2-f98c-42a8-8056-808b6a98eed0",
+  "revision": "a2536059-4391-4df1-ae38-9fd11d13e63b",
+  "units": "mm",
+  "sha256": "5fbe9fb44ba9ce63933ddc0a5901f5d09936b0a1e8ea93ab9d8bd1cddb0a1844",
+  "native_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\interface-pass\\interface-plate.FCStd",
+  "format": ".step",
+  "shape": {
+    "valid": true,
+    "solid_count": 1,
+    "volume_mm3": 14299.469035085125,
+    "area_mm2": 6050.2654824574365,
+    "bbox_mm": {
+      "min": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max": [
+        60.0,
+        40.0,
+        6.0
+      ],
+      "size": [
+        60.0,
+        40.0,
+        6.0
+      ]
+    },
+    "center_of_mass_mm": [
+      30.0,
+      20.000000000000004,
+      2.985939203103527
+    ]
+  },
+  "settings": {
+    "writer": "FreeCAD Part/OCCT"
+  }
+}

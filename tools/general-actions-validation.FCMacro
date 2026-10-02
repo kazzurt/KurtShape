@@ -1,0 +1,235 @@
+"""Isolated native copy/paste, document switching, and local-report checks."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape.core import Controller, metadata
+from kurtshape.general_actions import GeneralActions
+
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1200, 800)
+main.show()
+report = {"passed": False, "checks": [], "freecad_version": App.Version(),
+          "method": "Separate hidden FreeCAD GUI/config, native controller and native clipboard commands; user's clipboard restored after validation"}
+
+
+class TestPanel(QtCore.QObject):
+    def __init__(self):
+        super().__init__()
+        self.core = Controller()
+        self.main = main
+        self.state = None
+        self.message = QtGui.QLabel()
+        self.task = self.pending_sketch = False
+        self.feature = None
+
+    def active_sketch(self):
+        obj = Gui.activeDocument().getInEdit() if Gui.activeDocument() else None
+        obj = obj.Object if obj and hasattr(obj, "Object") else obj
+        return obj if obj and obj.TypeId == "Sketcher::SketchObject" else None
+
+    def notify(self, message):
+        self.message.setText(str(message))
+
+    def selected(self):
+        return self.feature
+
+    def select_feature(self, name):
+        self.feature = name
+
+    def refresh(self):
+        pass
+
+    def tick(self):
+        doc = App.activeDocument()
+        if doc:
+            self.state = self.core.inspect(doc)
+
+
+panel = TestPanel()
+actions = GeneralActions(panel)
+clipboard = QtGui.QApplication.clipboard()
+original_clipboard = QtCore.QMimeData()
+original_mime = clipboard.mimeData()
+if original_mime:
+    for mime_format in original_mime.formats():
+        original_clipboard.setData(mime_format, original_mime.data(mime_format))
+
+
+def call(op, **args):
+    if op not in {"new", "open"}:
+        current = panel.core.inspect(App.activeDocument())
+        args.update(document_id=current["document_id"], expected_revision=current["revision"])
+    result = panel.core.dispatch({"op": op, **args})
+    assert result["ok"], result
+    panel.state = result["result"]
+    return panel.state
+
+
+def check(name, condition):
+    assert condition, name + ": " + panel.message.text()
+    report["checks"].append(name)
+
+
+def select(obj, subelement=""):
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(obj.Document.Name, obj.Name, subelement)
+    panel.feature = obj.Name
+
+
+def validate():
+    try:
+        Gui.activateWorkbench("PartDesignWorkbench")
+        call("new", name="Native clipboard acceptance")
+        call("sketch_rectangle", id="Profile", width=30, height=20)
+        call("pad", id="Pad", profile="Profile", length=5)
+        doc = App.activeDocument()
+        original_id = metadata(doc).DocumentId
+        select(doc.Pad)
+        actions.copy()
+        actions.paste()
+        clone = doc.getObject(panel.feature)
+        check("Pad paste retains native type and profile, adds no frozen Body", clone.TypeId == "PartDesign::Pad" and clone.Profile[0] == doc.Profile and len([o for o in doc.Objects if o.TypeId == "PartDesign::Body"]) == 1)
+        check("Native pasted feature rebuilds valid and rotates revision", panel.state["build_status"] == "valid" and metadata(doc).DocumentId == original_id)
+        clone_name = clone.Name
+        call("set_parameter", feature=clone_name, parameter="Length", value=7)
+        check("Pasted Pad length edits independently", abs(doc.Body.Shape.Volume - 4200) < 1e-6 and doc.Pad.Length.Value == 5)
+        call("undo")
+        call("undo")
+        check("Native undo removes paste", doc.getObject(clone_name) is None)
+        call("redo")
+        check("Native redo restores editable pasted feature", doc.getObject(clone_name).TypeId == "PartDesign::Pad")
+        select(doc.Pad)
+        actions.copy()
+        count = len(doc.Objects)
+        actions.paste()
+        actions.paste()
+        check("Consecutive pastes each create one editable native feature", len(doc.Objects) == count + 2 and doc.Body.Tip.TypeId == "PartDesign::Pad" and doc.Body.Shape.isValid())
+        select(doc.Profile)
+        actions.copy()
+        before_volume = doc.Body.Shape.Volume
+        actions.paste()
+        sketch_copy = doc.getObject(panel.feature)
+        check("Sketch paste preserves constraints and attachment and solid Tip", sketch_copy.GeometryCount == 4 and sketch_copy.ConstraintCount == doc.Profile.ConstraintCount and sketch_copy.AttachmentSupport[0][0] == doc.Profile.AttachmentSupport[0][0] and abs(doc.Body.Shape.Volume - before_volume) < 1e-6)
+        call("set_parameter", feature=sketch_copy.Name, parameter="Width", value=35)
+        check("Pasted sketch parameters edit independently", doc.Profile.Constraints[-2].Value == 30 and sketch_copy.Constraints[-2].Value == 35)
+        select(doc.Pad)
+        actions.copy()
+        call("set_parameter", feature="Pad", parameter="Length", value=6)
+        count = len(doc.Objects)
+        actions.paste()
+        check("Source change rejects stale feature clipboard without mutation", len(doc.Objects) == count and "changed" in panel.message.text())
+        saved_clone_name = clone_name
+        call("save", path=str(root / "validation" / "general-actions-native-copy.FCStd"))
+        App.closeDocument(doc.Name)
+        call("open", path=str(root / "validation" / "general-actions-native-copy.FCStd"))
+        doc = App.activeDocument()
+        check("Pasted features reopen and freshly rebuild from native dependencies", metadata(doc).DocumentId == original_id and doc.getObject(saved_clone_name).Profile[0] == doc.Profile and panel.state["build_status"] == "valid")
+        select(doc.Profile)
+        actions.copy()
+        call("new", name="Second managed document")
+        second = App.activeDocument()
+        count = len(second.Objects)
+        actions.paste()
+        check("Cross-document feature paste rejects unresolved dependencies", len(second.Objects) == count and "source document" in panel.message.text())
+        actions.switch_recent()
+        check("Ctrl+Space equivalent switches to recent managed document", App.activeDocument() == doc)
+        actions.switch_recent()
+        check("Recent switching toggles between two native documents", App.activeDocument() == second)
+        panel.task = "pad"
+        actions.switch_recent()
+        check("Pending feature dialog blocks document switching", App.activeDocument() == second)
+        panel.task = None
+        actions.switch_recent()
+        assert App.activeDocument() == doc
+        Gui.Selection.clearSelection()
+        Gui.activeDocument().setEdit("Pad")
+        QtTest.QTest.qWait(150)
+        native_edit = Gui.activeDocument().getInEdit()
+        check("Native Pad editor opens a real non-sketch task", native_edit and native_edit.Object == doc.Pad and Gui.Control.activeDialog() and panel.active_sketch() is None)
+        actions.switch_recent()
+        check("Native Pad edit blocks recent document switching", App.activeDocument() == doc and Gui.activeDocument().getInEdit().Object == doc.Pad and "Finish or cancel" in panel.message.text())
+        chooser_state = {"opened": False}
+        def chooser_watchdog():
+            for dialog in main.findChildren(QtWidgets.QDialog):
+                if dialog.isVisible() and dialog.windowTitle() == "Open part studios":
+                    chooser_state["opened"] = True
+                    dialog.reject()
+        QtCore.QTimer.singleShot(250, chooser_watchdog)
+        actions.tab_manager()
+        check("Native Pad edit blocks the document chooser", App.activeDocument() == doc and Gui.Control.activeDialog() and not chooser_state["opened"] and "Finish or cancel" in panel.message.text())
+        for dock in main.findChildren(QtWidgets.QDockWidget):
+            if dock.windowTitle() in {"Tasks", "Combo View"} or dock.objectName() == "Tasks":
+                dock.show()
+        QtTest.QTest.qWait(100)
+        cancel_button = next(box.button(QtWidgets.QDialogButtonBox.Cancel) for box in main.findChildren(QtWidgets.QDialogButtonBox)
+                             if box.isVisible() and box.button(QtWidgets.QDialogButtonBox.Cancel))
+        QtTest.QTest.mouseClick(cancel_button, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(150)
+        check("Native Cancel closes Pad edit and its task", not Gui.activeDocument().getInEdit() and not Gui.Control.activeDialog())
+        actions.switch_recent()
+        check("Document switching resumes after native Pad cancellation", App.activeDocument() == second)
+        call("create_sketch", id="ClipboardSketch", plane="XY")
+        call("begin_sketch_edit", feature="ClipboardSketch")
+        Gui.activateWorkbench("SketcherWorkbench")
+        Gui.activeDocument().setEdit("ClipboardSketch")
+        call("add_circle", sketch="ClipboardSketch", x=0, y=0, diameter=6)
+        sketch = second.ClipboardSketch
+        select(sketch, "Edge1")
+        QtTest.QTest.qWait(100)
+        actions.copy()
+        check("Native selected geometry copy produces a recognized clipboard", bool(actions._sketch_clipboard_digest))
+        report["native_clipboard_text_length"] = len(clipboard.text())
+        before = sketch.GeometryCount
+        actions.paste()
+        QtTest.QTest.qWait(100)
+        gl = next(w for w in main.findChildren(QtWidgets.QWidget) if w.metaObject().className() == "QOpenGLWidget" and w.isVisible())
+        Gui.activeDocument().activeView().viewTop()
+        Gui.activeDocument().activeView().fitAll()
+        pos = gl.rect().center() + QtCore.QPoint(80, 35)
+        QtTest.QTest.mouseMove(gl, pos)
+        QtTest.QTest.mouseClick(gl, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, pos)
+        QtTest.QTest.qWait(120)
+        report["geometry_after_native_paste"] = sketch.GeometryCount
+        report["constraint_after_native_paste"] = sketch.ConstraintCount
+        check("Native paste placement creates real sketch geometry", sketch.GeometryCount > before)
+        clipboard.setText("Unrecognized clipboard text")
+        before = sketch.GeometryCount
+        actions.paste()
+        check("Unrecognized clipboard cannot invoke native script paste", sketch.GeometryCount == before and "compatible" in panel.message.text())
+        actions.switch_recent()
+        check("Managed sketch lease blocks document switching", App.activeDocument() == second)
+        Gui.activeDocument().resetEdit()
+        call("finish_sketch_edit")
+        path = actions.save_report("Automated validation report: native copy/paste and document switching")
+        data = json.loads(path.read_text())
+        check("Problem report stays local and excludes transport credentials", path.is_relative_to(root / "validation" / "user-reports") and not any(word in json.dumps(data).lower() for word in ["bearer", "token", "assistant-session"]))
+        report["local_report_path"] = str(path)
+        check("Fit selection native command is installed", "Std_ViewFitSelection" in Gui.listCommands())
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["status_message"] = panel.message.text()
+    finally:
+        clipboard.setMimeData(original_clipboard)
+        if Gui.activeDocument() and Gui.activeDocument().getInEdit():
+            Gui.activeDocument().resetEdit()
+        actions.close()
+        (root / "validation" / "general-actions-gui-result.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        for doc in list(App.listDocuments().values()):
+            App.closeDocument(doc.Name)
+        QtCore.QTimer.singleShot(100, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(500, validate)

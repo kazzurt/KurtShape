@@ -1,0 +1,35 @@
+{
+  "schema": "kurtshape.onshape-subset/1",
+  "name": "Synthetic inch circle pad",
+  "units": "mm",
+  "provenance": {
+    "kind": "synthetic_fixture",
+    "description": "Development fixture: explicit inch quantities normalize to mm. Not captured from Onshape."
+  },
+  "features": [
+    {
+      "featureId": "fixture-circle-profile",
+      "name": "Circle profile in inches",
+      "featureType": "newSketch",
+      "plane": "XY",
+      "profile": "circle",
+      "parameters": [
+        {"btType": "BTMParameterQuantity-147", "parameterId": "x", "expression": "0.5 in"},
+        {"btType": "BTMParameterQuantity-147", "parameterId": "y", "expression": "-0.25 in"},
+        {"btType": "BTMParameterQuantity-147", "parameterId": "diameter", "expression": "1 in"}
+      ]
+    },
+    {
+      "featureId": "fixture-circle-extrude",
+      "name": "Quarter-inch thickness",
+      "featureType": "extrude",
+      "direction": "+Z",
+      "entities": [{"btType": "BTMIndividualSketchRegionQuery-140", "featureId": "fixture-circle-profile"}],
+      "parameters": [
+        {"btType": "BTMParameterEnum-145", "parameterId": "operationType", "enumName": "NewBodyOperationType", "value": "NEW"},
+        {"btType": "BTMParameterEnum-145", "parameterId": "endBound", "enumName": "BoundingType", "value": "BLIND"},
+        {"btType": "BTMParameterQuantity-147", "parameterId": "depth", "expression": "0.25 in"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1489 @@
+{
+  "passed": true,
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "catalog_command_count": 103,
+  "model_tool_count": 39,
+  "sketch_tool_count": 64,
+  "primary_native_tool_count": 11,
+  "scenario_count": 17,
+  "cancel_scenario_count": 12,
+  "accept_scenario_count": 5,
+  "direct_core_part_task_guard_check_count": 48,
+  "cases": [
+    {
+      "tool": "draft",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Draft",
+        "command": "PartDesign_Draft"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Draft",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:draftAngle",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkReverse",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QLabel:label",
+        "QLineEdit:lineLine",
+        "QLineEdit:linePlane",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listWidgetReferences",
+        "QToolButton:buttonLine",
+        "QToolButton:buttonPlane",
+        "QToolButton:buttonRefSel",
+        "QWidget:PartDesignGui__TaskDraftParameters",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-draft.json"
+    },
+    {
+      "tool": "draft",
+      "mode": "accept",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Draft",
+        "command": "PartDesign_Draft"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Draft",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:draftAngle",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkReverse",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QLabel:label",
+        "QLineEdit:lineLine",
+        "QLineEdit:linePlane",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listWidgetReferences",
+        "QToolButton:buttonLine",
+        "QToolButton:buttonPlane",
+        "QToolButton:buttonRefSel",
+        "QWidget:PartDesignGui__TaskDraftParameters",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "preview": {
+        "tip": "Draft",
+        "type": "PartDesign::Draft",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 6052.371843138374
+      },
+      "accepted": {
+        "name": "Draft",
+        "type": "PartDesign::Draft",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 6052.371843138374,
+        "history_present": true,
+        "build_status": "valid",
+        "file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\draft-accepted.FCStd"
+      },
+      "source_report": "model-tools-draft.json"
+    },
+    {
+      "tool": "loft",
+      "mode": "accept",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Loft",
+        "command": "PartDesign_AdditiveLoft"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::AdditiveLoft",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkBoxClosed",
+        "QCheckBox:checkBoxRuled",
+        "QCheckBox:checkBoxUpdateView",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QFrame:line",
+        "QGroupBox:groupprofile",
+        "QLineEdit:profileBaseEdit",
+        "QListWidget:listWidgetReferences",
+        "QToolButton:buttonProfileBase",
+        "QToolButton:buttonRefAdd",
+        "QToolButton:buttonRefRemove",
+        "QWidget:PartDesignGui__TaskLoftParameters",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "preview": {
+        "tip": "AdditiveLoft",
+        "type": "PartDesign::AdditiveLoft",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 750.0
+      },
+      "accepted": {
+        "name": "AdditiveLoft",
+        "type": "PartDesign::AdditiveLoft",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 750.0,
+        "history_present": true,
+        "build_status": "valid",
+        "file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\loft-accepted.FCStd"
+      },
+      "source_report": "model-tools-loft_accept.json"
+    },
+    {
+      "tool": "hole",
+      "mode": "accept",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Hole",
+        "command": "PartDesign_Hole"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Hole",
+      "task_widgets": [
+        "Gui::ElideCheckBox:DrillForDepth",
+        "Gui::ElideCheckBox:DrillPointAngled",
+        "Gui::ElideCheckBox:HoleCutCustomValues",
+        "Gui::ElideCheckBox:Reversed",
+        "Gui::ElideCheckBox:UpdateView",
+        "Gui::ElideCheckBox:UseCustomThreadClearance",
+        "Gui::ElideLabel:labelDepth",
+        "Gui::ElideLabel:labelDepthType",
+        "Gui::ElideLabel:labelDiameter",
+        "Gui::ElideLabel:labelHeadType",
+        "Gui::ElideLabel:labelHoleCutCountersinkAngle",
+        "Gui::ElideLabel:labelHoleCutDepth",
+        "Gui::ElideLabel:labelHoleCutDiameter",
+        "Gui::ElideLabel:labelHoleType",
+        "Gui::ElideLabel:labelProfileType",
+        "Gui::ElideLabel:labelSize",
+        "Gui::ElideLabel:labelThreadClass",
+        "Gui::ElideLabel:labelThreadClearance",
+        "Gui::ElideLabel:labelThreadDepthType",
+        "Gui::ElideLabel:labelThreadType",
+        "Gui::FontScaledSVG:cutDiagram",
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::PrefQuantitySpinBox:CustomThreadClearance",
+        "Gui::PrefQuantitySpinBox:Depth",
+        "Gui::PrefQuantitySpinBox:Diameter",
+        "Gui::PrefQuantitySpinBox:DrillPointAngle",
+        "Gui::PrefQuantitySpinBox:HoleCutCountersinkAngle",
+        "Gui::PrefQuantitySpinBox:HoleCutDepth",
+        "Gui::PrefQuantitySpinBox:HoleCutDiameter",
+        "Gui::PrefQuantitySpinBox:TaperedAngle",
+        "Gui::PrefQuantitySpinBox:ThreadDepth",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:Tapered",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QComboBox:BaseProfileType",
+        "QComboBox:DepthType",
+        "QComboBox:HoleCutType",
+        "QComboBox:HoleType",
+        "QComboBox:ThreadClass",
+        "QComboBox:ThreadDepthType",
+        "QComboBox:ThreadFit",
+        "QComboBox:ThreadSize",
+        "QComboBox:ThreadType",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QFrame:DrillFrame",
+        "QGroupBox:ThreadGroupBox",
+        "QLabel:labelThreadDepth",
+        "QLabel:labelThreadDirection",
+        "QLabel:labelThreading",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QRadioButton:directionLeftHand",
+        "QRadioButton:directionRightHand",
+        "QWidget:ClearanceWidget",
+        "QWidget:CustomClearanceWidget",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:TaskHoleParameters",
+        "QWidget:ThreadDepthDimensionWidget",
+        "QWidget:ThreadDepthWidget",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "preview": {
+        "tip": "Hole",
+        "type": "PartDesign::Hole",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 5717.256661176919
+      },
+      "accepted": {
+        "name": "Hole",
+        "type": "PartDesign::Hole",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 5717.256661176919,
+        "history_present": true,
+        "build_status": "valid",
+        "file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\hole-accepted.FCStd"
+      },
+      "source_report": "model-tools-hole_accept.json"
+    },
+    {
+      "tool": "shell",
+      "mode": "accept",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Shell",
+        "command": "PartDesign_Thickness"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Thickness",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:Value",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkIntersection",
+        "QCheckBox:checkReverse",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QComboBox:joinComboBox",
+        "QComboBox:modeComboBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QLabel:label",
+        "QLabel:label_2",
+        "QLabel:label_3",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listWidgetReferences",
+        "QToolButton:buttonRefSel",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:PartDesignGui__TaskThicknessParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "preview": {
+        "tip": "Thickness",
+        "type": "PartDesign::Thickness",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 1464.0
+      },
+      "accepted": {
+        "name": "Thickness",
+        "type": "PartDesign::Thickness",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 1464.0,
+        "history_present": true,
+        "build_status": "valid",
+        "file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\shell-accepted.FCStd"
+      },
+      "source_report": "model-tools-shell_accept.json"
+    },
+    {
+      "tool": "sweep",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Sweep",
+        "command": "PartDesign_AdditivePipe"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::AdditivePipe",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:curvilinear",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QComboBox:comboBoxMode",
+        "QComboBox:comboBoxScaling",
+        "QComboBox:comboBoxTransition",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QDoubleSpinBox:doubleSpinBoxX",
+        "QDoubleSpinBox:doubleSpinBoxY",
+        "QDoubleSpinBox:doubleSpinBoxZ",
+        "QGroupBox:groupBox",
+        "QGroupBox:groupprofile",
+        "QLabel:label",
+        "QLabel:label_2",
+        "QLabel:label_3",
+        "QLabel:label_4",
+        "QLabel:label_5",
+        "QLineEdit:profileBaseEdit",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QLineEdit:spineBaseEdit",
+        "QListWidget:listWidgetReferences",
+        "QStackedWidget:stackedWidget",
+        "QToolButton:buttonProfileBase",
+        "QToolButton:buttonProfileClear",
+        "QToolButton:buttonRefAdd",
+        "QToolButton:buttonRefRemove",
+        "QToolButton:buttonSpineBase",
+        "QWidget:PartDesignGui__TaskPipeOrientation",
+        "QWidget:PartDesignGui__TaskPipeParameters",
+        "QWidget:PartDesignGui__TaskPipeScaling",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:auxiliary",
+        "QWidget:binormal",
+        "QWidget:constant",
+        "QWidget:fixed",
+        "QWidget:frenet",
+        "QWidget:multisection",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport",
+        "QWidget:standard"
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-circular_pattern_groove_multi_transform_sweep_cancel.json"
+    },
+    {
+      "tool": "groove",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Cut / Revolve remove",
+        "command": "PartDesign_Groove"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Groove",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:revolveAngle",
+        "Gui::QuantitySpinBox:revolveAngle2",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkBoxMidplane",
+        "QCheckBox:checkBoxReversed",
+        "QCheckBox:checkBoxUpdateView",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QComboBox:axis",
+        "QComboBox:changeMode",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QFrame:line",
+        "QLabel:labelAngle",
+        "QLabel:labelAngle2",
+        "QLabel:textLabel1",
+        "QLabel:textLabelMode",
+        "QLineEdit:lineFaceName",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QPushButton:buttonFace",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:PartDesignGui__TaskRevolutionParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-circular_pattern_groove_multi_transform_sweep_cancel.json"
+    },
+    {
+      "tool": "circular_pattern",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Patterns / Circular pattern",
+        "command": "PartDesign_PolarPattern"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::PolarPattern",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:spinExtent",
+        "Gui::QuantitySpinBox:spinSpacing",
+        "Gui::TaskView::TaskView:Tasks",
+        "Gui::UIntSpinBox:spinOccurrences",
+        "PartGui::PatternParametersWidget:PartGui__PatternParametersWidget",
+        "QCheckBox:checkBoxUpdateView",
+        "QCheckBox:enableCheckbox",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QComboBox:comboDirection",
+        "QComboBox:comboMode",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QGroupBox:groupBox",
+        "QLabel:labelLength",
+        "QLabel:labelMode",
+        "QLabel:labelOccurrences",
+        "QLabel:labelOffset",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listWidgetFeatures",
+        "QPushButton:buttonAddFeature",
+        "QPushButton:buttonRemoveFeature",
+        "QRadioButton:radioTransformBody",
+        "QRadioButton:radioTransformToolShapes",
+        "QToolButton:PushButtonReverse",
+        "QToolButton:addSpacingButton",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:PartDesignGui__TaskTransformedParameters",
+        "QWidget:featureUI",
+        "QWidget:groupFeatureList",
+        "QWidget:parametersWidgetPlaceholder",
+        "QWidget:parametersWidgetPlaceholder2",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport",
+        "QWidget:spacingControlsWidget",
+        "QWidget:widget"
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-circular_pattern_groove_multi_transform_sweep_cancel.json"
+    },
+    {
+      "tool": "multi_transform",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Patterns / Multiple transforms",
+        "command": "PartDesign_MultiTransform"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::MultiTransform",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkBoxUpdateView",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QLabel:label",
+        "QListWidget:listTransformFeatures",
+        "QListWidget:listWidgetFeatures",
+        "QPushButton:buttonAddFeature",
+        "QPushButton:buttonOK",
+        "QPushButton:buttonRemoveFeature",
+        "QRadioButton:radioTransformBody",
+        "QRadioButton:radioTransformToolShapes",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:PartDesignGui__TaskTransformedParameters",
+        "QWidget:featureUI",
+        "QWidget:groupFeatureList",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport",
+        "QWidget:subFeatureWidget",
+        "QWidget:widget"
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-circular_pattern_groove_multi_transform_sweep_cancel.json"
+    },
+    {
+      "tool": "datum_plane",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Reference / Plane",
+        "command": "PartDesign_Plane"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Plane",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::PrefQuantitySpinBox:attachmentOffsetX",
+        "Gui::PrefQuantitySpinBox:attachmentOffsetY",
+        "Gui::PrefQuantitySpinBox:attachmentOffsetZ",
+        "Gui::QuantitySpinBox:attachmentOffsetPitch",
+        "Gui::QuantitySpinBox:attachmentOffsetRoll",
+        "Gui::QuantitySpinBox:attachmentOffsetYaw",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkBoxFlip",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QGroupBox:groupBox_AttachmentOffset",
+        "QLabel:label",
+        "QLabel:labelOffsetX",
+        "QLabel:labelOffsetY",
+        "QLabel:labelOffsetZ",
+        "QLabel:labelPitch",
+        "QLabel:labelRoll",
+        "QLabel:labelYaw",
+        "QLabel:message",
+        "QLineEdit:lineRef1",
+        "QLineEdit:lineRef2",
+        "QLineEdit:lineRef3",
+        "QLineEdit:lineRef4",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listOfModes",
+        "QPushButton:buttonRef1",
+        "QPushButton:buttonRef2",
+        "QPushButton:buttonRef3",
+        "QPushButton:buttonRef4",
+        "QWidget:PartGui__TaskAttacher",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-datum_line_datum_plane_datum_point_cancel.json"
+    },
+    {
+      "tool": "datum_line",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Reference / Axis",
+        "command": "PartDesign_Line"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Line",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::PrefQuantitySpinBox:attachmentOffsetX",
+        "Gui::PrefQuantitySpinBox:attachmentOffsetY",
+        "Gui::PrefQuantitySpinBox:attachmentOffsetZ",
+        "Gui::QuantitySpinBox:attachmentOffsetPitch",
+        "Gui::QuantitySpinBox:attachmentOffsetRoll",
+        "Gui::QuantitySpinBox:attachmentOffsetYaw",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkBoxFlip",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QGroupBox:groupBox_AttachmentOffset",
+        "QLabel:label",
+        "QLabel:labelOffsetX",
+        "QLabel:labelOffsetY",
+        "QLabel:labelOffsetZ",
+        "QLabel:labelPitch",
+        "QLabel:labelRoll",
+        "QLabel:labelYaw",
+        "QLabel:message",
+        "QLineEdit:lineRef1",
+        "QLineEdit:lineRef2",
+        "QLineEdit:lineRef3",
+        "QLineEdit:lineRef4",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listOfModes",
+        "QPushButton:buttonRef1",
+        "QPushButton:buttonRef2",
+        "QPushButton:buttonRef3",
+        "QPushButton:buttonRef4",
+        "QWidget:PartGui__TaskAttacher",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-datum_line_datum_plane_datum_point_cancel.json"
+    },
+    {
+      "tool": "datum_point",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Reference / Point",
+        "command": "PartDesign_Point"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Point",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::PrefQuantitySpinBox:attachmentOffsetX",
+        "Gui::PrefQuantitySpinBox:attachmentOffsetY",
+        "Gui::PrefQuantitySpinBox:attachmentOffsetZ",
+        "Gui::QuantitySpinBox:attachmentOffsetPitch",
+        "Gui::QuantitySpinBox:attachmentOffsetRoll",
+        "Gui::QuantitySpinBox:attachmentOffsetYaw",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkBoxFlip",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QGroupBox:groupBox_AttachmentOffset",
+        "QLabel:label",
+        "QLabel:labelOffsetX",
+        "QLabel:labelOffsetY",
+        "QLabel:labelOffsetZ",
+        "QLabel:labelPitch",
+        "QLabel:labelRoll",
+        "QLabel:labelYaw",
+        "QLabel:message",
+        "QLineEdit:lineRef1",
+        "QLineEdit:lineRef2",
+        "QLineEdit:lineRef3",
+        "QLineEdit:lineRef4",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listOfModes",
+        "QPushButton:buttonRef1",
+        "QPushButton:buttonRef2",
+        "QPushButton:buttonRef3",
+        "QPushButton:buttonRef4",
+        "QWidget:PartGui__TaskAttacher",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-datum_line_datum_plane_datum_point_cancel.json"
+    },
+    {
+      "tool": "part_extrude",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Shape tools / Part extrude",
+        "command": "Part_Extrude"
+      },
+      "workbench": "PartWorkbench",
+      "editing": null,
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:spinLenFwd",
+        "Gui::QuantitySpinBox:spinLenRev",
+        "Gui::QuantitySpinBox:spinTaperAngle",
+        "Gui::QuantitySpinBox:spinTaperAngleRev",
+        "Gui::TaskView::TaskView:Tasks",
+        "PartGui::DlgExtrusion:PartGui__DlgExtrusion",
+        "QCheckBox:chkReversed",
+        "QCheckBox:chkSolid",
+        "QCheckBox:chkSymmetric",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QDoubleSpinBox:dirX",
+        "QDoubleSpinBox:dirY",
+        "QDoubleSpinBox:dirZ",
+        "QFrame:line",
+        "QGroupBox:groupBox",
+        "QGroupBox:groupBox_2",
+        "QLabel:label",
+        "QLabel:label_2",
+        "QLabel:label_5",
+        "QLabel:label_6",
+        "QLabel:statusLabel",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QLineEdit:txtLink",
+        "QPushButton:btnSelectEdge",
+        "QPushButton:btnX",
+        "QPushButton:btnY",
+        "QPushButton:btnZ",
+        "QRadioButton:rbDirModeCustom",
+        "QRadioButton:rbDirModeEdge",
+        "QRadioButton:rbDirModeNormal",
+        "QTreeWidget:treeWidget",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "task_buttons": [
+        {
+          "text": "OK",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Ok",
+          "role": "ButtonRole.AcceptRole"
+        },
+        {
+          "text": "Close",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Close",
+          "role": "ButtonRole.RejectRole"
+        },
+        {
+          "text": "Apply",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Apply",
+          "role": "ButtonRole.ApplyRole"
+        }
+      ],
+      "history_visible": true,
+      "direct_core_task_guards": [
+        {
+          "request": {
+            "op": "new",
+            "name": "Part native dialog guard probe"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before changing documents"
+            }
+          },
+          "checks": [
+            {
+              "name": "new_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "new_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "new_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "new_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "new_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "new_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "open",
+            "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\draft-accepted.FCStd"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before changing documents"
+            }
+          },
+          "checks": [
+            {
+              "name": "open_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "open_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "open_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "open_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "open_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "open_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "set_parameter",
+            "document_id": "58d34b0f-2bf1-4292-9453-4692679fefb4",
+            "expected_revision": "4e3a6bd5-59ad-4ab3-9f81-6f19e221f746",
+            "feature": "Profile",
+            "parameter": "Width",
+            "value": 6
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before another operation"
+            }
+          },
+          "checks": [
+            {
+              "name": "set_parameter_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "save",
+            "document_id": "58d34b0f-2bf1-4292-9453-4692679fefb4",
+            "expected_revision": "4e3a6bd5-59ad-4ab3-9f81-6f19e221f746",
+            "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\part-task-direct-core-save-probe.FCStd"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before another operation"
+            }
+          },
+          "checks": [
+            {
+              "name": "save_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "save_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "save_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "save_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "save_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "save_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        }
+      ],
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-part_extrude.json"
+    },
+    {
+      "tool": "part_extrude",
+      "mode": "accept",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Shape tools / Part extrude",
+        "command": "Part_Extrude"
+      },
+      "workbench": "PartWorkbench",
+      "editing": null,
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:spinLenFwd",
+        "Gui::QuantitySpinBox:spinLenRev",
+        "Gui::QuantitySpinBox:spinTaperAngle",
+        "Gui::QuantitySpinBox:spinTaperAngleRev",
+        "Gui::TaskView::TaskView:Tasks",
+        "PartGui::DlgExtrusion:PartGui__DlgExtrusion",
+        "QCheckBox:chkReversed",
+        "QCheckBox:chkSolid",
+        "QCheckBox:chkSymmetric",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QDoubleSpinBox:dirX",
+        "QDoubleSpinBox:dirY",
+        "QDoubleSpinBox:dirZ",
+        "QFrame:line",
+        "QGroupBox:groupBox",
+        "QGroupBox:groupBox_2",
+        "QLabel:label",
+        "QLabel:label_2",
+        "QLabel:label_5",
+        "QLabel:label_6",
+        "QLabel:statusLabel",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QLineEdit:txtLink",
+        "QPushButton:btnSelectEdge",
+        "QPushButton:btnX",
+        "QPushButton:btnY",
+        "QPushButton:btnZ",
+        "QRadioButton:rbDirModeCustom",
+        "QRadioButton:rbDirModeEdge",
+        "QRadioButton:rbDirModeNormal",
+        "QTreeWidget:treeWidget",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "task_buttons": [
+        {
+          "text": "OK",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Ok",
+          "role": "ButtonRole.AcceptRole"
+        },
+        {
+          "text": "Close",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Close",
+          "role": "ButtonRole.RejectRole"
+        },
+        {
+          "text": "Apply",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Apply",
+          "role": "ButtonRole.ApplyRole"
+        }
+      ],
+      "history_visible": true,
+      "direct_core_task_guards": [
+        {
+          "request": {
+            "op": "new",
+            "name": "Part native dialog guard probe"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before changing documents"
+            }
+          },
+          "checks": [
+            {
+              "name": "new_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "new_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "new_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "new_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "new_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "new_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "open",
+            "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\draft-accepted.FCStd"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before changing documents"
+            }
+          },
+          "checks": [
+            {
+              "name": "open_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "open_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "open_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "open_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "open_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "open_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "set_parameter",
+            "document_id": "a92eba5c-41f1-450e-9da6-3f320a020f48",
+            "expected_revision": "ebde1579-1aa2-4fc9-bfd3-89647a3ee264",
+            "feature": "Profile",
+            "parameter": "Width",
+            "value": 6
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before another operation"
+            }
+          },
+          "checks": [
+            {
+              "name": "set_parameter_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "set_parameter_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        },
+        {
+          "request": {
+            "op": "save",
+            "document_id": "a92eba5c-41f1-450e-9da6-3f320a020f48",
+            "expected_revision": "ebde1579-1aa2-4fc9-bfd3-89647a3ee264",
+            "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\part-task-direct-core-save-probe.FCStd"
+          },
+          "response": {
+            "ok": false,
+            "error": {
+              "code": "sketch_edit_active",
+              "message": "Finish or cancel graphical editing before another operation"
+            }
+          },
+          "checks": [
+            {
+              "name": "save_rejects_with_sketch_edit_active",
+              "passed": true
+            },
+            {
+              "name": "save_creates_no_document",
+              "passed": true
+            },
+            {
+              "name": "save_creates_no_file",
+              "passed": true
+            },
+            {
+              "name": "save_preserves_native_intent",
+              "passed": true
+            },
+            {
+              "name": "save_preserves_brep",
+              "passed": true
+            },
+            {
+              "name": "save_keeps_native_dialog_open",
+              "passed": true
+            }
+          ],
+          "passed": true
+        }
+      ],
+      "preview": {
+        "tip": null,
+        "note": "Standalone Part result is created by native OK; no Body Tip preview."
+      },
+      "accepted": {
+        "name": "Extrude",
+        "type": "Part::Extrusion",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 499.9999999999999,
+        "history_present": true,
+        "build_status": "sketch_only",
+        "file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\part_extrude-accepted.FCStd"
+      },
+      "source_report": "model-tools-part_extrude.json"
+    },
+    {
+      "tool": "loft",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Loft",
+        "command": "PartDesign_AdditiveLoft"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::AdditiveLoft",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkBoxClosed",
+        "QCheckBox:checkBoxRuled",
+        "QCheckBox:checkBoxUpdateView",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QFrame:line",
+        "QGroupBox:groupprofile",
+        "QLineEdit:profileBaseEdit",
+        "QListWidget:listWidgetReferences",
+        "QToolButton:buttonProfileBase",
+        "QToolButton:buttonRefAdd",
+        "QToolButton:buttonRefRemove",
+        "QWidget:PartDesignGui__TaskLoftParameters",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "task_buttons": [
+        {
+          "text": "OK",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Ok",
+          "role": "ButtonRole.AcceptRole"
+        },
+        {
+          "text": "Cancel",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Cancel",
+          "role": "ButtonRole.RejectRole"
+        }
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-hole_loft_shell_cancel.json"
+    },
+    {
+      "tool": "hole",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Hole",
+        "command": "PartDesign_Hole"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Hole",
+      "task_widgets": [
+        "Gui::ElideCheckBox:DrillForDepth",
+        "Gui::ElideCheckBox:DrillPointAngled",
+        "Gui::ElideCheckBox:HoleCutCustomValues",
+        "Gui::ElideCheckBox:Reversed",
+        "Gui::ElideCheckBox:UpdateView",
+        "Gui::ElideCheckBox:UseCustomThreadClearance",
+        "Gui::ElideLabel:labelDepth",
+        "Gui::ElideLabel:labelDepthType",
+        "Gui::ElideLabel:labelDiameter",
+        "Gui::ElideLabel:labelHeadType",
+        "Gui::ElideLabel:labelHoleCutCountersinkAngle",
+        "Gui::ElideLabel:labelHoleCutDepth",
+        "Gui::ElideLabel:labelHoleCutDiameter",
+        "Gui::ElideLabel:labelHoleType",
+        "Gui::ElideLabel:labelProfileType",
+        "Gui::ElideLabel:labelSize",
+        "Gui::ElideLabel:labelThreadClass",
+        "Gui::ElideLabel:labelThreadClearance",
+        "Gui::ElideLabel:labelThreadDepthType",
+        "Gui::ElideLabel:labelThreadType",
+        "Gui::FontScaledSVG:cutDiagram",
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::PrefQuantitySpinBox:CustomThreadClearance",
+        "Gui::PrefQuantitySpinBox:Depth",
+        "Gui::PrefQuantitySpinBox:Diameter",
+        "Gui::PrefQuantitySpinBox:DrillPointAngle",
+        "Gui::PrefQuantitySpinBox:HoleCutCountersinkAngle",
+        "Gui::PrefQuantitySpinBox:HoleCutDepth",
+        "Gui::PrefQuantitySpinBox:HoleCutDiameter",
+        "Gui::PrefQuantitySpinBox:TaperedAngle",
+        "Gui::PrefQuantitySpinBox:ThreadDepth",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:Tapered",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QComboBox:BaseProfileType",
+        "QComboBox:DepthType",
+        "QComboBox:HoleCutType",
+        "QComboBox:HoleType",
+        "QComboBox:ThreadClass",
+        "QComboBox:ThreadDepthType",
+        "QComboBox:ThreadFit",
+        "QComboBox:ThreadSize",
+        "QComboBox:ThreadType",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QFrame:DrillFrame",
+        "QGroupBox:ThreadGroupBox",
+        "QLabel:labelThreadDepth",
+        "QLabel:labelThreadDirection",
+        "QLabel:labelThreading",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QRadioButton:directionLeftHand",
+        "QRadioButton:directionRightHand",
+        "QWidget:ClearanceWidget",
+        "QWidget:CustomClearanceWidget",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:TaskHoleParameters",
+        "QWidget:ThreadDepthDimensionWidget",
+        "QWidget:ThreadDepthWidget",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "task_buttons": [
+        {
+          "text": "OK",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Ok",
+          "role": "ButtonRole.AcceptRole"
+        },
+        {
+          "text": "Cancel",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Cancel",
+          "role": "ButtonRole.RejectRole"
+        }
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-hole_loft_shell_cancel.json"
+    },
+    {
+      "tool": "shell",
+      "mode": "cancel",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Shell",
+        "command": "PartDesign_Thickness"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Thickness",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:Value",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkIntersection",
+        "QCheckBox:checkReverse",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QComboBox:joinComboBox",
+        "QComboBox:modeComboBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QLabel:label",
+        "QLabel:label_2",
+        "QLabel:label_3",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listWidgetReferences",
+        "QToolButton:buttonRefSel",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:PartDesignGui__TaskThicknessParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "task_buttons": [
+        {
+          "text": "OK",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Ok",
+          "role": "ButtonRole.AcceptRole"
+        },
+        {
+          "text": "Cancel",
+          "visible": true,
+          "enabled": true,
+          "standard": "StandardButton.Cancel",
+          "role": "ButtonRole.RejectRole"
+        }
+      ],
+      "history_visible": true,
+      "cancel_restoration": {
+        "intent_equal": true,
+        "group_equal": true,
+        "shape_equal": true,
+        "history_visible": true
+      },
+      "source_report": "model-tools-hole_loft_shell_cancel.json"
+    }
+  ],
+  "retained_initial_failure": {
+    "report": "model-tools-hole_loft_part_extrude_shell.json",
+    "issue": "Native Part Extrude Tasks had activeDialog but no getInEdit; direct core New created another document. Fixed by root core activeDialog guards; 48 final checks pass. Following scenarios in the partial report were invalidated by the failed document switch."
+  },
+  "stress_limitation": "An earlier rapid mixed native task/document loop hit a caught C++ Access violation; priority accepted features were validated in fresh isolated processes.",
+  "source_reports": [
+    "model-tools-circular_pattern_groove_multi_transform_sweep_cancel.json",
+    "model-tools-datum_line_datum_plane_datum_point_cancel.json",
+    "model-tools-draft.json",
+    "model-tools-hole_accept.json",
+    "model-tools-hole_loft_shell_cancel.json",
+    "model-tools-loft_accept.json",
+    "model-tools-part_extrude.json",
+    "model-tools-shell_accept.json"
+  ],
+  "all_canonical_source_reports_pass": true
+}

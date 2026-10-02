@@ -1,0 +1,295 @@
+{
+  "pid": 52516,
+  "stages": [
+    {
+      "name": "created",
+      "pending_transaction": false,
+      "undo_count": 1,
+      "redo_count": 0,
+      "geometry_count": 0,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": false,
+      "managed_edit": null
+    },
+    {
+      "name": "managed_begin",
+      "pending_transaction": true,
+      "undo_count": 2,
+      "redo_count": 0,
+      "geometry_count": 0,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": "Profile"
+    },
+    {
+      "name": "native_setEdit",
+      "pending_transaction": true,
+      "undo_count": 2,
+      "redo_count": 0,
+      "geometry_count": 0,
+      "edit_type": "SketcherGui::ViewProviderSketch",
+      "edit_object_type": "Sketcher::SketchObject",
+      "gui_modified": true,
+      "managed_edit": "Profile"
+    },
+    {
+      "name": "actual_native_rectangle_mouse_command",
+      "pending_transaction": false,
+      "undo_count": 4,
+      "redo_count": 0,
+      "geometry_count": 4,
+      "edit_type": "SketcherGui::ViewProviderSketch",
+      "edit_object_type": "Sketcher::SketchObject",
+      "gui_modified": true,
+      "managed_edit": "Profile"
+    },
+    {
+      "name": "native_circle",
+      "pending_transaction": false,
+      "undo_count": 4,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "SketcherGui::ViewProviderSketch",
+      "edit_object_type": "Sketcher::SketchObject",
+      "gui_modified": true,
+      "managed_edit": "Profile"
+    },
+    {
+      "name": "managed_undo_in_native_editor",
+      "pending_transaction": false,
+      "undo_count": 4,
+      "redo_count": 0,
+      "geometry_count": 4,
+      "edit_type": "SketcherGui::ViewProviderSketch",
+      "edit_object_type": "Sketcher::SketchObject",
+      "gui_modified": true,
+      "managed_edit": "Profile"
+    },
+    {
+      "name": "managed_redo_in_native_editor",
+      "pending_transaction": false,
+      "undo_count": 4,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "SketcherGui::ViewProviderSketch",
+      "edit_object_type": "Sketcher::SketchObject",
+      "gui_modified": true,
+      "managed_edit": "Profile"
+    },
+    {
+      "name": "native_resetEdit_before_finish",
+      "pending_transaction": false,
+      "undo_count": 4,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": "Profile"
+    },
+    {
+      "name": "managed_finish",
+      "pending_transaction": false,
+      "undo_count": 2,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": null
+    },
+    {
+      "name": "document_undo_redo_after_finish",
+      "pending_transaction": false,
+      "undo_count": 2,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": null
+    },
+    {
+      "name": "native_edit_before_cancel",
+      "pending_transaction": true,
+      "undo_count": 3,
+      "redo_count": 0,
+      "geometry_count": 6,
+      "edit_type": "SketcherGui::ViewProviderSketch",
+      "edit_object_type": "Sketcher::SketchObject",
+      "gui_modified": true,
+      "managed_edit": "Profile"
+    },
+    {
+      "name": "native_resetEdit_before_cancel",
+      "pending_transaction": false,
+      "undo_count": 3,
+      "redo_count": 0,
+      "geometry_count": 6,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": "Profile"
+    },
+    {
+      "name": "managed_cancel",
+      "pending_transaction": false,
+      "undo_count": 3,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": null
+    },
+    {
+      "name": "undo_prior_accepted_edit_after_cancel",
+      "pending_transaction": false,
+      "undo_count": 1,
+      "redo_count": 2,
+      "geometry_count": 0,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": null
+    },
+    {
+      "name": "redo_prior_accepted_edit_does_not_resurrect_cancelled_line",
+      "pending_transaction": false,
+      "undo_count": 3,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": null
+    },
+    {
+      "name": "successful_staged_save_clears_modified_without_history_change",
+      "pending_transaction": false,
+      "undo_count": 3,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": false,
+      "managed_edit": null
+    },
+    {
+      "name": "new_native_model_edit_sets_modified_again",
+      "pending_transaction": false,
+      "undo_count": 3,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": null
+    },
+    {
+      "name": "failed_staged_replace_preserves_file_modified_flag_and_history",
+      "pending_transaction": false,
+      "undo_count": 3,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": null
+    },
+    {
+      "name": "second_staged_save_clears_modified_and_preserves_history",
+      "pending_transaction": false,
+      "undo_count": 3,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": false,
+      "managed_edit": null
+    },
+    {
+      "name": "open_rebuild_and_fresh_session_metadata_leave_saved_tab_clean",
+      "pending_transaction": false,
+      "undo_count": 0,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": false,
+      "managed_edit": null
+    },
+    {
+      "name": "native_solid_feature_task_is_in_graphical_edit",
+      "pending_transaction": false,
+      "undo_count": 1,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "PartDesignGui::ViewProviderPad",
+      "edit_object_type": "PartDesign::Pad",
+      "gui_modified": true,
+      "managed_edit": null
+    },
+    {
+      "name": "graphical_feature_edit_closed_after_guard_checks",
+      "pending_transaction": false,
+      "undo_count": 1,
+      "redo_count": 0,
+      "geometry_count": 5,
+      "edit_type": "None",
+      "edit_object_type": "None",
+      "gui_modified": true,
+      "managed_edit": null
+    }
+  ],
+  "passed": true,
+  "gui_document_modified_api": {
+    "methods": [
+      "Modified",
+      "save",
+      "saveAs"
+    ],
+    "setModified_doc": null
+  },
+  "modified_property_probe": {
+    "before": true,
+    "undo_before": 1,
+    "after": false,
+    "undo_after": 1
+  },
+  "failed_save_error": {
+    "code": "operation_failed",
+    "message": "intentional staged-save replacement rejection"
+  },
+  "native_feature_edit_guards": [
+    {
+      "op": "new",
+      "error": {
+        "code": "sketch_edit_active",
+        "message": "Finish or cancel graphical editing before changing documents"
+      },
+      "documents_preserved": true,
+      "revision_preserved": true
+    },
+    {
+      "op": "open",
+      "error": {
+        "code": "sketch_edit_active",
+        "message": "Finish or cancel graphical editing before changing documents"
+      },
+      "documents_preserved": true,
+      "revision_preserved": true
+    },
+    {
+      "op": "rename_feature",
+      "error": {
+        "code": "sketch_edit_active",
+        "message": "Finish or cancel graphical editing before another operation"
+      },
+      "documents_preserved": true,
+      "revision_preserved": true
+    }
+  ]
+}

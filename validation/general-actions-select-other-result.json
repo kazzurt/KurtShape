@@ -1,0 +1,56 @@
+{
+  "passed": true,
+  "checks": [
+    "Qt pointer conversion obtains actual front and occluded native faces",
+    "Chooser selects exact occluded native face",
+    "Existing selection remains when choosing another entity",
+    "Hover highlights the real occluded object",
+    "Select other preserves native document, camera, revision, and edit context",
+    "Cancel leaves native selection unchanged",
+    "Changed native revision rejects stale face selection",
+    "Pointer outside viewport reports a clear selection boundary"
+  ],
+  "method": "Native ray hits and actual Qt menu activation on occluded faces; separate hidden GUI/config",
+  "selection_methods": [
+    "clearPreselection",
+    "getPreselection",
+    "setPreselection"
+  ],
+  "set_preselection_doc": "setPreselection(obj, subName, x=0, y=0, z=0, type=1) -> None\n\nSet preselected object.\n\nobj : App.DocumentObject\n    Object to preselect.\nsubName : str\n    Subelement name.\nx : float\n    Coordinate `x` of the point to preselect.\ny : float\n    Coordinate `y` of the point to preselect.\nz : float\n    Coordinate `z` of the point to preselect.\ntype : int",
+  "hit_list": [
+    {
+      "x": 14.979403495788574,
+      "y": 10.041192054748535,
+      "z": 5.0,
+      "Document": "KurtShape",
+      "Object": "FrontSolid",
+      "Component": "Face6"
+    },
+    {
+      "x": 14.979403495788574,
+      "y": 10.041192054748535,
+      "z": 0.0,
+      "Document": "KurtShape",
+      "Object": "FrontSolid",
+      "Component": "Face5"
+    },
+    {
+      "x": 14.979403495788574,
+      "y": 10.041192054748535,
+      "z": -5.0,
+      "Document": "KurtShape",
+      "Object": "RearSolid",
+      "Component": "Face6"
+    },
+    {
+      "x": 14.979403495788574,
+      "y": 10.041192054748535,
+      "z": -10.0,
+      "Document": "KurtShape",
+      "Object": "RearSolid",
+      "Component": "Face5"
+    }
+  ],
+  "pixel_ratio": 1.5,
+  "hovered_native_object": "RearSolid"
+}

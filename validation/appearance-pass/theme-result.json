@@ -1,0 +1,436 @@
+{
+  "passed": true,
+  "checks": [
+    "Hostile dark startup palette installed",
+    "Application owns the light stylesheet",
+    "Inherited native dark window stylesheet removed",
+    "Theme changes no FreeCAD preference",
+    "active labels contrast meets 4.5:1",
+    "active inputs contrast meets 4.5:1",
+    "active buttons contrast meets 4.5:1",
+    "active selection contrast meets 4.5:1",
+    "active tooltips contrast meets 4.5:1",
+    "inactive labels contrast meets 4.5:1",
+    "inactive inputs contrast meets 4.5:1",
+    "inactive buttons contrast meets 4.5:1",
+    "inactive selection contrast meets 4.5:1",
+    "inactive tooltips contrast meets 4.5:1",
+    "disabled labels contrast meets 4.5:1",
+    "disabled inputs contrast meets 4.5:1",
+    "disabled buttons contrast meets 4.5:1",
+    "disabled selection contrast meets 4.5:1",
+    "disabled tooltips contrast meets 4.5:1",
+    "History tree contrast meets 4.5:1",
+    "Parameter dropdown contrast meets 4.5:1",
+    "Dimension spinbox contrast meets 4.5:1",
+    "Document name contrast meets 4.5:1",
+    "workspace screenshot saved",
+    "Dynamic dialog label contrast meets 4.5:1",
+    "Dynamic line input contrast meets 4.5:1",
+    "Dynamic spin input contrast meets 4.5:1",
+    "Dynamic default button contrast meets 4.5:1",
+    "Dynamic disabled button contrast meets 4.5:1",
+    "Input placeholder contrast meets 4.5:1",
+    "Default action button rendered colors meet 4.5:1",
+    "Disabled action button rendered colors meet 4.5:1",
+    "Rendered label has visible ink glyphs",
+    "Rendered field has visible ink glyphs",
+    "Dropdown has a visible rendered arrow",
+    "Spinbox has visible rendered increment arrows",
+    "Split-menu button has a visible dropdown arrow",
+    "Split-menu button has no black dropdown rectangle",
+    "dynamic-dialog screenshot saved",
+    "Dropdown popup contrast meets 4.5:1",
+    "Dropdown popup selection contrast meets 4.5:1",
+    "dropdown-popup screenshot saved",
+    "Dynamic context menu contrast meets 4.5:1",
+    "context-menu screenshot saved",
+    "Long menu uses native scrolling",
+    "Long menu fits the available screen height",
+    "Last long-menu action is reachable and visible",
+    "First long-menu action remains reachable",
+    "Actual native tooltip contrast meets 4.5:1",
+    "Native tooltip rendered colors meet 4.5:1",
+    "tooltip screenshot saved",
+    "Actual native Pad task opened",
+    "Native Tasks panel visible",
+    "Native task has rendered labels",
+    "Native task label 0 contrast meets 4.5:1",
+    "Native task label 1 contrast meets 4.5:1",
+    "Native task label 2 contrast meets 4.5:1",
+    "Native task label 3 contrast meets 4.5:1",
+    "Native task label 4 contrast meets 4.5:1",
+    "Native task label 5 contrast meets 4.5:1",
+    "Native task label 6 contrast meets 4.5:1",
+    "Native task label 7 contrast meets 4.5:1",
+    "Native task has rendered inputs",
+    "Native task input 0 contrast meets 4.5:1",
+    "Native task input 1 contrast meets 4.5:1",
+    "Native task input 2 contrast meets 4.5:1",
+    "Native task input 3 contrast meets 4.5:1",
+    "Native task input 4 contrast meets 4.5:1",
+    "Native task OK button rendered colors meet 4.5:1",
+    "Native task dropdown arrows are rendered",
+    "native-pad-task screenshot saved",
+    "Native cancel remains functional with the theme"
+  ],
+  "contrast": [
+    {
+      "name": "active labels",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "active inputs",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "active buttons",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "active selection",
+      "method": "resolved Qt palette",
+      "foreground": "#153f68",
+      "background": "#d8e9fa",
+      "ratio": 8.728
+    },
+    {
+      "name": "active tooltips",
+      "method": "resolved Qt palette",
+      "foreground": "#ffffff",
+      "background": "#243447",
+      "ratio": 12.672
+    },
+    {
+      "name": "inactive labels",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "inactive inputs",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "inactive buttons",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "inactive selection",
+      "method": "resolved Qt palette",
+      "foreground": "#153f68",
+      "background": "#d8e9fa",
+      "ratio": 8.728
+    },
+    {
+      "name": "inactive tooltips",
+      "method": "resolved Qt palette",
+      "foreground": "#ffffff",
+      "background": "#243447",
+      "ratio": 12.672
+    },
+    {
+      "name": "disabled labels",
+      "method": "resolved Qt palette",
+      "foreground": "#5b687b",
+      "background": "#f1f3f6",
+      "ratio": 5.091
+    },
+    {
+      "name": "disabled inputs",
+      "method": "resolved Qt palette",
+      "foreground": "#5b687b",
+      "background": "#eef1f5",
+      "ratio": 4.995
+    },
+    {
+      "name": "disabled buttons",
+      "method": "resolved Qt palette",
+      "foreground": "#5b687b",
+      "background": "#eef1f5",
+      "ratio": 4.995
+    },
+    {
+      "name": "disabled selection",
+      "method": "resolved Qt palette",
+      "foreground": "#153f68",
+      "background": "#d8e9fa",
+      "ratio": 8.728
+    },
+    {
+      "name": "disabled tooltips",
+      "method": "resolved Qt palette",
+      "foreground": "#ffffff",
+      "background": "#243447",
+      "ratio": 12.672
+    },
+    {
+      "name": "History tree",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Parameter dropdown",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Dimension spinbox",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Document name",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Dynamic dialog label",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Dynamic line input",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Dynamic spin input",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Dynamic default button",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Dynamic disabled button",
+      "method": "resolved Qt palette",
+      "foreground": "#5b687b",
+      "background": "#eef1f5",
+      "ratio": 4.995
+    },
+    {
+      "name": "Input placeholder",
+      "method": "resolved Qt palette",
+      "foreground": "#65758a",
+      "background": "#ffffff",
+      "ratio": 4.703
+    },
+    {
+      "name": "Default action button",
+      "method": "actual foreground/background pixels",
+      "foreground": "#ffffff",
+      "background": "#1e65a7",
+      "ratio": 6.044
+    },
+    {
+      "name": "Disabled action button",
+      "method": "actual foreground/background pixels",
+      "foreground": "#5b687b",
+      "background": "#eef1f5",
+      "ratio": 4.995
+    },
+    {
+      "name": "Dropdown popup",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Dropdown popup selection",
+      "method": "resolved Qt palette",
+      "foreground": "#153f68",
+      "background": "#d8e9fa",
+      "ratio": 8.728
+    },
+    {
+      "name": "Dynamic context menu",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Actual native tooltip",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Native tooltip",
+      "method": "actual foreground/background pixels",
+      "foreground": "#ffffff",
+      "background": "#243447",
+      "ratio": 12.672
+    },
+    {
+      "name": "Native task label 0",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Native task label 1",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Native task label 2",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Native task label 3",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Native task label 4",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Native task label 5",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Native task label 6",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Native task label 7",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#f1f3f6",
+      "ratio": 11.399
+    },
+    {
+      "name": "Native task input 0",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Native task input 1",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Native task input 2",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Native task input 3",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Native task input 4",
+      "method": "resolved Qt palette",
+      "foreground": "#243447",
+      "background": "#ffffff",
+      "ratio": 12.672
+    },
+    {
+      "name": "Native task OK button",
+      "method": "actual foreground/background pixels",
+      "foreground": "#ffffff",
+      "background": "#1e65a7",
+      "ratio": 6.044
+    }
+  ],
+  "screenshots": [
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\theme-workspace.png",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\theme-dynamic-dialog.png",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\theme-dropdown-popup.png",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\theme-context-menu.png",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\theme-tooltip.png",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\theme-native-pad-task.png"
+  ],
+  "method": "Actual invisible native KurtShape GUI, hostile inherited dark palette/stylesheet, dynamic popup/dialog/native Pad task checks; transport excluded",
+  "theme_diagnostics": {
+    "native_preferences": {
+      "Theme": "",
+      "StyleSheet": "",
+      "OverlayActiveStyleSheet": ""
+    },
+    "application_stylesheet_length": 107,
+    "window_stylesheet_length": 25,
+    "previous_window_text": "#ffffff"
+  },
+  "long_menu": {
+    "scrollable_hint": 1,
+    "height": 1011,
+    "screen_height": 1019
+  },
+  "freecad_version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "preferences_unchanged": true
+}

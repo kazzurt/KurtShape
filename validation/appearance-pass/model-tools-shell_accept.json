@@ -1,0 +1,74 @@
+{
+  "passed": true,
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "method": "Actual KurtShape toolbar buttons and native PartDesign Tasks; assistant transport excluded.",
+  "cases": [
+    {
+      "tool": "shell",
+      "mode": "accept",
+      "passed": true,
+      "stage": "command_returned",
+      "action": {
+        "path": "Part Studio / Shell",
+        "command": "PartDesign_Thickness"
+      },
+      "workbench": "PartDesignWorkbench",
+      "editing": "PartDesign::Thickness",
+      "task_widgets": [
+        "Gui::OverlayTitleBar:OverlayTitle",
+        "Gui::OverlayToolButton:OBTN Float",
+        "Gui::OverlayToolButton:OBTN Overlay",
+        "Gui::QuantitySpinBox:Value",
+        "Gui::TaskView::TaskView:Tasks",
+        "QCheckBox:checkIntersection",
+        "QCheckBox:checkReverse",
+        "QCheckBox:showFinalCheckBox",
+        "QCheckBox:showTransparentPreviewCheckBox",
+        "QComboBox:joinComboBox",
+        "QComboBox:modeComboBox",
+        "QDockWidgetTitleButton:qt_dockwidget_closebutton",
+        "QDockWidgetTitleButton:qt_dockwidget_floatbutton",
+        "QLabel:label",
+        "QLabel:label_2",
+        "QLabel:label_3",
+        "QLineEdit:qt_spinbox_lineedit",
+        "QListWidget:listWidgetReferences",
+        "QToolButton:buttonRefSel",
+        "QWidget:PartDesignGui__TaskPreviewParameters",
+        "QWidget:PartDesignGui__TaskThicknessParameters",
+        "QWidget:qt_scrollarea_hcontainer",
+        "QWidget:qt_scrollarea_vcontainer",
+        "QWidget:qt_scrollarea_viewport"
+      ],
+      "history_visible": true,
+      "preview": {
+        "tip": "Thickness",
+        "type": "PartDesign::Thickness",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 1464.0
+      },
+      "accepted": {
+        "name": "Thickness",
+        "type": "PartDesign::Thickness",
+        "valid": true,
+        "solid_count": 1,
+        "volume": 1464.0,
+        "history_present": true,
+        "build_status": "valid",
+        "file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\appearance-pass\\shell-accepted.FCStd"
+      }
+    }
+  ],
+  "native_warnings": [],
+  "case_count": 1
+}
