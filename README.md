@@ -16,7 +16,9 @@ Double-click **KurtShape.cmd** in this directory, or run:
 
 Save your changes and close any older KurtShape window before launching the updated interface. Already-running processes keep the code they loaded. Startup opens an empty part studio; **Example** explicitly opens the development acceptance plate.
 
-The pinned portable engine is installed under `runtime/freecad-1.1.4`. For a fresh checkout run `install-runtime.ps1`; there is no global FreeCAD or package installation. Configuration, app data, temporary material and generated files are kept under this project. Use one normal application instance for the default assistant session.
+The pinned portable engine is installed under `runtime/freecad-1.1.4`. A fresh Windows checkout requires **7-Zip** at `C:\Program Files\7-Zip\7z.exe`; run `install-runtime.ps1`, then `launch-kurtshape.ps1`. The installer downloads the pinned official engine and verifies its SHA256; no global FreeCAD or Python package installation is needed. Runtime binaries, configuration, app data, temporary material and generated files stay local and are excluded from Git. Use one normal application instance for the default assistant session.
+
+The full acceptance checks additionally use the original STEP/FeatureScript files in the local `Onshape examples` folder two levels above this repository. Those source files are kept outside Git; a fresh checkout needs them at that location to run the source inventory and real-part tests. Launching the app and its included acceptance-plate example does not require them.
 
 ## Modeling workflow
 

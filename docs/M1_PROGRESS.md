@@ -2,6 +2,12 @@
 
 Updated October 2, 2026, America/Los_Angeles. Implementation authorized in this chat; **M1 remains incomplete**. Current runnable slice: `Codex/kurtshape`. Prior plans remain in `cadkz-project-planning`; source examples and Claude reference area are preserved in place.
 
+## October 2 GitHub checkpoint and pause
+
+Kurt requested committing and pushing the app to [kazzurt/KurtShape](https://github.com/kazzurt/KurtShape), then pausing development. The target is an empty public repository; publication uses `main` and retains the seven existing implementation/evidence commits through `eb3baf1`. The app is verified by 92 offline native tests, 4 bridge tests and 22 shortcut tests, plus the recorded native GUI checks. Repository history contains no runtime profiles or assistant session credentials; original Onshape inputs remain outside Git. Fresh-checkout Windows/7-Zip prerequisites and the external real-part test fixtures are documented in README.
+
+Development is paused at this checkpoint, with no further implementation dispatched. On resume, first check Kurt's actual direct STEP insertion, continuous Line/L sketching and floating-message readability after relaunch; the exact original popup trigger remains unreproduced. Larger upgrades remain named variables/configurations, imported-part editing, expanded previews and shared assistant operations. M1 and the 0/2 real parametric-conversion gate remain open.
+
 ## October 2 first Assembly increment — implemented
 
 The new authorized Assembly increment supersedes the earlier assembly/mate deferral for a single-level workflow. KurtShape now creates native FreeCAD 1.1.4 assemblies, inserts selected saved FCStd Bodies as repeated same-document link occurrences, changes the grounded reference, creates/edits/removes fixed/revolute/slider joints, and exercises rotation/translation through the installed native solver. The compact Assembly controls, history, selection, rename, cascade deletion, native undo/redo, save/reopen/recovery and occurrence-aware export share the typed controller with loopback clients. Part Studio returns to a separate modeling document. Shift+G Pierce, Shift+L Perpendicular and ordinary Ctrl+S/Escape remain available.
