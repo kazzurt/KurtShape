@@ -2,18 +2,18 @@
 
 Program: C:\Users\Kurtz\Documents\KURT\CADkz\Claude\prompts\2026-10-03_codex_long-run-program.md
 Program SHA-256 when last read: BFD1820915CDEDE335C2FF421163F1A404E666211402E81DB8E936631D3C2995, 2026-10-03 14:44 America/Los_Angeles
-Updated: 2026-10-03 14:44 America/Los_Angeles
+Updated: 2026-10-03 15:19 America/Los_Angeles
 State: IN PROGRESS Q01 since 2026-10-03 14:44
 Last green commit: 259a61b (tag longrun/Q00a)
-Green copy: not created; Q01 follows Q00a
-Free disk: 60.1 GiB
+Green copy: at 8ffd421; final Q01 tag/update follows
+Free disk: 59.9 GiB
 
 ## Queue
 
 | Q | Increment | State | Commit | Tests native/bridge/shortcut | Note |
 |---|---|---|---|---|---|
 | Q00a | Foundation: fixes, isolation, one runner | DONE | 259a61b | 147/7/22 | 405 workflows; exactly 3 external skips without examples |
-| Q01 | Green copy | IN PROGRESS | | | Launcher isolation and safe sibling worktree |
+| Q01 | Green copy | IN PROGRESS | 8ffd421 | 147/7/22 | Green interface41 and31 script probes; final record/tag follows |
 | Q00b | Foundation: CI, GUI runner, benchmarks, lint | QUEUED | | | Needs Q00a |
 | Q02 | Keyboard and command registry | QUEUED | | | Needs Q00a |
 | Q03 | Fast build status | QUEUED | | | Needs Q00b |
@@ -54,6 +54,14 @@ Free disk: 60.1 GiB
 | 9 | Start | Push local main when ready so CI can run. | Kurt pushes; this run never pushes or opens PRs | GitHub CI only |
 
 ## Try this (newest first)
+
+### Q01 stable green copy (tag pending)
+
+1. Save and close the old window, then open the sibling KurtShape-green.cmd; PrintOnly verified its green source and shared main profile. Normal launch remains Kurt's action.
+2. Create a rectangle with Shift+S, extrude with Shift+E, change its width, undo and redo; the green interface recipe exercised these actual keys and dimensions.
+3. Sketch on a face and make a blind removal; the recipe checked exact removed volume and rebuild visibility.
+4. Save and reopen the project, then enter 1/8 in for its depth; the recipe checked geometry and unchanged file/revision/history during preview.
+
 
 ### Q00a foundation (259a61b)
 
@@ -146,3 +154,5 @@ Own recipe report: kurtshape-problem-20261003-204924-ac7dc9ee.json came from the
 - 2026-10-03 15:07: Green interface attempt1 failed after2checks: fresh-profile QMdiArea had no active subwindow when first key was sent. OwnedPID26640 exited; main andgreen diff/status snapshots unchanged, green hash empty. Inspecting fresh-profile readiness before any retry. Free59.9GiB, NOTES empty.
 
 - 2026-10-03 15:13: Green interface attempt2 failed after29checks when two document views were visible; exact-one locator safely rejected ambiguity. OwnedPID50656 exited and both tree snapshots unchanged/empty. Need a probed active-document view mapping before final green-interface retry3; no assertion weakening or green tracked edits. NOTES empty.
+
+- 2026-10-03 15:19: Final green interface attempt3 passed41; ownedPID26864 exited. Main/green status and exact diffhash unchanged/empty, screenshot inspected, no new warning class. Preparing final Q01 record/tag/update, then Q00b. GUI locators/updater-only corrections did not change native source after final Full. NOTES empty.

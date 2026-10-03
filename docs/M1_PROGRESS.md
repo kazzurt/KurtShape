@@ -2,14 +2,11 @@
 
 Updated October 3, 2026, America/Los_Angeles. Implementation authorized in this chat; **M1 remains incomplete**. Current runnable slice: `Codex/kurtshape`. Prior plans remain in `cadkz-project-planning`; source examples and Claude reference area are preserved in place.
 
-## October 3, 2026 — Q01 green-copy preparation
+## October 3, 2026 — Q01 stable green copy
 
-The two-document probe verifies that the active MDI subwindow becomes available after event processing while both views may remain visible. Validation prefers that active subwindow and uses the unambiguous single-view fallback only during fresh startup. The final green retry remains pending. M1 remains incomplete and real parametric conversions remain 0/2.
+The detached `kurtshape-green` checkout and sibling `KurtShape-green.cmd` now separate tested code from the active development tree while sharing the main runtime, profile and recovery files. PrintOnly inspects the launch without side effects; validation uses a hidden private session. Updates skip an open green app and refuse tracked edits. Legacy single-Body rebuilds retain explicit visibility. Fresh-profile and active-document viewport handling are corrected without weakening behavioral assertions.
 
-The detached copy is created at the tested intermediate build. Fresh-profile probing found a visible modeling view without a QMdiArea active subwindow; the recipe now identifies exactly one visible modeling viewport in its own window. The final sibling interface gate is pending. M1 remains incomplete and real parametric conversions remain 0/2.
-
-Q01 separates launcher runtime and profile bases from source code and adds side-effect-free launch inspection. A guarded detached sibling is being prepared for the tested build; its interface and clean-tree gates remain pending. The interface recipe now waits for preview readiness and uses the created feature's actual id, retaining geometry, history and revision assertions. No profile format or modeling contract changes. M1 remains incomplete and real parametric conversions remain 0/2.
-
+Main and green interface recipes each passed 41 checks; the final native/bridge/shortcut suites passed 147/7/22 plus 405 workflow checks, with no skips and unchanged source hashes. Script probes passed 31 checks; both trees remained unchanged through the green GUI gate. Screenshots were inspected; known native startup and empty-shape log messages remain, and hands-on comfort acceptance is pending. The [Q01 record](long-run/Q01-green-copy.md) preserves the probes, failures and reproduction. M1 remains incomplete and real parametric conversions remain 0/2.
 ## October 3 long-run foundation: runtime and test isolation
 
 The [Q00a record](long-run/Q00a-foundation-test-isolation.md) tracks the first foundation increment. Assembly resolves its modules from the running pinned FreeCAD installation. The managed-document reactivation guard, target-unit errors and JSON charset transport handling are corrected, with shared contract 2.0 constants. Modeling, save/export publication and profile formats keep their established behavior.

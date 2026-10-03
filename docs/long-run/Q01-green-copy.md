@@ -38,3 +38,19 @@ Green updater attempt 1 refused before mutation because two Git applications wer
 Green interface attempt 1 failed after two checks: a fresh profile had one real visible modeling viewport but QMdiArea.activeSubWindow() was None. The isolated viewport probe reproduced this and verified the exact view widget class/parent. Replace the locator with a scan of this hidden main window for exactly one visible QOpenGLWidget whose parent is Gui::View3DInventorViewer; reject ambiguity. This changes no input or behavioral assertion. Commit this recipe correction before updating green; never edit its tracked files in place.
 
 Green interface attempt2 passed29 checks, then rejected two visible views after New. A fresh two-document probe confirmed QMdiArea active-subwindow exists after 150 ms of Qt event processing even while both views remain visible. Prefer that active-subwindow scope and require exactly one matching visible view inside it; use the single-view main-window fallback only when no active subwindow exists. Wait150 ms after the recipe's New action before the next key. No behavior assertion changed. Final green retry3 follows the committed correction.
+
+## Final green-source gate
+
+Green interface attempt 3 passed all 41 checks at 8ffd421; owned PID26864 exited. Both exact status/diff snapshots remained unchanged, with empty diff SHA256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855. Both tracked trees are clean. Green screenshot kurtshape-1200.png inspected; earlier selected feature geometry is visible in this fresh-profile view, so screenshot comfort is not an acceptance claim. Kernel, depth, save/reopen, revision/history and actual input consequences remain asserted. Empty embedded-sketch shape warnings match earlier Q00a logs; no new warning class. No normal launch or CMD execution occurred, and no runtime was copied or linked.
+
+| Gate | Result | Raw evidence |
+|---|---|---|
+| Full final native source | 147/7/22, 0 skips; 405 workflow checks, unchanged hashes | runtime/test-tmp/checks-20261003-145905-4756/evidence/checks/native.json |
+| Main interface | 41 passed | runtime/interface-validation/evidence/interface-pass/gui-test-result.json |
+| Green interface | 41 passed | ../kurtshape-green/runtime/interface-validation/evidence/interface-pass/gui-test-result.json |
+| PrintOnly / updater / reparse / CMD | 13 + 6 + 8 + 4 passed | runtime/longrun/q01-*-probes.json |
+| Both local trees | unchanged, empty exact diff hash | runtime/longrun/q01-tree-green-gate-main.json; ../kurtshape-green/runtime/longrun/q01-tree-green-gate.json |
+
+Reproduce main regression with `./run-checks.ps1 -Full`. Reproduce the green interface with `./runtime/longrun/q01-run-interface.ps1 -SourceRoot <absolute-green-root>` (scratch wrapper waits for and records the owned process). The production invocation is `<green>/launch-kurtshape.ps1 -Validation -RuntimeRoot <main>/runtime -SessionRoot <green>/runtime`; wait for its PID and inspect its private JSON. Run the updater with the tagged commit only after the guards pass. For Windows cross-user tree checks the recorded scratch wrapper applies command-only safe.directory to main/green, with no persistent configuration.
+
+Review: three independent findings repaired before launch; subsequent dynamic gates found PATH multiplicity and two viewport assumptions, each logged/fixed before retry. Final changes touch recipe synchronization/lookup and updater executable selection; no additional modeling source changed after the last Full suite. Native tests do not exercise GUI locators; the actual green recipe does. Final evidence is packaged through record_evidence with explicit opt-in; CI, installer extraction, benchmarks and Kurt's comfort acceptance are not claimed for Q01.
