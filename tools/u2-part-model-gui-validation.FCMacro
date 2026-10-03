@@ -1,0 +1,455 @@
+"""Actual production U2 dialogs, parts, rollback and selectors in a hidden app."""
+import json
+import hashlib
+import os
+from pathlib import Path
+import queue
+import socket
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+source_files = ["core.py", "studio.py", "selectors.py", "ui.py", "extrusion_preview.py",
+                "reference_tools.py", "bodies.py", "document_state.py"]
+
+
+def source_hashes():
+    return {name: hashlib.sha256((root / "src" / "kurtshape" / name).read_bytes()).hexdigest()
+            for name in source_files}
+
+
+startup_source_hashes = source_hashes()
+
+
+def deny_network(*args, **kwargs):
+    raise RuntimeError("Python networking denied for U2 GUI validation")
+
+
+socket.socket.connect = deny_network
+socket.socket.connect_ex = deny_network
+socket.socket.sendto = deny_network
+socket.create_connection = deny_network
+socket.getaddrinfo = deny_network
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+from kurtshape.core import native_intent
+
+
+class NoSocketTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+application = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1600, 1000)
+main.show()
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden_popups = HiddenPopupFilter(application)
+application.installEventFilter(hidden_popups)
+output = root / "validation" / "u2-part-model"
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "screens": [], "dialogs": [],
+          "method": "Actual production Panel, native quantities, Qt mouse/key events, revision-bound disposable previews; isolated hidden GUI/profile.",
+          "limits": "Synthetic small offline fixtures; rendered GUI checks supplement the native regression suite. Python networking denied; C++ networking is not intercepted.",
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}, "runtime_profile": str(session.relative_to(root))}
+report["source_sha256"] = startup_source_hashes
+panel = None
+cleaned = False
+started = time.perf_counter()
+
+
+def save_report():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=80):
+    QtTest.QTest.qWait(ms)
+    if report.get("aborted"):
+        raise RuntimeError("U2 GUI validation exceeded its time bound")
+
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label + ": " + (panel.message.text() if panel else "startup"))
+    report["checks"].append(label)
+    save_report()
+
+
+def call(op, **args):
+    result = panel.operation(op, **args)
+    if not result:
+        raise AssertionError(op + ": " + panel.message.text())
+    wait(50)
+    return result
+
+
+def capture(label):
+    wait(120)
+    filename = label + ".png"
+    pixmap = main.grab()
+    check(label + ": nonempty rendered app", not pixmap.isNull())
+    pixmap.save(str(output / filename))
+    report["screens"].append(filename)
+    if panel.studio_dialog is not None and panel.studio_dialog.isVisible():
+        controls = label + "-controls.png"
+        panel.studio_dialog.grab().save(str(output / controls))
+        report["screens"].append(controls)
+
+
+def current_parts():
+    return panel.state["studio"]["parts"]
+
+
+def metric(part):
+    entry = next(entry for entry in current_parts() if entry["id"] == part)
+    return panel.document().getObject(entry["body"]).Shape.Volume
+
+
+def selected_feature(identifier):
+    panel.features.scrollToItem(panel.items[identifier])
+    wait(40)
+    # The live document observer may refresh the tree during the event wait.
+    item = panel.items[identifier]
+    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier,
+                            panel.features.visualItemRect(item).center())
+    wait(50)
+
+
+def snapshot():
+    doc = panel.document()
+    panel.core.sync(doc)
+    return {"intent": native_intent(doc), "revision": panel.core._meta(doc).Revision,
+            "undo": doc.UndoCount, "redo": doc.RedoCount, "objects": [obj.Name for obj in doc.Objects]}
+
+
+def preview():
+    for _ in range(120):
+        wait(25)
+        result = panel.extrusion_preview.result
+        if result is not None and not panel.extrusion_preview.timer.isActive():
+            return result
+    raise AssertionError("Preview timeout: " + panel.preview_hint.text())
+
+
+def check_ids(widget, ids):
+    for index in range(widget.count()):
+        item = widget.item(index)
+        item.setCheckState(QtCore.Qt.Checked if item.data(QtCore.Qt.UserRole) in ids else QtCore.Qt.Unchecked)
+
+
+def dialog_operation(operation, configure, label=None, commit=True, part=None):
+    dialog_started = time.perf_counter()
+    outcome = {}
+    baseline = snapshot()
+    def automate():
+        try:
+            dialog = panel.studio_dialog
+            check(operation + ": actual typed modal dialog", dialog is not None and dialog.isVisible())
+            configure(dialog)
+            buttons = dialog.findChild(QtWidgets.QDialogButtonBox)
+            confirm = buttons.button(QtWidgets.QDialogButtonBox.Ok)
+            for _ in range(160):
+                wait(25)
+                if confirm.isEnabled():
+                    break
+            hint = dialog.findChild(QtWidgets.QLabel, "KurtShapeStudioPreviewHint")
+            check(operation + ": valid geometry preview enables Confirm (" + hint.text() + ")", confirm.isEnabled())
+            check(operation + ": preview preserves live intent/revision/undo", snapshot() == baseline)
+            capture(label or operation + "-dialog")
+            report["dialogs"].append(operation)
+            QtTest.QTest.mouseClick(confirm if commit else buttons.button(QtWidgets.QDialogButtonBox.Cancel), QtCore.Qt.LeftButton)
+        except Exception:
+            outcome["error"] = traceback.format_exc()
+            if panel.studio_dialog:
+                panel.studio_dialog.reject()
+    QtCore.QTimer.singleShot(120, automate)
+    result = panel.studio_tool(operation, part=part)
+    report.setdefault("dialog_timings_ms", {})[label or operation] = round((time.perf_counter() - dialog_started) * 1000, 2)
+    if outcome.get("error"):
+        raise AssertionError(outcome["error"])
+    check(operation + ": accepted shared-controller operation" if commit else operation + ": Cancel preserves the model",
+          bool(result) if commit else snapshot() == baseline)
+    return result
+
+
+def value(dialog, key, text):
+    widget = dialog.findChild(QtWidgets.QWidget, "KurtShapeStudio_" + key)
+    line = widget.findChild(QtWidgets.QLineEdit)
+    line.setText(text)
+
+
+def choice(dialog, key, identifier):
+    widget = dialog.findChild(QtWidgets.QComboBox, "KurtShapeStudio_" + key)
+    widget.setCurrentIndex(widget.findData(identifier))
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        call("new", name="U2 parts and rollback")
+        call("sketch_rectangle", id="FirstProfile", width=20, height=12, body="Body")
+        call("pad", id="FirstPad", profile="FirstProfile", length=8, body="Body")
+        call("create_body", id="SecondBody", name="Second part")
+        call("sketch_rectangle", id="SecondProfile", width=12, height=12, x=30, body="SecondBody")
+        call("pad", id="SecondPad", profile="SecondProfile", length=8, body="SecondBody")
+        call("sketch_rectangle", id="AddProfile", width=20, height=8, x=15, y=2, body="Body")
+        panel.isometric()
+        panel.fit()
+        wait(250)
+        selected_feature("AddProfile")
+        panel.extrude(False)
+        panel.merge_scope.setCurrentIndex(panel.merge_scope.findData("explicit"))
+        check_ids(panel.merge_parts, ["Body"])
+        panel.depth.lineEdit().setText("8 mm")
+        baseline = snapshot()
+        result = preview()
+        report["scoped_preview"] = {"valid": result.valid, "error": result.error, "proposal": result.proposal}
+        check("Explicit Add preview includes only the chosen merge target", result.valid and result.proposal["merge_scope"] == ["Body"])
+        check("Scoped preview retains both accepted native parts", snapshot() == baseline)
+        capture("explicit-merge-scope-preview")
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        wait(100)
+        check("Confirm creates two semantic parts without duplicate carriers", len(current_parts()) == 2 and panel.parts.topLevelItemCount() == 2)
+        check("Explicit Add enlarges first part and preserves second volume", metric("Body") > 1920 and abs(metric("SecondBody") - 1152) < 1e-6)
+        call("create_body", id="EmptySketchOwner", name="Empty sketch owner")
+        check("Enabled studio keeps a new empty sketch owner selectable", panel.body_choice.findData("EmptySketchOwner") >= 0 and panel.active_body().Name == "EmptySketchOwner")
+        check("Sketch chooser excludes every internal helper Body", all(not getattr(panel.document().getObject(panel.body_choice.itemData(i)), "KurtShapeInternal", False) for i in range(panel.body_choice.count())))
+        call("undo")
+        check("Undo empty sketch owner preserves the two accepted parts", len(current_parts()) == 2 and panel.document().getObject("EmptySketchOwner") is None)
+        selected_feature("AddProfile")
+        panel.extrude(False)
+        panel.result_operation.setCurrentIndex(panel.result_operation.findData("remove"))
+        panel.merge_scope.setCurrentIndex(panel.merge_scope.findData("explicit"))
+        check_ids(panel.merge_parts, ["Body"])
+        panel.end_type.setCurrentIndex(1)
+        panel.depth.lineEdit().setText("irrelevant depth")
+        through_baseline = snapshot()
+        through = preview()
+        check("Unified Extrude Remove supports Through all without depth", through.valid and through.proposal["end_type"] == "through_all" and "length" not in through.proposal)
+        check("Through all removes only the chosen part material", abs(through.measurements["volume_mm3"] - 2752) < 1e-6)
+        check("Through all preview retains native intent/revision/undo", snapshot() == through_baseline)
+        capture("unified-through-all-remove-preview")
+        panel.cancel_task()
+        check("Through all Cancel retains accepted parts", snapshot() == through_baseline)
+        selected_feature("FirstProfile")
+        panel.extrude(False)
+        panel.result_operation.setCurrentIndex(panel.result_operation.findData("new"))
+        panel.end_type.setCurrentIndex(2)
+        face_source = panel.document().SecondBody.Tip
+        end_face = "Face" + str(next(i + 1 for i, face in enumerate(face_source.Shape.Faces) if abs(face.CenterOfMass.z - 8) < 1e-7))
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(face_source, end_face)
+        panel.choose_end_face()
+        up_to_baseline = snapshot()
+        up_to = preview()
+        check("Actual Up to face editor produces a selector-backed valid preview", up_to.valid and up_to.proposal["up_to_face"]["kind"] == "closest")
+        check("Up to face preview retains native intent/revision/undo", snapshot() == up_to_baseline)
+        capture("up-to-face-preview")
+        panel.cancel_task()
+        check("Up to face Cancel retains accepted parts", snapshot() == up_to_baseline)
+        call("set_part_appearance", part="Body", name="Main bracket", color=[0.32, 0.62, 0.88])
+        item = next(panel.parts.topLevelItem(i) for i in range(panel.parts.topLevelItemCount()) if panel.parts.topLevelItem(i).data(0, QtCore.Qt.UserRole) == "Body")
+        item.setCheckState(0, QtCore.Qt.Unchecked)
+        wait(100)
+        check("Part checkbox dispatches native visibility while retaining stable ID", next(entry for entry in current_parts() if entry["id"] == "Body")["visible"] is False)
+        item = next(panel.parts.topLevelItem(i) for i in range(panel.parts.topLevelItemCount()) if panel.parts.topLevelItem(i).data(0, QtCore.Qt.UserRole) == "Body")
+        item.setCheckState(0, QtCore.Qt.Checked)
+        wait(80)
+        item = next(panel.parts.topLevelItem(i) for i in range(panel.parts.topLevelItemCount()) if panel.parts.topLevelItem(i).data(0, QtCore.Qt.UserRole) == "Body")
+        check("Rename and color persist in the actual parts list", item.text(0) == "Main bracket" and all(abs(a - b) < 1e-6 for a, b in zip(next(entry for entry in current_parts() if entry["id"] == "Body")["color"], [0.32, 0.62, 0.88])))
+        def split(dialog):
+            choice(dialog, "part", "Body")
+            value(dialog, "originX", "10 mm")
+        dialog_operation("split_part", split)
+        check("Split exposes both sides as semantic parts", len(current_parts()) == 3)
+        split_id = next(entry["id"] for entry in current_parts() if entry["id"] not in {"Body", "SecondBody"})
+        def transform(dialog):
+            choice(dialog, "part", split_id)
+            value(dialog, "translationZ", "20 mm")
+            dialog.findChild(QtWidgets.QCheckBox, "KurtShapeStudio_copy").setChecked(True)
+        dialog_operation("transform_part", transform, part=split_id)
+        check("Transform copy creates one more independently selectable part", len(current_parts()) == 4)
+        def pattern(dialog):
+            check_ids(dialog.findChild(QtWidgets.QListWidget, "KurtShapeStudio_parts"), ["SecondBody"])
+            value(dialog, "spacing", "20 mm")
+            dialog.findChild(QtWidgets.QSpinBox, "KurtShapeStudio_count").setValue(2)
+        dialog_operation("linear_pattern_parts", pattern)
+        check("Whole-part pattern retains source and adds a new part", len(current_parts()) == 5)
+        order = panel.state["studio"]["feature_order"]
+        index = len(order)
+        panel.rollback_bar.setFocus()
+        panel.rollback_selected = True
+        check("Selected rollback bar enables registered shortcut context", panel.router.resolve("Up")["id"] == "history.rollback_up")
+        QtTest.QTest.keyClick(panel.rollback_bar, QtCore.Qt.Key_Up)
+        wait(100)
+        check("Up rebuilds studio before its final feature", panel.state["studio"]["rollback_index"] == index - 1 and len(current_parts()) == 4)
+        check("Held future feature remains visible in ordered history", "held" in panel.items[order[-1]].text(0))
+        Gui.Selection.clearSelection()
+        panel.isometric()
+        panel.fit()
+        capture("rollback-selected-with-held-feature")
+        QtTest.QTest.keyClick(panel.rollback_bar, QtCore.Qt.Key_Down)
+        wait(100)
+        check("Down rolls all parts forward", panel.state["studio"]["rollback_index"] == index and len(current_parts()) == 5)
+        Gui.Selection.clearSelection()
+        panel.isometric()
+        panel.fit()
+        wait(150)
+        report["rendered_parts"] = [{"id": entry["id"], "body": entry["body"],
+                                     "body_visible": panel.document().getObject(entry["body"]).ViewObject.Visibility,
+                                     "tip": panel.document().getObject(entry["body"]).Tip.Name,
+                                     "tip_visible": panel.document().getObject(entry["body"]).Tip.ViewObject.Visibility}
+                                    for entry in current_parts()]
+        check("Every visible current part retains a visible native Tip provider", all(entry["body_visible"] and entry["tip_visible"] for entry in report["rendered_parts"]))
+        call("save", path=str(session / "u2-studio-gui.FCStd"))
+        report["fixture"] = str((session / "u2-studio-gui.FCStd").relative_to(root))
+        capture("u2-parts-final")
+        # Exercise remaining shared geometry dialogs through their actual
+        # valid previews and Cancel. Native accepted-operation fixtures are
+        # covered by the independent controller tests.
+        def revolve(dialog):
+            choice(dialog, "profile", "FirstProfile")
+            choice(dialog, "operation", "new")
+        dialog_operation("revolve", revolve, commit=False)
+        call("sketch_circle", id="SweepSection", x=2, y=0, diameter=2, body="Body")
+        call("create_sketch", id="SweepPath", plane="XZ", body="Body")
+        call("add_line", sketch="SweepPath", x1=2, y1=0, x2=2, y2=20, body="Body")
+        def sweep(dialog):
+            choice(dialog, "profile", "SweepSection")
+            choice(dialog, "path", "SweepPath")
+            choice(dialog, "operation", "new")
+        dialog_operation("sweep", sweep, commit=False)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(panel.document().SweepPath, "Edge1")
+        def selected_sweep(dialog):
+            choice(dialog, "profile", "SweepSection")
+            choice(dialog, "operation", "new")
+            choice(dialog, "path_by", "selected")
+        dialog_operation("sweep", selected_sweep, label="sweep-selected-curve-dialog", commit=False)
+        call("sketch_circle", id="LoftBottom", x=2, y=0, diameter=4, body="Body")
+        call("sketch_circle", id="LoftTop", x=2, y=0, diameter=2, body="Body")
+        panel.document().openTransaction("Native loft section offset")
+        panel.document().LoftTop.AttachmentOffset = App.Placement(App.Vector(0, 0, 15), App.Rotation())
+        panel.core._recompute(panel.document())
+        panel.document().commitTransaction()
+        panel.state = panel.core.inspect(panel.document())
+        panel.refresh()
+        def loft(dialog):
+            check_ids(dialog.findChild(QtWidgets.QListWidget, "KurtShapeStudio_sections"), ["LoftBottom", "LoftTop"])
+            choice(dialog, "operation", "new")
+        dialog_operation("loft", loft, commit=False)
+        def boolean(dialog):
+            check_ids(dialog.findChild(QtWidgets.QListWidget, "KurtShapeStudio_targets"), ["Body"])
+            check_ids(dialog.findChild(QtWidgets.QListWidget, "KurtShapeStudio_tools"), [split_id])
+            choice(dialog, "kind", "union")
+        dialog_operation("boolean_parts", boolean, commit=False)
+        for operation in ("circular_pattern_parts", "mirror_parts"):
+            def part_pattern(dialog):
+                check_ids(dialog.findChild(QtWidgets.QListWidget, "KurtShapeStudio_parts"), ["SecondBody"])
+            dialog_operation(operation, part_pattern, commit=False)
+        source = panel.document().SecondBody.Tip
+        for operation in ("fillet", "chamfer"):
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(source, "Edge1")
+            def modifier(dialog):
+                choice(dialog, "part", "SecondBody")
+            dialog_operation(operation, modifier, commit=False)
+        Gui.Selection.clearSelection()
+        top_face = "Face" + str(next(i + 1 for i, face in enumerate(source.Shape.Faces) if abs(face.CenterOfMass.z - 8) < 1e-7))
+        Gui.Selection.addSelection(source, top_face)
+        dialog_operation("shell", lambda dialog: choice(dialog, "part", "SecondBody"), commit=False)
+        support = {"kind": "closest", "point": [36, 6, 8], "query": {"kind": "geometry", "geometry": "plane",
+                   "query": {"kind": "owned_by", "part": "SecondBody", "entity_type": "face"}}}
+        call("create_sketch", id="QuerySupport", support=support, body="SecondBody")
+        feature = panel.document().QuerySupport
+        check("Selector-backed support persists healthy input metadata", json.loads(feature.QueryHealth)[0]["status"] == "healthy")
+        selected_feature(feature.Name)
+        capture("healthy-reference-health")
+        # Deliberately inject a missing creator in native input metadata to
+        # verify failure presentation. Natural topology regressions belong to
+        # the independent selector native tests, rather than this screen gate.
+        inputs = json.loads(feature.QueryInputs)
+        inputs["support"]["selector"] = {"kind": "created_by", "feature": "MissingCreator", "entity_type": "face"}
+        panel.document().openTransaction("Native missing-reference screen fixture")
+        feature.QueryInputs = json.dumps(inputs)
+        panel.core._recompute(panel.document())
+        panel.document().commitTransaction()
+        panel.state = panel.core.inspect(panel.document())
+        panel.refresh()
+        selected_feature(feature.Name)
+        check("Unresolved input has a red failure marker and health tooltip", "!" in panel.items[feature.Name].text(0) and "missing" in panel.items[feature.Name].toolTip(0))
+        check("Inspect distinguishes retained geometry from unresolved current intent", panel.state["build_status"] == "failed" and panel.state["measurements"] is None)
+        capture("missing-reference-health")
+        report["health_fixture"] = "Injected missing creator after a verified healthy selector; native topology regression behavior is covered separately."
+        report["source_unchanged"] = source_hashes() == startup_source_hashes
+        assert report["source_unchanged"], "Source changed during isolated GUI acceptance; rerun against the frozen implementation"
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        report["seconds"] = time.perf_counter() - started
+        report["check_count"] = len(report["checks"])
+        save_report()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    finally:
+        application.removeEventFilter(hidden_popups)
+        QtCore.QTimer.singleShot(0, application.quit)
+
+
+def timeout():
+    if not report.get("seconds"):
+        report["aborted"] = True
+        report["error"] = "U2 GUI validation exceeded 120 seconds"
+        save_report()
+        cleanup()
+
+
+QtCore.QTimer.singleShot(120000, timeout)
+QtCore.QTimer.singleShot(1500, validate)

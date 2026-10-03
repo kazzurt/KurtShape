@@ -1,6 +1,6 @@
 # KurtShape — local native CAD
 
-KurtShape uses portable FreeCAD 1.1.4, native Sketcher/PartDesign, and OCCT 7.8.1. Editable `.FCStd` is the authoritative model. The October 2 interface pass adds Onshape-style organization, SolidWorks mouse controls, native sketch editing in 3D, face/plane sketch placement, and the complete default Onshape Windows key registry.
+KurtShape uses portable FreeCAD 1.1.4, native Sketcher/PartDesign, and OCCT 7.8.1. Editable `.FCStd` is the authoritative model. The U2 increment adds one ordered history over many parts, scoped result operations, whole-part tools, rollback insertion and stored reference queries. It builds on the Onshape-style interface, SolidWorks mouse controls, native sketch editing in 3D and default Onshape Windows key registry. [Try the U2 walkthrough](docs/U2_WALKTHROUGH.md); [tested parity and limits](docs/ATLAS_PARITY.md).
 
 **M1 remains in progress. Neither supplied Onshape design has been converted.** Source migration and edited-reference acceptance remain separate from this local modeling implementation. See [project continuity](docs/M1_PROGRESS.md) and [conversion coverage](docs/CONVERSION_COVERAGE.md).
 
@@ -27,7 +27,7 @@ The full acceptance checks additionally use the original STEP/FeatureScript file
 3. **Middle drag orbits**, **Ctrl+middle pans**, **Shift+middle zooms**. Wheel zoom uses SolidWorks direction; double-middle fits. The sketch stays active while orbiting or switching to **3D / Shift+7**. **N** returns normal and pressing it again flips the normal. Ordinary feature selection and parameter edits preserve the camera.
 4. **Finish sketch** commits one history step. Failed Finish keeps the draft/editor open with a visible error; repair and retry. **Cancel sketch** restores the accepted pre-edit sketch. **Escape** cancels the current drawing tool or placement without discarding the sketch. **Ctrl+Z/Y** work within a sketch and across completed features. **Shift+G** applies Pierce to a selected sketch endpoint/center and crossing curve edge; **Shift+L** applies Perpendicular.
 5. **Shift+E / Extrude** opens depth controls, including directly from an active sketch. **Remove** opens a blind or through-all cut. New extrusions/cuts show an unpickable material preview while depth, reverse and end condition change. Confirm commits the previewed solid; Cancel preserves the model and history. Press **Enter** in the depth field to confirm, or **Shift+Enter** to confirm and repeat with a new profile. Blind cuts honor depth; omitted pocket direction chooses the material side. Reverse explicitly overrides direction.
-6. Select a feature to edit dimensions. Quantity fields accept `1/8 in` and `12.7/2`; a separate Formula field supports native references. Numeric replacement of a driven/reference dimension rejects. Double-click sketches to edit; right-click features for editing, visibility, rename and dependency-checked deletion. **New part** starts a separate solid and feature history; the part chooser selects ownership for new geometry. **Settings** contains mouse navigation, with SolidWorks as the default.
+6. Select a feature to edit dimensions. Quantity fields accept `1/8 in` and `12.7/2`; a separate Formula field supports native references. Numeric replacement of a driven/reference dimension rejects. Double-click sketches to edit; right-click features for editing, visibility, rename and dependency-checked deletion. **New part** starts a separate sketch owner; result operation **New** creates a solid in the shared history; the part chooser selects ownership for new geometry. **Settings** contains mouse navigation, with SolidWorks as the default.
 7. **Open / Ctrl+O** accepts FCStd, STEP and STP. STEP import creates a new unsaved project with each solid in a native Body; select a Body to add modeling features. **Ctrl+S** saves as FCStd in your chosen folder through staged replacement, retaining `.recovery.FCStd`. Recent projects and STEP sources persist. Unmanaged FCStd opens for inspection; **Adopt copy** creates a managed copy. **Export** includes all final solids and engine/settings/revision/SHA256 provenance; failed/unrecomputed builds reject. **Recovery** lists verified checkpoints, including unfinished sketches; choose a Save destination after recovery.
 
 STEP import preserves geometry, positions and units while leaving the source unchanged. It does not recover Onshape sketches, dimensions, feature history, product names/colors or assembly relationships. Assembly occurrences become independent solids; non-solid geometry remains as native references and is excluded from solid exports. This is geometry import, not a FeatureScript conversion. [Import behavior and validation](docs/STEP_IMPORT.md).
@@ -52,7 +52,7 @@ Ctrl-select a native face/edge/vertex on each of two instances, then choose **Fi
 
 All 126 normalized official Windows default actions/gestures are registered, plus Ctrl+S/N/O local file extensions. Meaning changes by context: Shift+S is sketch creation outside a sketch and Point inside it; Shift+F is edge fillet or sketch fillet. **Shift+/** opens searchable shortcut help; **Alt+C** searches tools.
 
-Registration is complete; equivalence is partial. The first single-level Assembly workflow now implements insertion, grounding and fixed/revolute/slider joints. Nested assemblies, snap/connector tools, advanced mates, drawings, Feature Studio code tools, rollback and analysis remain deferred. Pierce is implemented; three other advanced sketch meanings remain unavailable. Six mouse/held-modifier entries remain recorded. Live help shows actual availability and provides **Rebind selected / Reset selected** with context validation. [Complete keymap and sources](docs/ONSHAPE_SHORTCUTS.md).
+Registration is complete; equivalence is partial. The first single-level Assembly workflow now implements insertion, grounding and fixed/revolute/slider joints. Nested assemblies, snap/connector tools, advanced mates, drawings, Feature Studio code tools and analysis remain deferred. U2 implements shared Part Studio rollback with the slider and its Up/Down context. Pierce is implemented; three other advanced sketch meanings remain unavailable. Six mouse/held-modifier entries remain recorded. Live help shows actual availability and provides **Rebind selected / Reset selected** with context validation. [Complete keymap and sources](docs/ONSHAPE_SHORTCUTS.md).
 
 ## Assistant access
 
@@ -63,15 +63,18 @@ python -B tools\assistant_client.py --json '{"op":"list_documents"}'
 python -B tools\assistant_client.py --request-file path-to-request.json
 ```
 
-Contract 2 mutations require `request_id` and, for an existing document, its current UUID/revision. Identical retry returns the original result; use `request_status` after an unknown outcome. `capabilities` reports the session/retention limits. Native edits, undo/redo and reopen invalidate stale tokens. `preview` evaluates a parameter/formula in a hidden disposable clone; commit checks the base revision afresh. Use `--session path-to-session.json` to select an isolated instance. No actual Claude client has been connected or messaged. [Full contract](docs/OPERATION_CONTRACT.md).
+Contract 2 mutations require `request_id` and, for an existing document, its current UUID/revision. Identical retry returns the original result; use `request_status` after an unknown outcome. `capabilities` reports the session/retention limits. Native edits, undo/redo and reopen invalidate stale tokens. `preview` evaluates typed modeling operations in a hidden disposable clone; commit checks the base revision afresh. Use `--session path-to-session.json` to select an isolated instance. No actual Claude client has been connected or messaged. [Full contract](docs/OPERATION_CONTRACT.md).
 
 ## Reproduce verification
 
 ```powershell
 .\run-checks.ps1
 .\launch-kurtshape.ps1 -Validation
+.\tools\validate-u2-part-model-gui.ps1
 ```
 
 The first command verifies original source hashes/STEP geometry, runs offline native model tests, transport tests and Qt shortcut routing. The second launches an independent invisible Qt window with separate configuration/session, exercises the actual interface and viewport, records screenshots/native files under `validation/interface-pass`, then exits. It preserves an already-open user window. Other targeted native GUI recipes and reports are listed in [interface pass notes](docs/INTERFACE_PASS.md).
+
+The third command launches the isolated U2 Part Studio check; wait for its printed process to exit, then read `validation/u2-part-model/gui-result.json`. Its [recipe](validation/u2-part-model/README.md) explains fixtures and source-hash verification.
 
 Python networking is denied during offline core checks; native C++ networking and physical disconnection are not instrumented. Exact native rebuilds run synchronously. Automated GUI evidence supplements Kurt's hands-on usability review. Original examples and the Claude reference directory are preserved. Full source conversion remains **0/2**; two edited STEP variants per source design are deferred until Kurt provides them.

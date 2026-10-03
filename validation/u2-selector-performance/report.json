@@ -1,0 +1,64 @@
+{
+  "recipe": "tools/measure_selector_rebuild.py",
+  "engine": {
+    "freecad": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "occt": "7.8.1"
+  },
+  "feature_count": 30,
+  "part_count": 4,
+  "selector_consumers": 11,
+  "measurement": "Five forced explicit native rebuilds; selector evaluation includes query contexts, native reference/cache writes and health writes; excludes native geometry recomputation.",
+  "samples": [
+    {
+      "selector_evaluation_ms": 240.18199974671006,
+      "query_resolution_ms": 231.59889946691692,
+      "native_recompute_ms": 117.11670109070837,
+      "selector_rebuild_ms": 361.0646000597626,
+      "consumers": 11
+    },
+    {
+      "selector_evaluation_ms": 235.92520016245544,
+      "query_resolution_ms": 228.8877002429217,
+      "native_recompute_ms": 110.6954999268055,
+      "selector_rebuild_ms": 349.98439997434616,
+      "consumers": 11
+    },
+    {
+      "selector_evaluation_ms": 293.2044994086027,
+      "query_resolution_ms": 285.03380017355084,
+      "native_recompute_ms": 134.26270009949803,
+      "selector_rebuild_ms": 431.49899994023144,
+      "consumers": 11
+    },
+    {
+      "selector_evaluation_ms": 543.7062997370958,
+      "query_resolution_ms": 535.8331999741495,
+      "native_recompute_ms": 216.78540017455816,
+      "selector_rebuild_ms": 766.6114999447018,
+      "consumers": 11
+    },
+    {
+      "selector_evaluation_ms": 512.2706997208297,
+      "query_resolution_ms": 499.87119948491454,
+      "native_recompute_ms": 217.60149975307286,
+      "selector_rebuild_ms": 735.8021999243647,
+      "consumers": 11
+    }
+  ],
+  "median_ms": {
+    "selector_evaluation_ms": 293.2044994086027,
+    "query_resolution_ms": 285.03380017355084,
+    "native_recompute_ms": 134.26270009949803,
+    "selector_rebuild_ms": 431.49899994023144
+  },
+  "reference_errors": []
+}

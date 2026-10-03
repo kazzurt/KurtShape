@@ -1,0 +1,119 @@
+[
+  {
+    "fixture": "bodies",
+    "results": [
+      {
+        "id": "Part0",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 434.14557639766923,
+        "valid": true,
+        "element_map_size": 68
+      },
+      {
+        "id": "Part1",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 372.1247797694306,
+        "valid": true,
+        "element_map_size": 68
+      },
+      {
+        "id": "Part2",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 373.821239802369,
+        "valid": true,
+        "element_map_size": 62
+      },
+      {
+        "id": "Part3",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 373.8212398023691,
+        "valid": true,
+        "element_map_size": 62
+      }
+    ],
+    "native_order_count": 30
+  },
+  {
+    "fixture": "compound",
+    "results": [
+      {
+        "id": "Cut25",
+        "type": "Part::Cut",
+        "status": "Valid",
+        "solids": 4,
+        "volume": 1553.9128357718373,
+        "valid": true,
+        "element_map_size": 276
+      }
+    ],
+    "native_order_count": 30
+  },
+  {
+    "fixture": "compositions",
+    "results": [
+      {
+        "id": "Half0",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 2,
+        "volume": 2399.463495408493,
+        "valid": true,
+        "element_map_size": 49
+      },
+      {
+        "id": "Half1",
+        "type": "PartDesign::Body",
+        "status": "Touched",
+        "solids": 1,
+        "volume": 1199.3561944901926,
+        "valid": true,
+        "element_map_size": 32
+      },
+      {
+        "id": "PositiveHalfBody",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 1399.9999999999998,
+        "valid": true,
+        "element_map_size": 26
+      },
+      {
+        "id": "NegativeHalfBody",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 999.9999999999998,
+        "valid": true,
+        "element_map_size": 26
+      },
+      {
+        "id": "TransformedPart",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 2399.9999999999995,
+        "valid": true,
+        "element_map_size": 26
+      },
+      {
+        "id": "Mirror",
+        "type": "Part::Mirroring",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 2399.9999999999995,
+        "valid": true,
+        "element_map_size": 26
+      }
+    ],
+    "native_order_count": null
+  }
+]

@@ -1,0 +1,305 @@
+"""Bounded carrier-A evidence in a separate hidden native KurtShape process.
+
+Carrier probe only: native split compositions, output Body BaseFeature, current
+production Panel/preview and actual native fillet Tasks. No product changes.
+"""
+import json
+import os
+from pathlib import Path
+import queue
+import socket
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime"), "Use an isolated profile"
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+
+
+def deny_network(*args, **kwargs):
+    raise RuntimeError("Python networking disabled for carrier GUI spike")
+
+
+socket.socket.connect = deny_network
+socket.socket.connect_ex = deny_network
+socket.socket.sendto = deny_network
+socket.create_connection = deny_network
+socket.getaddrinfo = deny_network
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape.core import Controller, native_intent
+from kurtshape import ui
+
+
+class NoSocketTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+application = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1600, 1000)
+main.show()
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden_popups = HiddenPopupFilter(application)
+application.installEventFilter(hidden_popups)
+output = root / "validation" / "u2-part-model-spike"
+output.mkdir(parents=True, exist_ok=True)
+fixture_folder = session / "native-carrier-fixtures"
+fixture_folder.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "screens": [],
+          "method": "Separate hidden FreeCAD process/profile; actual production Panel, native Tasks, Qt mouse events and disposable native preview.",
+          "limits": "Carrier spike only. Production shell has no studio consumed-part metadata or rollback bar. Common/Cut clipping demonstrates plane-split composition, not a generalized split tool. Python networking is blocked; native C++ networking is not intercepted.",
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "runtime_profile": str(session.relative_to(root))}
+panel = None
+cleaned = False
+started = time.perf_counter()
+
+
+def save_report():
+    (output / "gui-carrier-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=80):
+    QtTest.QTest.qWait(ms)
+    if report.get("aborted"):
+        raise RuntimeError("Carrier GUI probe exceeded its time bound")
+
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label + ": " + (panel.message.text() if panel else "startup"))
+    report["checks"].append(label)
+    save_report()
+
+
+def call(op, **args):
+    result = panel.operation(op, **args)
+    if not result:
+        raise AssertionError(op + ": " + panel.message.text())
+    wait(50)
+    return result
+
+
+def capture(label):
+    wait(180)
+    pixmap = main.grab()
+    check(label + ": actual rendered main window", not pixmap.isNull() and pixmap.width() >= 1200)
+    filename = label + ".png"
+    pixmap.save(str(output / filename))
+    report["screens"].append(filename)
+
+
+def select_history(key):
+    item = panel.items[key]
+    panel.features.scrollToItem(item)
+    wait(30)
+    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier,
+                            panel.features.visualItemRect(item).center())
+    wait(50)
+    check(key + ": native selection from actual history click", panel.selected() == key and
+          any(obj.Name == key for obj in Gui.Selection.getSelection()))
+
+
+def preview():
+    for _ in range(80):
+        wait(25)
+        if panel.extrusion_preview.result is not None and not panel.extrusion_preview.timer.isActive():
+            return panel.extrusion_preview.result
+    raise AssertionError("No extrusion preview: " + panel.preview_hint.text())
+
+
+def live_state(doc):
+    panel.core.sync(doc)
+    return {"intent": native_intent(doc), "revision": panel.core._meta(doc).Revision,
+            "undo": doc.UndoCount, "redo": doc.RedoCount, "pending": doc.HasPendingTransaction,
+            "objects": [obj.Name for obj in doc.Objects],
+            "visibility": {obj.Name: obj.ViewObject.Visibility for obj in doc.Objects}}
+
+
+def split_output(doc, name, source, tool, kind):
+    boolean = doc.addObject(kind, name + "Composition")
+    boolean.Label = name + " · split composition"
+    boolean.Base, boolean.Tool, boolean.Refine = source, tool, True
+    doc.recompute()
+    body = doc.addObject("PartDesign::Body", name)
+    body.Label = "Split " + ("left" if name == "SplitLeft" else "right")
+    body.BaseFeature = boolean
+    doc.recompute()
+    boolean.ViewObject.Visibility = False
+    body.ViewObject.Visibility = True
+    return body, boolean
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.Panel(Controller())
+        main.addDockWidget(QtCore.Qt.LeftDockWidgetArea, panel)
+        panel.show()
+        call("new", name="U2 carrier GUI fixture")
+        call("sketch_rectangle", id="FirstProfile", width=20, height=12, body="Body")
+        call("pad", id="FirstPad", profile="FirstProfile", length=8, body="Body")
+        call("create_body", id="SecondBody", name="Second part")
+        call("sketch_rectangle", id="SecondProfile", width=12, height=12, x=30, body="SecondBody")
+        call("pad", id="SecondPad", profile="SecondProfile", length=8, body="SecondBody")
+        doc = panel.document()
+        panel.isometric()
+        panel.fit()
+        wait(350)
+        check("Two native Bodies appear as two selectable parts", panel.parts.topLevelItemCount() == 2 and panel.parts_title.text() == "Parts (2)")
+        check("Body chooser retains both native IDs", {panel.body_choice.itemData(i) for i in range(panel.body_choice.count())} == {"Body", "SecondBody"})
+        check("Shared displayed history contains both Pads", {"FirstPad", "SecondPad"}.issubset(panel.items))
+        select_history("FirstPad")
+        panel.parameters(show=True)
+        wait(60)
+        check("Pad Length is editable in production parameter editor", panel.editor.isVisible() and "Length" in [panel.parameter.itemText(i) for i in range(panel.parameter.count())])
+        capture("two-parts-native-parameters")
+        call("set_parameter", feature="FirstPad", parameter="Length", value="9 mm", body="Body")
+        check("Dimension edit changes only its owning part", abs(doc.Body.Shape.Volume - 2160) < 1e-6 and abs(doc.SecondBody.Shape.Volume - 1152) < 1e-6)
+        call("undo")
+        check("Undo restores its owning part", abs(doc.Body.Shape.Volume - 1920) < 1e-6 and abs(doc.SecondBody.Shape.Volume - 1152) < 1e-6)
+        top = "Face" + str(next(i + 1 for i, face in enumerate(doc.FirstPad.Shape.Faces) if abs(face.CenterOfMass.z - 8) < 1e-7))
+        call("sketch_circle", id="PreviewProfile", x=10, y=6, diameter=4,
+             support={"feature": "FirstPad", "subelement": top}, body="Body")
+        select_history("PreviewProfile")
+        baseline = live_state(doc)
+        panel.extrude(False)
+        panel.depth.lineEdit().setText("3 mm")
+        result = preview()
+        check("Preview evaluates selected Body in two-part document", result.valid and result.body_id == "Body" and abs(result.material_shape.Volume - 12 * 3.141592653589793) < 1e-5)
+        check("Preview shows actual scenegraph ghost", panel.extrusion_preview.overlay.node is not None and panel.confirm.isEnabled())
+        check("Preview preserves both parts and undo history", live_state(doc) == baseline)
+        capture("two-parts-extrude-preview")
+        QtTest.QTest.mouseClick(panel.cancel, QtCore.Qt.LeftButton)
+        wait(60)
+        check("Cancel removes ghost and retains accepted parts", panel.extrusion_preview.overlay.node is None and live_state(doc) == baseline)
+
+        # Both halves remain native editable Common/Cut graphs; the cutter's
+        # x=10 face is the clipping plane. Output Bodies have real BaseFeatures.
+        doc.openTransaction("Carrier spike native split composition")
+        tool = doc.addObject("Part::Box", "SplitHalfSpace")
+        tool.Length, tool.Width, tool.Height = 40, 40, 40
+        tool.Placement.Base = App.Vector(10, -10, -10)
+        left, left_boolean = split_output(doc, "SplitLeft", doc.Body, tool, "Part::Cut")
+        right, right_boolean = split_output(doc, "SplitRight", doc.Body, tool, "Part::Common")
+        doc.Body.ViewObject.Visibility = False
+        doc.FirstPad.ViewObject.Visibility = False
+        doc.PreviewProfile.ViewObject.Visibility = False
+        tool.ViewObject.Visibility = False
+        doc.recompute()
+        doc.commitTransaction()
+        check("Split creates two valid one-solid output Bodies", len(left.Shape.Solids) == 1 and len(right.Shape.Solids) == 1 and left.Shape.isValid() and right.Shape.isValid())
+        check("Output Bodies retain editable native boolean links", left.BaseFeature == left_boolean and right.BaseFeature == right_boolean)
+        check("Split halves partition source volume", abs(left.Shape.Volume + right.Shape.Volume - doc.Body.Shape.Volume) < 1e-6 and left.Shape.common(right.Shape).Volume < 1e-7)
+        right.Placement.Base = App.Vector(3, 0, 0)
+        doc.recompute()
+        panel.state = panel.core.inspect(doc)
+        panel.refresh()
+        panel.change_body()
+        panel.fit()
+        wait(250)
+        check("Shared history retains split composition and output features", {left_boolean.Name, right_boolean.Name, left.Tip.Name, right.Tip.Name}.issubset(panel.items))
+        report["raw_shell_parts"] = [panel.parts.topLevelItem(i).text(0) for i in range(panel.parts.topLevelItemCount())]
+        report["consumed_part_limit"] = "The unmodified shell displays six results: the source Body, the unchanged second Body, two output Bodies and their two standalone Boolean carriers. Only three are semantic current parts. Studio metadata must designate consumed sources/internal carriers before part counting or export."
+        capture("native-split-output-bodies")
+
+        base = left.Tip
+        doc.openTransaction("Carrier spike native fillet")
+        fillet = left.newObject("PartDesign::Fillet", "SplitLeftFillet")
+        fillet.Base, fillet.Radius = (base, ["Edge1"]), 0.7
+        doc.recompute()
+        doc.commitTransaction()
+        check("Native fillet rebuilds on split output Body", fillet.Shape.isValid() and len(fillet.Shape.Solids) == 1 and fillet.Shape.Volume < base.Shape.Volume)
+        Gui.activateWorkbench("PartDesignWorkbench")
+        panel.body_choice.setCurrentIndex(panel.body_choice.findData(left.Name))
+        Gui.activeDocument().activeView().setActiveObject("pdbody", left)
+        base.ViewObject.Visibility = False
+        fillet.ViewObject.Visibility = True
+        panel.state = panel.core.inspect(doc)
+        panel.refresh()
+        select_history(fillet.Name)
+        panel.edit_native_feature()
+        wait(250)
+        check("Fillet opens actual native editable Tasks", bool(Gui.Control.activeDialog()) and bool(Gui.activeDocument().getInEdit()))
+        task_docks = [dock for dock in main.findChildren(QtWidgets.QDockWidget) if dock.windowTitle() == "Tasks" and dock.isVisible()]
+        check("Native Tasks and KurtShape history remain visible", bool(task_docks) and panel.features.isVisible())
+        report["native_task_widgets"] = [{"class": widget.metaObject().className(), "object": widget.objectName(),
+                                          "text": widget.text() if hasattr(widget, "text") else None}
+                                         for dock in task_docks for widget in dock.findChildren(QtWidgets.QWidget)
+                                         if widget.isVisible() and isinstance(widget, (QtWidgets.QLabel, QtWidgets.QAbstractSpinBox, QtWidgets.QAbstractButton))]
+        capture("split-output-native-fillet-task")
+        Gui.activeDocument().resetEdit()
+        if doc.HasPendingTransaction:
+            doc.commitTransaction()
+        doc.recompute()
+        panel.core.sync(doc)
+        fixture_path = fixture_folder / "native-split-bodies-with-fillet.FCStd"
+        doc.saveAs(str(fixture_path))
+        report["fixture"] = str(fixture_path.relative_to(root))
+        check("Composition saves as editable native FCStd", fixture_path.exists() and fixture_path.stat().st_size > 0)
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        report["seconds"] = time.perf_counter() - started
+        report["check_count"] = len(report["checks"])
+        save_report()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            doc = App.getDocument(name)
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    finally:
+        application.removeEventFilter(hidden_popups)
+        QtCore.QTimer.singleShot(0, application.quit)
+
+
+def timeout():
+    if not report.get("seconds"):
+        report["aborted"] = True
+        report["error"] = "GUI carrier probe exceeded its 45-second bound"
+        save_report()
+        cleanup()
+
+
+QtCore.QTimer.singleShot(45000, timeout)
+QtCore.QTimer.singleShot(1500, validate)

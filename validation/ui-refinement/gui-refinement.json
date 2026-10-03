@@ -128,7 +128,7 @@
     ],
     "OCCT": "7.8.1"
   },
-  "runtime_profile": "runtime\\ui-refinement-gui-validation-20261002-203018",
+  "runtime_profile": "runtime\\ui-refinement-interface-validation",
   "last_preview": {
     "valid": true,
     "proposal": {
@@ -258,15 +258,15 @@
     ],
     "projected_center_pixels": [
       1200,
-      560
+      718
     ],
     "native_view_size": [
       1587,
-      919
+      1260
     ],
     "qt_gl_size": [
       1058,
-      613
+      840
     ],
     "native_ratio": 1.5,
     "image_ratio": 1.5,
@@ -274,7 +274,7 @@
       406,
       135,
       1994,
-      1054
+      1395
     ],
     "sample_pixels": 625,
     "orange_pixels": 625
@@ -287,15 +287,15 @@
     ],
     "projected_center_pixels": [
       1404,
-      560
+      718
     ],
     "native_view_size": [
       1993,
-      919
+      1260
     ],
     "qt_gl_size": [
       1329,
-      613
+      840
     ],
     "native_ratio": 1.4996237772761474,
     "image_ratio": 1.5,
@@ -303,7 +303,7 @@
       406,
       135,
       2400,
-      1054
+      1395
     ],
     "sample_pixels": 625,
     "orange_pixels": 0
@@ -316,7 +316,7 @@
       "tooltip": "",
       "geometry": [
         1583,
-        16,
+        17,
         17,
         17
       ]
@@ -329,17 +329,17 @@
       "geometry": [
         2,
         3,
-        659,
-        28
+        619,
+        29
       ]
     },
     {
       "class": "Gui::DimensionWidget",
       "name": "",
-      "text": "38.61 mm x 22.36 mm",
+      "text": "28.16 mm x 22.36 mm",
       "tooltip": "",
       "geometry": [
-        762,
+        722,
         3,
         149,
         28
@@ -351,10 +351,10 @@
       "text": "",
       "tooltip": "",
       "geometry": [
-        667,
+        627,
         3,
         6,
-        28
+        29
       ]
     },
     {
@@ -363,19 +363,19 @@
       "text": "",
       "tooltip": "",
       "geometry": [
-        685,
+        645,
         3,
         6,
-        28
+        29
       ]
     },
     {
       "class": "QPushButton",
       "name": "notificationArea",
-      "text": "8",
+      "text": "7",
       "tooltip": "",
       "geometry": [
-        697,
+        657,
         3,
         59,
         28
@@ -387,10 +387,10 @@
       "text": "",
       "tooltip": "",
       "geometry": [
-        679,
+        639,
         3,
         0,
-        28
+        29
       ]
     },
     {
@@ -399,10 +399,22 @@
       "text": "Feature canceled",
       "tooltip": "Feature canceled",
       "geometry": [
-        917,
+        877,
         3,
-        659,
-        28
+        618,
+        29
+      ]
+    },
+    {
+      "class": "QToolButton",
+      "name": "KurtShapeMessagesButton",
+      "text": "Messages",
+      "tooltip": "Show messages",
+      "geometry": [
+        1501,
+        3,
+        75,
+        29
       ]
     }
   ],
@@ -412,7 +424,7 @@
     "foreground": "#243447",
     "background": "#ffffff",
     "contrast": 12.672002424980027,
-    "rendered_dark_pixels": 1409,
+    "rendered_dark_pixels": 1424,
     "size": [
       1200,
       57
@@ -421,53 +433,65 @@
   "timings": {
     "intent": {
       "samples": 40,
-      "median_ms": 0.727,
-      "p95_ms": 2.215,
-      "worst_ms": 3.576
+      "median_ms": 0.936,
+      "p95_ms": 2.016,
+      "worst_ms": 2.083
     },
     "native_recompute": {
       "samples": 37,
-      "median_ms": 5.873,
-      "p95_ms": 37.029,
-      "worst_ms": 50.921
+      "median_ms": 10.841,
+      "p95_ms": 34.689,
+      "worst_ms": 38.1
+    },
+    "selector_evaluation": {
+      "samples": 37,
+      "median_ms": 0.0,
+      "p95_ms": 0.0,
+      "worst_ms": 0.0
+    },
+    "managed_rebuild": {
+      "samples": 37,
+      "median_ms": 11.308,
+      "p95_ms": 35.817,
+      "worst_ms": 38.562
     },
     "inspection": {
       "samples": 53,
-      "median_ms": 1.344,
-      "p95_ms": 9.269,
-      "worst_ms": 11.749
+      "median_ms": 2.238,
+      "p95_ms": 9.725,
+      "worst_ms": 14.588
     },
     "operation": {
       "samples": 46,
-      "median_ms": 2.463,
-      "p95_ms": 67.055,
-      "worst_ms": 589.872
+      "median_ms": 3.493,
+      "p95_ms": 162.631,
+      "worst_ms": 1040.484
     },
     "input_to_feedback": {
       "samples": 11,
-      "median_ms": 21.404,
-      "p95_ms": 476.274,
-      "worst_ms": 476.274
+      "median_ms": 22.21,
+      "p95_ms": 492.719,
+      "worst_ms": 492.719
     },
     "input_to_feedback_model": {
       "samples": 4,
-      "median_ms": 370.939,
-      "p95_ms": 476.274,
-      "worst_ms": 476.274
+      "median_ms": 456.486,
+      "p95_ms": 492.719,
+      "worst_ms": 492.719
     },
     "input_to_feedback_ordinary": {
       "samples": 6,
-      "median_ms": 12.023,
-      "p95_ms": 21.404,
-      "worst_ms": 21.404
+      "median_ms": 14.219,
+      "p95_ms": 22.21,
+      "worst_ms": 22.21
     },
     "input_to_feedback_disk": {
       "samples": 1,
-      "median_ms": 376.597,
-      "p95_ms": 376.597,
-      "worst_ms": 376.597
+      "median_ms": 411.67,
+      "p95_ms": 411.67,
+      "worst_ms": 411.67
     }
   },
-  "seconds": 15.165384299820289,
+  "seconds": 17.462197000160813,
   "check_count": 106
 }

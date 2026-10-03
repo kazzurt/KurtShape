@@ -1,0 +1,2968 @@
+{
+  "engine": {
+    "freecad": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "occt": "7.8.1"
+  },
+  "recipe": "tools/probe_query_history.py",
+  "pad": {
+    "object": "Pad",
+    "type": "PartDesign::Pad",
+    "solid_count": 1,
+    "face_count": 6,
+    "element_map_size": 30,
+    "native_history_property": "None",
+    "dangling_face_map_values": [],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "#d:1;:G;XTR;:H1d8:7,F",
+        "area_mm2": 49.99999999999999,
+        "center_mm": [
+          5.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Pad",
+            "element": "#d:1;:G;XTR;:H1d8:7,F",
+            "intermediate": [
+              "#b:1;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g1;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "#d:2;:G;XTR;:H1d8:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          -0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Pad",
+            "element": "#d:2;:G;XTR;:H1d8:7,F",
+            "intermediate": [
+              "#b:2;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g2;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "#d:3;:G;XTR;:H1d8:7,F",
+        "area_mm2": 49.99999999999999,
+        "center_mm": [
+          5.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          -0.0,
+          1.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Pad",
+            "element": "#d:3;:G;XTR;:H1d8:7,F",
+            "intermediate": [
+              "#b:3;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g3;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "#d:4;:G;XTR;:H1d8:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Pad",
+            "element": "#d:4;:G;XTR;:H1d8:7,F",
+            "intermediate": [
+              "#b:4;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g4;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "#d:1;FAC;:H1d8:4,F",
+        "area_mm2": 199.99999999999997,
+        "center_mm": [
+          5.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          -0.0,
+          -0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "Pad",
+            "element": "#d:1;FAC;:H1d8:4,F",
+            "intermediate": [
+              "#b:1;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g1;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "#14:1;:G0;XTR;:H1d8:8,F",
+        "area_mm2": 199.99999999999997,
+        "center_mm": [
+          5.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "Pad",
+            "element": "#14:1;:G0;XTR;:H1d8:8,F",
+            "intermediate": [
+              "#d:1;FAC;:H1d8:4,F",
+              "#b:1;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g1;SKT",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "pocket": {
+    "object": "Pocket",
+    "type": "PartDesign::Pocket",
+    "solid_count": 1,
+    "face_count": 7,
+    "element_map_size": 36,
+    "native_history_property": "None",
+    "dangling_face_map_values": [],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "#16:1;:H1d9,F",
+        "area_mm2": 49.99999999999999,
+        "center_mm": [
+          5.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Pocket",
+            "element": "#16:1;:H1d9,F",
+            "intermediate": []
+          },
+          {
+            "object": "Pad",
+            "element": "#d:1;:G;XTR;:H1d8:7,F",
+            "intermediate": [
+              "#b:1;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g1;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "#16:4;:H1d9,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Pocket",
+            "element": "#16:4;:H1d9,F",
+            "intermediate": []
+          },
+          {
+            "object": "Pad",
+            "element": "#d:4;:G;XTR;:H1d8:7,F",
+            "intermediate": [
+              "#b:4;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g4;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "#16:2;:H1d9,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          -0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Pocket",
+            "element": "#16:2;:H1d9,F",
+            "intermediate": []
+          },
+          {
+            "object": "Pad",
+            "element": "#d:2;:G;XTR;:H1d8:7,F",
+            "intermediate": [
+              "#b:2;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g2;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "#14:1;:M;CUT;:H1d9:7,F",
+        "area_mm2": 187.4336293856408,
+        "center_mm": [
+          5.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          -0.0,
+          -0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "Pocket",
+            "element": "#14:1;:M;CUT;:H1d9:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "Pad",
+            "element": "#d:1;FAC;:H1d8:4,F",
+            "intermediate": [
+              "#b:1;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g1;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "#32:1;:M;CUT;:H1d9:7,F",
+        "area_mm2": 187.4336293856408,
+        "center_mm": [
+          5.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "Pocket",
+            "element": "#32:1;:M;CUT;:H1d9:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "Pad",
+            "element": "#14:1;:G0;XTR;:H1d8:8,F",
+            "intermediate": [
+              "#d:1;FAC;:H1d8:4,F",
+              "#b:1;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g1;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "#16:3;:H1d9,F",
+        "area_mm2": 49.99999999999999,
+        "center_mm": [
+          5.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          -0.0,
+          1.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Pocket",
+            "element": "#16:3;:H1d9,F",
+            "intermediate": []
+          },
+          {
+            "object": "Pad",
+            "element": "#d:3;:G;XTR;:H1d8:7,F",
+            "intermediate": [
+              "#b:3;:H1d8,E"
+            ]
+          },
+          {
+            "object": "Profile",
+            "element": "g3;SKT",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face7",
+        "mapped": "#23:1;:M;CUT;:H-1db:7,F",
+        "area_mm2": 62.83185307179586,
+        "center_mm": [
+          5.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Pocket",
+            "element": "#23:1;:M;CUT;:H-1db:7,F",
+            "intermediate": [
+              "#1d:1;:G;XTR;:H1da:7,F",
+              "#b:1;:H1da,E"
+            ]
+          },
+          {
+            "object": "Hole",
+            "element": "g1;SKT",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "split": {
+    "object": "Split",
+    "type": "Part::Cut",
+    "solid_count": 2,
+    "face_count": 12,
+    "element_map_size": 52,
+    "native_history_property": "None",
+    "dangling_face_map_values": [],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "Face1;:H1dc,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face1;:H1dc,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "Face3;:M;CUT;:H1dc:7,F",
+        "area_mm2": 19.999999999999996,
+        "center_mm": [
+          2.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          -0.0,
+          -1.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face3;:M;CUT;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "Face6;:M;CUT;:H1dc:7,F",
+        "area_mm2": 80.0,
+        "center_mm": [
+          2.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face6;:M;CUT;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "Face4;:M;CUT;:H1dc:7,F",
+        "area_mm2": 19.999999999999996,
+        "center_mm": [
+          2.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face4;:M;CUT;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "Face5;:M;CUT;:H1dc:7,F",
+        "area_mm2": 80.0,
+        "center_mm": [
+          2.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          -0.0,
+          -0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face5;:M;CUT;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "Face1;:M;CUT;:H1de:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          4.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face1;:M;CUT;:H1de:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "Divider",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face7",
+        "mapped": "Face3;:M2;CUT;:H1dc:8,F",
+        "area_mm2": 19.999999999999996,
+        "center_mm": [
+          8.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          -0.0,
+          -1.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face3;:M2;CUT;:H1dc:8,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face8",
+        "mapped": "Face5;:M2;CUT;:H1dc:8,F",
+        "area_mm2": 80.0,
+        "center_mm": [
+          8.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          -0.0,
+          -0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face5;:M2;CUT;:H1dc:8,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face9",
+        "mapped": "Face2;:H1dc,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face2;:H1dc,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face2",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face10",
+        "mapped": "Face6;:M2;CUT;:H1dc:8,F",
+        "area_mm2": 80.0,
+        "center_mm": [
+          8.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face6;:M2;CUT;:H1dc:8,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face11",
+        "mapped": "Face2;:M;CUT;:H1de:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          6.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face2;:M;CUT;:H1de:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "Divider",
+            "element": "Face2",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face12",
+        "mapped": "Face4;:M2;CUT;:H1dc:8,F",
+        "area_mm2": 19.999999999999996,
+        "center_mm": [
+          8.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Split",
+            "element": "Face4;:M2;CUT;:H1dc:8,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "common": {
+    "object": "Common",
+    "type": "Part::Common",
+    "solid_count": 1,
+    "face_count": 6,
+    "element_map_size": 26,
+    "native_history_property": "None",
+    "dangling_face_map_values": [],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "Face3;:M;CMN;:H1dc:7,F",
+        "area_mm2": 9.999999999999998,
+        "center_mm": [
+          5.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          -0.0,
+          -1.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Common",
+            "element": "Face3;:M;CMN;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "Face5;:M;CMN;:H1dc:7,F",
+        "area_mm2": 40.0,
+        "center_mm": [
+          5.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          -0.0,
+          -0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "Common",
+            "element": "Face5;:M;CMN;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "Face2;:M;CMN;:H1de:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          6.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Common",
+            "element": "Face2;:M;CMN;:H1de:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "Divider",
+            "element": "Face2",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "Face6;:M;CMN;:H1dc:7,F",
+        "area_mm2": 40.0,
+        "center_mm": [
+          5.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "Common",
+            "element": "Face6;:M;CMN;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "Face1;:M;CMN;:H1de:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          4.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Common",
+            "element": "Face1;:M;CMN;:H1de:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "Divider",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "Face4;:M;CMN;:H1dc:7,F",
+        "area_mm2": 9.999999999999998,
+        "center_mm": [
+          5.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Common",
+            "element": "Face4;:M;CMN;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "unrefined_fuse": {
+    "object": "Merged",
+    "type": "Part::MultiFuse",
+    "solid_count": 1,
+    "face_count": 10,
+    "element_map_size": 42,
+    "native_history_property": "None",
+    "dangling_face_map_values": [],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "Face1;:H1dc,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face1;:H1dc,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "Face3;:M;FUS;:H1dc:7,F",
+        "area_mm2": 49.99999999999999,
+        "center_mm": [
+          5.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          -0.0,
+          -1.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face3;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "Face6;:M;FUS;:H1dc:7,F",
+        "area_mm2": 199.99999999999997,
+        "center_mm": [
+          5.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face6;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "Face4;:M;FUS;:H1dc:7,F",
+        "area_mm2": 49.99999999999999,
+        "center_mm": [
+          5.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face4;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "Face5;:M;FUS;:H1dc:7,F",
+        "area_mm2": 199.99999999999997,
+        "center_mm": [
+          5.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          -0.0,
+          -0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face5;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "Face3;:M;FUS;:H1dd:7,F",
+        "area_mm2": 49.99999999999999,
+        "center_mm": [
+          15.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          -0.0,
+          -1.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face3;:M;FUS;:H1dd:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxB",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face7",
+        "mapped": "Face6;:M;FUS;:H1dd:7,F",
+        "area_mm2": 199.99999999999997,
+        "center_mm": [
+          15.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face6;:M;FUS;:H1dd:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxB",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face8",
+        "mapped": "Face4;:M;FUS;:H1dd:7,F",
+        "area_mm2": 49.99999999999999,
+        "center_mm": [
+          15.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face4;:M;FUS;:H1dd:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxB",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face9",
+        "mapped": "Face5;:M;FUS;:H1dd:7,F",
+        "area_mm2": 199.99999999999997,
+        "center_mm": [
+          15.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          -0.0,
+          -0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face5;:M;FUS;:H1dd:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxB",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face10",
+        "mapped": "Face2;:H1dd,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          20.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face2;:H1dd,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxB",
+            "element": "Face2",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "refined_fuse": {
+    "object": "Merged",
+    "type": "Part::MultiFuse",
+    "solid_count": 1,
+    "face_count": 6,
+    "element_map_size": 42,
+    "native_history_property": "None",
+    "dangling_face_map_values": [
+      "Face10",
+      "Face7",
+      "Face8",
+      "Face9"
+    ],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "Face1;:H1dc,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          20.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face1;:H1dc,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "Face3;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face3;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "Face6;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face6;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "Face4;:M;FUS;:H1dc:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face4;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "Face5;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face5;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "Face3;:M;FUS;:H1dd:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face3;:M;FUS;:H1dd:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxB",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "merged_top_face": {
+    "current": {
+      "native": "Face4",
+      "mapped": "Face4;:M;FUS;:H1dc:7,F",
+      "area_mm2": 399.99999999999994,
+      "center_mm": [
+        10.0,
+        10.0,
+        5.0
+      ],
+      "normal": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "history": [
+        {
+          "object": "Merged",
+          "element": "Face4;:M;FUS;:H1dc:7,F",
+          "intermediate": []
+        },
+        {
+          "object": "BoxA",
+          "element": "Face4",
+          "intermediate": []
+        }
+      ]
+    },
+    "expected_creators_per_atlas": [
+      "BoxA",
+      "BoxB",
+      "Merged"
+    ],
+    "exposed_history_objects": [
+      "Merged",
+      "BoxA"
+    ]
+  },
+  "inherited_side_false_creator_hazard": {
+    "native": "Face1",
+    "mapped": "#16:1;:H1d9,F",
+    "area_mm2": 49.99999999999999,
+    "center_mm": [
+      5.0,
+      0.0,
+      2.5
+    ],
+    "normal": [
+      0.0,
+      -1.0,
+      -0.0
+    ],
+    "history": [
+      {
+        "object": "Pocket",
+        "element": "#16:1;:H1d9,F",
+        "intermediate": []
+      },
+      {
+        "object": "Pad",
+        "element": "#d:1;:G;XTR;:H1d8:7,F",
+        "intermediate": [
+          "#b:1;:H1d8,E"
+        ]
+      },
+      {
+        "object": "Profile",
+        "element": "g1;SKT",
+        "intermediate": []
+      }
+    ]
+  },
+  "split_source_multiplicity": {
+    "BoxA.Face1": [
+      "Face1"
+    ],
+    "BoxA.Face3": [
+      "Face2",
+      "Face7"
+    ],
+    "BoxA.Face6": [
+      "Face3",
+      "Face10"
+    ],
+    "BoxA.Face4": [
+      "Face4",
+      "Face12"
+    ],
+    "BoxA.Face5": [
+      "Face5",
+      "Face8"
+    ],
+    "Divider.Face1": [
+      "Face6"
+    ],
+    "BoxA.Face2": [
+      "Face9"
+    ],
+    "Divider.Face2": [
+      "Face11"
+    ]
+  },
+  "fresh_refined_fuse": {
+    "object": "FreshRefinedMerge",
+    "type": "Part::MultiFuse",
+    "solid_count": 1,
+    "face_count": 6,
+    "element_map_size": 42,
+    "native_history_property": "None",
+    "dangling_face_map_values": [
+      "Face10",
+      "Face7",
+      "Face8",
+      "Face9"
+    ],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "Face1;:H1dc,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          20.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face1;:H1dc,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "Face3;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face3;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "Face6;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face6;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "Face4;:M;FUS;:H1dc:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face4;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "Face5;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face5;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "Face3;:M;FUS;:H1dd:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face3;:M;FUS;:H1dd:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxB",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "native_part_refine": {
+    "object": "NativeRefine",
+    "type": "Part::Refine",
+    "solid_count": 1,
+    "face_count": 6,
+    "element_map_size": 0,
+    "native_history_property": "None",
+    "dangling_face_map_values": [],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          20.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "NativeRefine",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "NativeRefine",
+            "element": "Face2",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "NativeRefine",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "NativeRefine",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "NativeRefine",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "NativeRefine",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "raw_remove_splitter": {
+    "face_count": 6,
+    "element_map_size": 26,
+    "face_map": {
+      "Face1;:H1dc,F": "Face3",
+      "Face2;:H1dd,F": "Face1",
+      "Face3;:M;FUS;:H1dc:7,F;:M(Face3;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F": "Face2",
+      "Face4;:M;FUS;:H1dc:7,F;:M(Face4;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F": "Face5",
+      "Face5;:M;FUS;:H1dc:7,F;:M(Face5;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F": "Face6",
+      "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F": "Face4"
+    },
+    "history_api_note": "Raw Shape.removeSplitter carries both sources inside a composite mapped name, but getElementHistory only returns one source tag and opaque composite text. Native Part::Refine drops this map. A custom adapter/parser would need separately proven complete and persistent creator semantics."
+  },
+  "history_api_options": {
+    "object_docstring": "getElementHistory(name,recursive=True,sameType=False,showName=False) - returns the element mapped name history\n\nname: mapped element name belonging to this shape\nrecursive: if True, then track back the history through other objects till the origin\nsameType: if True, then stop trace back when element type changes\nshowName: if False, return the owner object, or else return a tuple of object name and label\n\nIf not recursive, then return tuple(sourceObject, sourceElementName, [intermediateNames...]),\notherwise return a list of tuple.",
+    "shape_docstring": "getElementHistory(name) - returns the element mapped name history\n\nname: mapped element name belonging to this shape\n\nReturns tuple(sourceShapeTag, sourceName, [intermediateNames...]),\nor None if no history.",
+    "flags": [
+      {
+        "recursive": false,
+        "same_type": false,
+        "show_name": false,
+        "result": [
+          [
+            "RawRefinedHistoryProbe",
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F;:H1e3,F",
+            []
+          ],
+          [
+            "UnrefinedForRefine",
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F",
+            []
+          ]
+        ]
+      },
+      {
+        "recursive": false,
+        "same_type": false,
+        "show_name": true,
+        "result": [
+          [
+            [
+              "U2QueryHistorySpike#RawRefinedHistoryProbe",
+              "RawRefinedHistoryProbe"
+            ],
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F;:H1e3,F",
+            []
+          ],
+          [
+            [
+              "U2QueryHistorySpike#UnrefinedForRefine",
+              "UnrefinedForRefine"
+            ],
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F",
+            []
+          ]
+        ]
+      },
+      {
+        "recursive": false,
+        "same_type": true,
+        "show_name": false,
+        "result": [
+          [
+            "RawRefinedHistoryProbe",
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F;:H1e3,F",
+            []
+          ],
+          [
+            "UnrefinedForRefine",
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F",
+            []
+          ]
+        ]
+      },
+      {
+        "recursive": false,
+        "same_type": true,
+        "show_name": true,
+        "result": [
+          [
+            [
+              "U2QueryHistorySpike#RawRefinedHistoryProbe",
+              "RawRefinedHistoryProbe"
+            ],
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F;:H1e3,F",
+            []
+          ],
+          [
+            [
+              "U2QueryHistorySpike#UnrefinedForRefine",
+              "UnrefinedForRefine"
+            ],
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F",
+            []
+          ]
+        ]
+      },
+      {
+        "recursive": true,
+        "same_type": false,
+        "show_name": false,
+        "result": [
+          [
+            "RawRefinedHistoryProbe",
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F;:H1e3,F",
+            []
+          ],
+          [
+            "UnrefinedForRefine",
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F",
+            []
+          ],
+          [
+            "BoxA",
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F)",
+            []
+          ]
+        ]
+      },
+      {
+        "recursive": true,
+        "same_type": false,
+        "show_name": true,
+        "result": [
+          [
+            [
+              "U2QueryHistorySpike#RawRefinedHistoryProbe",
+              "RawRefinedHistoryProbe"
+            ],
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F;:H1e3,F",
+            []
+          ],
+          [
+            [
+              "U2QueryHistorySpike#UnrefinedForRefine",
+              "UnrefinedForRefine"
+            ],
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F",
+            []
+          ],
+          [
+            [
+              "U2QueryHistorySpike#BoxA",
+              "BoxA"
+            ],
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F)",
+            []
+          ]
+        ]
+      },
+      {
+        "recursive": true,
+        "same_type": true,
+        "show_name": false,
+        "result": [
+          [
+            "RawRefinedHistoryProbe",
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F;:H1e3,F",
+            []
+          ],
+          [
+            "UnrefinedForRefine",
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F",
+            []
+          ]
+        ]
+      },
+      {
+        "recursive": true,
+        "same_type": true,
+        "show_name": true,
+        "result": [
+          [
+            [
+              "U2QueryHistorySpike#RawRefinedHistoryProbe",
+              "RawRefinedHistoryProbe"
+            ],
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F;:H1e3,F",
+            []
+          ],
+          [
+            [
+              "U2QueryHistorySpike#UnrefinedForRefine",
+              "UnrefinedForRefine"
+            ],
+            "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F",
+            []
+          ]
+        ]
+      }
+    ],
+    "shape_result": [
+      "483",
+      "Face6;:M;FUS;:H1dc:7,F;:M(Face6;:M;FUS;:H1dd:7,F);RFI;:H1dc:1f,F",
+      []
+    ]
+  },
+  "fresh_refined_wrong_creator_examples": [
+    {
+      "current": "Face1",
+      "current_center_mm": [
+        20.0,
+        10.0,
+        2.5
+      ],
+      "exposed_source": {
+        "object": "BoxA",
+        "element": "Face1",
+        "intermediate": []
+      },
+      "source_center_mm": [
+        0.0,
+        10.0,
+        2.5
+      ]
+    },
+    {
+      "current": "Face3",
+      "current_center_mm": [
+        0.0,
+        10.0,
+        2.5
+      ],
+      "exposed_source": {
+        "object": "BoxA",
+        "element": "Face6",
+        "intermediate": []
+      },
+      "source_center_mm": [
+        5.0,
+        10.0,
+        5.0
+      ]
+    },
+    {
+      "current": "Face4",
+      "current_center_mm": [
+        10.0,
+        10.0,
+        5.0
+      ],
+      "exposed_source": {
+        "object": "BoxA",
+        "element": "Face4",
+        "intermediate": []
+      },
+      "source_center_mm": [
+        5.0,
+        20.0,
+        2.5
+      ]
+    },
+    {
+      "current": "Face5",
+      "current_center_mm": [
+        10.0,
+        20.0,
+        2.5
+      ],
+      "exposed_source": {
+        "object": "BoxA",
+        "element": "Face5",
+        "intermediate": []
+      },
+      "source_center_mm": [
+        5.0,
+        10.0,
+        0.0
+      ]
+    },
+    {
+      "current": "Face6",
+      "current_center_mm": [
+        10.0,
+        10.0,
+        0.0
+      ],
+      "exposed_source": {
+        "object": "BoxB",
+        "element": "Face3",
+        "intermediate": []
+      },
+      "source_center_mm": [
+        15.0,
+        0.0,
+        2.5
+      ]
+    }
+  ],
+  "unhashed_raw_refine": {
+    "use_hasher": false,
+    "source_object_ids": {
+      "UnhashedBoxA": 486,
+      "UnhashedBoxB": 487
+    },
+    "face_map": {
+      "Face1;:H1e6,F": "Face3",
+      "Face2;:H1e7,F": "Face1",
+      "Face3;:M;FUS;:H1e6:7,F;:M(Face3;:M;FUS;:H1e7:7,F);RFI;:H1e6:1f,F": "Face2",
+      "Face4;:M;FUS;:H1e6:7,F;:M(Face4;:M;FUS;:H1e7:7,F);RFI;:H1e6:1f,F": "Face5",
+      "Face5;:M;FUS;:H1e6:7,F;:M(Face5;:M;FUS;:H1e7:7,F);RFI;:H1e6:1f,F": "Face6",
+      "Face6;:M;FUS;:H1e6:7,F;:M(Face6;:M;FUS;:H1e7:7,F);RFI;:H1e6:1f,F": "Face4"
+    },
+    "merged_top_mapped_name": "Face6;:M;FUS;:H1e6:7,F;:M(Face6;:M;FUS;:H1e7:7,F);RFI;:H1e6:1f,F",
+    "both_source_tags_present": true
+  },
+  "unhashed_native_refined_fuse": {
+    "object": "UnhashedFuse",
+    "type": "Part::MultiFuse",
+    "solid_count": 1,
+    "face_count": 6,
+    "element_map_size": 42,
+    "native_history_property": "None",
+    "dangling_face_map_values": [
+      "Face10",
+      "Face7",
+      "Face8",
+      "Face9"
+    ],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "Face1;:H1e6,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          20.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "UnhashedFuse",
+            "element": "Face1;:H1e6,F",
+            "intermediate": []
+          },
+          {
+            "object": "UnhashedBoxA",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "Face3;:M;FUS;:H1e6:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "UnhashedFuse",
+            "element": "Face3;:M;FUS;:H1e6:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "UnhashedBoxA",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "Face6;:M;FUS;:H1e6:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "UnhashedFuse",
+            "element": "Face6;:M;FUS;:H1e6:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "UnhashedBoxA",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "Face4;:M;FUS;:H1e6:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "UnhashedFuse",
+            "element": "Face4;:M;FUS;:H1e6:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "UnhashedBoxA",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "Face5;:M;FUS;:H1e6:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "UnhashedFuse",
+            "element": "Face5;:M;FUS;:H1e6:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "UnhashedBoxA",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "Face3;:M;FUS;:H1e7:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "UnhashedFuse",
+            "element": "Face3;:M;FUS;:H1e7:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "UnhashedBoxB",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "primary_naming_algorithm_source": {
+    "url": "https://github.com/realthunder/FreeCAD_assembly3/wiki/Topological-Naming-Algorithm#tracing-model-history",
+    "interpretation": "The algorithm author documents multi-source names in parentheses and first-source linear getElementHistory traversal. Disabling the document hasher exposes names for parsing. This supports a potential custom provenance adapter; it does not establish this runtime's complete creator query behavior across every requested operation."
+  },
+  "refined_fuse_after_reopen": {
+    "object": "Merged",
+    "type": "Part::MultiFuse",
+    "solid_count": 1,
+    "face_count": 6,
+    "element_map_size": 42,
+    "native_history_property": "None",
+    "dangling_face_map_values": [
+      "Face10",
+      "Face7",
+      "Face8",
+      "Face9"
+    ],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "Face1;:H1dc,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          20.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face1;:H1dc,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "Face3;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face3;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "Face6;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face6;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "Face4;:M;FUS;:H1dc:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face4;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "Face5;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face5;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "Face3;:M;FUS;:H1dd:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face3;:M;FUS;:H1dd:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxB",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "refined_fuse_after_fresh_rebuild": {
+    "object": "Merged",
+    "type": "Part::MultiFuse",
+    "solid_count": 1,
+    "face_count": 6,
+    "element_map_size": 42,
+    "native_history_property": "None",
+    "dangling_face_map_values": [
+      "Face10",
+      "Face7",
+      "Face8",
+      "Face9"
+    ],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "Face1;:H1dc,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          20.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face1;:H1dc,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "Face3;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face3;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "Face6;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face6;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "Face4;:M;FUS;:H1dc:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face4;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "Face5;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face5;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "Face3;:M;FUS;:H1dd:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "Merged",
+            "element": "Face3;:M;FUS;:H1dd:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxB",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "fresh_refined_fuse_after_fresh_rebuild": {
+    "object": "FreshRefinedMerge",
+    "type": "Part::MultiFuse",
+    "solid_count": 1,
+    "face_count": 6,
+    "element_map_size": 42,
+    "native_history_property": "None",
+    "dangling_face_map_values": [
+      "Face10",
+      "Face7",
+      "Face8",
+      "Face9"
+    ],
+    "faces": [
+      {
+        "native": "Face1",
+        "mapped": "Face1;:H1dc,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          20.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face1;:H1dc,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face1",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face2",
+        "mapped": "Face3;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          0.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face3;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face3",
+        "mapped": "Face6;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          0.0,
+          10.0,
+          2.5
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face6;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face6",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face4",
+        "mapped": "Face4;:M;FUS;:H1dc:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          5.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face4;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face4",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face5",
+        "mapped": "Face5;:M;FUS;:H1dc:7,F",
+        "area_mm2": 99.99999999999999,
+        "center_mm": [
+          10.0,
+          20.0,
+          2.5
+        ],
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face5;:M;FUS;:H1dc:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxA",
+            "element": "Face5",
+            "intermediate": []
+          }
+        ]
+      },
+      {
+        "native": "Face6",
+        "mapped": "Face3;:M;FUS;:H1dd:7,F",
+        "area_mm2": 399.99999999999994,
+        "center_mm": [
+          10.0,
+          10.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "history": [
+          {
+            "object": "FreshRefinedMerge",
+            "element": "Face3;:M;FUS;:H1dd:7,F",
+            "intermediate": []
+          },
+          {
+            "object": "BoxB",
+            "element": "Face3",
+            "intermediate": []
+          }
+        ]
+      }
+    ]
+  },
+  "reopened_wrong_creator_examples": [
+    {
+      "current": "Face1",
+      "current_center_mm": [
+        20.0,
+        10.0,
+        2.5
+      ],
+      "exposed_source": {
+        "object": "BoxA",
+        "element": "Face1",
+        "intermediate": []
+      },
+      "source_center_mm": [
+        0.0,
+        10.0,
+        2.5
+      ]
+    },
+    {
+      "current": "Face3",
+      "current_center_mm": [
+        0.0,
+        10.0,
+        2.5
+      ],
+      "exposed_source": {
+        "object": "BoxA",
+        "element": "Face6",
+        "intermediate": []
+      },
+      "source_center_mm": [
+        5.0,
+        10.0,
+        5.0
+      ]
+    },
+    {
+      "current": "Face4",
+      "current_center_mm": [
+        10.0,
+        10.0,
+        5.0
+      ],
+      "exposed_source": {
+        "object": "BoxA",
+        "element": "Face4",
+        "intermediate": []
+      },
+      "source_center_mm": [
+        5.0,
+        20.0,
+        2.5
+      ]
+    },
+    {
+      "current": "Face5",
+      "current_center_mm": [
+        10.0,
+        20.0,
+        2.5
+      ],
+      "exposed_source": {
+        "object": "BoxA",
+        "element": "Face5",
+        "intermediate": []
+      },
+      "source_center_mm": [
+        5.0,
+        10.0,
+        0.0
+      ]
+    },
+    {
+      "current": "Face6",
+      "current_center_mm": [
+        10.0,
+        10.0,
+        0.0
+      ],
+      "exposed_source": {
+        "object": "BoxB",
+        "element": "Face3",
+        "intermediate": []
+      },
+      "source_center_mm": [
+        15.0,
+        0.0,
+        2.5
+      ]
+    }
+  ],
+  "checks_passed": [
+    "Native Pad and Pocket expose element maps and history",
+    "Current feature appears on untouched inherited face history",
+    "Cut split face multiplicity is visible through source histories",
+    "Refined MultiFuse loses merged top face's second creator",
+    "Refined MultiFuse leaves invalid Face7..Face10 map indexes",
+    "Fresh MultiFuse configured Refine=True before first build has the same failure",
+    "Native Part::Refine exposes no element map",
+    "Raw Shape.removeSplitter preserves composite mapped names but not full history traversal",
+    "All eight documented object history flag combinations tested; none traverses both merged creators",
+    "UseHasher=False does not repair native MultiFuse refinement maps",
+    "Unhashed raw removeSplitter composite mapped name retains both merged source IDs",
+    "Native history loss and wrong creator correspondence persist after FCStd reopen and fresh rebuild"
+  ],
+  "selector_fidelity_proven": false,
+  "conclusion": "getElementHistory membership is not qCreatedBy; all result objects occur on inherited-face history. Split source multiplicity is available, but refined native MultiFuse exposes incomplete and incorrectly indexed history for merged faces. Raw removeSplitter names retain both sources; the author's documented grammar and UseHasher=False offer a custom parser route. No exact all-creators query adapter is demonstrated by this spike."
+}

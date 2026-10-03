@@ -1,0 +1,79 @@
+# U2 part carrier evidence and decision gate
+
+October 2–3, 2026, America/Los_Angeles. Starting checkout: `main`, `d9efdcc`; the requested U1 increment has not landed. Runtime: portable FreeCAD 1.1.4 (`4fd3bf320d9566a27e60069fc8387448aaa3a094`), Python 3.11, OCCT 7.8.1. The runtime and existing user windows are untouched.
+
+**Selected: one native PartDesign Body per logical part, with versioned native output Bodies and native studio metadata.** Both carriers can produce editable, persistent geometry; native Bodies preserve existing editing workflows and performed much better in the bounded fixture. A second query probe established that `Document.UseHasher=False` exposes composite mapped names containing both source tags after native Body Boolean refinement. The recursive history API alone omits those secondary branches; the selectors adapter reads documented native map provenance. Native FCStd and its dependency graph remain authoritative.
+
+## Reproducible native comparison
+
+`tools/probe_part_model.py` runs in the pinned bundled Python without a GUI. It creates four separated 8×8×6 mm parts, then makes 26 distinct small through cuts: exactly 30 modeled operations. The Body version uses native Sketcher, Pad and Pocket; the alternative uses native Part Extrusion, Compound and Cut. Auxiliary sketches/cutters are counted separately from the 30 operations. Both versions have native studio order/rollback properties on a document group. It checks dimensional editing, native transaction undo/redo, STEP export, save/reopen and complete recompute in a genuinely fresh Python process. The Part chain evaluates the compound of all four solids on every cut; the Body chain evaluates the affected Body. This reflects the proposed carrier distinction, and is a small synthetic fixture rather than a large-model latency guarantee.
+
+| Evidence | One Body per part | One compound result over many parts |
+|---|---:|---:|
+| Modeled operations / final solids | 30 / 4 | 30 / 4 |
+| Native document objects | 97 | 62 |
+| Initial build | 0.87 s | 6.28 s |
+| Three full touched-feature rebuilds | 0.34–0.37 s | 5.56–6.09 s |
+| Final edited aggregate volume | 1553.912836 mm³ | 1553.912836 mm³ |
+| One-transaction depth edit, undo, redo | Passed | Passed |
+| Save, fresh-process reopen, recompute | Passed | Passed |
+| Native order and rollback metadata reopen | Passed | Passed |
+| STEP export | Produced | Produced |
+
+Evidence: `validation/u2-part-model-spike/carrier-result.json` and `fresh-process-reopen.json`. Native fixtures are under the descriptive ignored folder `validation/u2-part-model-spike/native-carrier-fixtures-working/`. The reproduction recipe is:
+
+```powershell
+& .\runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\python.exe -B tools\probe_part_model.py
+& .\runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\python.exe -B tools\probe_part_model.py --refinement
+& .\runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\python.exe -B tools\probe_part_model.py --unhashed-refinement
+```
+
+The spike preserves editable FCStd fixtures and source scripts. The checked reports contain the actual engine revision and local measurements. Generated shape/export fixtures remain outside Git.
+
+## Native composition facts
+
+- This runtime exposes `Body.AllowCompound`. A Pad from two disconnected rectangles fails with it false and produces two valid solids with it true. Disconnected geometry is therefore not an inherent FreeCAD Body limitation. One Body per logical part still provides a better identity and native-editing boundary; putting many parts in one Body requires solid-level identity handling.
+- `Body.BaseFeature = native_part_result` creates a real `PartDesign::FeatureBase`. A split output carried this way accepts an ordinary native PartDesign Fillet. Paired `Part::Common` / `Part::Cut` against a finite bounding halfspace cutter preserve both planar-split halves and follow upstream dimensional edits. Production uses a built-in `PartDesign::Plane`, native attachment and offset expressions, with the `Part::Box` Placement/dimensions driven by that plane. Sketch motion follows after save/reopen/relocation and a fresh-process recompute. Authored oriented planes, planar faces and sketch planes are supported; curved faces and split results containing more than two connected solids reject explicitly.
+- Native `Part::Extrusion`, `Part::Revolution`, `Part::Sweep`, `Part::Loft`, `Part::Cut`, `Part::Common`, `Part::MultiFuse`, `Part::MultiCommon`, `Part::Compound` and `Part::Mirroring` are available C++ document types. Neutral tool creation plus per-part Boolean results therefore has a native representation. Their existence is not evidence that every end condition, merge-scope dialog or typed operation is implemented.
+- A direct `App::Link` assigned as `Body.BaseFeature` fails: the native BaseFeature requires a `Part::Feature`. The proven transform-copy composition is `App::Link → Part::Compound(Links=[link]) → Body.BaseFeature`. It preserves translation and follows upstream dimension edits after fresh-process reopen. A SubShapeBinder directly on the link did not preserve the link transform in this probe.
+- A Body BaseFeature copies a primitive's local shape. A primitive's nonidentity `Placement` must be carried onto the output Body or baked through an appropriate native Compound result. This placement distinction also affects Boolean fixtures and export.
+- Native `PartDesign::ShapeBinder` with `TraceSupport=True` carries a sketch or selected Sweep edge into its actual coordinate frame and follows its containing Body's placement. Unlike a Body-placement expression on a profile wrapper, its native dependency list contains only the source feature; it avoids a cycle through the aggregate Body and its later attached sketches. Input snapshots and private Boolean tool Bodies retain the original native Tip as BaseFeature, preserving its complete native element maps; traced binders supply only world/result-local Placement through native expressions. Using the binder's copied Shape as BaseFeature lost native map ancestry and was rejected. Production tests cover translated/rotated legacy Bodies, owner-rotation changes to extrusion direction, literal and selector Sweep edges after save/reopen and source-pose edits, transform copies and exact current-part STEP placement/volume. The separate query suite proves original native Pad provenance through copy/move/pattern/mirror chains in a fresh process.
+- `Part::Slice` and `Part::BooleanFragments` are not C++ document types. The installed `BOPTools.SplitFeatures.FeatureSlice` does split a native plane into two solids, and native SubShapeBinders / output Bodies accept native fillets on both halves. This exact installed proxy survived save and a fresh-process reopen, recompute, upstream edit and another recompute. It is a possible bounded native-runtime exception, requiring an explicit trust-policy change; arbitrary custom proxies remain unacceptable. The spike's `Solid1` / `Solid2` binder names are disposable probe inputs, **not** a proposed persistent part identity scheme.
+- Native `Body.Tip` rollback and undo work. The production suite proves studio rollback, insertion and forwarding; explicit stable-part input snapshots rebind native BaseFeature links so a later copy incorporates an inserted Add. Delete-part is a native ordered metadata feature that excludes the logical part without destroying dependencies; undo/redo restores it. Current-result filtering prevents exporting earlier Body generations.
+- `PartDesign::Boolean.Group` owns tool Bodies through a GeoFeatureGroup. Sharing one tool Body across multiple target Booleans raises `Object can only be in a single GeoFeatureGroup`. Production creates private native Body wrappers for each Boolean while sharing the actual neutral native tool feature; two-part Remove and multi-target Subtract now pass.
+- Adding `Part::AttachExtensionPython` to a native Box appears to work before save but loses `MapMode`/`AttachmentSupport` on reopen. It is **not used**. The built-in datum Plane plus Box expressions preserves native attachment without a Python proxy.
+
+## Query gate
+
+The runtime exposes Shape `ElementMap`, `ElementReverseMap`, `getElementMappedName`, `getElementIndexedName`, `getElementHistory`, and mapped-name `getElement`; document objects expose recursive `getElementHistory`. Body BaseFeature wrappers, Cut, Compound and installed Slice retain useful mapped face histories. A primitive Box in this runtime has no mapped names until a downstream operation introduces mappings; an empty mapped name must not be treated as a resolved reference. One hundred mapped-name plus history lookups took approximately 0.01–0.02 s per mapped object in the small composition fixture. That measurement excludes complete selector evaluation, adjacency construction and rebuild integration.
+
+`tools/probe_part_model.py --refinement` additionally fuses two genuinely adjacent 10 mm cubes through `PartDesign::Boolean`:
+
+| Native Body Boolean | Faces | Map entries | Invalid face indices | Proven provenance |
+|---|---:|---:|---:|---|
+| `Refine=False` | 10 | 42 | 0 | Separate surviving patches trace their own source |
+| `Refine=True` | 6 | 26 | 0 | Each merged face traces only one original source |
+
+The refined front/top/bottom/back faces cover patches from **both** original cubes, but the recursive native history API lists SourceA and omits SourceB for those merged faces. Save/reopen/recompute preserves that API behavior. Unlike Part MultiFuse in the independent query audit, native Body Boolean updates its maps to the actual six faces, avoiding stale out-of-range indices. The exact default-hasher evidence is `validation/u2-part-model-spike/body-boolean-refinement.json`.
+
+With `Document.UseHasher=False`, the native mapped name expands the merged face into explicit `;:M(...)` secondary branches. The refined top name contains both SourceA and SourceB native object tags, which equal their native object IDs. Save/reopen/recompute preserves both tags. This is recorded in `body-boolean-refinement-unhashed.json`. The production query implementation uses native lineage with entity/type and generation/modification semantics, and rejects unresolved selector intent.
+
+The independent query audit also checks Part-level history and refinement in `tools/probe_query_history.py`. A production `created_by` selector needs an explicit contract for generated, modified, split and merged descendants, and proof that its stored native metadata and kernel lineage reconstruct that contract across upstream topology changes and save/reopen. Treating the single surviving native history as complete creator provenance, storing `FaceN`/`SolidN` as identity, or selecting the nearest face without the authored query would silently substitute geometry. Those shortcuts cannot meet U2.
+
+The created-by gate therefore has a native representation with executable proof, allowing carrier A production work to proceed. Query regressions and the separate query audit remain required; the evidence does not certify arbitrary future FreeCAD operations, imported topology without lineage or unsupported mapping grammar.
+
+## Integration implications after the gate
+
+The Body candidate retains native Sketcher and PartDesign task workflows and the existing `bodies.owner`, explicit Body resolution, STEP-import editing and per-Body validation expectations. Studio metadata can impose one operation order over native features. Neutral Part tools can feed versioned Body outputs while older native objects remain authoritative dependencies. Consumed Body generations would need stable logical part IDs and current-result filtering; blindly exporting every Body would duplicate earlier geometry. Selection, parts-list visibility/color, inspection, preview, checkpoints, recovery and assembly source candidates would all need to use the same current logical results.
+
+The Part compound candidate offers a compact single result chain and straightforward aggregate booleans, but every part is a subsolid requiring explicit stable identity and extraction for native PartDesign editing. It affects more existing Body-based controller, preview, ownership, GUI and tests, and rebuilt substantially more slowly in this fixture. Both carriers require native metadata for studio-wide rollback/order and selector health. None of those metadata choices may become a second editable model graph.
+
+`src/kurtshape/studio.py` now implements the selected native graph. The targeted `PartStudioTests` suite passes 19 tests (36.919 s, final native-map-preserving source): scoped Add, two-part through Remove, Intersect, multi-target Subtract with keep-tools, each split half filleted, upstream dimensional edits, persistent sketch-split attachment, transform/copy, linear/circular patterns and mirror, pattern Add/Remove scope, part appearance across generations, delete undo/redo, rollback insertion/forward/zero, current-result STEP export, recovery of order and rollback, native Revolve/Sweep/Loft tools, selector-backed native up-to-face, posed literal and selector Sweep paths, dynamic standard auto scope, and unsafe native-consumer migration rejection. The full regression suite and rendered GUI validation are separate root-level acceptance gates. No generic proxy trust waiver has been added. Full Dodec conversion remains 0/2.
+
+Auto merge scope is evaluated against every prior current part. Managed rebuilding synchronizes standard neutral-tool Add/Remove/Intersect operations after upstream geometry changes: it retargets native snapshots and Boolean tools, creates or retires native output generations, preserves surviving part IDs and the public operation Name, and rewires later stable-part inputs. Native dimensional fields remain authoritative; request JSON is never used to restore lengths or angles. Tests cover growth and dropping of target parts, primary-part migration, one-step undo/redo and save/reopen followed by another scope change. Through-all bounds update to the evaluated inputs.
+
+A native edit outside a controller transaction reports `auto_merge_scope_changed` until a managed rebuild synchronizes its outputs. A migration that would orphan later native features on a dropped output Body rejects explicitly and rolls back the typed edit. Dynamic whole-part pattern/mirror scope synchronization is not implemented: a changed intended scope is detected and fails closed, requiring the affected operation to be reapplied. The scope evaluator is cached between rebuilds and invalidated by cheap native recompute notifications; it performs no kernel work on idle callbacks. These bounds prevent accepted geometry or export from silently using stale fixed targets.
+
+Other explicit first-implementation bounds: planar face/sketch-plane split with exactly two connected solid halves; New from one connected solid tool; whole-part pattern counts 2–100; no automatic reconstruction of Onshape source features. Multiple-solid New tools, curved split surfaces and split halves containing several disconnected solids fail rather than assigning indexed solid identities.
+
+Final consolidated acceptance passes 141 offline native tests, 4 bridge tests, 22 keyboard tests and 99 actual U2 GUI checks. Both offline and U2 GUI reports record source hashes and unchanged-source gates. The final rendered five-part scene, scoped Through-all preview, split controls and reference-failure display were visually inspected. The separate 30-feature/four-part/11-consumer query fixture measured median 293 ms selector evaluation, 134 ms native recomputation and 431 ms total rebuild across five forced runs. These are bounded local measurements; [project continuity](M1_PROGRESS.md) and [GUI recipe](../validation/u2-part-model/README.md) record the handoff.

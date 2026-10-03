@@ -1,0 +1,23 @@
+{
+  "freecad": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "fresh_process": true,
+  "forced_recompute": true,
+  "creator_face_counts": {
+    "Copy": 6,
+    "Move": 0,
+    "Linear": 12,
+    "Circular": 6,
+    "Mirror": 6,
+    "Pad": 36
+  },
+  "recipe": "tests.test_selector_consumers.SelectorConsumerTests.test_whole_part_generated_instances_keep_creator_identity"
+}

@@ -1,6 +1,6 @@
 # Shared operation contract
 
-The authoritative document is native FreeCAD FCStd. A feature object's `Name` is its stable ID; native Sketcher constraints are parameters and native expressions are dependencies. `KurtShapeProject` stores project UUID, opaque revision, build status and source mapping, without duplicating editable geometry or dimensions. Body resolution uses explicit `body`, the target/support's owning Body, or the sole Body. Several eligible Bodies without a target or explicit ID reject with `ambiguous_body`; assistants never inherit GUI focus.
+The authoritative document is native FreeCAD FCStd. A feature object's `Name` is its stable ID; native Sketcher constraints are parameters and native expressions are dependencies. `KurtShapeProject` stores project UUID, opaque revision, build status and source mapping, without duplicating editable geometry or dimensions. Studio operations additionally persist an ordered native feature list and logical part identities. Body resolution uses explicit `body`, the target/support's owning Body, or the sole current part. Several eligible parts without a target or explicit ID reject with `ambiguous_body`; assistants never inherit GUI focus. Historical and auxiliary Bodies are native dependencies and are excluded from current results.
 
 `Controller.dispatch(request)` returns `{ok:true,result}` or `{ok:false,error:{code,message,...}}`. Successful document operations return inspection including `document_id`, `revision`, native features, `build_status`, measurements and `active_sketch_edit`. Mutations run serially on the GUI thread; the interface does not transport arbitrary executable code.
 
@@ -66,7 +66,7 @@ Successful staged save/open clears the native GUI Modified flag after final insp
 
 New/open and existing-document mutations reject while native graphical editing is active, including solid-feature task dialogs; finish or cancel the graphical edit first. The compatibility error code remains `sketch_edit_active`. Deletion restores the latest surviving solid feature as Body.Tip, or clears Tip when only profiles remain; native undo restores deleted features, references and geometry.
 
-Current limits: no general expression-evaluation request, arbitrary FeatureScript execution, automatic topology guessing, general multi-body conversion or typed operations for every native GUI feature. Face sketches require a retained native planar support; native lost references/rebuild failures are explicit and no frozen placement is substituted. Native GUI tools can create other features in the same authoritative document. **The two supplied Onshape designs remain 0/2 converted**; synthetic subset fixtures do not count as real migrations.
+Current limits: no general expression-evaluation request, arbitrary FeatureScript execution, automatic topology guessing, full source feature-history conversion or typed operations for every native GUI feature. Face sketches require a retained native planar support; native lost references/rebuild failures are explicit and no frozen placement is substituted. Native GUI tools can create other features in the same authoritative document. **The two supplied Onshape designs remain 0/2 converted**; synthetic subset fixtures do not count as real migrations.
 
 The token-authenticated loopback adapter sends the same dispatch requests to the GUI thread; CLI clients read its local session file. It does not configure cloud Onshape access or message another assistant. An actual Claude-client session and reference-backed imported-edit equivalence remain M1 acceptance gaps.
 
@@ -88,3 +88,50 @@ All assembly mutations require the existing current document UUID/revision and b
 | `solve_assembly` | Optional `assembly` | Explicit solve of current native assembly intent |
 
 `rename_feature` additionally accepts supported assembly/instance/joint IDs and preserves internal references. Inspection adds `assembly`; capabilities identify native solver, single-level scope, source snapshot policy and motion units. Undo/redo restore transaction placements and solver evidence without rerunning the solver on idle. Assembly current-solid export includes every occurrence globally transformed once, excludes embedded sources, and rejects a `body` filter. Its sidecar includes the inspected assembly state. Solver failure rolls back typed mutations; unresolved native intent is never current valid geometry. Reopen/recovery uses native persistence and rechecks solving. Arbitrary proxy/cross-document safety remains narrow; this is not a general FCStd trust waiver.
+
+## U2 Part Studio and reference queries — October 2
+
+This section supersedes the earlier multi-body, rollback and preview limitations. Existing single-Body files and requests retain their native behavior. An explicit studio operation, part appearance change or rollback lazily adopts the native feature history; no separate migration file is required. Managed files use `UseHasher=false` so the pinned runtime exposes complete composite element names. Switching that cache mode during attachment completes a native recompute before inspection.
+
+Extrude (`pad`), Remove (`pocket`), `revolve`, `sweep`, `loft` and whole-part patterns accept `operation:"new"|"add"|"remove"|"intersect"` and `merge_scope:"auto"|[part_id,...]`. New makes independent parts. Auto chooses parts intersecting the tool, including contact for Add. An explicit scope limits target parts; it does not clip the tool. Add fuses its connected scoped targets and retains the first target's logical identity. Remove/Intersect preserve each surviving target identity. Disconnected or empty one-part outcomes reject rather than discard solids. Patterns act on generated copies; count includes the retained source. Extrude supports blind, through-all and native up-to-face ends; selectors may supply `up_to_face`. Legacy Pad/Pocket requests omitting studio fields retain their original native path.
+
+Managed rebuilds reevaluate automatic scopes for Extrude, Revolve, Sweep and Loft and update native target/output dependencies in the same transaction. A scope change that would require migrating an unsupported downstream native consumer fails closed. Changed automatic pattern target sets also fail closed and require reapplying the operation. Native edits outside a controller transaction can expose such changes but cannot rewrite authored dependencies; use managed Rebuild. Scope invalidation is cheap and never evaluates geometry on idle ticks.
+
+Through-all `pad` requests require an explicit `operation` or `merge_scope` to enter the studio path. Omitting both rejects rather than silently using a finite legacy Pad. The unified GUI emits the result operation automatically.
+
+| Operation | Arguments beyond shared IDs/revision | Native behavior |
+|---|---|---|
+| `revolve` | `profile`, `axis:{origin:[x,y,z],direction:[x,y,z]}`, `angle`; result fields | Native Part Revolution tool plus native output Body/booleans; angle quantities or radians |
+| `sweep` | `profile`, `path`, optional `frenet`; result fields | Native Part Sweep; native curve feature or geometry reference for the path |
+| `loft` | Ordered `sections:[sketch_id,...]`, optional `ruled`, `closed`; result fields | Native Part Loft over at least two sections |
+| `boolean_parts` | `targets`, `tools`, `kind:"union"|"subtract"|"intersect"`, `keep_tools=false` | Independent native inputs; scoped union or per-target subtract/intersection |
+| `split_part` | `part`; one of `plane:{origin,normal}`, planar `face` reference, `sketch` | Both halfspace results become editable parts; negative side retains source identity, positive side gets a new identity. Sketch means its plane |
+| `transform_part` | `part`, `translation`, `rotation:{axis,angle}` or `coordinate_system:{origin,x,y,z}`, `copy=false` | Native linked composition; proper orthonormal coordinate systems required; copy retains source |
+| `delete_part` | `part` | Native history intent consumes the current part without destroying upstream dependencies; undo restores it |
+| `linear_pattern_parts` | `parts`, `direction`, `spacing`, `count`; result fields | Native placed copies and result operations |
+| `circular_pattern_parts` | `parts`, `axis`, `angle`, `count`; result fields | Native rotated copies; a full turn excludes the coincident last instance |
+| `mirror_parts` | `parts`, `origin`, `normal`; result fields | Native Part Mirroring and result operations |
+| `rollback` | Zero-based `index` between 0 and feature-count | Moves every current Tip to the shared history position; later features are held. Insertions enter at the bar; roll forward rewires recorded stable part inputs |
+| `set_part_appearance` | `part`, optional `name`, `visible`, RGB `color:[0..1,0..1,0..1]` | Native part metadata and view appearance; visibility never removes a part from export |
+| `fillet` / `chamfer` | Optional `part`, `edges:[reference,...]`, `radius` / `size` | Native PartDesign feature on the current part |
+| `shell` | Optional `part`, `faces:[reference,...]`, `thickness`, `reversed=false` | Native PartDesign Thickness |
+| `project_geometry` | `sketch`, `references:[edge_reference,...]` | Native external geometry slots; selector rebinding preserves constraints and projection/intersection mode |
+| `resolve_selector` | `selector`; read-only, no revision required | Matched native elements with part identity and geometry summary |
+
+All modeling requests use the existing transaction/revision/edit guards. Every accepted command is one undo step; rejection restores native objects and revision. `preview.proposal` accepts these modeling operations and legacy operations except rebuild, uses a disposable native clone, and returns current-part measurements. Commit remains a fresh operation against the preview's base revision. Inspect adds `studio:{enabled,feature_order,rollback_index,parts}`; each part has stable `id`, current native `body`/`feature`, name, visibility and color. Features expose `rolled_back`, `selectors` and `reference_health`. Export includes each current part once, with `included_part_ids` alongside native Body IDs. Assembly source selection uses the same current-result enumeration.
+
+A geometry reference accepts `{feature,subelement:"FaceN"|"EdgeN"|"VertexN"}` or an authored selector (bare, or `{selector:...}`). Native names remain supported explicit references, not inferred persistent identities. Selector syntax:
+
+```json
+{"kind":"created_by","feature":"Extrude","entity_type":"face","cap":"end"}
+{"kind":"owned_by","part":"Body","entity_type":"edge"}
+{"kind":"geometry","geometry":"plane","query":{"kind":"owned_by","part":"Body"}}
+{"kind":"intersection","queries":[{"kind":"created_by","feature":"Extrude","cap":"end"},{"kind":"owned_by","part":"Body"}]}
+{"kind":"closest","point":[10,5,8],"query":{"kind":"geometry","geometry":"plane"}}
+```
+
+`entity_type` is face/edge/vertex; created-by cap is start/end/side. Set operations are `union`/`intersection` with `queries`, or `subtraction` with `query` and `subtract`. `adjacent` takes `query`, target `entity_type` and edge/vertex `adjacency`; `tangent` expands an edge query. `parallel` takes `query`, `direction` and optional `allow_antiparallel`; `closest` preserves all ties. Geometry filters include plane, cylinder, cone, sphere, torus, line, circle, ellipse, spline and point. Unknown schema/history rejects. No nth-element selector exists.
+
+Consumers store `QueryInputs` on their native feature and evaluate at that feature's regeneration position, after dependencies and before consumer recompute. Native resolved links are caches. Rebinding, input health and a bounded `QueryResolutionLog` occur inside the mutation transaction. Health is healthy/missing/ambiguous; unknown history is missing with its error code. A missing or ambiguous reference retains the last native link and never substitutes another element. Such intent has no current measurements and blocks export. A rejected typed edit rolls back; unresolved intent introduced through native editing remains visible until repaired. Evaluation compares the actual native property with the selector result, so manually changed native links cannot remain healthy merely because their JSON cache still matches. Native consumer recompute diagnoses that divergence without starting a nested kernel rebuild; managed Rebuild restores the authored query. Native recompute without an adapter transaction may refresh derived health but cannot change authored links; changed resolution then requires managed Rebuild. Idle inspection reads cached health without query evaluation.
+
+Created-by traces the pinned FreeCAD 1.1.4 raw element-name branches and explicit native whole-part generator metadata, distinguishing generated/modified topology and retaining all tested refined merge ancestors. Unsupported hashed, stale or unknown maps fail closed. Caps use native extrusion/revolution/loft/sweep geometry; this is local OCCT lineage, not an Onshape topology-ID translation. GUI geometry picks author ownership, geometry and closest-point predicates explicitly; a tie becomes ambiguous. Native link/constraint parameters remain authoritative. Diagnostics records selector evaluation separately from total rebuild. See [carrier evidence](PART_MODEL_DECISION.md), [parity limits](ATLAS_PARITY.md) and [walkthrough](U2_WALKTHROUGH.md).

@@ -1,0 +1,395 @@
+{
+  "use_hasher": false,
+  "cases": [
+    {
+      "refine": false,
+      "faces": [
+        {
+          "indexed": "Face1",
+          "mapped": "Face1;:H77e,F;:H789,F",
+          "center": [
+            0.0,
+            5.0,
+            5.0
+          ],
+          "raw_native_tag_ids": [
+            1918,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face1;:H77e,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face1;:H77e,F', []), (<Part::Feature>, 'Face1', [])]"
+        },
+        {
+          "indexed": "Face2",
+          "mapped": "Face3;:H77e,F;:M;FUS;:H77e:7,F;:H789,F",
+          "center": [
+            5.0,
+            0.0,
+            5.0
+          ],
+          "raw_native_tag_ids": [
+            1918,
+            1918,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face3;:H77e,F;:M;FUS;:H77e:7,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face3;:H77e,F;:M;FUS;:H77e:7,F', ['Face3;:H77e,F']), (<Part::Feature>, 'Face3', [])]"
+        },
+        {
+          "indexed": "Face3",
+          "mapped": "Face6;:H77e,F;:M;FUS;:H77e:7,F;:H789,F",
+          "center": [
+            5.0,
+            5.0,
+            10.0
+          ],
+          "raw_native_tag_ids": [
+            1918,
+            1918,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face6;:H77e,F;:M;FUS;:H77e:7,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face6;:H77e,F;:M;FUS;:H77e:7,F', ['Face6;:H77e,F']), (<Part::Feature>, 'Face6', [])]"
+        },
+        {
+          "indexed": "Face4",
+          "mapped": "Face4;:H77e,F;:M;FUS;:H77e:7,F;:H789,F",
+          "center": [
+            5.0,
+            10.0,
+            5.0
+          ],
+          "raw_native_tag_ids": [
+            1918,
+            1918,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face4;:H77e,F;:M;FUS;:H77e:7,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face4;:H77e,F;:M;FUS;:H77e:7,F', ['Face4;:H77e,F']), (<Part::Feature>, 'Face4', [])]"
+        },
+        {
+          "indexed": "Face5",
+          "mapped": "Face5;:H77e,F;:M;FUS;:H77e:7,F;:H789,F",
+          "center": [
+            5.0,
+            5.0,
+            0.0
+          ],
+          "raw_native_tag_ids": [
+            1918,
+            1918,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face5;:H77e,F;:M;FUS;:H77e:7,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face5;:H77e,F;:M;FUS;:H77e:7,F', ['Face5;:H77e,F']), (<Part::Feature>, 'Face5', [])]"
+        },
+        {
+          "indexed": "Face6",
+          "mapped": "Face3;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F;:H789,F",
+          "center": [
+            15.0,
+            0.0,
+            5.0
+          ],
+          "raw_native_tag_ids": [
+            1919,
+            1939,
+            1930,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face3;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face3;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F', []), (<body object>, 'Face3;:H77f,F;:H793:8,F', []), (<PartDesign::FeatureBase>, 'Face3;:H77f,F', []), (<Part::Feature>, 'Face3', [])]"
+        },
+        {
+          "indexed": "Face7",
+          "mapped": "Face6;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F;:H789,F",
+          "center": [
+            15.0,
+            5.0,
+            10.0
+          ],
+          "raw_native_tag_ids": [
+            1919,
+            1939,
+            1930,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face6;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face6;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F', []), (<body object>, 'Face6;:H77f,F;:H793:8,F', []), (<PartDesign::FeatureBase>, 'Face6;:H77f,F', []), (<Part::Feature>, 'Face6', [])]"
+        },
+        {
+          "indexed": "Face8",
+          "mapped": "Face4;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F;:H789,F",
+          "center": [
+            15.0,
+            10.0,
+            5.0
+          ],
+          "raw_native_tag_ids": [
+            1919,
+            1939,
+            1930,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face4;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face4;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F', []), (<body object>, 'Face4;:H77f,F;:H793:8,F', []), (<PartDesign::FeatureBase>, 'Face4;:H77f,F', []), (<Part::Feature>, 'Face4', [])]"
+        },
+        {
+          "indexed": "Face9",
+          "mapped": "Face5;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F;:H789,F",
+          "center": [
+            15.0,
+            5.0,
+            0.0
+          ],
+          "raw_native_tag_ids": [
+            1919,
+            1939,
+            1930,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face5;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face5;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F', []), (<body object>, 'Face5;:H77f,F;:H793:8,F', []), (<PartDesign::FeatureBase>, 'Face5;:H77f,F', []), (<Part::Feature>, 'Face5', [])]"
+        },
+        {
+          "indexed": "Face10",
+          "mapped": "Face2;:H77f,F;:H793:8,F;:H78a,F;:H789,F",
+          "center": [
+            20.0,
+            5.0,
+            5.0
+          ],
+          "raw_native_tag_ids": [
+            1919,
+            1939,
+            1930,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face2;:H77f,F;:H793:8,F;:H78a,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face2;:H77f,F;:H793:8,F;:H78a,F', []), (<body object>, 'Face2;:H77f,F;:H793:8,F', []), (<PartDesign::FeatureBase>, 'Face2;:H77f,F', []), (<Part::Feature>, 'Face2', [])]"
+        }
+      ],
+      "stale_face_maps": [],
+      "volume": 1999.9999999999993,
+      "map_size": 42
+    },
+    {
+      "refine": true,
+      "faces": [
+        {
+          "indexed": "Face1",
+          "mapped": "Face2;:H77f,F;:H793:8,F;:H78a,F;:H789,F",
+          "center": [
+            20.0,
+            5.0,
+            5.0
+          ],
+          "raw_native_tag_ids": [
+            1919,
+            1939,
+            1930,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face2;:H77f,F;:H793:8,F;:H78a,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face2;:H77f,F;:H793:8,F;:H78a,F', []), (<body object>, 'Face2;:H77f,F;:H793:8,F', []), (<PartDesign::FeatureBase>, 'Face2;:H77f,F', []), (<Part::Feature>, 'Face2', [])]"
+        },
+        {
+          "indexed": "Face2",
+          "mapped": "Face3;:H77e,F;:M;FUS;:H77e:7,F;:M(Face3;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F;:H789,F",
+          "center": [
+            10.0,
+            0.0,
+            5.0
+          ],
+          "raw_native_tag_ids": [
+            1918,
+            1918,
+            1919,
+            1939,
+            1930,
+            1918,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face3;:H77e,F;:M;FUS;:H77e:7,F;:M(Face3;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face3;:H77e,F;:M;FUS;:H77e:7,F;:M(Face3;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F', []), (<Part::Feature>, 'Face3;:H77e,F;:M;FUS;:H77e:7,F;:M(Face3;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F)', [])]"
+        },
+        {
+          "indexed": "Face3",
+          "mapped": "Face1;:H77e,F;:H789,F",
+          "center": [
+            0.0,
+            5.0,
+            5.0
+          ],
+          "raw_native_tag_ids": [
+            1918,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face1;:H77e,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face1;:H77e,F', []), (<Part::Feature>, 'Face1', [])]"
+        },
+        {
+          "indexed": "Face4",
+          "mapped": "Face6;:H77e,F;:M;FUS;:H77e:7,F;:M(Face6;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F;:H789,F",
+          "center": [
+            10.0,
+            5.0,
+            10.0
+          ],
+          "raw_native_tag_ids": [
+            1918,
+            1918,
+            1919,
+            1939,
+            1930,
+            1918,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face6;:H77e,F;:M;FUS;:H77e:7,F;:M(Face6;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face6;:H77e,F;:M;FUS;:H77e:7,F;:M(Face6;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F', []), (<Part::Feature>, 'Face6;:H77e,F;:M;FUS;:H77e:7,F;:M(Face6;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F)', [])]"
+        },
+        {
+          "indexed": "Face5",
+          "mapped": "Face4;:H77e,F;:M;FUS;:H77e:7,F;:M(Face4;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F;:H789,F",
+          "center": [
+            10.0,
+            10.0,
+            5.0
+          ],
+          "raw_native_tag_ids": [
+            1918,
+            1918,
+            1919,
+            1939,
+            1930,
+            1918,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face4;:H77e,F;:M;FUS;:H77e:7,F;:M(Face4;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face4;:H77e,F;:M;FUS;:H77e:7,F;:M(Face4;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F', []), (<Part::Feature>, 'Face4;:H77e,F;:M;FUS;:H77e:7,F;:M(Face4;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F)', [])]"
+        },
+        {
+          "indexed": "Face6",
+          "mapped": "Face5;:H77e,F;:M;FUS;:H77e:7,F;:M(Face5;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F;:H789,F",
+          "center": [
+            10.0,
+            5.0,
+            0.0
+          ],
+          "raw_native_tag_ids": [
+            1918,
+            1918,
+            1919,
+            1939,
+            1930,
+            1918,
+            1929
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face5;:H77e,F;:M;FUS;:H77e:7,F;:M(Face5;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F;:H789,F', []), (<PartDesign::FeatureBase>, 'Face5;:H77e,F;:M;FUS;:H77e:7,F;:M(Face5;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F', []), (<Part::Feature>, 'Face5;:H77e,F;:M;FUS;:H77e:7,F;:M(Face5;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F)', [])]"
+        }
+      ],
+      "stale_face_maps": [],
+      "volume": 1999.9999999999995,
+      "map_size": 26
+    }
+  ],
+  "save_reopen_recompute": true,
+  "reopen_face2_history_ids": [
+    "BodyUnion",
+    "BaseFeature",
+    "SourceA"
+  ],
+  "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\u2-part-model-spike\\native-carrier-fixtures-working\\body-boolean-refinement-unhashed.FCStd",
+  "reopen_top_face_mapped_name": "Face6;:H77e,F;:M;FUS;:H77e:7,F;:M(Face6;:H77f,F;:H793:8,F;:M;FUS;:H78a:7,F);RFI;:H77e:31,F;:H789,F",
+  "reopen_top_face_raw_native_tag_ids": [
+    1918,
+    1918,
+    1919,
+    1939,
+    1930,
+    1918,
+    1929
+  ],
+  "reopen_source_ids": {
+    "SourceA": 1918,
+    "SourceB": 1919
+  },
+  "limit": "Recursive history returns one lineage. Unhashed composite mapped names retain both source tags; no production provenance parser is implemented."
+}

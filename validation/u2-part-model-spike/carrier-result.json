@@ -1,0 +1,288 @@
+{
+  "FreeCAD": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "OCCT": "7.8.1",
+  "gui_up": 0,
+  "bodies": {
+    "creation_seconds": 0.8672054000198841,
+    "rebuild_seconds": [
+      0.35555550013668835,
+      0.37321519991382957,
+      0.34125569998286664
+    ],
+    "operations": 30,
+    "parts": 4,
+    "native_objects": 97,
+    "baseline_volume": 1491.8920391435993,
+    "edited_volume": 1553.912835771838,
+    "undo_redo": true,
+    "results": [
+      {
+        "id": "Part0",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 434.14557639766923,
+        "valid": true,
+        "element_map_size": 68
+      },
+      {
+        "id": "Part1",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 372.1247797694306,
+        "valid": true,
+        "element_map_size": 68
+      },
+      {
+        "id": "Part2",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 373.821239802369,
+        "valid": true,
+        "element_map_size": 62
+      },
+      {
+        "id": "Part3",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 373.8212398023691,
+        "valid": true,
+        "element_map_size": 62
+      }
+    ],
+    "order_persisted_on_native_metadata": [
+      "Create0",
+      "Create1",
+      "Create2",
+      "Create3",
+      "Cut0",
+      "Cut1",
+      "Cut2",
+      "Cut3",
+      "Cut4",
+      "Cut5",
+      "Cut6",
+      "Cut7",
+      "Cut8",
+      "Cut9",
+      "Cut10",
+      "Cut11",
+      "Cut12",
+      "Cut13",
+      "Cut14",
+      "Cut15",
+      "Cut16",
+      "Cut17",
+      "Cut18",
+      "Cut19",
+      "Cut20",
+      "Cut21",
+      "Cut22",
+      "Cut23",
+      "Cut24",
+      "Cut25"
+    ],
+    "result_ids": [
+      "Part0",
+      "Part1",
+      "Part2",
+      "Part3"
+    ],
+    "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\u2-part-model-spike\\native-carrier-fixtures-working\\bodies.FCStd"
+  },
+  "compound": {
+    "creation_seconds": 6.283772900002077,
+    "rebuild_seconds": [
+      6.092103200033307,
+      5.561713600065559,
+      5.628307699924335
+    ],
+    "operations": 30,
+    "parts": 4,
+    "native_objects": 62,
+    "baseline_volume": 1491.8920391435995,
+    "edited_volume": 1553.9128357718373,
+    "undo_redo": true,
+    "results": [
+      {
+        "id": "Cut25",
+        "type": "Part::Cut",
+        "status": "Valid",
+        "solids": 4,
+        "volume": 1553.9128357718373,
+        "valid": true,
+        "element_map_size": 276
+      }
+    ],
+    "order_persisted_on_native_metadata": [
+      "Create0",
+      "Create1",
+      "Create2",
+      "Create3",
+      "Cut0",
+      "Cut1",
+      "Cut2",
+      "Cut3",
+      "Cut4",
+      "Cut5",
+      "Cut6",
+      "Cut7",
+      "Cut8",
+      "Cut9",
+      "Cut10",
+      "Cut11",
+      "Cut12",
+      "Cut13",
+      "Cut14",
+      "Cut15",
+      "Cut16",
+      "Cut17",
+      "Cut18",
+      "Cut19",
+      "Cut20",
+      "Cut21",
+      "Cut22",
+      "Cut23",
+      "Cut24",
+      "Cut25"
+    ],
+    "result_ids": [
+      "Cut25"
+    ],
+    "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\u2-part-model-spike\\native-carrier-fixtures-working\\compound.FCStd"
+  },
+  "compositions": {
+    "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\u2-part-model-spike\\native-carrier-fixtures-working\\compositions.FCStd",
+    "result_ids": [
+      "Half0",
+      "Half1",
+      "PositiveHalfBody",
+      "NegativeHalfBody",
+      "TransformedPart",
+      "Mirror"
+    ],
+    "installed_slice_proxy": "BOPTools.SplitFeatures.FeatureSlice",
+    "split_solids": 2,
+    "split_then_native_fillets": [
+      {
+        "id": "Half0",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 999.4634954084931,
+        "valid": true,
+        "element_map_size": 32
+      },
+      {
+        "id": "Half1",
+        "type": "PartDesign::Body",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 1199.3561944901928,
+        "valid": true,
+        "element_map_size": 32
+      }
+    ],
+    "native_planar_split": [
+      {
+        "id": "PositiveHalf",
+        "type": "Part::Common",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 1199.9999999999998,
+        "valid": true,
+        "element_map_size": 26
+      },
+      {
+        "id": "NegativeHalf",
+        "type": "Part::Cut",
+        "status": "Valid",
+        "solids": 1,
+        "volume": 999.9999999999998,
+        "valid": true,
+        "element_map_size": 26
+      }
+    ],
+    "transformed_body": {
+      "id": "TransformedPart",
+      "type": "PartDesign::Body",
+      "status": "Valid",
+      "solids": 1,
+      "volume": 2199.9999999999995,
+      "valid": true,
+      "element_map_size": 26
+    },
+    "mirror": {
+      "id": "Mirror",
+      "type": "Part::Mirroring",
+      "status": "Valid",
+      "solids": 1,
+      "volume": 2199.9999999999995,
+      "valid": true,
+      "element_map_size": 26
+    },
+    "native_tip_rollback_undo": true,
+    "delete_metadata_undo": true,
+    "element_maps": [
+      {
+        "object": "Source",
+        "map_size": 0,
+        "mapped_face": "",
+        "indexed_face": "Face",
+        "history": "[(<Part::Feature>, '', [])]",
+        "100_resolution_seconds": 0.007528499932959676
+      },
+      {
+        "object": "Slice",
+        "map_size": 43,
+        "mapped_face": "Face1;:H7b4,F;:H,F;:H:5,F",
+        "indexed_face": "Face1",
+        "history": "[(<Part::Feature>, 'Face1;:H7b4,F;:H,F;:H:5,F', []), (<Part::Feature>, 'Face1', [])]",
+        "100_resolution_seconds": 0.01175919990055263
+      },
+      {
+        "object": "PositiveHalf",
+        "map_size": 26,
+        "mapped_face": "Face3;:M;CMN;:H7b4:7,F",
+        "indexed_face": "Face1",
+        "history": "[(<Part::Feature>, 'Face3;:M;CMN;:H7b4:7,F', []), (<Part::Feature>, 'Face3', [])]",
+        "100_resolution_seconds": 0.01273859990760684
+      },
+      {
+        "object": "TransformedShape",
+        "map_size": 26,
+        "mapped_face": "Face1;:H7b4,F",
+        "indexed_face": "Face1",
+        "history": "[(<Part::Feature>, 'Face1;:H7b4,F', []), (<Part::Feature>, 'Face1', [])]",
+        "100_resolution_seconds": 0.010626200120896101
+      },
+      {
+        "object": "TransformedPart",
+        "map_size": 26,
+        "mapped_face": "Face1;:H7b4,F;:H7e7:8,F;:H7f1:12,F",
+        "indexed_face": "Face1",
+        "history": "[(<body object>, 'Face1;:H7b4,F;:H7e7:8,F;:H7f1:12,F', []), (<PartDesign::FeatureBase>, 'Face1;:H7b4,F;:H7e7:8,F', []), (<Part::Feature>, 'Face1;:H7b4,F', []), (<Part::Feature>, 'Face1', [])]",
+        "100_resolution_seconds": 0.023470799904316664
+      }
+    ],
+    "indexed_solid_binders_are_probe_only": true
+  },
+  "fresh_process": {
+    "returncode": 0,
+    "stdout": "{\"fresh_process_reopen\": \"passed\", \"fixtures\": 3}\n",
+    "stderr": ""
+  },
+  "passed": true
+}

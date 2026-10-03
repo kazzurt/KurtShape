@@ -1,0 +1,280 @@
+{
+  "cases": [
+    {
+      "refine": false,
+      "faces": [
+        {
+          "indexed": "Face1",
+          "mapped": "Face1;:H1240,F;:H124b,F",
+          "center": [
+            0.0,
+            5.0,
+            5.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face1;:H1240,F;:H124b,F', []), (<PartDesign::FeatureBase>, 'Face1;:H1240,F', []), (<Part::Feature>, 'Face1', [])]"
+        },
+        {
+          "indexed": "Face2",
+          "mapped": "#11:3;:M;FUS;:H1240:7,F;:H124b,F",
+          "center": [
+            5.0,
+            0.0,
+            5.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#11:3;:M;FUS;:H1240:7,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#11:3;:M;FUS;:H1240:7,F', ['Face3;:H1240,F']), (<Part::Feature>, 'Face3', [])]"
+        },
+        {
+          "indexed": "Face3",
+          "mapped": "#11:6;:M;FUS;:H1240:7,F;:H124b,F",
+          "center": [
+            5.0,
+            5.0,
+            10.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#11:6;:M;FUS;:H1240:7,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#11:6;:M;FUS;:H1240:7,F', ['Face6;:H1240,F']), (<Part::Feature>, 'Face6', [])]"
+        },
+        {
+          "indexed": "Face4",
+          "mapped": "#11:4;:M;FUS;:H1240:7,F;:H124b,F",
+          "center": [
+            5.0,
+            10.0,
+            5.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#11:4;:M;FUS;:H1240:7,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#11:4;:M;FUS;:H1240:7,F', ['Face4;:H1240,F']), (<Part::Feature>, 'Face4', [])]"
+        },
+        {
+          "indexed": "Face5",
+          "mapped": "#11:5;:M;FUS;:H1240:7,F;:H124b,F",
+          "center": [
+            5.0,
+            5.0,
+            0.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#11:5;:M;FUS;:H1240:7,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#11:5;:M;FUS;:H1240:7,F', ['Face5;:H1240,F']), (<Part::Feature>, 'Face5', [])]"
+        },
+        {
+          "indexed": "Face6",
+          "mapped": "#9:3;:M;FUS;:H124c:7,F;:H124b,F",
+          "center": [
+            15.0,
+            0.0,
+            5.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#9:3;:M;FUS;:H124c:7,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#9:3;:M;FUS;:H124c:7,F', []), (<body object>, 'Face3;:H1241,F;:H1255:9,F', []), (<PartDesign::FeatureBase>, 'Face3;:H1241,F', []), (<Part::Feature>, 'Face3', [])]"
+        },
+        {
+          "indexed": "Face7",
+          "mapped": "#9:6;:M;FUS;:H124c:7,F;:H124b,F",
+          "center": [
+            15.0,
+            5.0,
+            10.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#9:6;:M;FUS;:H124c:7,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#9:6;:M;FUS;:H124c:7,F', []), (<body object>, 'Face6;:H1241,F;:H1255:9,F', []), (<PartDesign::FeatureBase>, 'Face6;:H1241,F', []), (<Part::Feature>, 'Face6', [])]"
+        },
+        {
+          "indexed": "Face8",
+          "mapped": "#9:4;:M;FUS;:H124c:7,F;:H124b,F",
+          "center": [
+            15.0,
+            10.0,
+            5.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#9:4;:M;FUS;:H124c:7,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#9:4;:M;FUS;:H124c:7,F', []), (<body object>, 'Face4;:H1241,F;:H1255:9,F', []), (<PartDesign::FeatureBase>, 'Face4;:H1241,F', []), (<Part::Feature>, 'Face4', [])]"
+        },
+        {
+          "indexed": "Face9",
+          "mapped": "#9:5;:M;FUS;:H124c:7,F;:H124b,F",
+          "center": [
+            15.0,
+            5.0,
+            0.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#9:5;:M;FUS;:H124c:7,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#9:5;:M;FUS;:H124c:7,F', []), (<body object>, 'Face5;:H1241,F;:H1255:9,F', []), (<PartDesign::FeatureBase>, 'Face5;:H1241,F', []), (<Part::Feature>, 'Face5', [])]"
+        },
+        {
+          "indexed": "Face10",
+          "mapped": "#9:2;:H124c,F;:H124b,F",
+          "center": [
+            20.0,
+            5.0,
+            5.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#9:2;:H124c,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#9:2;:H124c,F', []), (<body object>, 'Face2;:H1241,F;:H1255:9,F', []), (<PartDesign::FeatureBase>, 'Face2;:H1241,F', []), (<Part::Feature>, 'Face2', [])]"
+        }
+      ],
+      "stale_face_maps": [],
+      "volume": 1999.9999999999993,
+      "map_size": 42
+    },
+    {
+      "refine": true,
+      "faces": [
+        {
+          "indexed": "Face1",
+          "mapped": "#9:2;:H124c,F;:H124b,F",
+          "center": [
+            20.0,
+            5.0,
+            5.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "BodyB",
+            "BaseFeature001",
+            "SourceB"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#9:2;:H124c,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#9:2;:H124c,F', []), (<body object>, 'Face2;:H1241,F;:H1255:9,F', []), (<PartDesign::FeatureBase>, 'Face2;:H1241,F', []), (<Part::Feature>, 'Face2', [])]"
+        },
+        {
+          "indexed": "Face2",
+          "mapped": "#20:3;:M#1e;RFI;:H1240:a,F;:H124b,F",
+          "center": [
+            10.0,
+            0.0,
+            5.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#20:3;:M#1e;RFI;:H1240:a,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#20:3;:M#1e;RFI;:H1240:a,F', ['#11:3;:M;FUS;:H1240:7,F', 'Face3;:H1240,F']), (<Part::Feature>, 'Face3', [])]"
+        },
+        {
+          "indexed": "Face3",
+          "mapped": "Face1;:H1240,F;:H124b,F",
+          "center": [
+            0.0,
+            5.0,
+            5.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, 'Face1;:H1240,F;:H124b,F', []), (<PartDesign::FeatureBase>, 'Face1;:H1240,F', []), (<Part::Feature>, 'Face1', [])]"
+        },
+        {
+          "indexed": "Face4",
+          "mapped": "#20:6;:M#21;RFI;:H1240:a,F;:H124b,F",
+          "center": [
+            10.0,
+            5.0,
+            10.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#20:6;:M#21;RFI;:H1240:a,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#20:6;:M#21;RFI;:H1240:a,F', ['#11:6;:M;FUS;:H1240:7,F', 'Face6;:H1240,F']), (<Part::Feature>, 'Face6', [])]"
+        },
+        {
+          "indexed": "Face5",
+          "mapped": "#20:4;:M#22;RFI;:H1240:a,F;:H124b,F",
+          "center": [
+            10.0,
+            10.0,
+            5.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#20:4;:M#22;RFI;:H1240:a,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#20:4;:M#22;RFI;:H1240:a,F', ['#11:4;:M;FUS;:H1240:7,F', 'Face4;:H1240,F']), (<Part::Feature>, 'Face4', [])]"
+        },
+        {
+          "indexed": "Face6",
+          "mapped": "#20:5;:M#23;RFI;:H1240:a,F;:H124b,F",
+          "center": [
+            10.0,
+            5.0,
+            0.0
+          ],
+          "history_ids": [
+            "BodyUnion",
+            "BaseFeature",
+            "SourceA"
+          ],
+          "history": "[(<PartDesign::Boolean>, '#20:5;:M#23;RFI;:H1240:a,F;:H124b,F', []), (<PartDesign::FeatureBase>, '#20:5;:M#23;RFI;:H1240:a,F', ['#11:5;:M;FUS;:H1240:7,F', 'Face5;:H1240,F']), (<Part::Feature>, 'Face5', [])]"
+        }
+      ],
+      "stale_face_maps": [],
+      "volume": 1999.9999999999995,
+      "map_size": 26
+    }
+  ],
+  "save_reopen_recompute": true,
+  "reopen_face2_history_ids": [
+    "BodyUnion",
+    "BaseFeature",
+    "SourceA"
+  ],
+  "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\u2-part-model-spike\\native-carrier-fixtures-working\\body-boolean-refinement.FCStd",
+  "limit": "Merged refined faces expose one original source lineage, not all contributing original creators."
+}

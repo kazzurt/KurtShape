@@ -1,0 +1,142 @@
+{
+  "passed": true,
+  "checks": [
+    "Two native Bodies appear as two selectable parts",
+    "Body chooser retains both native IDs",
+    "Shared displayed history contains both Pads",
+    "FirstPad: native selection from actual history click",
+    "Pad Length is editable in production parameter editor",
+    "two-parts-native-parameters: actual rendered main window",
+    "Dimension edit changes only its owning part",
+    "Undo restores its owning part",
+    "PreviewProfile: native selection from actual history click",
+    "Preview evaluates selected Body in two-part document",
+    "Preview shows actual scenegraph ghost",
+    "Preview preserves both parts and undo history",
+    "two-parts-extrude-preview: actual rendered main window",
+    "Cancel removes ghost and retains accepted parts",
+    "Split creates two valid one-solid output Bodies",
+    "Output Bodies retain editable native boolean links",
+    "Split halves partition source volume",
+    "Shared history retains split composition and output features",
+    "native-split-output-bodies: actual rendered main window",
+    "Native fillet rebuilds on split output Body",
+    "SplitLeftFillet: native selection from actual history click",
+    "Fillet opens actual native editable Tasks",
+    "Native Tasks and KurtShape history remain visible",
+    "split-output-native-fillet-task: actual rendered main window",
+    "Composition saves as editable native FCStd"
+  ],
+  "screens": [
+    "two-parts-native-parameters.png",
+    "two-parts-extrude-preview.png",
+    "native-split-output-bodies.png",
+    "split-output-native-fillet-task.png"
+  ],
+  "method": "Separate hidden FreeCAD process/profile; actual production Panel, native Tasks, Qt mouse events and disposable native preview.",
+  "limits": "Carrier spike only. Production shell has no studio consumed-part metadata or rollback bar. Common/Cut clipping demonstrates plane-split composition, not a generalized split tool. Python networking is blocked; native C++ networking is not intercepted.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "runtime_profile": "runtime\\u2-part-model-spike-gui-validation",
+  "raw_shell_parts": [
+    "Body",
+    "Second part",
+    "Split left",
+    "Split right",
+    "SplitLeft · split composition",
+    "SplitRight · split composition"
+  ],
+  "consumed_part_limit": "The unmodified shell displays six results: the source Body, the unchanged second Body, two output Bodies and their two standalone Boolean carriers. Only three are semantic current parts. Studio metadata must designate consumed sources/internal carriers before part counting or export.",
+  "native_task_widgets": [
+    {
+      "class": "QSint::ActionLabel",
+      "object": "",
+      "text": "Fillet Parameters"
+    },
+    {
+      "class": "QLabel",
+      "object": "",
+      "text": ""
+    },
+    {
+      "class": "QToolButton",
+      "object": "buttonRefSel",
+      "text": "Select"
+    },
+    {
+      "class": "QLabel",
+      "object": "label",
+      "text": "Radius"
+    },
+    {
+      "class": "Gui::QuantitySpinBox",
+      "object": "filletRadius",
+      "text": "0.70 mm"
+    },
+    {
+      "class": "ExpressionLabel",
+      "object": "",
+      "text": ""
+    },
+    {
+      "class": "QCheckBox",
+      "object": "checkBoxUseAllEdges",
+      "text": "Use all edges"
+    },
+    {
+      "class": "QSint::ActionLabel",
+      "object": "",
+      "text": "Preview"
+    },
+    {
+      "class": "QLabel",
+      "object": "",
+      "text": ""
+    },
+    {
+      "class": "QCheckBox",
+      "object": "showFinalCheckBox",
+      "text": "Show final result"
+    },
+    {
+      "class": "QCheckBox",
+      "object": "showTransparentPreviewCheckBox",
+      "text": "Show preview overlay"
+    },
+    {
+      "class": "QPushButton",
+      "object": "",
+      "text": "OK"
+    },
+    {
+      "class": "QPushButton",
+      "object": "",
+      "text": "Cancel"
+    },
+    {
+      "class": "Gui::OverlayToolButton",
+      "object": "OBTN Overlay",
+      "text": ""
+    },
+    {
+      "class": "Gui::OverlayToolButton",
+      "object": "OBTN Float",
+      "text": ""
+    }
+  ],
+  "fixture": "runtime\\u2-part-model-spike-gui-validation\\native-carrier-fixtures\\native-split-bodies-with-fillet.FCStd",
+  "seconds": 11.589896699879318,
+  "check_count": 25,
+  "visual_inspection": "All four screenshots visually inspected through view_image. Two separate parts, readable Length editor and blue extrusion ghost are visible. Split sides appear separated; actual native Fillet Tasks shows Edge1 and editable Radius 0.70 mm while history stays visible. Raw Parts (6) and aggregate metrics visibly demonstrate duplicate carrier enumeration, retained as an explicit spike limit."
+}
