@@ -1,0 +1,446 @@
+{
+  "baseline_shell": "565566b",
+  "production_theme_sha256": "d9e39de76678e54d7366313f81c7e1931896fbc617c58ab87c5bfc3423559fe7",
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "checks": [
+    "Actual native parentless notification exists before applying theme",
+    "Existing native popup receives light tooltip background",
+    "Existing native popup receives ink tooltip text",
+    "Existing native popup preserves its size",
+    "Existing native popup has actual white background pixels",
+    "Existing native popup has actual dark ink glyph pixels",
+    "Native popup Show repairs hostile background palette",
+    "Native popup Show repairs hostile foreground palette",
+    "Native popup Show retains size",
+    "Actual future native notification constructed",
+    "Future native popup has white tooltip background",
+    "Future native popup has dark tooltip text",
+    "Future native popup renders white panel and ink glyphs",
+    "Surface selection remains functional",
+    "Ordinary native Qt rich-text tooltip appears",
+    "Ordinary tooltip keeps dark panel and white glyphs",
+    "Theme leaves native theme preferences unchanged"
+  ],
+  "observations": [
+    {
+      "label": "production-existing-before",
+      "class": "Gui::NotificationLabel",
+      "name": "NotificationBox_label",
+      "size": [
+        800,
+        42
+      ],
+      "text": "<style>p { margin: 0 0 0 0 } td { padding: 0 15px }</style>                             <p style='white-space:normal'>                                                                                              <table>                                                                                                                     <tr>                                                                                                                       <th><small>Type</small></th>                                                                                                <th><small>Notifier</small></th>                                                                                                <th><small>Message</small></th>                                                                                                </tr>                                                                                                   <tr>                                                                                                                            <td align='left'><img width=\"16\" height=\"16\" src=':/icons/Warning.svg'></td>                                                                 <td align='left'></td>                                                                                                        <td align='left'><p>Before application theme</p></td>                                                                                                        </tr></table></p>",
+      "palette": {
+        "Window": "#f0f0f0",
+        "WindowText": "#000000",
+        "ToolTipBase": "#000000",
+        "ToolTipText": "#243447"
+      },
+      "colors": [
+        {
+          "color": "#f0f0f0",
+          "pixels": 68034
+        },
+        {
+          "color": "#c8c8c8",
+          "pixels": 2506
+        },
+        {
+          "color": "#dcdcdc",
+          "pixels": 2482
+        },
+        {
+          "color": "#000000",
+          "pixels": 555
+        },
+        {
+          "color": "#abf0f0",
+          "pixels": 124
+        },
+        {
+          "color": "#000060",
+          "pixels": 123
+        },
+        {
+          "color": "#0060ab",
+          "pixels": 117
+        },
+        {
+          "color": "#86cef0",
+          "pixels": 109
+        },
+        {
+          "color": "#000035",
+          "pixels": 108
+        },
+        {
+          "color": "#ce8635",
+          "pixels": 106
+        },
+        {
+          "color": "#f0ab60",
+          "pixels": 102
+        },
+        {
+          "color": "#600000",
+          "pixels": 96
+        },
+        {
+          "color": "#ab6000",
+          "pixels": 95
+        },
+        {
+          "color": "#863500",
+          "pixels": 92
+        },
+        {
+          "color": "#f0f0ab",
+          "pixels": 87
+        },
+        {
+          "color": "#f0f0ce",
+          "pixels": 85
+        }
+      ]
+    },
+    {
+      "label": "production-existing-after",
+      "class": "Gui::NotificationLabel",
+      "name": "NotificationBox_label",
+      "size": [
+        800,
+        42
+      ],
+      "text": "<style>p { margin: 0 0 0 0 } td { padding: 0 15px }</style>                             <p style='white-space:normal'>                                                                                              <table>                                                                                                                     <tr>                                                                                                                       <th><small>Type</small></th>                                                                                                <th><small>Notifier</small></th>                                                                                                <th><small>Message</small></th>                                                                                                </tr>                                                                                                   <tr>                                                                                                                            <td align='left'><img width=\"16\" height=\"16\" src=':/icons/Warning.svg'></td>                                                                 <td align='left'></td>                                                                                                        <td align='left'><p>Before application theme</p></td>                                                                                                        </tr></table></p>",
+      "palette": {
+        "Window": "#f1f3f6",
+        "WindowText": "#243447",
+        "ToolTipBase": "#ffffff",
+        "ToolTipText": "#243447"
+      },
+      "colors": [
+        {
+          "color": "#ffffff",
+          "pixels": 68034
+        },
+        {
+          "color": "#bdc7d3",
+          "pixels": 2522
+        },
+        {
+          "color": "#dee3e9",
+          "pixels": 2510
+        },
+        {
+          "color": "#243447",
+          "pixels": 537
+        },
+        {
+          "color": "#bdffff",
+          "pixels": 124
+        },
+        {
+          "color": "#24348a",
+          "pixels": 123
+        },
+        {
+          "color": "#247fc6",
+          "pixels": 117
+        },
+        {
+          "color": "#9ae0ff",
+          "pixels": 109
+        },
+        {
+          "color": "#243469",
+          "pixels": 108
+        },
+        {
+          "color": "#dea069",
+          "pixels": 106
+        },
+        {
+          "color": "#ffc18a",
+          "pixels": 102
+        },
+        {
+          "color": "#763447",
+          "pixels": 96
+        },
+        {
+          "color": "#bd7f47",
+          "pixels": 95
+        },
+        {
+          "color": "#9a5a47",
+          "pixels": 92
+        },
+        {
+          "color": "#ffffc6",
+          "pixels": 87
+        },
+        {
+          "color": "#ffffe3",
+          "pixels": 85
+        }
+      ]
+    },
+    {
+      "label": "production-native-show-after",
+      "class": "Gui::NotificationLabel",
+      "name": "NotificationBox_label",
+      "size": [
+        800,
+        42
+      ],
+      "text": "<style>p { margin: 0 0 0 0 } td { padding: 0 15px }</style>                             <p style='white-space:normal'>                                                                                              <table>                                                                                                                     <tr>                                                                                                                       <th><small>Type</small></th>                                                                                                <th><small>Notifier</small></th>                                                                                                <th><small>Message</small></th>                                                                                                </tr>                                                                                                   <tr>                                                                                                                            <td align='left'><img width=\"16\" height=\"16\" src=':/icons/Warning.svg'></td>                                                                 <td align='left'></td>                                                                                                        <td align='left'><p>Before application theme</p></td>                                                                                                        </tr></table></p>",
+      "palette": {
+        "Window": "#f1f3f6",
+        "WindowText": "#243447",
+        "ToolTipBase": "#ffffff",
+        "ToolTipText": "#243447"
+      },
+      "colors": [
+        {
+          "color": "#ffffff",
+          "pixels": 68034
+        },
+        {
+          "color": "#bdc7d3",
+          "pixels": 2522
+        },
+        {
+          "color": "#dee3e9",
+          "pixels": 2510
+        },
+        {
+          "color": "#243447",
+          "pixels": 537
+        },
+        {
+          "color": "#bdffff",
+          "pixels": 124
+        },
+        {
+          "color": "#24348a",
+          "pixels": 123
+        },
+        {
+          "color": "#247fc6",
+          "pixels": 117
+        },
+        {
+          "color": "#9ae0ff",
+          "pixels": 109
+        },
+        {
+          "color": "#243469",
+          "pixels": 108
+        },
+        {
+          "color": "#dea069",
+          "pixels": 106
+        },
+        {
+          "color": "#ffc18a",
+          "pixels": 102
+        },
+        {
+          "color": "#763447",
+          "pixels": 96
+        },
+        {
+          "color": "#bd7f47",
+          "pixels": 95
+        },
+        {
+          "color": "#9a5a47",
+          "pixels": 92
+        },
+        {
+          "color": "#ffffc6",
+          "pixels": 87
+        },
+        {
+          "color": "#ffffe3",
+          "pixels": 85
+        }
+      ]
+    },
+    {
+      "label": "production-future-notification",
+      "class": "Gui::NotificationLabel",
+      "name": "NotificationBox_label",
+      "size": [
+        800,
+        38
+      ],
+      "text": "<style>p { margin: 0 0 0 0 } td { padding: 0 15px }</style>                             <p style='white-space:normal'>                                                                                              <table>                                                                                                                     <tr>                                                                                                                       <th><small>Type</small></th>                                                                                                <th><small>Notifier</small></th>                                                                                                <th><small>Message</small></th>                                                                                                </tr>                                                                                                   <tr>                                                                                                                            <td align='left'><img width=\"16\" height=\"16\" src=':/icons/Warning.svg'></td>                                                                 <td align='left'></td>                                                                                                        <td align='left'><p>After application theme</p></td>                                                                                                        </tr></table></p>",
+      "palette": {
+        "Window": "#f1f3f6",
+        "WindowText": "#243447",
+        "ToolTipBase": "#ffffff",
+        "ToolTipText": "#243447"
+      },
+      "colors": [
+        {
+          "color": "#ffffff",
+          "pixels": 60931
+        },
+        {
+          "color": "#243447",
+          "pixels": 5527
+        },
+        {
+          "color": "#76c1ff",
+          "pixels": 122
+        },
+        {
+          "color": "#763447",
+          "pixels": 121
+        },
+        {
+          "color": "#ffffc6",
+          "pixels": 113
+        },
+        {
+          "color": "#ffe0a8",
+          "pixels": 112
+        },
+        {
+          "color": "#9ae0ff",
+          "pixels": 110
+        },
+        {
+          "color": "#4f3447",
+          "pixels": 109
+        },
+        {
+          "color": "#243469",
+          "pixels": 108
+        },
+        {
+          "color": "#dea069",
+          "pixels": 97
+        },
+        {
+          "color": "#bd7f47",
+          "pixels": 92
+        },
+        {
+          "color": "#4fa0e3",
+          "pixels": 91
+        },
+        {
+          "color": "#24348a",
+          "pixels": 84
+        },
+        {
+          "color": "#bdffff",
+          "pixels": 80
+        },
+        {
+          "color": "#ffc18a",
+          "pixels": 78
+        },
+        {
+          "color": "#247fc6",
+          "pixels": 75
+        }
+      ]
+    },
+    {
+      "label": "production-ordinary-rich-tooltip",
+      "class": "QTipLabel",
+      "name": "qtooltip_label",
+      "size": [
+        164,
+        62
+      ],
+      "text": "<b>ThemeProbePad.Face6</b><br>Planar face: 600 mm\u00b2",
+      "palette": {
+        "Window": "#f1f3f6",
+        "WindowText": "#243447",
+        "ToolTipBase": "#243447",
+        "ToolTipText": "#ffffff"
+      },
+      "colors": [
+        {
+          "color": "#243447",
+          "pixels": 20516
+        },
+        {
+          "color": "#ffffff",
+          "pixels": 804
+        },
+        {
+          "color": "#dfa16a",
+          "pixels": 123
+        },
+        {
+          "color": "#245ba9",
+          "pixels": 104
+        },
+        {
+          "color": "#50a1e3",
+          "pixels": 102
+        },
+        {
+          "color": "#bd7f47",
+          "pixels": 102
+        },
+        {
+          "color": "#247fc6",
+          "pixels": 94
+        },
+        {
+          "color": "#dfffff",
+          "pixels": 88
+        },
+        {
+          "color": "#ffc18a",
+          "pixels": 88
+        },
+        {
+          "color": "#763447",
+          "pixels": 85
+        },
+        {
+          "color": "#76c1ff",
+          "pixels": 84
+        },
+        {
+          "color": "#bdffff",
+          "pixels": 84
+        },
+        {
+          "color": "#ffffc6",
+          "pixels": 82
+        },
+        {
+          "color": "#24348a",
+          "pixels": 82
+        },
+        {
+          "color": "#ffe1a9",
+          "pixels": 76
+        },
+        {
+          "color": "#503447",
+          "pixels": 71
+        }
+      ]
+    }
+  ],
+  "passed": true
+}

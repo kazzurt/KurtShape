@@ -1,0 +1,146 @@
+"""Actual native notifications with the production theme and baseline shell."""
+import os, sys, json, traceback, importlib.util, hashlib
+from pathlib import Path
+from collections import Counter
+ROOT=Path(os.environ['KURTSHAPE_ROOT'])
+PROBE=ROOT/'runtime'/'ui-refresh-diagnostics'
+OUT=ROOT/'validation'/'ui-refresh'
+OUT.mkdir(parents=True,exist_ok=True)
+sys.dont_write_bytecode=True
+sys.path.insert(0,str(PROBE/'baseline-source'/'src'))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore,QtGui
+from PySide6 import QtWidgets,QtTest
+import kurtshape.core as core
+core.ROOT=ROOT
+core.WRITE_ROOT=ROOT.parent.resolve()
+theme_path=ROOT/'src'/'kurtshape'/'theme.py'
+theme_spec=importlib.util.spec_from_file_location('kurtshape.theme',theme_path)
+theme=importlib.util.module_from_spec(theme_spec)
+sys.modules['kurtshape.theme']=theme
+theme_spec.loader.exec_module(theme)
+from kurtshape import ui
+app=QtWidgets.QApplication.instance()
+main=Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen,True)
+report={'baseline_shell':'565566b','production_theme_sha256':hashlib.sha256(theme_path.read_bytes()).hexdigest(),
+        'version':App.Version(),'checks':[],'observations':[]}
+panel=None
+
+class KeepHidden(QtCore.QObject):
+    def eventFilter(self,w,e):
+        if isinstance(w,QtWidgets.QWidget) and w.isWindow() and e.type() in (QtCore.QEvent.Show,QtCore.QEvent.Polish):
+            w.setAttribute(QtCore.Qt.WA_DontShowOnScreen,True)
+        return False
+hide_filter=KeepHidden(app)
+app.installEventFilter(hide_filter)
+
+class NoBridge:
+    def __init__(self,*a):pass
+    def tick(self):return False
+    def close(self):pass
+ui.Bridge=NoBridge
+
+def wait(ms=150):QtTest.QTest.qWait(ms)
+def check(name,value):
+    if not value:raise AssertionError(name)
+    report['checks'].append(name)
+def native_notification():
+    return next((w for w in app.topLevelWidgets()
+                 if w.metaObject().className()=='Gui::NotificationLabel' and w.isVisible()),None)
+def observed(w,label):
+    p=w.palette()
+    image=w.grab().toImage().convertToFormat(QtGui.QImage.Format_RGB32)
+    colors=Counter(image.pixel(x,y)&0xffffff for x in range(image.width()) for y in range(image.height()))
+    result={'label':label,'class':w.metaObject().className(),'name':w.objectName(),
+            'size':[w.width(),w.height()],'text':w.text() if hasattr(w,'text') else '',
+            'palette':{name:p.color(getattr(QtGui.QPalette,name)).name()
+                       for name in ('Window','WindowText','ToolTipBase','ToolTipText')},
+            'colors':[{'color':'#%06x'%rgb,'pixels':count} for rgb,count in colors.most_common(16)]}
+    report['observations'].append(result)
+    w.grab().save(str(OUT/(label+'.png')))
+    return result,colors
+
+def native_warning(message):
+    App.Console.PrintWarning(message+'\n')
+    wait(350)
+    return native_notification()
+
+def run():
+    global panel
+    try:
+        # Only this disposable profile permits developer warnings in a hidden
+        # inactive window, so native popup construction is reproducible.
+        notification_prefs=App.ParamGet('User parameter:BaseApp/Preferences/NotificationArea')
+        notification_prefs.SetBool('DeveloperWarningSubscriptionEnabled',True)
+        notification_prefs.SetBool('PreventNonIntrusiveNotificationsWhenWindowNotActive',False)
+        notification_prefs.SetBool('HideNonIntrusiveNotificationsWhenWindowDeactivated',False)
+        notification_prefs.SetBool('NonIntrusiveNotificationsEnabled',True)
+        main.show();wait(200)
+        prefs_before=theme.native_theme_preferences()
+        existing=native_warning('Before application theme')
+        check('Actual native parentless notification exists before applying theme',existing is not None and existing.parentWidget() is None)
+        # Match the retained native startup palette while inheriting dark ink.
+        dark=QtGui.QPalette(existing.palette())
+        for group in (QtGui.QPalette.Active,QtGui.QPalette.Inactive,QtGui.QPalette.Disabled):
+            dark.setColor(group,QtGui.QPalette.ToolTipBase,QtGui.QColor('#000000'))
+            dark.setColor(group,QtGui.QPalette.ToolTipText,QtGui.QColor('#243447'))
+        existing.setPalette(dark)
+        existing_size=[existing.width(),existing.height()]
+        observed(existing,'production-existing-before')
+        theme.apply_theme(main)
+        existing_after,colors=observed(existing,'production-existing-after')
+        check('Existing native popup receives light tooltip background',existing_after['palette']['ToolTipBase']=='#ffffff')
+        check('Existing native popup receives ink tooltip text',existing_after['palette']['ToolTipText']=='#243447')
+        check('Existing native popup preserves its size',existing_after['size']==existing_size)
+        check('Existing native popup has actual white background pixels',colors[0xffffff]>100)
+        check('Existing native popup has actual dark ink glyph pixels',colors[0x243447]>10)
+        # Hide and show the real native label with a hostile palette. This
+        # exercises the production Show filter without an app-owned substitute.
+        existing.hide()
+        existing.setPalette(dark)
+        existing.show()
+        shown,colors=observed(existing,'production-native-show-after')
+        check('Native popup Show repairs hostile background palette',shown['palette']['ToolTipBase']=='#ffffff')
+        check('Native popup Show repairs hostile foreground palette',shown['palette']['ToolTipText']=='#243447')
+        check('Native popup Show retains size',shown['size']==existing_size)
+        existing.close()
+        wait(350)
+        later=native_warning('After application theme')
+        check('Actual future native notification constructed',later is not None)
+        later_state,colors=observed(later,'production-future-notification')
+        check('Future native popup has white tooltip background',later_state['palette']['ToolTipBase']=='#ffffff')
+        check('Future native popup has dark tooltip text',later_state['palette']['ToolTipText']=='#243447')
+        check('Future native popup renders white panel and ink glyphs',colors[0xffffff]>100 and colors[0x243447]>10)
+        later.close()
+        wait(200)
+        panel=ui.start();main.show();wait(200)
+        panel.operation('sketch_rectangle',id='ThemeProbeSketch',plane='XY',width=30,height=20)
+        panel.operation('pad',id='ThemeProbePad',profile='ThemeProbeSketch',length=8)
+        Gui.Selection.addSelection(panel.document().Name,'ThemeProbePad','Face6')
+        check('Surface selection remains functional',any('Face6' in list(s.SubElementNames) for s in Gui.Selection.getSelectionEx()))
+        panel.isometric();panel.fit();wait(250)
+        viewport=next(w for w in main.findChildren(QtWidgets.QWidget)
+                      if w.metaObject().className()=='QOpenGLWidget' and w.parentWidget().metaObject().className()=='Gui::View3DInventorViewer' and w.isVisible())
+        point=viewport.rect().center()
+        QtTest.QTest.mouseMove(viewport,point)
+        wait(150)
+        QtGui.QToolTip.showText(viewport.mapToGlobal(point),'<b>ThemeProbePad.Face6</b><br>Planar face: 600 mm²',viewport)
+        wait(200)
+        tooltip=next((w for w in app.topLevelWidgets() if w.metaObject().className()=='QTipLabel' and w.isVisible()),None)
+        check('Ordinary native Qt rich-text tooltip appears',tooltip is not None)
+        tip_state,colors=observed(tooltip,'production-ordinary-rich-tooltip')
+        check('Ordinary tooltip keeps dark panel and white glyphs',colors[0x243447]>100 and colors[0xffffff]>10)
+        QtGui.QToolTip.hideText()
+        check('Theme leaves native theme preferences unchanged',theme.native_theme_preferences()==prefs_before)
+        report['passed']=True
+    except Exception:report['error']=traceback.format_exc()
+    finally:
+        (OUT/'production-popup-validation.json').write_text(json.dumps(report,indent=2,default=str),encoding='utf-8')
+        if panel:panel.shutdown()
+        for doc in list(App.listDocuments()):App.closeDocument(doc)
+        QtCore.QTimer.singleShot(150,app.quit)
+
+QtCore.QTimer.singleShot(700,run)

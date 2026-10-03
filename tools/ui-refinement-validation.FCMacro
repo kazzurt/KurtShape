@@ -1,0 +1,513 @@
+"""Production Panel/Qt/Coin checks in an independent hidden native process.
+
+Launch portable freecad.exe -u <isolated>/user.cfg -s <isolated>/system.cfg
+--log-file <isolated>/freecad.log tools/ui-refinement-validation.FCMacro,
+with KURTSHAPE_ROOT set to this project and FREECAD_USER_HOME, APPDATA,
+LOCALAPPDATA, TEMP/TMP and KURTSHAPE_SESSION_DIR below runtime. Launch via
+PowerShell Start-Process -WindowStyle Hidden. Never run in a user's app.
+Only assistant transport is replaced; production Panel, theme, preview evaluator,
+Coin overlay, controller, native navigation and preferences are exercised.
+"""
+import json
+import math
+import os
+from pathlib import Path
+import queue
+import socket
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime"), "Use an isolated runtime profile"
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session), "Use this validation profile's FreeCAD home"
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+
+
+def deny_network(*args, **kwargs):
+    raise RuntimeError("Python networking disabled for UI refinement validation")
+
+
+socket.socket.connect = deny_network
+socket.socket.connect_ex = deny_network
+socket.socket.sendto = deny_network
+socket.create_connection = deny_network
+socket.getaddrinfo = deny_network
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from pivy import coin
+from kurtshape.core import native_intent
+from kurtshape import navigation, ui
+
+
+class NoSocketTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+application = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1600, 1000)
+main.show()
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden_popups = HiddenPopupFilter(application)
+application.installEventFilter(hidden_popups)
+output = root / "validation" / "ui-refinement"
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "screens": [], "method": "Actual production Panel and Qt button events, native scenegraph and disposable FCStd evaluation; hidden independent process with no assistant server.",
+          "limits": "Synthetic small fixtures. Native renderer automatically adjusts near/far clipping to displayed scene geometry; camera invariance checks retain position/orientation/focus/zoom while excluding those clipping distances. Palette and rendered-glyph checks plus screenshots do not replace Kurt's visual/comfort acceptance. Native notification is triggered with an isolated console warning; the original face-selection popup's exact trigger is not asserted. Native C++ networking and physical offline operation are not intercepted.",
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}, "runtime_profile": str(session.relative_to(root))}
+panel = None
+cleaned = False
+started = time.perf_counter()
+
+
+def wait(ms=100):
+    QtTest.QTest.qWait(ms)
+    if report.get("aborted"):
+        raise RuntimeError("UI refinement validation aborted at its 45-second bound")
+
+
+def save_report():
+    (output / "gui-refinement.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label + ": " + (panel.message.text() if panel else "startup"))
+    report["checks"].append(label)
+    save_report()
+
+
+def call(op, **args):
+    result = panel.operation(op, **args)
+    if not result:
+        raise AssertionError(op + ": " + panel.message.text())
+    wait(50)
+    return result
+
+
+def action(bar, label):
+    return next(item for item in bar.actions() if item.text() == label)
+
+
+def click_action(bar, label):
+    item = action(bar, label)
+    button = bar.widgetForAction(item)
+    check(label + ": actual toolbar button usable", item.isEnabled() and button.isVisible() and button.isEnabled())
+    QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
+    wait(80)
+    return item
+
+
+def preview():
+    for _ in range(80):
+        wait(25)
+        if panel.extrusion_preview.result is not None and not panel.extrusion_preview.timer.isActive():
+            result = panel.extrusion_preview.result
+            report["last_preview"] = {"valid": result.valid, "proposal": result.proposal, "error": result.error, "measurements": result.measurements}
+            return result
+    report["preview_timeout_state"] = {"task": panel.task, "task_document": panel.task_document,
+        "active_document": App.activeDocument().Name if App.activeDocument() else None,
+        "editor_visible": panel.editor.isVisible(), "native_dialog": bool(Gui.Control.activeDialog()),
+        "native_edit": bool(panel.core._native_edit_active()), "timer_active": panel.extrusion_preview.timer.isActive(),
+        "evaluator": panel.extrusion_preview.evaluator is not None, "pending": panel.extrusion_preview.pending,
+        "state_revision": panel.state.get("revision") if panel.state else None,
+        "native_revision": panel.core._meta(panel.document()).Revision if panel.document() else None}
+    raise AssertionError("No extrusion preview in two seconds: " + panel.preview_hint.text())
+
+
+def set_depth(text):
+    line = panel.depth.lineEdit()
+    line.setFocus()
+    QtTest.QTest.keyClick(line, QtCore.Qt.Key_A, QtCore.Qt.ControlModifier)
+    QtTest.QTest.keyClicks(line, text)
+    return preview()
+
+
+def select_history(key):
+    item = panel.items[key]
+    panel.features.scrollToItem(item)
+    wait(30)
+    position = panel.features.visualItemRect(item).center()
+    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, position)
+    wait(50)
+    check(key + ": actual history click selects native object", panel.selected() == key and
+          any(obj.Name == key for obj in Gui.Selection.getSelection()))
+
+
+def selected_references():
+    return [(item.DocumentName, item.ObjectName, list(item.SubElementNames),
+             [list(point) for point in item.PickedPoints]) for item in Gui.Selection.getSelectionEx()]
+
+
+def authoritative_state():
+    doc = panel.document()
+    panel.core.sync(doc)
+    # Coin auto-clipping legitimately changes when the displayed overlay has
+    # depth. Preserve the user's camera pose/focus/zoom, not renderer bounds.
+    camera = "\n".join(line for line in Gui.getDocument(doc.Name).activeView().getCamera().splitlines()
+                       if not line.strip().startswith(("nearDistance ", "farDistance ")))
+    return {"intent": native_intent(doc), "revision": panel.core._meta(doc).Revision,
+            "documents": sorted(App.listDocuments()), "objects": [obj.Name for obj in doc.Objects],
+            "undo": doc.UndoCount, "redo": doc.RedoCount, "pending": doc.HasPendingTransaction,
+            "filename": doc.FileName, "modified": Gui.getDocument(doc.Name).Modified,
+            "camera": camera, "selection": selected_references(),
+            "visibility": {obj.Name: obj.ViewObject.Visibility for obj in doc.Objects if hasattr(obj.ViewObject, "Visibility")},
+            "brep": doc.Body.Shape.exportBrepToString() if not doc.Body.Shape.isNull() else None}
+
+
+def assert_live_overlay(label, result):
+    overlay = panel.extrusion_preview.overlay
+    check(label + ": valid evaluated result and enabled Confirm", result.valid and panel.confirm.isEnabled())
+    check(label + ": real scenegraph child", overlay.node is not None and overlay.scene.findChild(overlay.node) >= 0)
+    def find_node(node_type):
+        search = coin.SoSearchAction()
+        search.setType(node_type.getClassTypeId())
+        search.apply(overlay.node)
+        path = search.getPath()
+        return path.getTail() if path else None
+    pick = find_node(coin.SoPickStyle)
+    faces = find_node(coin.SoIndexedFaceSet)
+    check(label + ": overlay is unpickable", pick is not None and pick.style.getValue() == coin.SoPickStyle.UNPICKABLE)
+    check(label + ": real tessellated faces", faces is not None and faces.coordIndex.getNum() >= 4)
+
+
+def capture(label, width):
+    main.resize(width, 900 if width == 1200 else 1000)
+    wait(180)
+    pixmap = main.grab()
+    pixmap.save(str(output / (label + "-" + str(width) + ".png")))
+    report["screens"].append(label + "-" + str(width) + ".png")
+    report.setdefault("window_sizes", []).append({"label": label, "qt_logical_pixels": [main.width(), main.height()],
+        "screenshot_pixels": [pixmap.width(), pixmap.height()], "device_pixel_ratio": pixmap.devicePixelRatioF()})
+
+
+def removal_render_gate(expect_visible=True):
+    # Sample the projected interior of the actual removed cylinder. This
+    # excludes toolbar icons, axis arrows and resulting-solid outer outlines.
+    view = Gui.activeDocument().activeView()
+    area = main.findChild(QtWidgets.QMdiArea)
+    gl = next(widget for widget in area.activeSubWindow().findChildren(QtWidgets.QWidget)
+              if widget.isVisible() and widget.metaObject().className() == "QOpenGLWidget" and
+              widget.parentWidget().metaObject().className() == "Gui::View3DInventorViewer")
+    native_size = view.getSize()
+    native_point = view.getPointOnScreen(App.Vector(10, 5, 1))
+    native_ratio = native_size[0] / gl.width()
+    logical = gl.mapTo(main, QtCore.QPoint(round(native_point[0] / native_ratio),
+                                          round((native_size[1] - 1 - native_point[1]) / native_ratio)))
+    image = main.grab().toImage()
+    image_ratio = image.width() / main.width()
+    center = (round(logical.x() * image_ratio), round(logical.y() * image_ratio))
+    orange = 0
+    radius = 12
+    origin = gl.mapTo(main, QtCore.QPoint(0, 0))
+    view_bounds = [round(origin.x() * image_ratio), round(origin.y() * image_ratio),
+                   round((origin.x() + gl.width()) * image_ratio), round((origin.y() + gl.height()) * image_ratio)]
+    check("Removal color sample lies inside the actual rendered viewport", 0 <= view_bounds[0] <= center[0] - radius and
+          center[0] + radius < view_bounds[2] <= image.width() and 0 <= view_bounds[1] <= center[1] - radius and
+          center[1] + radius < view_bounds[3] <= image.height())
+    for y in range(center[1] - radius, center[1] + radius + 1):
+        for x in range(center[0] - radius, center[0] + radius + 1):
+            color = image.pixelColor(x, y)
+            if color.red() > 130 and color.red() > color.green() + 20 and color.green() > color.blue() + 15:
+                orange += 1
+    detail_name = "removal-preview-detail.png" if expect_visible else "removal-after-cancel-detail.png"
+    image.copy(QtCore.QRect(center[0] - 45, center[1] - 45, 91, 91)).save(str(output / detail_name))
+    report["removal_render" if expect_visible else "removal_cancel_render"] = {
+        "sample_world_mm": [10, 5, 1], "projected_center_pixels": list(center), "native_view_size": list(native_size),
+        "qt_gl_size": [gl.width(), gl.height()], "native_ratio": native_ratio, "image_ratio": image_ratio,
+        "viewport_bounds_pixels": view_bounds,
+        "sample_pixels": (2 * radius + 1)**2, "orange_pixels": orange}
+    check("Blind removal shows filled orange material through the original solid" if expect_visible else
+          "Cancel clears orange material from the actual rendered viewport", orange > 200 if expect_visible else orange <= 20)
+
+
+def toolbar_coverage(width):
+    main.resize(width, 900 if width == 1200 else 1000)
+    wait(180)
+    required = {"Sketch", "Extrude", "Remove", "Revolve", "Sweep", "Loft", "Fillet", "Chamfer", "Shell", "Draft", "Mirror", "Linear pattern", "Circular pattern", "Boolean", "Plane"}
+    labels = {item.text() for item in panel.model_bar.actions()}
+    check(str(width) + "px: requested modeling tools in direct toolbar", required.issubset(labels))
+    for label in sorted(required):
+        button = panel.model_bar.widgetForAction(action(panel.model_bar, label))
+        check(str(width) + "px: " + label + " directly visible", button is not None and button.isVisible() and panel.model_bar.rect().contains(button.geometry()))
+    check(str(width) + "px: Hole omitted from default direct toolbar", "Hole" not in labels)
+    check(str(width) + "px: part and plane names explain actions", "New part" in labels and "Show planes" in labels and "New Body" not in labels)
+    check(str(width) + "px: implementation prefixes absent from toolbar", all("native" not in (item.text() + " " + item.toolTip()).lower() for item in panel.model_bar.actions()))
+    more = panel.tool_menus["More"]
+    observed = {}
+    def inspect_and_close_more():
+        # InstantPopup enters a native QMenu loop within mouseClick itself.
+        # Inspect inside that loop, then close it before the click returns.
+        try:
+            observed.update(visible=more.isVisible(), labels={item.text() for item in more.actions()})
+        finally:
+            more.close()
+    QtCore.QTimer.singleShot(150, inspect_and_close_more)
+    click_action(panel.model_bar, "More")
+    check(str(width) + "px: More exposes actual grouped menus", observed.get("visible") and {"Build", "Cut", "Modify", "Patterns", "Reference", "Shape tools"}.issubset(observed.get("labels", set())))
+    wait(50)
+
+
+def settings_gate():
+    report["status_bar_widgets"] = [{"class": widget.metaObject().className(), "name": widget.objectName(),
+        "text": widget.text() if hasattr(widget, "text") else "", "tooltip": widget.toolTip(),
+        "geometry": [widget.x(), widget.y(), widget.width(), widget.height()]}
+        for widget in main.statusBar().findChildren(QtWidgets.QWidget) if widget.isVisible()]
+    indicator = main.findChild(QtWidgets.QWidget, "NavigationIndicator")
+    check("Navigation indicator is hidden from the working status bar", indicator is None or not indicator.isVisible())
+    if indicator:
+        indicator.show()
+        wait(60)
+        check("Navigation indicator stays hidden after native Show", not indicator.isVisible())
+    original = navigation.selected_style()
+    click_action(panel.document_bar, "Settings")
+    dialog = panel.workspace_preferences.dialog
+    choice = dialog.findChild(QtWidgets.QComboBox, "KurtShapeMouseNavigation")
+    buttons = dialog.findChild(QtWidgets.QDialogButtonBox)
+    check("Settings exposes supported mouse navigation choices", dialog.isVisible() and choice.count() == len(navigation.NAVIGATION_STYLES))
+    choice.setCurrentIndex(choice.findData("Gui::CADNavigationStyle"))
+    check("Settings help follows selected style", any("CAD mouse controls" in label.text() for label in dialog.findChildren(QtWidgets.QLabel)))
+    QtTest.QTest.mouseClick(buttons.button(QtWidgets.QDialogButtonBox.Cancel), QtCore.Qt.LeftButton)
+    wait(100)
+    check("Settings Cancel preserves native style", navigation.selected_style() == original and Gui.activeDocument().activeView().getNavigationType() == original)
+    click_action(panel.document_bar, "Settings")
+    dialog = panel.workspace_preferences.dialog
+    choice = dialog.findChild(QtWidgets.QComboBox, "KurtShapeMouseNavigation")
+    choice.setCurrentIndex(choice.findData("Gui::CADNavigationStyle"))
+    dialog.grab().save(str(output / "settings-navigation.png"))
+    QtTest.QTest.mouseClick(dialog.findChild(QtWidgets.QDialogButtonBox).button(QtWidgets.QDialogButtonBox.Save), QtCore.Qt.LeftButton)
+    wait(150)
+    check("Settings Save updates preference and current native view", navigation.selected_style() == "Gui::CADNavigationStyle" and Gui.activeDocument().activeView().getNavigationType() == "Gui::CADNavigationStyle")
+    call("new", name="Navigation preference persistence")
+    check("New project inherits chosen native navigation", Gui.activeDocument().activeView().getNavigationType() == "Gui::CADNavigationStyle")
+    click_action(panel.document_bar, "Settings")
+    dialog = panel.workspace_preferences.dialog
+    choice = dialog.findChild(QtWidgets.QComboBox, "KurtShapeMouseNavigation")
+    choice.setCurrentIndex(choice.findData(original))
+    QtTest.QTest.mouseClick(dialog.findChild(QtWidgets.QDialogButtonBox).button(QtWidgets.QDialogButtonBox.Save), QtCore.Qt.LeftButton)
+    wait(100)
+    check("Settings restoration applies original style", Gui.activeDocument().activeView().getNavigationType() == original)
+
+
+def contrast(first, second):
+    def luminance(color):
+        values = [channel / 255 for channel in (color.red(), color.green(), color.blue())]
+        values = [value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055)**2.4 for value in values]
+        return 0.2126 * values[0] + 0.7152 * values[1] + 0.0722 * values[2]
+    light, dark = sorted((luminance(first), luminance(second)), reverse=True)
+    return (light + 0.05) / (dark + 0.05)
+
+
+def native_popup_gate():
+    prefs = App.ParamGet("User parameter:BaseApp/Preferences/NotificationArea")
+    for key, value in (("DeveloperWarningSubscriptionEnabled", True), ("PreventNonIntrusiveNotificationsWhenWindowNotActive", False),
+                       ("HideNonIntrusiveNotificationsWhenWindowDeactivated", False), ("NonIntrusiveNotificationsEnabled", True)):
+        prefs.SetBool(key, value)
+    App.Console.PrintWarning("UI refinement: actual native notification readability check\n")
+    wait(450)
+    popups = [widget for widget in application.topLevelWidgets() if widget.metaObject().className() == "Gui::NotificationLabel" and widget.isVisible()]
+    check("Actual native NotificationLabel is exercised", bool(popups))
+    popup = popups[-1]
+    palette = popup.palette()
+    foreground = palette.color(QtGui.QPalette.ToolTipText)
+    background = palette.color(QtGui.QPalette.ToolTipBase)
+    ratio = contrast(foreground, background)
+    check("Native notification text/background have at least 7:1 contrast", ratio >= 7)
+    image = popup.grab().toImage()
+    check("Actual native notification renders a readable sized panel", image.width() > 100 and image.height() >= 20)
+    dark_pixels = 0
+    for y in range(5, max(5, image.height() - 5)):
+        for x in range(5, max(5, image.width() - 5)):
+            color = image.pixelColor(x, y)
+            if color.alpha() > 200 and max(color.red(), color.green(), color.blue()) < 150:
+                dark_pixels += 1
+    check("Native notification contains actual dark glyph pixels", dark_pixels > 20)
+    popup.grab().save(str(output / "native-notification.png"))
+    report["native_notification"] = {"class": popup.metaObject().className(), "object_name": popup.objectName(),
+                                     "foreground": foreground.name(), "background": background.name(), "contrast": ratio,
+                                     "rendered_dark_pixels": dark_pixels, "size": [image.width(), image.height()]}
+    popup.hide()
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()  # Recovery is independently tested; avoid incidental disk checkpoints here.
+        wait(250)
+        for width in (1200, 1600):
+            toolbar_coverage(width)
+        call("new", name="Extrusion preview validation")
+        call("sketch_rectangle", id="Profile", width=20, height=10)
+        select_history("Profile")
+        view = Gui.activeDocument().activeView()
+        view.viewIsometric()
+        view.fitAll()
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(panel.document().Name, "Profile")
+        before = authoritative_state()
+        click_action(panel.model_bar, "Extrude")
+        result = preview()
+        assert_live_overlay("Initial extrusion preview", result)
+        after_open = authoritative_state()
+        if after_open != before:
+            report["opening_preview_state_differences"] = {key: {"before": before[key], "after": after_open[key]} for key in before if before[key] != after_open[key]}
+        check("Opening preview preserves complete authoritative project state", after_open == before)
+        result = set_depth("7 mm")
+        check("Typing depth updates actual preview volume", result.valid and abs(result.measurements["volume_mm3"] - 1400) < 1e-6)
+        assert_live_overlay("Changed extrusion preview", result)
+        QtTest.QTest.mouseClick(panel.reverse, QtCore.Qt.LeftButton)
+        reversed_result = preview()
+        check("Reverse direction changes real preview placement", reversed_result.valid and abs(reversed_result.shape.BoundBox.ZMin + 7) < 1e-6)
+        QtTest.QTest.mouseClick(panel.reverse, QtCore.Qt.LeftButton)
+        preview()
+        check("Depth/reverse previews preserve native geometry, history, revision and selection", authoritative_state() == before)
+        for width in (1200, 1600):
+            capture("extrusion-preview", width)
+        QtTest.QTest.mouseClick(panel.cancel, QtCore.Qt.LeftButton)
+        wait(100)
+        check("Cancel removes actual scenegraph overlay", panel.extrusion_preview.overlay.node is None)
+        check("Cancel preserves authoritative object geometry and history", native_intent(panel.document()) == before["intent"] and panel.document().UndoCount == before["undo"] and panel.core._meta(panel.document()).Revision == before["revision"])
+        main.resize(1600, 1000)
+        select_history("Profile")
+        click_action(panel.model_bar, "Extrude")
+        result = set_depth("7 mm")
+        call("save", path=str(session / "preview-uncommitted.FCStd"))
+        result = preview()
+        check("Save preserves open extrusion fields and restarts valid preview", panel.task == "pad" and panel.editor.isVisible() and result.valid and abs(result.measurements["volume_mm3"] - 1400) < 1e-6)
+        check("Save before Confirm persists no extrusion feature", panel.document().Body.Shape.isNull() and panel.document().UndoCount == before["undo"])
+        result = set_depth("8 mm")
+        check("Changed depth after Save creates a fresh actual preview", result.valid and abs(result.measurements["volume_mm3"] - 1600) < 1e-6)
+        result = set_depth("7 mm")
+        expected_volume = result.measurements["volume_mm3"]
+        check("Confirm is visible and enabled before actual click", panel.confirm.isVisible() and panel.confirm.isEnabled())
+        clicked = []
+        panel.confirm.clicked.connect(lambda: clicked.append(True))
+        def confirm_state():
+            return {"enabled": panel.confirm.isEnabled(), "visible": panel.confirm.isVisible(), "task": panel.task,
+                    "hint": panel.preview_hint.text(), "depth_text": panel.depth.lineEdit().text(),
+                    "timer_active": panel.extrusion_preview.timer.isActive(), "pending": panel.extrusion_preview.pending,
+                    "clicked": len(clicked), "body_null": panel.document().Body.Shape.isNull()}
+        report["confirm_click_diagnostics"] = {"before_press": confirm_state()}
+        QtTest.QTest.mousePress(panel.confirm, QtCore.Qt.LeftButton)
+        report["confirm_click_diagnostics"]["after_press"] = confirm_state()
+        QtTest.QTest.mouseRelease(panel.confirm, QtCore.Qt.LeftButton)
+        wait(250)
+        report["confirm_click_diagnostics"]["after_release"] = confirm_state()
+        check("Confirm commits the same solid evaluated in preview", panel.state["build_status"] == "valid" and abs(panel.document().Body.Shape.Volume - expected_volume) < 1e-6)
+        check("Confirm removes preview overlay and makes one undo step", panel.extrusion_preview.overlay.node is None and panel.document().UndoCount == before["undo"] + 1)
+        call("undo")
+        check("Undo removes accepted extrusion", panel.document().Body.Shape.isNull())
+        call("redo")
+        check("Redo restores accepted extrusion", abs(panel.document().Body.Shape.Volume - expected_volume) < 1e-6)
+
+        call("sketch_circle", id="CutProfile", x=10, y=5, diameter=4)
+        select_history("CutProfile")
+        before_cut = authoritative_state()
+        click_action(panel.model_bar, "Remove")
+        result = preview()
+        assert_live_overlay("Through-all removal preview", result)
+        check("Through-all preview removes real full-depth material", abs(result.measurements["volume_mm3"] - (1400 - math.pi * 4 * 7)) < 1e-5)
+        panel.end_type.setCurrentIndex(0)
+        result = set_depth("2 mm")
+        check("Blind end condition and depth update actual cut", result.valid and abs(result.measurements["volume_mm3"] - (1400 - math.pi * 4 * 2)) < 1e-5)
+        capture("removal-preview", 1600)
+        removal_render_gate()
+        check("Visible removal preview preserves native visibility, geometry, history and selection", authoritative_state() == before_cut)
+        QtTest.QTest.mouseClick(panel.cancel, QtCore.Qt.LeftButton)
+        wait(100)
+        removal_render_gate(expect_visible=False)
+        check("Removal Cancel preserves original solid", abs(panel.document().Body.Shape.Volume - 1400) < 1e-6 and panel.extrusion_preview.overlay.node is None)
+
+        select_history("CutProfile")
+        click_action(panel.model_bar, "Remove")
+        preview()
+        call("rebuild")
+        # refresh may show the selected sketch's normal parameter editor.
+        # The extrusion task and its controls/ghost must be fully dismissed.
+        check("Rebuild cancels the custom extrusion editor and scenegraph ghost", panel.task is None and not panel.depth.isVisible() and not panel.preview_hint.isVisible() and panel.extrusion_preview.overlay.node is None)
+        check("Rebuild during preview leaves accepted solid unchanged", abs(panel.document().Body.Shape.Volume - 1400) < 1e-6)
+
+        select_history("CutProfile")
+        click_action(panel.model_bar, "Remove")
+        preview()
+        doc = panel.document()
+        current = panel.core.inspect(doc)
+        response = panel.core.dispatch({"op": "set_parameter", "document_id": current["document_id"], "expected_revision": current["revision"],
+                                       "feature": "CutProfile", "parameter": "Diameter", "value": 5})
+        check("Out-of-band upstream edit is accepted through shared controller", response["ok"])
+        wait(500)
+        check("Out-of-band edit removes stale ghost and disables Confirm", panel.extrusion_preview.overlay.node is None and not panel.confirm.isEnabled())
+        volume = doc.Body.Shape.Volume
+        undo_count = doc.UndoCount
+        accepted = panel.accept_task()
+        check("Stale task cannot commit its old proposal", not accepted and abs(doc.Body.Shape.Volume - volume) < 1e-6 and doc.UndoCount == undo_count)
+        panel.cancel_task()
+        settings_gate()
+        native_popup_gate()
+        report["timings"] = panel.core.timings.report()
+        report["passed"] = True
+    except Exception:
+        report["after_timeout_traceback" if report.get("aborted") else "error"] = traceback.format_exc()
+    finally:
+        report["seconds"] = time.perf_counter() - started
+        report["check_count"] = len(report["checks"])
+        main.grab().save(str(output / "final-workspace.png"))
+        save_report()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            doc = App.getDocument(name)
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    finally:
+        application.removeEventFilter(hidden_popups)
+        QtCore.QTimer.singleShot(0, application.quit)
+
+
+def timeout():
+    if not report.get("seconds"):
+        report["aborted"] = True
+        report["error"] = "GUI refinement harness exceeded its 45-second bound"
+        save_report()
+        cleanup()
+
+
+QtCore.QTimer.singleShot(45000, timeout)
+QtCore.QTimer.singleShot(1500, validate)

@@ -1,0 +1,190 @@
+"""Hidden isolated GUI checks for native extrusion preview and lifecycle."""
+import json
+import os
+from pathlib import Path
+import re
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest
+from pivy import coin
+from kurtshape.core import Controller, intent_signature
+from kurtshape.extrusion_preview import DebouncedExtrusionPreview
+
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+output = root / "validation" / "ui-refinement-preview"
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "method": "Separate hidden FreeCAD 1.1.4 GUI; native BRep plus transient Coin geometry"}
+core = Controller()
+state = None
+adapter = None
+
+
+def call(op, **args):
+    global state
+    request = dict(op=op, **args)
+    if op != "new":
+        request.update(document_id=state["document_id"], expected_revision=state["revision"])
+    result = core.dispatch(request)
+    assert result["ok"], result
+    state = result["result"]
+    return core.documents[state["document_id"]]
+
+
+def check(label, condition):
+    assert condition, label
+    report["checks"].append(label)
+
+
+def snapshot(doc):
+    view = Gui.getDocument(doc.Name).activeView()
+    camera_pose = re.sub(r"^\s*(?:nearDistance|farDistance)\s+.*$", "", view.getCamera(), flags=re.MULTILINE)
+    return (intent_signature(doc), core._meta(doc).DocumentId, core._meta(doc).Revision,
+            doc.UndoCount, doc.RedoCount, doc.HasPendingTransaction, doc.FileName,
+            Gui.getDocument(doc.Name).Modified,
+            tuple((o.Name, o.ViewObject.Visibility) for o in doc.Objects if o.ViewObject),
+            tuple((s.DocumentName, s.ObjectName, tuple(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()),
+            camera_pose, App.activeDocument().Name, tuple(core.documents),
+            tuple(App.listDocuments()), tuple(core.observer.states), tuple(core.evaluations))
+
+
+def validate():
+    global adapter
+    try:
+        doc = call("new")
+        call("sketch_rectangle", id="BaseProfile", width=20, height=10)
+        call("pad", profile="BaseProfile", length=6)
+        top = "Face" + str(next(i + 1 for i, face in enumerate(doc.Pad.Shape.Faces) if abs(face.CenterOfMass.z - 6) < 1e-7))
+        call("sketch_circle", id="Profile", x=10, y=5, diameter=4, support={"feature": "Pad", "subelement": top})
+        doc.Body.ViewObject.Visibility = True
+        doc.Pad.ViewObject.Visibility = True
+        doc.Profile.ViewObject.Visibility = True
+        Gui.getDocument(doc.Name).activeView().viewAxonometric()
+        Gui.getDocument(doc.Name).activeView().fitAll()
+        Gui.Selection.addSelection(doc.Name, "Pad", top)
+        core.sync(doc)
+        QtTest.QTest.qWait(850)
+        baseline = snapshot(doc)
+        events = []
+        editor_visible = [True]
+        adapter = DebouncedExtrusionPreview(core, main, status=events.append, allowed=lambda: editor_visible[0], delay_ms=80)
+        adapter.begin(doc, state["revision"])
+        initial_scene = Gui.getDocument(doc.Name).activeView().getSceneGraph().getNumChildren()
+        adapter.schedule(dict(op="pad", profile="Profile", length=2, reversed=False))
+        adapter.schedule(dict(op="pad", profile="Profile", length=3, reversed=False))
+        adapter.schedule(dict(op="pad", profile="Profile", length=4, reversed=False))
+        QtTest.QTest.qWait(250)
+        report["initial_preview"] = {"valid": bool(adapter.result and adapter.result.valid),
+                                     "error": adapter.result.error if adapter.result else None,
+                                     "milliseconds": adapter.result.milliseconds if adapter.result else None,
+                                     "evaluations": adapter.evaluator.evaluations if adapter.evaluator else None}
+        check("Debounce evaluates only the latest depth", adapter.result and adapter.result.valid and adapter.evaluator.evaluations == 1 and adapter.result.proposal["length"] == 4)
+        check("Coin overlay is attached without a document object", adapter.overlay.node is not None and Gui.getDocument(doc.Name).activeView().getSceneGraph().getNumChildren() == initial_scene + 1)
+        current = snapshot(doc)
+        report["invariant_differences"] = [{"index": i, "before": before, "after": after}
+                                           for i, (before, after) in enumerate(zip(baseline, current)) if before != after]
+        check("Preview preserves live UUID/revision/history/modified/visibility/selection/camera", current == baseline)
+        from pivy import coin
+        search = coin.SoSearchAction()
+        search.setType(coin.SoPickStyle.getClassTypeId())
+        search.setInterest(coin.SoSearchAction.FIRST)
+        search.apply(adapter.overlay.node)
+        pick = search.getPath().getTail()
+        check("Ghost cannot steal surface/profile selection", pick.style.getValue() == coin.SoPickStyle.UNPICKABLE)
+        original_result, original_node = adapter.result, adapter.overlay.node
+        original_evaluations = adapter.evaluator.evaluations
+        adapter.schedule(dict(op="pad", profile="Profile", length="4.00 mm", reversed=False))
+        check("Equivalent focus-out quantity text preserves a valid result and ghost synchronously",
+              adapter.result is original_result and adapter.overlay.node is original_node
+              and events[-1] is original_result and not adapter.timer.isActive())
+        adapter.schedule(dict(op="pad", profile="Profile", length="0.4 cm", reversed=False))
+        QtTest.QTest.qWait(140)
+        check("Equivalent units never start another native evaluation",
+              adapter.result is original_result and adapter.evaluator.evaluations == original_evaluations
+              and adapter.pending["length"] == "0.4 cm" and snapshot(doc) == baseline)
+        adapter.schedule(dict(op="pad", profile="Profile", length="wrong units"))
+        check("Changing to invalid text clears the old ghost immediately", adapter.overlay.node is None and adapter.result is None)
+        QtTest.QTest.qWait(160)
+        check("Invalid depth has readable failure data and no live mutation", adapter.result and not adapter.result.valid and adapter.result.error["code"] == "invalid_argument" and snapshot(doc) == baseline)
+        adapter.schedule(dict(op="pocket", profile="Profile", length=2, through_all=False, reversed=False))
+        QtTest.QTest.qWait(220)
+        blind = adapter.result
+        check("Native face-attached blind cut draws removed material", blind and blind.valid and abs(blind.material_shape.Volume - 25.1327412287) < 1e-6)
+        depth_search = coin.SoSearchAction()
+        depth_search.setType(coin.SoDepthBuffer.getClassTypeId())
+        depth_search.setInterest(coin.SoSearchAction.FIRST)
+        depth_search.apply(adapter.overlay.node)
+        depth = depth_search.getPath().getTail()
+        check("Removal x-ray is confined to its non-testing, non-writing Coin ghost",
+              not depth.getField("test").getValue() and not depth.getField("write").getValue()
+              and depth.getField("function").getValue() == coin.SoDepthBuffer.ALWAYS)
+        adapter.schedule(dict(op="pocket", profile="Profile", through_all=True, reversed=False))
+        QtTest.QTest.qWait(220)
+        report["preview_timings_ms"] = {"initial_pad": report["initial_preview"]["milliseconds"],
+                                       "blind_cut": blind.milliseconds,
+                                       "through_all_cut": adapter.result.milliseconds if adapter.result else None}
+        check("Through-all changes the actual cut geometry", adapter.result.valid and adapter.result.shape.Volume < blind.shape.Volume)
+        check("Cut preview preserves every captured live invariant", snapshot(doc) == baseline)
+        adapter.clear()
+        check("Cancel disposes clone snapshots and Coin children", adapter.evaluator is None and adapter.overlay.node is None and Gui.getDocument(doc.Name).activeView().getSceneGraph().getNumChildren() == initial_scene)
+        check("Cancel retains the unchanged live solid", snapshot(doc) == baseline and abs(doc.Body.Shape.Volume - 1200) < 1e-6)
+        adapter.begin(doc, state["revision"])
+        adapter.schedule(dict(op="pad", profile="Profile", length=2))
+        QtTest.QTest.qWait(180)
+        editor_visible[0] = False
+        QtTest.QTest.qWait(260)
+        check("Closing the custom feature editor clears the preview", adapter.evaluator is None and adapter.overlay.node is None)
+        editor_visible[0] = True
+        adapter.begin(doc, state["revision"])
+        adapter.schedule(dict(op="pocket", profile="Profile", length=2, through_all=False, reversed=False))
+        QtTest.QTest.qWait(180)
+        result = adapter.result
+        adapter.clear()
+        call("pocket", id="AcceptedPocket", **{key: value for key, value in result.proposal.items() if key != "op"})
+        check("Acceptance creates one normal controller transaction matching preview", doc.UndoCount == baseline[3] + 1 and abs(doc.Body.Shape.Volume - result.shape.Volume) < 1e-6)
+        adapter.begin(doc, state["revision"])
+        adapter.schedule(dict(op="pad", profile="Profile", length=2))
+        QtTest.QTest.qWait(180)
+        call("rename_feature", feature="Profile", name="Changed profile")
+        QtTest.QTest.qWait(260)
+        check("A newer accepted revision invalidates the existing ghost", adapter.evaluator is None and adapter.overlay.node is None)
+        adapter.begin(doc, state["revision"])
+        adapter.schedule(dict(op="pad", profile="Profile", length=2))
+        QtTest.QTest.qWait(180)
+        second = App.newDocument("PreviewLifecycleOther")
+        App.setActiveDocument(second.Name)
+        QtTest.QTest.qWait(260)
+        check("Document activation clears the previous document overlay", adapter.evaluator is None and adapter.overlay.node is None)
+        App.closeDocument(second.Name)
+        App.setActiveDocument(doc.Name)
+        adapter.begin(doc, state["revision"])
+        adapter.schedule(dict(op="pad", profile="Profile", length=2))
+        QtTest.QTest.qWait(180)
+        App.closeDocument(doc.Name)
+        QtTest.QTest.qWait(260)
+        check("Closing the source document releases preview resources", adapter.evaluator is None and adapter.overlay.node is None)
+        adapter.close()
+        check("Window cleanup stops both preview timers", not adapter.timer.isActive() and not adapter.lifetime_timer.isActive())
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        if adapter:
+            adapter.close()
+        core.close()
+        for name in list(App.listDocuments()):
+            App.closeDocument(name)
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str))
+        QtCore.QTimer.singleShot(250, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1600, validate)

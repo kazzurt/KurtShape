@@ -1,9 +1,10 @@
 {
-  "document_id": "260d79fe-f2f7-4288-9737-63e1fee04226",
-  "revision": "67815d83-64e3-4c82-9548-59c9b8085102",
+  "document_id": "1b7f2caf-f36c-465b-8a2f-9bc5545c80f0",
+  "revision": "8bb83931-8f3d-48e6-a926-06e1e48b74a6",
   "units": "mm",
   "source_mapping": {},
   "import_source": null,
+  "assembly": null,
   "engine": {
     "FreeCAD": [
       "1",

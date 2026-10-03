@@ -1,0 +1,2322 @@
+{
+  "source_commit": "565566b",
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "events": [
+    {
+      "phase": "explicit-rich-tooltip",
+      "event": 75,
+      "widget": {
+        "class": "QTipLabel",
+        "name": "",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": false,
+        "window": true,
+        "parent": null,
+        "parent_name": null,
+        "size": [
+          640,
+          480
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "explicit-rich-tooltip",
+      "event": 75,
+      "widget": {
+        "class": "QRollEffect",
+        "name": "",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": false,
+        "window": true,
+        "parent": null,
+        "parent_name": null,
+        "size": [
+          148,
+          0
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "explicit-rich-tooltip",
+      "event": 17,
+      "widget": {
+        "class": "QRollEffect",
+        "name": "",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": true,
+        "window": true,
+        "parent": null,
+        "parent_name": null,
+        "size": [
+          148,
+          0
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "explicit-rich-tooltip",
+      "event": 17,
+      "widget": {
+        "class": "QTipLabel",
+        "name": "qtooltip_label",
+        "title": "",
+        "text": "<b>ProbePad.Face6</b><br>Planar face: 600 mm\u00b2",
+        "tooltip": "",
+        "visible": true,
+        "window": true,
+        "parent": null,
+        "parent_name": null,
+        "size": [
+          148,
+          62
+        ],
+        "stylesheet": "/* */",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "surface-right-click",
+      "event": 75,
+      "widget": {
+        "class": "QMenu",
+        "name": "",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": false,
+        "window": true,
+        "parent": "QOpenGLWidget",
+        "parent_name": "",
+        "size": [
+          100,
+          30
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "surface-right-click",
+      "event": 75,
+      "widget": {
+        "class": "QMenu",
+        "name": "Link Actions",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": false,
+        "window": true,
+        "parent": "QMenu",
+        "parent_name": "",
+        "size": [
+          100,
+          30
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "surface-right-click",
+      "event": 75,
+      "widget": {
+        "class": "QMenu",
+        "name": "",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": false,
+        "window": true,
+        "parent": "QMenu",
+        "parent_name": "Link Actions",
+        "size": [
+          100,
+          30
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "surface-right-click",
+      "event": 75,
+      "widget": {
+        "class": "QMenu",
+        "name": "",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": false,
+        "window": true,
+        "parent": "QMenu",
+        "parent_name": "",
+        "size": [
+          100,
+          30
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "surface-right-click",
+      "event": 75,
+      "widget": {
+        "class": "QMenu",
+        "name": "Standard Views",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": false,
+        "window": true,
+        "parent": "QMenu",
+        "parent_name": "",
+        "size": [
+          100,
+          30
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "surface-right-click",
+      "event": 75,
+      "widget": {
+        "class": "QMenu",
+        "name": "",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": false,
+        "window": true,
+        "parent": "QMenu",
+        "parent_name": "",
+        "size": [
+          100,
+          30
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "surface-right-click",
+      "event": 75,
+      "widget": {
+        "class": "QMenu",
+        "name": "",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": false,
+        "window": true,
+        "parent": "QMenu",
+        "parent_name": "",
+        "size": [
+          100,
+          30
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "surface-right-click",
+      "event": 17,
+      "widget": {
+        "class": "QMenu",
+        "name": "",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": true,
+        "window": true,
+        "parent": "QOpenGLWidget",
+        "parent_name": "",
+        "size": [
+          270,
+          652
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    },
+    {
+      "phase": "surface-right-click",
+      "event": 75,
+      "widget": {
+        "class": "QAlphaWidget",
+        "name": "",
+        "title": "",
+        "text": "",
+        "tooltip": "",
+        "visible": false,
+        "window": true,
+        "parent": null,
+        "parent_name": null,
+        "size": [
+          640,
+          480
+        ],
+        "stylesheet": "",
+        "palette": {
+          "Window": "#f1f3f6",
+          "WindowText": "#243447",
+          "Base": "#ffffff",
+          "Text": "#243447",
+          "Button": "#ffffff",
+          "ButtonText": "#243447",
+          "ToolTipBase": "#243447",
+          "ToolTipText": "#ffffff"
+        }
+      }
+    }
+  ],
+  "stages": [
+    {
+      "name": "created-solid",
+      "top_levels": [
+        {
+          "class": "Gui::MainWindow",
+          "name": "",
+          "title": "[*] Surface popup audit - FreeCAD 1.1.4",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": true,
+          "parent": null,
+          "parent_name": null,
+          "size": [
+            1440,
+            917
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ],
+      "other_labels": [
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "",
+          "title": "",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            517,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "rightSideLabel",
+          "title": "Quick measure",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            6,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "IndicatorButton",
+          "name": "NavigationIndicator",
+          "title": "Navigation indicator",
+          "text": "SolidWorks  ",
+          "tooltip": "<p align='center'><b>SolidWorks</b> Navigation style</p>\n    <table>\n     <tr>\n      <th><small>Select</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Rotate</small></th>\n      <th><small>Pan</small></th>\n     </tr>\n     <tr>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Left.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Scroll.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_ShiftMiddle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Middle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_CtrlMiddle.svg'></td>\n     </tr>\n    </table>\n    <b>Rotation focus:</b> Middle mouse button.</small></p>",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            118,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Pad complete",
+          "tooltip": "Pad complete",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            517,
+            28
+          ],
+          "stylesheet": "color:#405267",
+          "palette": {
+            "Window": "#000000",
+            "WindowText": "#243447",
+            "Base": "#000000",
+            "Text": "#243447",
+            "Button": "#000000",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "  KurtShape  ",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            120,
+            33
+          ],
+          "stylesheet": "font-size:17px;font-weight:700;color:#1c5fa8;padding-right:8px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Surface popup audit",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            160,
+            33
+          ],
+          "stylesheet": "font-weight:600;padding:0 14px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Features (2)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Parts (1)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "1 solid \u00b7 4,800.00 mm\u00b3",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            35
+          ],
+          "stylesheet": "color:#586679; border-top:1px solid #d1d8e1",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "name": "surface-hover",
+      "top_levels": [
+        {
+          "class": "Gui::MainWindow",
+          "name": "",
+          "title": "[*] Surface popup audit - FreeCAD 1.1.4",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": true,
+          "parent": null,
+          "parent_name": null,
+          "size": [
+            1440,
+            917
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ],
+      "other_labels": [
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "",
+          "title": "",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            517,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "rightSideLabel",
+          "title": "Quick measure",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            6,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "IndicatorButton",
+          "name": "NavigationIndicator",
+          "title": "Navigation indicator",
+          "text": "SolidWorks  ",
+          "tooltip": "<p align='center'><b>SolidWorks</b> Navigation style</p>\n    <table>\n     <tr>\n      <th><small>Select</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Rotate</small></th>\n      <th><small>Pan</small></th>\n     </tr>\n     <tr>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Left.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Scroll.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_ShiftMiddle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Middle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_CtrlMiddle.svg'></td>\n     </tr>\n    </table>\n    <b>Rotation focus:</b> Middle mouse button.</small></p>",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            118,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Pad complete",
+          "tooltip": "Pad complete",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            517,
+            28
+          ],
+          "stylesheet": "color:#405267",
+          "palette": {
+            "Window": "#000000",
+            "WindowText": "#243447",
+            "Base": "#000000",
+            "Text": "#243447",
+            "Button": "#000000",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "  KurtShape  ",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            120,
+            33
+          ],
+          "stylesheet": "font-size:17px;font-weight:700;color:#1c5fa8;padding-right:8px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Surface popup audit",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            160,
+            33
+          ],
+          "stylesheet": "font-weight:600;padding:0 14px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Features (2)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Parts (1)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "1 solid \u00b7 4,800.00 mm\u00b3",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            35
+          ],
+          "stylesheet": "color:#586679; border-top:1px solid #d1d8e1",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "name": "surface-click",
+      "top_levels": [
+        {
+          "class": "Gui::MainWindow",
+          "name": "",
+          "title": "[*] Surface popup audit - FreeCAD 1.1.4",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": true,
+          "parent": null,
+          "parent_name": null,
+          "size": [
+            1440,
+            917
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ],
+      "other_labels": [
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "",
+          "title": "",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            517,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "rightSideLabel",
+          "title": "Quick measure",
+          "text": "Area: 6.00 cm^2",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            6,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "IndicatorButton",
+          "name": "NavigationIndicator",
+          "title": "Navigation indicator",
+          "text": "SolidWorks  ",
+          "tooltip": "<p align='center'><b>SolidWorks</b> Navigation style</p>\n    <table>\n     <tr>\n      <th><small>Select</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Rotate</small></th>\n      <th><small>Pan</small></th>\n     </tr>\n     <tr>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Left.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Scroll.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_ShiftMiddle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Middle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_CtrlMiddle.svg'></td>\n     </tr>\n    </table>\n    <b>Rotation focus:</b> Middle mouse button.</small></p>",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            118,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Pad complete",
+          "tooltip": "Pad complete",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            517,
+            28
+          ],
+          "stylesheet": "color:#405267",
+          "palette": {
+            "Window": "#000000",
+            "WindowText": "#243447",
+            "Base": "#000000",
+            "Text": "#243447",
+            "Button": "#000000",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "  KurtShape  ",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            120,
+            33
+          ],
+          "stylesheet": "font-size:17px;font-weight:700;color:#1c5fa8;padding-right:8px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Surface popup audit",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            160,
+            33
+          ],
+          "stylesheet": "font-weight:600;padding:0 14px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Features (2)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Parts (1)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "1 solid \u00b7 4,800.00 mm\u00b3",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            35
+          ],
+          "stylesheet": "color:#586679; border-top:1px solid #d1d8e1",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "name": "surface-selected",
+      "top_levels": [
+        {
+          "class": "Gui::MainWindow",
+          "name": "",
+          "title": "[*] Surface popup audit - FreeCAD 1.1.4",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": true,
+          "parent": null,
+          "parent_name": null,
+          "size": [
+            1440,
+            917
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ],
+      "other_labels": [
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "",
+          "title": "",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            477,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "rightSideLabel",
+          "title": "Quick measure",
+          "text": "Area: 6.00 cm^2",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            86,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "IndicatorButton",
+          "name": "NavigationIndicator",
+          "title": "Navigation indicator",
+          "text": "SolidWorks  ",
+          "tooltip": "<p align='center'><b>SolidWorks</b> Navigation style</p>\n    <table>\n     <tr>\n      <th><small>Select</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Rotate</small></th>\n      <th><small>Pan</small></th>\n     </tr>\n     <tr>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Left.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Scroll.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_ShiftMiddle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Middle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_CtrlMiddle.svg'></td>\n     </tr>\n    </table>\n    <b>Rotation focus:</b> Middle mouse button.</small></p>",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            118,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Pad complete",
+          "tooltip": "Pad complete",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            477,
+            28
+          ],
+          "stylesheet": "color:#405267",
+          "palette": {
+            "Window": "#000000",
+            "WindowText": "#243447",
+            "Base": "#000000",
+            "Text": "#243447",
+            "Button": "#000000",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "  KurtShape  ",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            120,
+            33
+          ],
+          "stylesheet": "font-size:17px;font-weight:700;color:#1c5fa8;padding-right:8px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Surface popup audit",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            160,
+            33
+          ],
+          "stylesheet": "font-weight:600;padding:0 14px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Features (2)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Parts (1)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "1 solid \u00b7 4,800.00 mm\u00b3",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            35
+          ],
+          "stylesheet": "color:#586679; border-top:1px solid #d1d8e1",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "name": "surface-preselection",
+      "top_levels": [
+        {
+          "class": "Gui::MainWindow",
+          "name": "",
+          "title": "[*] Surface popup audit - FreeCAD 1.1.4",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": true,
+          "parent": null,
+          "parent_name": null,
+          "size": [
+            1440,
+            917
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ],
+      "other_labels": [
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "",
+          "title": "",
+          "text": "Preselected: KurtShape1.ProbePad.Face1 (16.82 mm, 0.00 mm, 5.39 mm)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            477,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#000000",
+            "WindowText": "#243447",
+            "Base": "#000000",
+            "Text": "#243447",
+            "Button": "#000000",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "rightSideLabel",
+          "title": "Quick measure",
+          "text": "Area: 6.00 cm^2",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            86,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#000000",
+            "WindowText": "#243447",
+            "Base": "#000000",
+            "Text": "#243447",
+            "Button": "#000000",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "IndicatorButton",
+          "name": "NavigationIndicator",
+          "title": "Navigation indicator",
+          "text": "SolidWorks  ",
+          "tooltip": "<p align='center'><b>SolidWorks</b> Navigation style</p>\n    <table>\n     <tr>\n      <th><small>Select</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Rotate</small></th>\n      <th><small>Pan</small></th>\n     </tr>\n     <tr>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Left.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Scroll.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_ShiftMiddle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Middle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_CtrlMiddle.svg'></td>\n     </tr>\n    </table>\n    <b>Rotation focus:</b> Middle mouse button.</small></p>",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            118,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#ffffff",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Pad complete",
+          "tooltip": "Pad complete",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            477,
+            28
+          ],
+          "stylesheet": "color:#405267",
+          "palette": {
+            "Window": "#000000",
+            "WindowText": "#243447",
+            "Base": "#000000",
+            "Text": "#243447",
+            "Button": "#000000",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "  KurtShape  ",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            120,
+            33
+          ],
+          "stylesheet": "font-size:17px;font-weight:700;color:#1c5fa8;padding-right:8px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Surface popup audit",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            160,
+            33
+          ],
+          "stylesheet": "font-weight:600;padding:0 14px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Features (2)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Parts (1)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "1 solid \u00b7 4,800.00 mm\u00b3",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            35
+          ],
+          "stylesheet": "color:#586679; border-top:1px solid #d1d8e1",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "name": "surface-right-click",
+      "top_levels": [
+        {
+          "class": "QMenu",
+          "name": "",
+          "title": "",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": true,
+          "parent": "QOpenGLWidget",
+          "parent_name": "",
+          "size": [
+            270,
+            652
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "Gui::MainWindow",
+          "name": "",
+          "title": "[*] Surface popup audit - FreeCAD 1.1.4",
+          "text": "",
+          "tooltip": "",
+          "visible": true,
+          "window": true,
+          "parent": null,
+          "parent_name": null,
+          "size": [
+            1440,
+            917
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ],
+      "other_labels": [
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "",
+          "title": "",
+          "text": "Preselected: KurtShape1.ProbePad.Face1 (16.82 mm, 0.00 mm, 5.39 mm)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            477,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#000000",
+            "WindowText": "#243447",
+            "Base": "#000000",
+            "Text": "#243447",
+            "Button": "#000000",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "Gui::StatusBarLabel",
+          "name": "rightSideLabel",
+          "title": "Quick measure",
+          "text": "Area: 6.00 cm^2",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            86,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#000000",
+            "WindowText": "#243447",
+            "Base": "#000000",
+            "Text": "#243447",
+            "Button": "#000000",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "IndicatorButton",
+          "name": "NavigationIndicator",
+          "title": "Navigation indicator",
+          "text": "SolidWorks  ",
+          "tooltip": "<p align='center'><b>SolidWorks</b> Navigation style</p>\n    <table>\n     <tr>\n      <th><small>Select</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Rotate</small></th>\n      <th><small>Pan</small></th>\n     </tr>\n     <tr>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Left.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Scroll.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_ShiftMiddle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Middle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_CtrlMiddle.svg'></td>\n     </tr>\n    </table>\n    <b>Rotation focus:</b> Middle mouse button.</small></p>",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            118,
+            28
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#ffffff",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Pad complete",
+          "tooltip": "Pad complete",
+          "visible": true,
+          "window": false,
+          "parent": "QStatusBar",
+          "parent_name": "statusBar",
+          "size": [
+            477,
+            28
+          ],
+          "stylesheet": "color:#405267",
+          "palette": {
+            "Window": "#000000",
+            "WindowText": "#243447",
+            "Base": "#000000",
+            "Text": "#243447",
+            "Button": "#000000",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "  KurtShape  ",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            120,
+            33
+          ],
+          "stylesheet": "font-size:17px;font-weight:700;color:#1c5fa8;padding-right:8px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "Surface popup audit",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QToolBar",
+          "parent_name": "KurtShapeDocumentBar",
+          "size": [
+            160,
+            33
+          ],
+          "stylesheet": "font-weight:600;padding:0 14px",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Features (2)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "SectionTitle",
+          "title": "",
+          "text": "Parts (1)",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            30
+          ],
+          "stylesheet": "",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        },
+        {
+          "class": "QLabel",
+          "name": "",
+          "title": "",
+          "text": "1 solid \u00b7 4,800.00 mm\u00b3",
+          "tooltip": "",
+          "visible": true,
+          "window": false,
+          "parent": "QWidget",
+          "parent_name": "",
+          "size": [
+            265,
+            35
+          ],
+          "stylesheet": "color:#586679; border-top:1px solid #d1d8e1",
+          "palette": {
+            "Window": "#f1f3f6",
+            "WindowText": "#243447",
+            "Base": "#ffffff",
+            "Text": "#243447",
+            "Button": "#ffffff",
+            "ButtonText": "#243447",
+            "ToolTipBase": "#243447",
+            "ToolTipText": "#ffffff"
+          }
+        }
+      ],
+      "popup_images": [
+        "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\ui-refresh\\surface-right-click-popup-15.png"
+      ]
+    }
+  ],
+  "notification_before": {
+    "widget": {
+      "class": "Gui::NotificationLabel",
+      "name": "NotificationBox_label",
+      "title": "",
+      "text": "<style>p { margin: 0 0 0 0 } td { padding: 0 15px }</style>                             <p style='white-space:normal'>                                                                                              <table>                                                                                                                     <tr>                                                                                                                       <th><small>Type</small></th>                                                                                                <th><small>Notifier</small></th>                                                                                                <th><small>Message</small></th>                                                                                                </tr>                                                                                                   <tr>                                                                                                                            <td align='left'><img width=\"16\" height=\"16\" src=':/icons/Warning.svg'></td>                                                                 <td align='left'></td>                                                                                                        <td align='left'><p>QStatusBar::insertPermanentWidget: Index out of range (0), appending widget</p></td>                                                                                                        </tr></table></p>",
+      "tooltip": "",
+      "visible": true,
+      "window": true,
+      "parent": null,
+      "parent_name": null,
+      "size": [
+        800,
+        38
+      ],
+      "stylesheet": "",
+      "palette": {
+        "Window": "#f1f3f6",
+        "WindowText": "#243447",
+        "Base": "#ffffff",
+        "Text": "#243447",
+        "Button": "#ffffff",
+        "ButtonText": "#243447",
+        "ToolTipBase": "#243447",
+        "ToolTipText": "#ffffff"
+      }
+    },
+    "rendered_colors": [
+      {
+        "color": "#243447",
+        "pixels": 63147
+      },
+      {
+        "color": "#ffffff",
+        "pixels": 5012
+      },
+      {
+        "color": "#fce94f",
+        "pixels": 38
+      },
+      {
+        "color": "#302b00",
+        "pixels": 30
+      },
+      {
+        "color": "#000000",
+        "pixels": 18
+      },
+      {
+        "color": "#312c00",
+        "pixels": 3
+      },
+      {
+        "color": "#e5ca20",
+        "pixels": 3
+      },
+      {
+        "color": "#dfc41a",
+        "pixels": 3
+      },
+      {
+        "color": "#273130",
+        "pixels": 2
+      },
+      {
+        "color": "#302b01",
+        "pixels": 2
+      },
+      {
+        "color": "#efd82f",
+        "pixels": 2
+      },
+      {
+        "color": "#e6cc22",
+        "pixels": 2
+      }
+    ]
+  },
+  "notification_after": {
+    "widget": {
+      "class": "Gui::NotificationLabel",
+      "name": "NotificationBox_label",
+      "title": "",
+      "text": "<style>p { margin: 0 0 0 0 } td { padding: 0 15px }</style>                             <p style='white-space:normal'>                                                                                              <table>                                                                                                                     <tr>                                                                                                                       <th><small>Type</small></th>                                                                                                <th><small>Notifier</small></th>                                                                                                <th><small>Message</small></th>                                                                                                </tr>                                                                                                   <tr>                                                                                                                            <td align='left'><img width=\"16\" height=\"16\" src=':/icons/Warning.svg'></td>                                                                 <td align='left'></td>                                                                                                        <td align='left'><p>QStatusBar::insertPermanentWidget: Index out of range (0), appending widget</p></td>                                                                                                        </tr></table></p>",
+      "tooltip": "",
+      "visible": true,
+      "window": true,
+      "parent": null,
+      "parent_name": null,
+      "size": [
+        800,
+        38
+      ],
+      "stylesheet": "QLabel#NotificationBox_label { color:#243447; background:#ffffff; border:1px solid #bdc7d3; }",
+      "palette": {
+        "Window": "#f1f3f6",
+        "WindowText": "#243447",
+        "Base": "#ffffff",
+        "Text": "#243447",
+        "Button": "#ffffff",
+        "ButtonText": "#243447",
+        "ToolTipBase": "#ffffff",
+        "ToolTipText": "#243447"
+      }
+    },
+    "rendered_colors": [
+      {
+        "color": "#ffffff",
+        "pixels": 58407
+      },
+      {
+        "color": "#bdc7d3",
+        "pixels": 2510
+      },
+      {
+        "color": "#dee3e9",
+        "pixels": 2498
+      },
+      {
+        "color": "#243447",
+        "pixels": 833
+      },
+      {
+        "color": "#245aa8",
+        "pixels": 243
+      },
+      {
+        "color": "#bd7f47",
+        "pixels": 235
+      },
+      {
+        "color": "#deffff",
+        "pixels": 234
+      },
+      {
+        "color": "#dea069",
+        "pixels": 224
+      },
+      {
+        "color": "#763447",
+        "pixels": 221
+      },
+      {
+        "color": "#9ae0ff",
+        "pixels": 217
+      },
+      {
+        "color": "#ffc18a",
+        "pixels": 216
+      },
+      {
+        "color": "#247fc6",
+        "pixels": 214
+      }
+    ]
+  },
+  "click_hit": {
+    "x": 16.820545196533203,
+    "y": 0.0,
+    "z": 5.386999130249023,
+    "ParentObject": "<body object>",
+    "SubName": "ProbePad.Face1",
+    "Document": "KurtShape1",
+    "Object": "ProbePad",
+    "Component": "Face1"
+  },
+  "ordinary_rich_tooltip": {
+    "widget": {
+      "class": "QTipLabel",
+      "name": "qtooltip_label",
+      "title": "",
+      "text": "<b>ProbePad.Face6</b><br>Planar face: 600 mm\u00b2",
+      "tooltip": "",
+      "visible": true,
+      "window": true,
+      "parent": null,
+      "parent_name": null,
+      "size": [
+        148,
+        62
+      ],
+      "stylesheet": "/* */",
+      "palette": {
+        "Window": "#f1f3f6",
+        "WindowText": "#243447",
+        "Base": "#ffffff",
+        "Text": "#243447",
+        "Button": "#ffffff",
+        "ButtonText": "#243447",
+        "ToolTipBase": "#243447",
+        "ToolTipText": "#ffffff"
+      }
+    },
+    "rendered_colors": [
+      {
+        "color": "#243447",
+        "pixels": 18703
+      },
+      {
+        "color": "#ffffff",
+        "pixels": 597
+      },
+      {
+        "color": "#bd7f47",
+        "pixels": 94
+      },
+      {
+        "color": "#50a1e3",
+        "pixels": 89
+      },
+      {
+        "color": "#245ba9",
+        "pixels": 84
+      },
+      {
+        "color": "#dfa16a",
+        "pixels": 81
+      },
+      {
+        "color": "#ffc18a",
+        "pixels": 81
+      },
+      {
+        "color": "#9b5b47",
+        "pixels": 79
+      },
+      {
+        "color": "#ffffc6",
+        "pixels": 78
+      },
+      {
+        "color": "#763447",
+        "pixels": 76
+      },
+      {
+        "color": "#24346a",
+        "pixels": 73
+      },
+      {
+        "color": "#9be1ff",
+        "pixels": 73
+      }
+    ]
+  },
+  "selection_after_click": [
+    {
+      "object": "ProbePad",
+      "subelements": [
+        "Face6"
+      ]
+    }
+  ],
+  "navigation_before": {
+    "class": "IndicatorButton",
+    "name": "NavigationIndicator",
+    "title": "Navigation indicator",
+    "text": "SolidWorks  ",
+    "tooltip": "<p align='center'><b>SolidWorks</b> Navigation style</p>\n    <table>\n     <tr>\n      <th><small>Select</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Zoom</small></th>\n      <th><small>Rotate</small></th>\n      <th><small>Pan</small></th>\n     </tr>\n     <tr>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Left.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Scroll.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_ShiftMiddle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_Middle.svg'></td>\n      <td align='center'><img src=':/icons/Navigation_Mouse_CtrlMiddle.svg'></td>\n     </tr>\n    </table>\n    <b>Rotation focus:</b> Middle mouse button.</small></p>",
+    "visible": true,
+    "window": false,
+    "parent": "QStatusBar",
+    "parent_name": "statusBar",
+    "size": [
+      118,
+      28
+    ],
+    "stylesheet": "",
+    "palette": {
+      "Window": "#ffffff",
+      "WindowText": "#243447",
+      "Base": "#ffffff",
+      "Text": "#243447",
+      "Button": "#ffffff",
+      "ButtonText": "#243447",
+      "ToolTipBase": "#243447",
+      "ToolTipText": "#ffffff"
+    }
+  },
+  "navigation_after": {
+    "indicator_visible": false,
+    "style_before": "Gui::SolidWorksNavigationStyle",
+    "style_after": "Gui::SolidWorksNavigationStyle"
+  },
+  "passed": true
+}

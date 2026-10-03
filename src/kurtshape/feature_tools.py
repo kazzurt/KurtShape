@@ -7,6 +7,7 @@ FreeCAD 1.1.4 command inventory; runtime filtering handles other installations.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 
 # Resource names from Gui.Command.get(command).getInfo()['pixmap'] in 1.1.4.
@@ -50,33 +51,35 @@ class NativeTool:
 
 
 def _tool(key, label, command, tip, category, workbench='PartDesignWorkbench', icon=None):
+    # Engine provenance belongs in the contract/docs, not modeling hover help.
+    tip = re.sub(r'\bnative\s+', '', tip, flags=re.IGNORECASE)
     return NativeTool(key, label, command, workbench, icon or _NATIVE_PIXMAPS.get(command, command), tip, category)
 
 
 MODEL_TOOLS = (
-    _tool('pad', 'Extrude', 'PartDesign_Pad', 'Native Pad: add material from a closed sketch in the active Body.', 'Add material'),
-    _tool('revolve', 'Revolve', 'PartDesign_Revolution', 'Native Revolution: add material by revolving a closed sketch about an axis.', 'Add material'),
-    _tool('sweep', 'Sweep', 'PartDesign_AdditivePipe', 'Native Additive Pipe: sweep a sketch along a selected path in the active Body.', 'Add material'),
-    _tool('loft', 'Loft', 'PartDesign_AdditiveLoft', 'Native Additive Loft: join multiple sketch sections into an additive Body feature.', 'Add material'),
+    _tool('pad', 'Extrude', 'PartDesign_Pad', 'Extrude a closed sketch to create a solid or add material to the selected part.', 'Add material'),
+    _tool('revolve', 'Revolve', 'PartDesign_Revolution', 'Revolve a closed sketch around an axis to create or add material.', 'Add material'),
+    _tool('sweep', 'Sweep', 'PartDesign_AdditivePipe', 'Sweep a sketch profile along a path to create or add material.', 'Add material'),
+    _tool('loft', 'Loft', 'PartDesign_AdditiveLoft', 'Connect two or more sketch sections to create or add material.', 'Add material'),
     _tool('additive_helix', 'Helical sweep', 'PartDesign_AdditiveHelix', 'Native Additive Helix: sweep a sketch along a parametric helix.', 'Add material'),
     _tool('additive_primitive', 'Additive primitives', 'PartDesign_CompPrimitiveAdditive', 'Native additive primitive controls: create a primitive feature in the active Body.', 'Add material', icon='PartDesign_AdditiveBox'),
-    _tool('pocket', 'Extrude remove', 'PartDesign_Pocket', 'Native Pocket: remove material using a closed sketch.', 'Remove material'),
-    _tool('groove', 'Revolve remove', 'PartDesign_Groove', 'Native Groove: remove material by revolving a closed sketch about an axis.', 'Remove material'),
-    _tool('subtractive_sweep', 'Sweep remove', 'PartDesign_SubtractivePipe', 'Native Subtractive Pipe: remove material by sweeping a sketch along a path.', 'Remove material'),
-    _tool('subtractive_loft', 'Loft remove', 'PartDesign_SubtractiveLoft', 'Native Subtractive Loft: remove material through multiple sketch sections.', 'Remove material'),
+    _tool('pocket', 'Extrude remove', 'PartDesign_Pocket', 'Extrude a closed sketch to remove material from the selected part.', 'Remove material'),
+    _tool('groove', 'Revolve remove', 'PartDesign_Groove', 'Revolve a closed sketch around an axis to remove material.', 'Remove material'),
+    _tool('subtractive_sweep', 'Sweep remove', 'PartDesign_SubtractivePipe', 'Sweep a sketch profile along a path to remove material.', 'Remove material'),
+    _tool('subtractive_loft', 'Loft remove', 'PartDesign_SubtractiveLoft', 'Remove material between two or more sketch sections.', 'Remove material'),
     _tool('subtractive_helix', 'Helical remove', 'PartDesign_SubtractiveHelix', 'Native Subtractive Helix: remove material along a parametric helical sweep.', 'Remove material'),
     _tool('subtractive_primitive', 'Subtractive primitives', 'PartDesign_CompPrimitiveSubtractive', 'Native subtractive primitive controls: cut a primitive volume from the active Body.', 'Remove material', icon='PartDesign_SubtractiveBox'),
     _tool('hole', 'Hole', 'PartDesign_Hole', 'Native Hole: select a positioning sketch to define holes, countersinks or counterbores.', 'Remove material'),
-    _tool('fillet', 'Fillet', 'PartDesign_Fillet', 'Native Body fillet: round selected solid edges.', 'Modify'),
-    _tool('chamfer', 'Chamfer', 'PartDesign_Chamfer', 'Native Body chamfer: bevel selected solid edges.', 'Modify'),
-    _tool('shell', 'Shell', 'PartDesign_Thickness', 'Native Thickness: remove selected faces and offset remaining walls to hollow the Body.', 'Modify'),
-    _tool('draft', 'Draft', 'PartDesign_Draft', 'Native Draft: taper selected faces relative to a neutral plane and pull direction.', 'Modify'),
-    _tool('boolean', 'Boolean', 'PartDesign_Boolean', 'Native Body Boolean: fuse, cut or intersect the active Body with other Bodies.', 'Modify'),
-    _tool('mirror', 'Mirror', 'PartDesign_Mirrored', 'Native Mirrored: mirror selected Body features about a reference plane.', 'Pattern'),
-    _tool('linear_pattern', 'Linear pattern', 'PartDesign_LinearPattern', 'Native Linear Pattern: repeat selected Body features along a direction.', 'Pattern'),
-    _tool('circular_pattern', 'Circular pattern', 'PartDesign_PolarPattern', 'Native Polar Pattern: repeat selected Body features about an axis.', 'Pattern'),
+    _tool('fillet', 'Fillet', 'PartDesign_Fillet', 'Round selected edges of a part.', 'Modify'),
+    _tool('chamfer', 'Chamfer', 'PartDesign_Chamfer', 'Bevel selected edges of a part.', 'Modify'),
+    _tool('shell', 'Shell', 'PartDesign_Thickness', 'Remove selected faces and hollow a part with a specified wall thickness.', 'Modify'),
+    _tool('draft', 'Draft', 'PartDesign_Draft', 'Taper selected faces relative to a neutral plane and pull direction.', 'Modify'),
+    _tool('boolean', 'Boolean', 'PartDesign_Boolean', 'Combine parts by adding, subtracting or intersecting their solids.', 'Modify'),
+    _tool('mirror', 'Mirror', 'PartDesign_Mirrored', 'Mirror selected features across a plane within the selected part.', 'Pattern'),
+    _tool('linear_pattern', 'Linear pattern', 'PartDesign_LinearPattern', 'Repeat selected features along a direction within the selected part.', 'Pattern'),
+    _tool('circular_pattern', 'Circular pattern', 'PartDesign_PolarPattern', 'Repeat selected features around an axis within the selected part.', 'Pattern'),
     _tool('multi_transform', 'Multiple transforms', 'PartDesign_MultiTransform', 'Native MultiTransform: combine mirror, linear and polar transforms of Body features.', 'Pattern'),
-    _tool('datum_plane', 'Plane', 'PartDesign_Plane', 'Native datum plane: create an attached or offset reference plane in the active Body.', 'Reference'),
+    _tool('datum_plane', 'Plane', 'PartDesign_Plane', 'Create an attached, offset or angled sketch plane in the selected part.', 'Reference'),
     _tool('datum_line', 'Axis', 'PartDesign_Line', 'Native datum line: create an attached reference axis in the active Body.', 'Reference'),
     _tool('datum_point', 'Point', 'PartDesign_Point', 'Native datum point: create an attached reference point in the active Body.', 'Reference'),
     _tool('datum_coordinates', 'Coordinate system', 'PartDesign_CoordinateSystem', 'Native datum coordinate system: define an attached reference frame.', 'Reference'),
@@ -170,8 +173,8 @@ SKETCH_TOOLS = (
 ALL_TOOLS = MODEL_TOOLS + SKETCH_TOOLS
 BY_KEY = {tool.key: tool for tool in ALL_TOOLS}
 PRIMARY_TOOLS = tuple(BY_KEY[key] for key in
-                      ('revolve', 'sweep', 'loft', 'fillet', 'chamfer', 'hole',
-                       'shell', 'draft', 'mirror', 'linear_pattern', 'boolean'))
+                      ('revolve', 'sweep', 'loft', 'fillet', 'chamfer',
+                       'shell', 'draft', 'linear_pattern', 'circular_pattern', 'mirror', 'boolean', 'datum_plane'))
 TOOL_GROUPS = tuple((category, tuple(tool for tool in MODEL_TOOLS if tool.category == category))
                     for category in ('Add material', 'Remove material', 'Modify', 'Pattern', 'Reference', 'Part tools'))
 SKETCH_GROUPS = tuple((category, tuple(tool for tool in SKETCH_TOOLS if tool.category == category))

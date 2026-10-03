@@ -77,6 +77,7 @@ QMenu::item:selected, QMenuBar::item:selected { color: %(selection_ink)s; backgr
 QMenu::item:disabled { color: %(disabled_ink)s; background: transparent; }
 QMenu::separator { height: 1px; background: %(border)s; margin: 4px 9px; }
 QToolTip { color: white; background: %(tooltip)s; border: 1px solid %(tooltip)s; padding: 5px 7px; }
+QLabel#NotificationBox_label { color: %(ink)s; background: %(surface)s; border: 1px solid %(border)s; }
 QGroupBox { color: %(ink)s; background: %(surface)s; border: 1px solid %(border)s; border-radius: 2px; margin-top: 9px; padding: 9px 5px 5px; }
 QGroupBox::title { color: %(ink)s; background: %(surface)s; subcontrol-origin: margin; left: 7px; padding: 0 3px; }
 QCheckBox, QRadioButton { color: %(ink)s; background: transparent; spacing: 5px; }
@@ -161,12 +162,28 @@ def apply_theme(main):
                 "window_stylesheet_length": len(main.styleSheet()), "previous_window_text": app.palette().color(QtGui.QPalette.WindowText).name()}
     app.setStyle("Fusion")
     palette = light_palette()
+    notification_palette = QtGui.QPalette(palette)
+    for group in (QtGui.QPalette.Active, QtGui.QPalette.Inactive, QtGui.QPalette.Disabled):
+        notification_palette.setColor(group, QtGui.QPalette.ToolTipBase, QtGui.QColor(COLORS["surface"]))
+        notification_palette.setColor(group, QtGui.QPalette.ToolTipText, QtGui.QColor(COLORS["ink"]))
+
+    def set_widget_palette(widget):
+        # FreeCAD draws parentless notifications using its separate tooltip
+        # palette. Keep that panel consistent with its explicit QLabel colors.
+        notification = (widget.objectName() == "NotificationBox_label"
+                        or widget.metaObject().className() == "Gui::NotificationLabel")
+        widget.setPalette(notification_palette if notification else palette)
+
     app.setPalette(palette)
     main.setStyleSheet("")  # Remove the separate generated FreeCAD/dark window stylesheet.
     app.setStyleSheet(STYLESHEET)
     main.setPalette(palette)
     for widget in main.findChildren(QtGui.QWidget):
-        widget.setPalette(palette)
+        set_widget_palette(widget)
+    # A notification can already be visible before the app theme is applied;
+    # parentless windows are absent from the main window's child traversal.
+    for widget in app.topLevelWidgets():
+        set_widget_palette(widget)
     QtGui.QToolTip.setPalette(palette)
 
     old_filter = getattr(app, "_kurtshape_theme_filter", None)
@@ -178,7 +195,7 @@ def apply_theme(main):
         def eventFilter(self, watched, event):
             if event.type() in (QtCore.QEvent.Polish, QtCore.QEvent.Show) and isinstance(watched, QtGui.QWidget):
                 # Native task widgets/popups may carry an explicit startup palette.
-                watched.setPalette(palette)
+                set_widget_palette(watched)
                 if isinstance(watched, QtGui.QMenu):
                     # Qt may use full monitor height for scrolling menus. Keep
                     # every action above the Windows taskbar on this monitor.

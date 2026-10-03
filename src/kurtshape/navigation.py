@@ -9,7 +9,42 @@ import math
 import FreeCAD as App
 
 SOLIDWORKS_STYLE = 'Gui::SolidWorksNavigationStyle'
+NAVIGATION_STYLES = (
+    ('SolidWorks', SOLIDWORKS_STYLE), ('CAD', 'Gui::CADNavigationStyle'),
+    ('Blender', 'Gui::BlenderNavigationStyle'), ('Gesture', 'Gui::GestureNavigationStyle'),
+    ('Maya', 'Gui::MayaGestureNavigationStyle'), ('OpenCascade', 'Gui::OpenCascadeNavigationStyle'),
+    ('Inventor', 'Gui::InventorNavigationStyle'), ('OpenSCAD', 'Gui::OpenSCADNavigationStyle'),
+    ('Revit', 'Gui::RevitNavigationStyle'), ('Siemens NX', 'Gui::SiemensNXNavigationStyle'),
+    ('TinkerCAD', 'Gui::TinkerCADNavigationStyle'), ('Touchpad', 'Gui::TouchpadNavigationStyle'),
+)
 _double_middle_filter = None
+
+
+def selected_style():
+    configured = App.ParamGet('User parameter:KurtShape/Preferences').GetString('NavigationStyle', SOLIDWORKS_STYLE)
+    return configured if configured in {style for _, style in NAVIGATION_STYLES} else SOLIDWORKS_STYLE
+
+
+def set_navigation_style(style):
+    if style not in {value for _, value in NAVIGATION_STYLES}:
+        raise ValueError('Choose a supported mouse navigation style')
+    import FreeCADGui as Gui
+    settings = App.ParamGet('User parameter:KurtShape/Preferences')
+    previous = selected_style()
+    views = [Gui.getDocument(name).activeView() for name in App.listDocuments() if Gui.getDocument(name)]
+    previous_views = [(view, view.getNavigationType()) for view in views]
+    settings.SetString('NavigationStyle', style)
+    try:
+        for view in views:
+            apply_navigation(view)
+        apply_navigation()
+        App.saveParameter()
+    except Exception:
+        settings.SetString('NavigationStyle', previous)
+        App.ParamGet('User parameter:BaseApp/Preferences/View').SetString('NavigationStyle', previous)
+        for view, old_style in previous_views:
+            view.setNavigationType(old_style)
+        raise
 
 
 def _active_view(view=None):
@@ -21,32 +56,34 @@ def _active_view(view=None):
 
 
 def apply_navigation(view=None):
-    """Set verified SolidWorks controls, with no orientation or fit change.
+    """Apply the user's style, defaulting to verified SolidWorks controls.
 
     Wheel forward zooms out, as in default SolidWorks.  Rotation uses a
     picked scene point, falling back to the window focal plane on empty space.
     Safe before a document exists; call again for each new/opened native view.
     """
     prefs = App.ParamGet('User parameter:BaseApp/Preferences/View')
-    for key, value, default in [('InvertZoom', False, True), ('ZoomAtCursor', True, True),
-                                ('UseNavigationAnimations', False, True),
-                                ('UseSpinningAnimations', False, False)]:
+    style = selected_style()
+    flags = [('UseNavigationAnimations', False, True), ('UseSpinningAnimations', False, False)]
+    if style == SOLIDWORKS_STYLE:
+        flags.extend([('InvertZoom', False, True), ('ZoomAtCursor', True, True)])
+    for key, value, default in flags:
         if prefs.GetBool(key, default) != value:
             prefs.SetBool(key, value)
-    if prefs.GetInt('RotationMode', 0) != 1:
+    if style == SOLIDWORKS_STYLE and prefs.GetInt('RotationMode', 0) != 1:
         prefs.SetInt('RotationMode', 1)
     # Native styles read some navigation preferences when instantiated.
-    if prefs.GetString('NavigationStyle', '') != SOLIDWORKS_STYLE:
-        prefs.SetString('NavigationStyle', SOLIDWORKS_STYLE)
+    if prefs.GetString('NavigationStyle', '') != style:
+        prefs.SetString('NavigationStyle', style)
     allow_sketch_3d()
     view = _active_view(view)
     if view is not None:
-        if view.getNavigationType() != SOLIDWORKS_STYLE:
-            view.setNavigationType(SOLIDWORKS_STYLE)
-        if view.getNavigationType() != SOLIDWORKS_STYLE:
-            raise RuntimeError('The bundled native SolidWorks navigation style is unavailable.')
+        if view.getNavigationType() != style:
+            view.setNavigationType(style)
+        if view.getNavigationType() != style:
+            raise RuntimeError('The chosen mouse navigation style is unavailable.')
     _install_double_middle_fit()
-    return SOLIDWORKS_STYLE
+    return style
 
 
 def _install_double_middle_fit():
@@ -62,6 +99,9 @@ def _install_double_middle_fit():
             self.suppress_release = None
 
         def eventFilter(self, watched, event):
+            if selected_style() != SOLIDWORKS_STYLE:
+                self.suppress_release = None
+                return False
             event_type = event.type()
             if event_type not in (QtCore.QEvent.MouseButtonDblClick, QtCore.QEvent.MouseButtonRelease):
                 return False

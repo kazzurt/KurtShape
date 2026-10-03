@@ -1523,7 +1523,7 @@
       "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec Hub Conformal.step",
       "sha256": "ed9949c937ccaa768d018038cebcbab6638c9af48223b684dd7ace235389a3fc",
       "original_unchanged": true,
-      "read_measure_seconds": 3.4717939000111073,
+      "read_measure_seconds": 3.8162159000057727,
       "frame": "Original STEP placement, interpreted by OCCT; no alignment or extra transform",
       "measurement_units": {
         "length": "mm",
@@ -2111,7 +2111,7 @@
       "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec pipe mount.step",
       "sha256": "0d83f47ae66ddf23de94c7cadc56ac1634ee1c5583f5a6895af3d569fe1957f0",
       "original_unchanged": true,
-      "read_measure_seconds": 0.4925488999579102,
+      "read_measure_seconds": 0.44637049990706146,
       "frame": "Original STEP placement, interpreted by OCCT; no alignment or extra transform",
       "measurement_units": {
         "length": "mm",

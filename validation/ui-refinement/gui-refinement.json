@@ -1,0 +1,473 @@
+{
+  "passed": true,
+  "checks": [
+    "1200px: requested modeling tools in direct toolbar",
+    "1200px: Boolean directly visible",
+    "1200px: Chamfer directly visible",
+    "1200px: Circular pattern directly visible",
+    "1200px: Draft directly visible",
+    "1200px: Extrude directly visible",
+    "1200px: Fillet directly visible",
+    "1200px: Linear pattern directly visible",
+    "1200px: Loft directly visible",
+    "1200px: Mirror directly visible",
+    "1200px: Plane directly visible",
+    "1200px: Remove directly visible",
+    "1200px: Revolve directly visible",
+    "1200px: Shell directly visible",
+    "1200px: Sketch directly visible",
+    "1200px: Sweep directly visible",
+    "1200px: Hole omitted from default direct toolbar",
+    "1200px: part and plane names explain actions",
+    "1200px: implementation prefixes absent from toolbar",
+    "More: actual toolbar button usable",
+    "1200px: More exposes actual grouped menus",
+    "1600px: requested modeling tools in direct toolbar",
+    "1600px: Boolean directly visible",
+    "1600px: Chamfer directly visible",
+    "1600px: Circular pattern directly visible",
+    "1600px: Draft directly visible",
+    "1600px: Extrude directly visible",
+    "1600px: Fillet directly visible",
+    "1600px: Linear pattern directly visible",
+    "1600px: Loft directly visible",
+    "1600px: Mirror directly visible",
+    "1600px: Plane directly visible",
+    "1600px: Remove directly visible",
+    "1600px: Revolve directly visible",
+    "1600px: Shell directly visible",
+    "1600px: Sketch directly visible",
+    "1600px: Sweep directly visible",
+    "1600px: Hole omitted from default direct toolbar",
+    "1600px: part and plane names explain actions",
+    "1600px: implementation prefixes absent from toolbar",
+    "More: actual toolbar button usable",
+    "1600px: More exposes actual grouped menus",
+    "Profile: actual history click selects native object",
+    "Extrude: actual toolbar button usable",
+    "Initial extrusion preview: valid evaluated result and enabled Confirm",
+    "Initial extrusion preview: real scenegraph child",
+    "Initial extrusion preview: overlay is unpickable",
+    "Initial extrusion preview: real tessellated faces",
+    "Opening preview preserves complete authoritative project state",
+    "Typing depth updates actual preview volume",
+    "Changed extrusion preview: valid evaluated result and enabled Confirm",
+    "Changed extrusion preview: real scenegraph child",
+    "Changed extrusion preview: overlay is unpickable",
+    "Changed extrusion preview: real tessellated faces",
+    "Reverse direction changes real preview placement",
+    "Depth/reverse previews preserve native geometry, history, revision and selection",
+    "Cancel removes actual scenegraph overlay",
+    "Cancel preserves authoritative object geometry and history",
+    "Profile: actual history click selects native object",
+    "Extrude: actual toolbar button usable",
+    "Save preserves open extrusion fields and restarts valid preview",
+    "Save before Confirm persists no extrusion feature",
+    "Changed depth after Save creates a fresh actual preview",
+    "Confirm is visible and enabled before actual click",
+    "Confirm commits the same solid evaluated in preview",
+    "Confirm removes preview overlay and makes one undo step",
+    "Undo removes accepted extrusion",
+    "Redo restores accepted extrusion",
+    "CutProfile: actual history click selects native object",
+    "Remove: actual toolbar button usable",
+    "Through-all removal preview: valid evaluated result and enabled Confirm",
+    "Through-all removal preview: real scenegraph child",
+    "Through-all removal preview: overlay is unpickable",
+    "Through-all removal preview: real tessellated faces",
+    "Through-all preview removes real full-depth material",
+    "Blind end condition and depth update actual cut",
+    "Removal color sample lies inside the actual rendered viewport",
+    "Blind removal shows filled orange material through the original solid",
+    "Visible removal preview preserves native visibility, geometry, history and selection",
+    "Removal color sample lies inside the actual rendered viewport",
+    "Cancel clears orange material from the actual rendered viewport",
+    "Removal Cancel preserves original solid",
+    "CutProfile: actual history click selects native object",
+    "Remove: actual toolbar button usable",
+    "Rebuild cancels the custom extrusion editor and scenegraph ghost",
+    "Rebuild during preview leaves accepted solid unchanged",
+    "CutProfile: actual history click selects native object",
+    "Remove: actual toolbar button usable",
+    "Out-of-band upstream edit is accepted through shared controller",
+    "Out-of-band edit removes stale ghost and disables Confirm",
+    "Stale task cannot commit its old proposal",
+    "Navigation indicator is hidden from the working status bar",
+    "Navigation indicator stays hidden after native Show",
+    "Settings: actual toolbar button usable",
+    "Settings exposes supported mouse navigation choices",
+    "Settings help follows selected style",
+    "Settings Cancel preserves native style",
+    "Settings: actual toolbar button usable",
+    "Settings Save updates preference and current native view",
+    "New project inherits chosen native navigation",
+    "Settings: actual toolbar button usable",
+    "Settings restoration applies original style",
+    "Actual native NotificationLabel is exercised",
+    "Native notification text/background have at least 7:1 contrast",
+    "Actual native notification renders a readable sized panel",
+    "Native notification contains actual dark glyph pixels"
+  ],
+  "screens": [
+    "extrusion-preview-1200.png",
+    "extrusion-preview-1600.png",
+    "removal-preview-1600.png"
+  ],
+  "method": "Actual production Panel and Qt button events, native scenegraph and disposable FCStd evaluation; hidden independent process with no assistant server.",
+  "limits": "Synthetic small fixtures. Native renderer automatically adjusts near/far clipping to displayed scene geometry; camera invariance checks retain position/orientation/focus/zoom while excluding those clipping distances. Palette and rendered-glyph checks plus screenshots do not replace Kurt's visual/comfort acceptance. Native notification is triggered with an isolated console warning; the original face-selection popup's exact trigger is not asserted. Native C++ networking and physical offline operation are not intercepted.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "runtime_profile": "runtime\\ui-refinement-gui-validation-20261002-203018",
+  "last_preview": {
+    "valid": true,
+    "proposal": {
+      "op": "pocket",
+      "profile": "CutProfile",
+      "through_all": true,
+      "body": "Body"
+    },
+    "error": null,
+    "measurements": {
+      "valid": true,
+      "solid_count": 1,
+      "volume_mm3": 1312.0354056994856,
+      "area_mm2": 882.8318530717958,
+      "bbox_mm": {
+        "min": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max": [
+          20.0,
+          10.0,
+          7.0
+        ],
+        "size": [
+          20.0,
+          10.0,
+          7.0
+        ]
+      },
+      "center_of_mass_mm": [
+        10.000000000000004,
+        5.000000000000001,
+        3.500000000000001
+      ]
+    }
+  },
+  "window_sizes": [
+    {
+      "label": "extrusion-preview",
+      "qt_logical_pixels": [
+        1200,
+        900
+      ],
+      "screenshot_pixels": [
+        1800,
+        1350
+      ],
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "label": "extrusion-preview",
+      "qt_logical_pixels": [
+        1600,
+        1000
+      ],
+      "screenshot_pixels": [
+        2400,
+        1500
+      ],
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "label": "removal-preview",
+      "qt_logical_pixels": [
+        1600,
+        1000
+      ],
+      "screenshot_pixels": [
+        2400,
+        1500
+      ],
+      "device_pixel_ratio": 1.5
+    }
+  ],
+  "confirm_click_diagnostics": {
+    "before_press": {
+      "enabled": true,
+      "visible": true,
+      "task": "pad",
+      "hint": "Preview \u00b7 added material",
+      "depth_text": "7 mm",
+      "timer_active": false,
+      "pending": {
+        "op": "pad",
+        "profile": "Profile",
+        "length": "7 mm",
+        "reversed": false
+      },
+      "clicked": 0,
+      "body_null": true
+    },
+    "after_press": {
+      "enabled": true,
+      "visible": true,
+      "task": "pad",
+      "hint": "Preview \u00b7 added material",
+      "depth_text": "7.00 mm",
+      "timer_active": false,
+      "pending": {
+        "op": "pad",
+        "profile": "Profile",
+        "length": "7.00 mm",
+        "reversed": false
+      },
+      "clicked": 0,
+      "body_null": true
+    },
+    "after_release": {
+      "enabled": true,
+      "visible": false,
+      "task": null,
+      "hint": "",
+      "depth_text": "7.00 mm",
+      "timer_active": false,
+      "pending": null,
+      "clicked": 1,
+      "body_null": false
+    }
+  },
+  "removal_render": {
+    "sample_world_mm": [
+      10,
+      5,
+      1
+    ],
+    "projected_center_pixels": [
+      1200,
+      560
+    ],
+    "native_view_size": [
+      1587,
+      919
+    ],
+    "qt_gl_size": [
+      1058,
+      613
+    ],
+    "native_ratio": 1.5,
+    "image_ratio": 1.5,
+    "viewport_bounds_pixels": [
+      406,
+      135,
+      1994,
+      1054
+    ],
+    "sample_pixels": 625,
+    "orange_pixels": 625
+  },
+  "removal_cancel_render": {
+    "sample_world_mm": [
+      10,
+      5,
+      1
+    ],
+    "projected_center_pixels": [
+      1404,
+      560
+    ],
+    "native_view_size": [
+      1993,
+      919
+    ],
+    "qt_gl_size": [
+      1329,
+      613
+    ],
+    "native_ratio": 1.4996237772761474,
+    "image_ratio": 1.5,
+    "viewport_bounds_pixels": [
+      406,
+      135,
+      2400,
+      1054
+    ],
+    "sample_pixels": 625,
+    "orange_pixels": 0
+  },
+  "status_bar_widgets": [
+    {
+      "class": "QSizeGrip",
+      "name": "",
+      "text": "",
+      "tooltip": "",
+      "geometry": [
+        1583,
+        16,
+        17,
+        17
+      ]
+    },
+    {
+      "class": "Gui::StatusBarLabel",
+      "name": "",
+      "text": "",
+      "tooltip": "",
+      "geometry": [
+        2,
+        3,
+        659,
+        28
+      ]
+    },
+    {
+      "class": "Gui::DimensionWidget",
+      "name": "",
+      "text": "38.61 mm x 22.36 mm",
+      "tooltip": "",
+      "geometry": [
+        762,
+        3,
+        149,
+        28
+      ]
+    },
+    {
+      "class": "Gui::InputHintWidget",
+      "name": "hintLabel",
+      "text": "",
+      "tooltip": "",
+      "geometry": [
+        667,
+        3,
+        6,
+        28
+      ]
+    },
+    {
+      "class": "Gui::StatusBarLabel",
+      "name": "rightSideLabel",
+      "text": "",
+      "tooltip": "",
+      "geometry": [
+        685,
+        3,
+        6,
+        28
+      ]
+    },
+    {
+      "class": "QPushButton",
+      "name": "notificationArea",
+      "text": "8",
+      "tooltip": "",
+      "geometry": [
+        697,
+        3,
+        59,
+        28
+      ]
+    },
+    {
+      "class": "Gui::ToolBarAreaWidget",
+      "name": "StatusBarArea",
+      "text": "",
+      "tooltip": "",
+      "geometry": [
+        679,
+        3,
+        0,
+        28
+      ]
+    },
+    {
+      "class": "QLabel",
+      "name": "",
+      "text": "Feature canceled",
+      "tooltip": "Feature canceled",
+      "geometry": [
+        917,
+        3,
+        659,
+        28
+      ]
+    }
+  ],
+  "native_notification": {
+    "class": "Gui::NotificationLabel",
+    "object_name": "NotificationBox_label",
+    "foreground": "#243447",
+    "background": "#ffffff",
+    "contrast": 12.672002424980027,
+    "rendered_dark_pixels": 1409,
+    "size": [
+      1200,
+      57
+    ]
+  },
+  "timings": {
+    "intent": {
+      "samples": 40,
+      "median_ms": 0.727,
+      "p95_ms": 2.215,
+      "worst_ms": 3.576
+    },
+    "native_recompute": {
+      "samples": 37,
+      "median_ms": 5.873,
+      "p95_ms": 37.029,
+      "worst_ms": 50.921
+    },
+    "inspection": {
+      "samples": 53,
+      "median_ms": 1.344,
+      "p95_ms": 9.269,
+      "worst_ms": 11.749
+    },
+    "operation": {
+      "samples": 46,
+      "median_ms": 2.463,
+      "p95_ms": 67.055,
+      "worst_ms": 589.872
+    },
+    "input_to_feedback": {
+      "samples": 11,
+      "median_ms": 21.404,
+      "p95_ms": 476.274,
+      "worst_ms": 476.274
+    },
+    "input_to_feedback_model": {
+      "samples": 4,
+      "median_ms": 370.939,
+      "p95_ms": 476.274,
+      "worst_ms": 476.274
+    },
+    "input_to_feedback_ordinary": {
+      "samples": 6,
+      "median_ms": 12.023,
+      "p95_ms": 21.404,
+      "worst_ms": 21.404
+    },
+    "input_to_feedback_disk": {
+      "samples": 1,
+      "median_ms": 376.597,
+      "p95_ms": 376.597,
+      "worst_ms": 376.597
+    }
+  },
+  "seconds": 15.165384299820289,
+  "check_count": 106
+}
