@@ -261,8 +261,11 @@ class ShortcutRouter:
 
     @staticmethod
     def _text_input(widget, QtGui):
+        from PySide import QtCore
         while widget is not None:
             if isinstance(widget, (QtGui.QLineEdit, QtGui.QTextEdit, QtGui.QPlainTextEdit, QtGui.QAbstractSpinBox)):
+                return True
+            if isinstance(widget, QtGui.QLabel) and widget.textInteractionFlags() & (QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextSelectableByKeyboard):
                 return True
             if isinstance(widget, QtGui.QComboBox) and widget.isEditable():
                 return True

@@ -63,12 +63,18 @@ main.resize(1440, 920)
 main.show()
 hidden_popups = HiddenPopupFilter(application)
 application.installEventFilter(hidden_popups)
+clipboard = application.clipboard()
+original_clipboard = QtCore.QMimeData()
+original_mime = clipboard.mimeData()
+if original_mime is not None:
+    for mime_format in original_mime.formats():
+        original_clipboard.setData(mime_format, QtCore.QByteArray(original_mime.data(mime_format)))
 output = root / 'validation' / 'messages-behavior'
 output.mkdir(parents=True, exist_ok=True)
 result = {
     'passed': False,
     'checks': [],
-    'method': 'Production Panel, native Console/ReportOutput and actual Qt Messages button/close-button events in an independent hidden native process',
+    'method': 'Production Panel, native Console/ReportOutput, actual Qt Messages/copy/close-button events and text clipboard shortcuts in an independent hidden native process; original clipboard MIME data restored',
     'runtime_profile': str(session.relative_to(root)),
     'engine': App.Version(),
     'limits': 'Small synthetic project; native warnings/errors are deliberately generated in this isolated profile. Native C++ networking is not intercepted.',
@@ -90,6 +96,30 @@ def wait(ms=100):
 def click(widget):
     QtTest.QTest.mouseClick(widget, QtCore.Qt.LeftButton)
     wait()
+
+
+def message_menu_action(label, action_text):
+    observed = {}
+    def choose():
+        menu = application.activePopupWidget()
+        if not isinstance(menu, QtGui.QMenu):
+            menu = next((child for child in label.findChildren(QtGui.QMenu) if child.isVisible()), None)
+        if menu is None:
+            observed['error'] = 'Status context menu did not open'
+            # Close any label-owned menu even when the hidden-window platform
+            # does not report it as an active popup, keeping exec_ bounded.
+            for child in label.findChildren(QtGui.QMenu):
+                child.close()
+            return
+        observed['actions'] = {action.text(): action.isEnabled() for action in menu.actions() if not action.isSeparator()}
+        action = next((action for action in menu.actions() if action.text() == action_text), None)
+        if action is not None and action.isEnabled():
+            action.trigger()
+            observed['triggered'] = action_text
+        menu.close()
+    QtCore.QTimer.singleShot(20, choose)
+    panel.show_message_menu(label.rect().center(), label)
+    return observed
 
 
 def finish():
@@ -120,6 +150,8 @@ def finish():
         result['passed'] = False
         result['cleanup_error'] = traceback.format_exc()
     finally:
+        clipboard.setMimeData(original_clipboard)
+        result['clipboard_restored'] = True
         (output / 'gui-result.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
         application.removeEventFilter(hidden_popups)
         QtCore.QTimer.singleShot(0, application.quit)
@@ -128,14 +160,19 @@ def finish():
 def validate():
     global panel
     try:
+        prefs = App.ParamGet('User parameter:BaseApp/Preferences/OutputWindow')
+        prefs.SetBool('checkMessage', True)
+        startup_marker = 'messages pre-panel startup: retained once ☀ 😀'
+        App.Console.PrintMessage(startup_marker + '\n')
+        wait()
         panel = ui.start()
         wait(500)
         report_widget = next(w for w in main.findChildren(QtGui.QTextEdit) if w.metaObject().className() == 'Gui::DockWnd::ReportOutput')
         report_dock = next(w for w in main.findChildren(QtGui.QDockWidget) if w.objectName() == 'Report view')
         check('Messages starts hidden with a manually accessible button', panel.messages_dock.isHidden() and panel.messages_button.isVisible() and not panel.messages_button.isChecked())
+        check('Native startup output emitted before Panel attaches is retained exactly once', panel.messages.toPlainText().count(startup_marker) == 1)
         startup_output = report_widget.toPlainText() + (session / 'freecad.log').read_text(encoding='utf-8', errors='replace')
         check('App startup no longer produces the QStatusBar insertPermanentWidget warning', 'QStatusBar::insertPermanentWidget' not in startup_output)
-        prefs = App.ParamGet('User parameter:BaseApp/Preferences/OutputWindow')
         for key in ('checkWarning', 'checkError', 'checkMessage', 'checkLogging'):
             prefs.SetBool(key, True)
         # Exercise the independent native preference that used to reopen its own
@@ -201,8 +238,104 @@ def validate():
         check('Native warnings and errors do not overwrite the explicit application error status', panel.message.text() == 'messages managed error after close' and '#a2322c' in panel.message.styleSheet())
         click(panel.messages_button)
         check('Messages can be reopened after native Clear/trim with full retained details and unread reset', panel.messages_dock.isVisible() and panel.unread_messages == 0 and panel.messages.toPlainText().count(retained) == 1)
+        check('Messages exposes an explicit Copy all button', panel.copy_messages_button.isVisible() and panel.copy_messages_button.objectName() == 'KurtShapeCopyMessagesButton')
+        cursor = panel.messages.textCursor()
+        cursor.setPosition(0)
+        cursor.setPosition(min(24, panel.messages.document().characterCount() - 1), QtGui.QTextCursor.KeepAnchor)
+        panel.messages.setTextCursor(cursor)
+        selection_before = (cursor.anchor(), cursor.position(), cursor.selectedText())
+        status_before = (panel.message.text(), panel.message.styleSheet())
+        unread_before = panel.unread_messages
+        expected_copy = panel.messages.toPlainText()
+        click(panel.copy_messages_button)
+        check('Actual Copy all button copies exact retained Unicode and newlines', clipboard.text() == expected_copy and '\n' in expected_copy and '☀ 😀' in expected_copy)
+        cursor = panel.messages.textCursor()
+        check('Copy all preserves error status, unread count, selection and retained history',
+              (panel.message.text(), panel.message.styleSheet()) == status_before and panel.unread_messages == unread_before
+              and (cursor.anchor(), cursor.position(), cursor.selectedText()) == selection_before and panel.messages.toPlainText() == expected_copy)
+        model_clipboard_actions = []
+        original_copy_action = panel.router.callbacks['general.copy']
+        original_paste_action = panel.router.callbacks['general.paste']
+        panel.router.callbacks['general.copy'] = lambda: model_clipboard_actions.append('copy')
+        panel.router.callbacks['general.paste'] = lambda: model_clipboard_actions.append('paste')
+        clipboard_target = None
+        try:
+            panel.messages.setFocus(QtCore.Qt.OtherFocusReason)
+            wait()
+            QtTest.QTest.keyClick(panel.messages, QtCore.Qt.Key_A, QtCore.Qt.ControlModifier)
+            QtTest.QTest.keyClick(panel.messages, QtCore.Qt.Key_C, QtCore.Qt.ControlModifier)
+            wait()
+            check('Ctrl+A then Ctrl+C copies read-only Messages without invoking model copy',
+                  clipboard.text() == expected_copy and panel.messages.isReadOnly() and not model_clipboard_actions)
+            clipboard_target = QtGui.QPlainTextEdit(main)
+            clipboard_target.resize(240, 80)
+            clipboard_target.show()
+            clipboard_target.setFocus(QtCore.Qt.OtherFocusReason)
+            wait()
+            QtTest.QTest.keyClick(clipboard_target, QtCore.Qt.Key_V, QtCore.Qt.ControlModifier)
+            wait()
+            check('Copied Messages paste exactly into a text target without invoking model paste',
+                  clipboard_target.toPlainText() == expected_copy and not model_clipboard_actions)
+            clipboard_target.hide()
+            status_copy_text = 'messages status copy: <native> ☀ 😀'
+            panel.notify(status_copy_text, 'error')
+            panel.message.setFocus(QtCore.Qt.OtherFocusReason)
+            panel.message.setSelection(0, len(status_copy_text.encode('utf-16-le')) // 2)
+            wait()
+            check('Status errors are plain text and selectable with keyboard focus',
+                  panel.message.textFormat() == QtCore.Qt.PlainText
+                  and panel.message.textInteractionFlags() & QtCore.Qt.TextSelectableByMouse
+                  and panel.message.textInteractionFlags() & QtCore.Qt.TextSelectableByKeyboard
+                  and panel.message.focusPolicy() == QtCore.Qt.StrongFocus and panel.message.selectedText() == status_copy_text)
+            QtTest.QTest.keyClick(panel.message, QtCore.Qt.Key_C, QtCore.Qt.ControlModifier)
+            wait()
+            check('Ctrl+C on a selected status error copies exact text without invoking model copy or changing status',
+                  clipboard.text() == status_copy_text and panel.message.text() == status_copy_text
+                  and '#a2322c' in panel.message.styleSheet() and not model_clipboard_actions)
+            long_status_text = 'messages long status copy: <native> ☀ 😀 ' + ('diagnostic detail ' * 45)
+            original_maximum_width = panel.message.maximumWidth()
+            try:
+                panel.message.setMaximumWidth(220)
+                panel.notify(long_status_text, 'error')
+                wait()
+                check('Long diagnostic status is visibly clipped for the full-message copy test',
+                      panel.message.fontMetrics().boundingRect(long_status_text).width() > panel.message.width())
+                selection_text = 'diagnostic detail'
+                selection_start = len(long_status_text[:long_status_text.index(selection_text)].encode('utf-16-le')) // 2
+                panel.message.setSelection(selection_start, len(selection_text))
+                menu_result = message_menu_action(panel.message, 'Copy selection')
+                check('Status context-menu Copy selection copies only the selected diagnostic text',
+                      menu_result.get('triggered') == 'Copy selection' and clipboard.text() == selection_text
+                      and panel.message.text() == long_status_text and not model_clipboard_actions)
+                panel.message.setSelection(0, 0)
+                menu_result = message_menu_action(panel.message, 'Copy message')
+                check('Status context-menu Copy message copies the full clipped Unicode diagnostic',
+                      menu_result.get('triggered') == 'Copy message' and clipboard.text() == long_status_text
+                      and menu_result.get('actions', {}).get('Copy selection') is False
+                      and panel.message.text() == long_status_text and '#a2322c' in panel.message.styleSheet() and not model_clipboard_actions)
+            finally:
+                panel.message.setMaximumWidth(original_maximum_width)
+            panel.notify(status_copy_text, 'error')
+        finally:
+            panel.router.callbacks['general.copy'] = original_copy_action
+            panel.router.callbacks['general.paste'] = original_paste_action
+            if clipboard_target is not None:
+                clipboard_target.hide()
+                clipboard_target.deleteLater()
+            result['model_clipboard_actions'] = model_clipboard_actions
+        main.grab().save(str(output / 'messages-copy-controls.png'))
         click(panel.messages_button)
         check('Clicking Messages a second time closes it', panel.messages_dock.isHidden() and not panel.messages_button.isChecked())
+        App.Console.PrintWarning('messages hidden copy: unread details retained\n')
+        wait()
+        hidden_status_before = (panel.message.text(), panel.message.styleSheet())
+        hidden_unread_before = panel.unread_messages
+        hidden_copy = panel.messages.toPlainText()
+        panel.copy_messages()
+        check('Copying hidden Messages preserves unread count, dock visibility and the current error status',
+              clipboard.text() == hidden_copy and hidden_unread_before > 0 and panel.unread_messages == hidden_unread_before
+              and panel.messages_dock.isHidden() and not panel.messages_button.isChecked()
+              and (panel.message.text(), panel.message.styleSheet()) == hidden_status_before)
         result['passed'] = True
     except Exception:
         result['error'] = traceback.format_exc()

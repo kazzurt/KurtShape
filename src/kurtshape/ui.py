@@ -226,6 +226,7 @@ class Panel(QtGui.QDockWidget):
         layout.addLayout(self.form)
         self.preview_hint = QtGui.QLabel()
         self.preview_hint.setObjectName("KurtShapeExtrusionPreviewHint")
+        self.make_message_copyable(self.preview_hint)
         self.preview_hint.setWordWrap(True)
         layout.addWidget(self.preview_hint)
         self.apply = QtGui.QPushButton("Apply dimension")
@@ -443,7 +444,31 @@ class Panel(QtGui.QDockWidget):
         self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.sketch_bar)
         self.sketch_bar.hide()
         self.message = QtGui.QLabel("Ready · Middle drag: orbit · Ctrl+middle: pan · Shift+middle: zoom")
+        self.message.setObjectName("KurtShapeStatusMessage")
+        self.make_message_copyable(self.message)
         self.main.statusBar().addPermanentWidget(self.message, 1)
+
+    def make_message_copyable(self, label):
+        label.setTextFormat(QtCore.Qt.PlainText)
+        label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse | QtCore.Qt.TextSelectableByKeyboard)
+        label.setFocusPolicy(QtCore.Qt.StrongFocus)
+        label.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        label.customContextMenuRequested.connect(lambda position: self.show_message_menu(position, label))
+
+    def show_message_menu(self, position, label=None):
+        label = label or self.message
+        menu = QtGui.QMenu(label)
+        selected = menu.addAction("Copy selection")
+        selected.setEnabled(bool(label.selectedText()))
+        selected.triggered.connect(lambda: QtGui.QApplication.clipboard().setText(label.selectedText()))
+        copy = menu.addAction("Copy message")
+        copy.setEnabled(bool(label.text()))
+        copy.triggered.connect(lambda: QtGui.QApplication.clipboard().setText(label.text()))
+        menu.addSeparator()
+        show = menu.addAction("Show messages")
+        show.triggered.connect(lambda: self.messages_dock.show())
+        menu.exec_(label.mapToGlobal(position))
+        menu.deleteLater()
 
     def notify(self, message, *args):
         self.feedback_complete()
@@ -482,13 +507,35 @@ class Panel(QtGui.QDockWidget):
     def toggle_messages(self):
         self.messages_dock.setVisible(not self.messages_dock.isVisible())
 
+    def copy_messages(self):
+        text = self.messages.toPlainText()
+        if text:
+            QtGui.QApplication.clipboard().setText(text)
+
     def make_messages(self):
         self.messages_dock = QtGui.QDockWidget("Messages", self.main)
         self.messages_dock.setObjectName("KurtShapeMessages")
+        container = QtGui.QWidget()
+        layout = QtGui.QVBoxLayout(container)
+        layout.setContentsMargins(8, 6, 8, 6)
+        tools = QtGui.QHBoxLayout()
+        hint = QtGui.QLabel("Select text and press Ctrl+C, or copy all messages.")
+        tools.addWidget(hint, 1)
+        self.copy_messages_button = QtGui.QToolButton()
+        self.copy_messages_button.setObjectName("KurtShapeCopyMessagesButton")
+        self.copy_messages_button.setText("Copy all")
+        self.copy_messages_button.setToolTip("Copy all retained messages, including errors, to the clipboard")
+        self.copy_messages_button.setEnabled(False)
+        self.copy_messages_button.clicked.connect(self.copy_messages)
+        tools.addWidget(self.copy_messages_button)
+        layout.addLayout(tools)
         self.messages = QtGui.QPlainTextEdit()
+        self.messages.setObjectName("KurtShapeMessagesText")
         self.messages.setReadOnly(True)
         self.messages.setMaximumBlockCount(200)
-        self.messages_dock.setWidget(self.messages)
+        self.messages.textChanged.connect(lambda: self.copy_messages_button.setEnabled(bool(self.messages.toPlainText())))
+        layout.addWidget(self.messages)
+        self.messages_dock.setWidget(container)
         self.main.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.messages_dock)
         self.messages_dock.hide()
         self.unread_messages = 0
@@ -515,6 +562,8 @@ class Panel(QtGui.QDockWidget):
                         self.append_message(text, native=True)
                     document.contentsChange.connect(changed)
                     self.report_connections.append((document, changed))
+                    # Include diagnostics emitted before the UI attached, once.
+                    self.append_message(widget.toPlainText(), native=True)
 
     def context(self):
         if self.rollback_selected and not self.active_sketch() and self.workspace_mode == "part_studio":
@@ -1606,6 +1655,7 @@ class Panel(QtGui.QDockWidget):
                 field("reversed", "", widget, widget.isChecked)
         layout.addLayout(form)
         hint = QtGui.QLabel("Updating preview…")
+        self.make_message_copyable(hint)
         hint.setWordWrap(True)
         hint.setObjectName("KurtShapeStudioPreviewHint")
         layout.addWidget(hint)

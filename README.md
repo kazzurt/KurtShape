@@ -38,6 +38,8 @@ The feature bar directly includes Sweep, Loft, Linear pattern, Circular pattern,
 
 The app owns a consistent light palette for fields, popups and native Tasks, including disabled controls. Save and close a previously running window before relaunching to load appearance changes.
 
+To share errors, open **Messages** at the bottom right and click **Copy all**, then paste the log into chat. Selected log text also copies with **Ctrl+C**. Status and feature-preview messages are selectable; right-click one and choose **Copy message** to copy its full text. The log includes native output emitted during startup.
+
 In a sketch, **Line / L** draws connected segments with successive clicks and stays active until Escape or right-click. **Geometry → Single line** draws separate two-point segments. Finish retains the edit as one Undo step; Cancel discards the current edit. Floating dimensions and notifications use readable application colors even when native controls supply their own style.
 
 ## Assembly workflow
