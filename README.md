@@ -12,7 +12,7 @@ During the long run, use **KurtShape-green.cmd** in the parent `Codex` folder af
 
 The launcher accepts `-RuntimeRoot` (the folder containing `freecad-1.1.4`) and `-SessionRoot` (the profile base). `-Validation` uses `interface-validation` below that base in a hidden process. `-PrintOnly` prints the resolved paths, environment and arguments as JSON without creating folders, changing the environment or starting a process.
 
-Validation sends Qt input only to the single visible modeling viewport in its own hidden window, including with a fresh profile.
+Validation sends Qt input to the active modeling view in its own hidden window, including with a fresh profile.
 
 Double-click **KurtShape.cmd** in this directory, or run:
 

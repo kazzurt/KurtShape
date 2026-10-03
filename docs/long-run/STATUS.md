@@ -144,3 +144,5 @@ Own recipe report: kurtshape-problem-20261003-204924-ac7dc9ee.json came from the
 - 2026-10-03 15:06: Green updater attempt2 created detached ad166e2 and siblingCMD; CMD read/PrintOnly passed4checks. Green tree capture attempt1 rejected Windows ownership before GUI launch. Use command-scoped safe.directory for verified main/green paths in scratch Git wrapper, preserving the tracked tree checker unchanged. No config edits, no write refusal, no user notes.
 
 - 2026-10-03 15:07: Green interface attempt1 failed after2checks: fresh-profile QMdiArea had no active subwindow when first key was sent. OwnedPID26640 exited; main andgreen diff/status snapshots unchanged, green hash empty. Inspecting fresh-profile readiness before any retry. Free59.9GiB, NOTES empty.
+
+- 2026-10-03 15:13: Green interface attempt2 failed after29checks when two document views were visible; exact-one locator safely rejected ambiguity. OwnedPID50656 exited and both tree snapshots unchanged/empty. Need a probed active-document view mapping before final green-interface retry3; no assertion weakening or green tracked edits. NOTES empty.

@@ -36,7 +36,10 @@ def wait_for_confirm(timeout_ms=15000):
     require(panel.confirm.isEnabled())
 
 def viewport():
-    views=[w for w in main.findChildren(QtWidgets.QWidget)
+    areas=[a for a in main.findChildren(QtWidgets.QMdiArea) if a.activeSubWindow()]
+    assert len(areas)<=1, 'Expected at most one active document area in the isolated window'
+    scope=areas[0].activeSubWindow() if areas else main
+    views=[w for w in scope.findChildren(QtWidgets.QWidget)
            if w.metaObject().className() == 'QOpenGLWidget'
            and w.parentWidget().metaObject().className() == 'Gui::View3DInventorViewer'
            and w.isVisible()]
@@ -219,7 +222,7 @@ def validate():
         key(QtCore.Qt.Key_Z,QtCore.Qt.ControlModifier)
         check('GUI undo restores actual assistant change',abs(App.activeDocument().getObject(pad_name).Length.Value-6)<1e-6)
         # Verify native geometry tools from the official shortcuts, not just typed fixtures.
-        panel.new();Gui.Selection.clearSelection()
+        panel.new();wait(150);Gui.Selection.clearSelection()
         report['new_document']={'active':App.activeDocument().Name,'state_document':panel.core.documents[panel.state['document_id']].Name}
         key(QtCore.Qt.Key_S,QtCore.Qt.ShiftModifier);tree_click('plane:XZ')
         drawing=panel.active_sketch()
