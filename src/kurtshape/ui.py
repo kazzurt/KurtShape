@@ -1,6 +1,7 @@
 """Onshape-style desktop organization around one native FreeCAD document."""
 from __future__ import annotations
 import os
+import json
 import time
 from pathlib import Path
 import FreeCAD as App
@@ -71,6 +72,8 @@ class Panel(QtGui.QDockWidget):
         self.workspace_modes = {}
         self.workspace_documents = {}
         self.workspace_mode = "part_studio"
+        self.rollback_selected = False
+        self.studio_dialog = None
         self.main = Gui.getMainWindow()
         self.main.installEventFilter(self)
         self.main.menuBar().hide()
@@ -88,6 +91,9 @@ class Panel(QtGui.QDockWidget):
         self.depth.lineEdit().textChanged.connect(self.schedule_preview)
         self.end_type.currentIndexChanged.connect(self.schedule_preview)
         self.reverse.toggled.connect(self.schedule_preview)
+        self.result_operation.currentIndexChanged.connect(self.result_operation_changed)
+        self.merge_scope.currentIndexChanged.connect(self.schedule_preview)
+        self.merge_parts.itemChanged.connect(self.schedule_preview)
         self.observer = SelectionObserver(self)
         Gui.Selection.addObserver(self.observer)
         self.general_actions = GeneralActions(self)
@@ -128,6 +134,17 @@ class Panel(QtGui.QDockWidget):
         self.features.itemClicked.connect(self.history_click)
         self.features.itemDoubleClicked.connect(self.history_double_click)
         layout.addWidget(self.features, 1)
+        self.rollback_label = QtGui.QLabel("Rollback · end of history")
+        self.rollback_label.setMargin(5)
+        layout.addWidget(self.rollback_label)
+        self.rollback_bar = QtGui.QSlider(QtCore.Qt.Horizontal)
+        self.rollback_bar.setObjectName("KurtShapeRollbackBar")
+        self.rollback_bar.setToolTip("Drag to rebuild up to a feature. Select this bar and use Up / Down to move one feature.")
+        self.rollback_bar.sliderPressed.connect(lambda: setattr(self, "rollback_selected", True))
+        self.rollback_bar.valueChanged.connect(lambda index: self.rollback_label.setText("Rollback · " + str(index) + " / " + str(self.rollback_bar.maximum())))
+        self.rollback_bar.sliderReleased.connect(self.commit_rollback)
+        self.rollback_bar.installEventFilter(self)
+        layout.addWidget(self.rollback_bar)
         self.parts_title = QtGui.QLabel("Parts (0)")
         self.parts_title.setObjectName("SectionTitle")
         layout.addWidget(self.parts_title)
@@ -140,6 +157,9 @@ class Panel(QtGui.QDockWidget):
         self.parts.setMaximumHeight(145)
         self.parts.setMinimumHeight(58)
         self.parts.itemClicked.connect(self.part_selection)
+        self.parts.itemChanged.connect(self.part_visibility_changed)
+        self.parts.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.parts.customContextMenuRequested.connect(self.part_menu)
         layout.addWidget(self.parts)
         self.status = QtGui.QLabel("Create or open a part studio")
         self.status.setWordWrap(True)
@@ -176,15 +196,32 @@ class Panel(QtGui.QDockWidget):
         self.depth.setDecimals(3)
         self.depth.setSuffix(" mm")
         self.end_type = QtGui.QComboBox()
-        self.end_type.addItems(["Blind", "Through all"])
+        self.end_type.addItems(["Blind", "Through all", "Up to face"])
         self.end_type.currentIndexChanged.connect(lambda: self.depth.setEnabled(self.end_type.currentIndex() == 0))
         self.reverse = QtGui.QCheckBox("Reverse direction")
+        self.result_operation = QtGui.QComboBox()
+        self.result_operation.setObjectName("KurtShapeResultOperation")
+        for label, value in (("New", "new"), ("Add", "add"), ("Remove", "remove"), ("Intersect", "intersect")):
+            self.result_operation.addItem(label, value)
+        self.merge_scope = QtGui.QComboBox()
+        self.merge_scope.setObjectName("KurtShapeMergeScope")
+        self.merge_scope.addItem("Auto · touching parts", "auto")
+        self.merge_scope.addItem("Selected parts", "explicit")
+        self.merge_parts = QtGui.QListWidget()
+        self.merge_parts.setObjectName("KurtShapeMergeParts")
+        self.merge_parts.setMaximumHeight(115)
+        self.end_face = QtGui.QPushButton("Use selected face")
+        self.end_face.setObjectName("KurtShapeEndFace")
+        self.end_face.clicked.connect(self.choose_end_face)
+        self.up_to_face_reference = None
         self.formula = QtGui.QLineEdit()
         self.formula.setPlaceholderText("Example: Plate.Constraints.Width / 2")
         self.formula.installEventFilter(self)
         self.depth.lineEdit().installEventFilter(self)
         self.value.lineEdit().installEventFilter(self)
-        for label, control in [("Dimension", self.parameter), ("Value", self.value), ("Formula", self.formula), ("End condition", self.end_type), ("Depth", self.depth), ("", self.reverse)]:
+        for label, control in [("Dimension", self.parameter), ("Value", self.value), ("Formula", self.formula),
+                               ("Operation", self.result_operation), ("Merge scope", self.merge_scope),
+                               ("Parts", self.merge_parts), ("End condition", self.end_type), ("End face", self.end_face), ("Depth", self.depth), ("", self.reverse)]:
             self.form.addRow(label, control)
         layout.addLayout(self.form)
         self.preview_hint = QtGui.QLabel()
@@ -257,7 +294,7 @@ class Panel(QtGui.QDockWidget):
             action.setData(native.command)
             action.setToolTip(native.tip)
             action.setStatusTip(native.tip)
-            action.triggered.connect(lambda checked=False, tool=native: self.native_command(tool.command, tool.workbench))
+            action.triggered.connect(lambda checked=False, tool=native: self.project_selected_geometry() if tool.key == "sk_projection" else self.native_command(tool.command, tool.workbench))
             menu.addAction(action)
             if modeling:
                 self.model_actions.append(action)
@@ -340,8 +377,13 @@ class Panel(QtGui.QDockWidget):
             self.tool(self.model_bar, name, callback, tip, ":/icons/" + icon + ".svg", modeling=True, command=icon)
         self.model_bar.addSeparator()
         for native in self.catalog["primary"]:
-            self.tool(self.model_bar, native.label, lambda tool=native: self.native_command(tool.command, tool.workbench),
+            self.tool(self.model_bar, native.label, lambda tool=native: self.primary_feature_tool(tool),
                       native.tip, native.icon, modeling=True, command=native.command)
+        for label, op, icon in (("Boolean parts", "boolean_parts", "PartDesign_Boolean"),
+                                ("Split", "split_part", "Part_Slice"),
+                                ("Transform", "transform_part", "Std_TransformManip")):
+            self.tool(self.model_bar, label, lambda kind=op: self.studio_tool(kind),
+                      label + " · edit parts in this studio", icon, modeling=True)
         self.model_bar.addSeparator()
         group_labels = {"Add material":"Build", "Remove material":"Cut", "Modify":"Modify", "Pattern":"Patterns", "Reference":"Reference", "Part tools":"Shape tools"}
         more = QtGui.QMenu("More", self.main)
@@ -390,7 +432,7 @@ class Panel(QtGui.QDockWidget):
         self.tool(self.sketch_bar, "Pierce", self.pierce, "Select a sketch point and crossing curve · Shift+G")
         self.sketch_bar.addSeparator()
         self.tool(self.sketch_bar, "Extrude", lambda: self.extrude(False), "Finish this sketch and extrude · Shift+E", "PartDesign_Pad")
-        self.tool(self.sketch_bar, "Revolve", lambda: self.feature_from_sketch("PartDesign_Revolution"), "Finish this sketch and revolve", "PartDesign_Revolution")
+        self.tool(self.sketch_bar, "Revolve", lambda: self.studio_from_sketch("revolve"), "Finish this sketch and revolve", "PartDesign_Revolution")
         self.sketch_bar.addSeparator()
         self.tool(self.sketch_bar, "Normal", self.normal, "Normal to sketch · N")
         self.tool(self.sketch_bar, "3D", self.isometric, "Sketch in 3D · Shift+7")
@@ -475,6 +517,8 @@ class Panel(QtGui.QDockWidget):
                     self.report_connections.append((document, changed))
 
     def context(self):
+        if self.rollback_selected and not self.active_sketch() and self.workspace_mode == "part_studio":
+            return ["rollback", "part_studio"]
         return "sketch" if self.active_sketch() else self.workspace_mode
 
     def set_workspace_mode(self, mode):
@@ -807,7 +851,21 @@ class Panel(QtGui.QDockWidget):
     def active_body(self):
         doc = self.document()
         selected = doc.getObject(self.body_choice.currentData() or "") if doc else None
-        return selected or (bodies(doc)[0] if doc and len(bodies(doc)) == 1 else None)
+        candidates = self.sketch_owners()
+        return selected if selected in candidates else candidates[0] if len(candidates) == 1 else None
+
+    def sketch_owners(self):
+        doc = self.document()
+        if not doc:
+            return []
+        originals = [body for body in bodies(doc) if not getattr(body, "KurtShapeInternal", False)
+                     and not getattr(body, "KurtShapeOutputGeneration", False)]
+        studio = (self.state or {}).get("studio") or {}
+        if not studio.get("enabled"):
+            return originals
+        current = [doc.getObject(entry["body"]) for entry in studio.get("parts", [])]
+        empty_owners = [body for body in originals if body.Shape.isNull() or not body.Shape.Solids]
+        return list(dict.fromkeys(body for body in current + empty_owners if body is not None))
 
     def plane(self, doc, plane):
         return native_plane(doc, plane, self.active_body())
@@ -834,6 +892,10 @@ class Panel(QtGui.QDockWidget):
         return bool(Gui.Control.activeDialog()) and not bool(self.active_sketch())
 
     def tick(self):
+        # Native preview evaluation may process Qt events while its hidden
+        # document is active. Refresh only after it restores the live view.
+        if self.core.busy:
+            return
         processed = False
         if not self.bridge.pending.empty():
             failures_before = self.core.last_failures.copy()
@@ -982,8 +1044,19 @@ class Panel(QtGui.QDockWidget):
         self.mode_choice.setCurrentIndex(self.mode_choice.findData(self.workspace_mode))
         self.mode_choice.blockSignals(False)
         if self.workspace_mode == "assembly":
+            self.rollback_bar.hide()
+            self.rollback_label.hide()
             self.refresh_assembly(selected)
             return
+        studio = self.state.get("studio") or {}
+        self.rollback_bar.setVisible(bool(studio))
+        self.rollback_label.setVisible(bool(studio))
+        order = studio.get("feature_order", [])
+        self.rollback_bar.blockSignals(True)
+        self.rollback_bar.setRange(0, len(order))
+        self.rollback_bar.setValue(studio.get("rollback_index", len(order)))
+        self.rollback_bar.blockSignals(False)
+        self.rollback_label.setText("Rollback · " + str(self.rollback_bar.value()) + " / " + str(len(order)))
         self.body_choice.show()
         self.filter.setPlaceholderText("Filter features")
         expanded = {key for key, item in self.items.items() if item.isExpanded()}
@@ -993,7 +1066,7 @@ class Panel(QtGui.QDockWidget):
         previous_body = self.body_choice.currentData()
         self.body_choice.blockSignals(True)
         self.body_choice.clear()
-        for body in bodies(doc):
+        for body in self.sketch_owners():
             self.body_choice.addItem(body.Label, body.Name)
         if previous_body:
             self.body_choice.setCurrentIndex(max(0, self.body_choice.findData(previous_body)))
@@ -1014,14 +1087,25 @@ class Panel(QtGui.QDockWidget):
             item.setToolTip(0, name + " (" + plane + ") · select after Shift+S to start a sketch")
             self.items["plane:" + plane] = item
         features = [f for f in self.state["features"] if f["type"] not in {"PartDesign::Body", "App::Point"}]
+        if order:
+            order_index = {identifier: index for index, identifier in enumerate(order)}
+            features = [feature for feature in features if feature["id"] in order_index]
+            features.sort(key=lambda feature: order_index[feature["id"]])
         for feature in features:
             obj = doc.getObject(feature["id"])
-            failed = any(flag in feature["state"] for flag in ["Invalid", "Error"])
-            item = QtGui.QTreeWidgetItem([feature["name"] + ("  !" if failed else "")])
+            health = feature.get("reference_health") or []
+            health = list(health.values()) if isinstance(health, dict) else health
+            unhealthy = [entry for entry in health if isinstance(entry, dict) and entry.get("status", entry.get("health")) in {"missing", "ambiguous"}]
+            failed = bool(unhealthy) or any(flag in feature["state"] for flag in ["Invalid", "Error"])
+            held = feature["id"] in order and order.index(feature["id"]) >= self.rollback_bar.value()
+            item = QtGui.QTreeWidgetItem([feature["name"] + ("  !" if failed else "") + (" · held" if held else "")])
             item.setData(0, QtCore.Qt.UserRole, feature["id"])
             if obj and hasattr(obj, "ViewObject"):
                 item.setIcon(0, obj.ViewObject.Icon)
-            item.setToolTip(0, feature["type"].split("::")[-1] + " · " + feature["id"])
+            tooltip = feature["type"].split("::")[-1] + " · " + feature["id"]
+            if unhealthy:
+                tooltip += "\n" + "\n".join(str(entry.get("input", "Reference")) + ": " + str(entry.get("status", entry.get("health"))) + " · " + str(entry.get("message", entry.get("error", ""))) for entry in unhealthy)
+            item.setToolTip(0, tooltip)
             if failed or (obj and not obj.ViewObject.Visibility):
                 item.setForeground(0, QtGui.QBrush(QtGui.QColor("#a2322c" if failed else "#748292")))
             self.features.addTopLevelItem(item)
@@ -1035,16 +1119,34 @@ class Panel(QtGui.QDockWidget):
         self.refreshing = False
         self.features_title.setText(f"Features ({len(features)})")
         self.filter_features()
+        self.parts.blockSignals(True)
         self.parts.clear()
         count = 0
-        for body in native_results(doc):
+        if studio.get("enabled"):
+            for entry in studio.get("parts", []):
+                body = doc.getObject(entry["body"])
+                item = QtGui.QTreeWidgetItem([entry["name"]])
+                item.setData(0, QtCore.Qt.UserRole, entry["id"])
+                item.setData(0, QtCore.Qt.UserRole + 1, entry["body"])
+                item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
+                item.setCheckState(0, QtCore.Qt.Checked if entry.get("visible", True) else QtCore.Qt.Unchecked)
+                if body:
+                    item.setIcon(0, body.ViewObject.Icon)
+                item.setToolTip(0, entry["id"] + " · right-click to rename, color or operate on this part")
+                self.parts.addTopLevelItem(item)
+                count += 1
+        for body in [] if studio.get("enabled") else native_results(doc):
             solids = body.Shape.Solids if not body.Shape.isNull() else []
             count += len(solids)
             for i, solid in enumerate(solids):
                 item = QtGui.QTreeWidgetItem([body.Label if len(solids) == 1 else f"{body.Label} · solid {i + 1}"])
                 item.setData(0, QtCore.Qt.UserRole, body.Name)
+                item.setData(0, QtCore.Qt.UserRole + 1, body.Name)
+                item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
+                item.setCheckState(0, QtCore.Qt.Checked if body.ViewObject.Visibility else QtCore.Qt.Unchecked)
                 item.setIcon(0, body.ViewObject.Icon)
                 self.parts.addTopLevelItem(item)
+        self.parts.blockSignals(False)
         self.parts_title.setText(f"Parts ({count})")
         geometry = self.state["measurements"]
         detail = "Rebuild required · retained geometry" if self.state["build_status"] in {"failed", "needs_rebuild"} else (f"{geometry['solid_count']} solid · {geometry['volume_mm3']:,.2f} mm³" if geometry else "Sketches only · mm")
@@ -1141,6 +1243,7 @@ class Panel(QtGui.QDockWidget):
         self.feedback_complete()
 
     def history_click(self, item, column=0):
+        self.rollback_selected = False
         key = item.data(0, QtCore.Qt.UserRole)
         if key.startswith("plane:"):
             if self.pending_sketch:
@@ -1174,8 +1277,451 @@ class Panel(QtGui.QDockWidget):
                 self.parameters(show=True)
 
     def part_selection(self, item, column=0):
+        self.rollback_selected = False
         Gui.Selection.clearSelection()
-        Gui.Selection.addSelection(self.document().getObject(item.data(0, QtCore.Qt.UserRole)))
+        identifier = item.data(0, QtCore.Qt.UserRole + 1) or item.data(0, QtCore.Qt.UserRole)
+        obj = self.document().getObject(identifier)
+        if obj:
+            Gui.Selection.addSelection(obj)
+            index = self.body_choice.findData(identifier)
+            if index >= 0:
+                QtCore.QTimer.singleShot(0, lambda: self.body_choice.setCurrentIndex(self.body_choice.findData(identifier)))
+
+    def part_visibility_changed(self, item, column=0):
+        if not self.refreshing and (self.state or {}).get("studio"):
+            identifier = item.data(0, QtCore.Qt.UserRole)
+            visible = item.checkState(0) == QtCore.Qt.Checked
+            document_id = self.state["document_id"]
+            # Native QTreeWidget still owns the emitting item until this signal
+            # returns. A controller refresh must not delete it in that stack.
+            QtCore.QTimer.singleShot(0, lambda: self.operation("set_part_appearance", part=identifier,
+                                                            visible=visible, _document_id=document_id))
+
+    def part_menu(self, position):
+        item = self.parts.itemAt(position)
+        if not item or self.workspace_mode != "part_studio":
+            return
+        self.parts.setCurrentItem(item)
+        identifier = item.data(0, QtCore.Qt.UserRole)
+        part_name, part_visible = item.text(0), item.checkState(0) == QtCore.Qt.Checked
+        tokens = {"_expected_revision": self.state["revision"], "_document_id": self.state["document_id"]}
+        menu = QtGui.QMenu(self)
+        menu.addAction("Hide" if part_visible else "Show",
+                       lambda: self.operation("set_part_appearance", part=identifier, visible=not part_visible, **tokens))
+        def rename():
+            name, accepted = QtGui.QInputDialog.getText(self.main, "Rename part", "Name", text=part_name)
+            if accepted and name.strip():
+                self.operation("set_part_appearance", part=identifier, name=name.strip(), **tokens)
+        def color():
+            entry = next((part for part in self.studio_parts() if part["id"] == identifier), {})
+            initial = entry.get("color", [0.8, 0.8, 0.8])
+            chosen = QtGui.QColorDialog.getColor(QtGui.QColor.fromRgbF(*initial), self.main, "Part color")
+            if chosen.isValid():
+                self.operation("set_part_appearance", part=identifier, color=[chosen.redF(), chosen.greenF(), chosen.blueF()], **tokens)
+        menu.addAction("Rename", rename)
+        menu.addAction("Color", color)
+        menu.addSeparator()
+        for label, operation in (("Split", "split_part"), ("Transform / copy", "transform_part"),
+                                 ("Linear pattern", "linear_pattern_parts"), ("Circular pattern", "circular_pattern_parts"),
+                                 ("Mirror", "mirror_parts")):
+            menu.addAction(label, lambda checked=False, op=operation: self.studio_tool(op, part=identifier))
+        menu.addAction("Delete part", lambda: self.operation("delete_part", part=identifier, **tokens))
+        menu.exec_(self.parts.mapToGlobal(position))
+
+    def commit_rollback(self):
+        self.rollback_selected = True
+        return self.operation("rollback", index=self.rollback_bar.value())
+
+    def move_rollback(self, delta):
+        self.rollback_selected = True
+        current = (self.state or {}).get("studio") or {}
+        index = max(0, min(len(current.get("feature_order", [])), current.get("rollback_index", 0) + delta))
+        return self.operation("rollback", index=index)
+
+    def studio_parts(self):
+        studio = (self.state or {}).get("studio") or {}
+        if studio.get("enabled"):
+            return studio.get("parts", [])
+        doc = self.document()
+        return [{"id": body.Name, "name": body.Label, "body": body.Name,
+                 "feature": body.Tip.Name if body.Tip else None,
+                 "visible": body.ViewObject.Visibility, "color": list(body.ViewObject.ShapeColor)}
+                for body in bodies(doc) if not body.Shape.isNull() and body.Shape.Solids] if doc else []
+
+    def fill_merge_parts(self, widget, selected=()):
+        widget.blockSignals(True)
+        widget.clear()
+        for entry in self.studio_parts():
+            item = QtGui.QListWidgetItem(entry["name"])
+            item.setData(QtCore.Qt.UserRole, entry["id"])
+            item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
+            item.setCheckState(QtCore.Qt.Checked if entry["id"] in selected else QtCore.Qt.Unchecked)
+            widget.addItem(item)
+        widget.blockSignals(False)
+
+    @staticmethod
+    def checked_parts(widget):
+        return [widget.item(index).data(QtCore.Qt.UserRole) for index in range(widget.count())
+                if widget.item(index).checkState() == QtCore.Qt.Checked]
+
+    def scope_value(self, choice, parts):
+        return "auto" if choice.currentData() == "auto" else self.checked_parts(parts)
+
+    def result_operation_changed(self, *args):
+        if self.task in {"pad", "pocket"}:
+            self.studio_operation_explicit = True
+            self.configure_editor("extrude")
+            self.schedule_preview()
+
+    def choose_end_face(self):
+        references = self.geometry_references("Face")
+        if len(references) != 1:
+            self.notify("Select one end face in the viewport.", "error")
+            return
+        self.up_to_face_reference = references[0]
+        self.end_face.setText("Selected face · query retained")
+        self.schedule_preview()
+
+    def primary_feature_tool(self, tool):
+        operations = {"revolve": "revolve", "sweep": "sweep", "loft": "loft",
+                      "linear_pattern": "linear_pattern_parts", "circular_pattern": "circular_pattern_parts",
+                      "mirror": "mirror_parts", "fillet": "fillet", "chamfer": "chamfer", "shell": "shell",
+                      "boolean": "boolean_parts"}
+        operation = operations.get(tool.key)
+        return self.studio_tool(operation) if operation else self.native_command(tool.command, tool.workbench)
+
+    def studio_from_sketch(self, operation):
+        sketch = self.active_sketch()
+        if sketch:
+            identifier = sketch.Name
+            if not self.finish_sketch():
+                return False
+            self.select_feature(identifier)
+        return self.studio_tool(operation)
+
+    def studio_selection(self):
+        selected = {obj.Name for obj in Gui.Selection.getSelection()}
+        return [entry["id"] for entry in self.studio_parts() if entry["body"] in selected or entry["feature"] in selected]
+
+    def geometry_references(self, entity):
+        references = []
+        for selection in Gui.Selection.getSelectionEx():
+            obj = selection.Object
+            body = owner(self.document(), obj)
+            feature = body.Tip if body and obj == body else obj
+            for element in selection.SubElementNames:
+                if element.startswith(entity) and feature:
+                    references.append(self.reference_from_geometry(feature, element, entity))
+        return references
+
+    def reference_from_geometry(self, feature, element, entity):
+        body = owner(self.document(), feature)
+        if body and feature == body:
+            feature = body.Tip
+        reference = {"feature": feature.Name, "subelement": element}
+        try:
+            shape = feature.Shape.getElement(element)
+            part = next((entry for entry in self.studio_parts() if entry["body"] == body.Name), None) if body else None
+            if part or feature.TypeId == "Sketcher::SketchObject":
+                query = ({"kind": "created_by", "feature": feature.Name, "entity_type": entity.lower()}
+                         if feature.TypeId == "Sketcher::SketchObject" else
+                         {"kind": "owned_by", "part": part["id"], "entity_type": entity.lower()})
+                geometry = getattr(shape, "Surface", None) if entity == "Face" else getattr(shape, "Curve", None)
+                kind = type(geometry).__name__.lower()
+                kind = {"planesurface": "plane", "cylindricalsurface": "cylinder", "linesegment": "line"}.get(kind, kind)
+                if kind in {"plane", "cylinder", "line", "circle", "sphere", "cone"}:
+                    query = {"kind": "geometry", "geometry": kind, "query": query}
+                world = feature.getGlobalPlacement() * feature.Placement.inverse()
+                reference = {"kind": "closest", "point": list(world.multVec(shape.CenterOfMass)), "query": query}
+        except Exception:
+            pass
+        return reference
+
+    def project_selected_geometry(self):
+        sketch = self.active_sketch()
+        if not sketch:
+            self.notify("Edit a sketch before using projected geometry.", "error")
+            return False
+        references = self.geometry_references("Edge")
+        if not references:
+            self.notify("Select edges to project into this sketch.", "error")
+            return True
+        return self.operation("project_geometry", sketch=sketch.Name, references=references)
+
+    def studio_tool(self, operation, part=None):
+        """Stage shared typed operations in a revision-bound native dialog."""
+        if not self.document() or self.workspace_mode != "part_studio":
+            self.notify("Create or open a Part Studio first.")
+            return None
+        if self.active_sketch() or self.native_feature_task_active():
+            self.notify("Finish or cancel the current edit before starting this tool.")
+            return None
+        if not self.state.get("managed", True):
+            self.notify("Adopt a copy before editing this reference file.", "error")
+            return None
+        self.cancel_task()
+        doc = self.document()
+        self.state = self.core.inspect(doc)
+        tokens = {"_expected_revision": self.state["revision"], "_document_id": self.state["document_id"]}
+        parts = self.studio_parts()
+        selected_parts = [part] if part else self.studio_selection()
+        labels = {"revolve": "Revolve", "sweep": "Sweep", "loft": "Loft", "boolean_parts": "Boolean parts",
+                  "split_part": "Split part", "transform_part": "Transform / copy part",
+                  "linear_pattern_parts": "Linear part pattern", "circular_pattern_parts": "Circular part pattern",
+                  "mirror_parts": "Mirror parts", "fillet": "Fillet", "chamfer": "Chamfer", "shell": "Shell"}
+        label = labels.get(operation, operation.replace("_", " ").capitalize())
+        dialog = QtGui.QDialog(self.main)
+        dialog.setObjectName("KurtShapeStudio_" + operation)
+        dialog.setWindowTitle(label)
+        layout = QtGui.QVBoxLayout(dialog)
+        form = QtGui.QFormLayout()
+        fields = {}
+        values = {}
+        def field(key, caption, widget, getter):
+            widget.setObjectName("KurtShapeStudio_" + key)
+            fields[key] = widget
+            values[key] = getter
+            form.addRow(caption, widget)
+            return widget
+        def choice(key, caption, entries, initial=None):
+            widget = QtGui.QComboBox()
+            for name, identifier in entries:
+                widget.addItem(name, identifier)
+            if initial is not None:
+                widget.setCurrentIndex(max(0, widget.findData(initial)))
+            return field(key, caption, widget, widget.currentData)
+        def quantity(key, caption, value, unit="mm"):
+            widget = QuantityField(unit)
+            widget.setRange(-100000, 100000)
+            widget.setDecimals(4)
+            widget.setValue(value)
+            return field(key, caption, widget, lambda: widget.lineEdit().text())
+        def vector(key, caption, value, unit=None):
+            widget = QtGui.QWidget()
+            row = QtGui.QHBoxLayout(widget)
+            row.setContentsMargins(0, 0, 0, 0)
+            controls = []
+            for axis, initial in zip(("X", "Y", "Z"), value):
+                number = QuantityField(unit) if unit else QtGui.QDoubleSpinBox()
+                number.setObjectName("KurtShapeStudio_" + key + axis)
+                number.setRange(-100000, 100000)
+                number.setDecimals(4)
+                number.setValue(initial)
+                row.addWidget(number)
+                controls.append(number)
+            return field(key, caption, widget, lambda: [number.value() for number in controls])
+        def checklist(key, caption, entries, initial=()):
+            widget = QtGui.QListWidget()
+            widget.setMaximumHeight(115)
+            for name, identifier in entries:
+                item = QtGui.QListWidgetItem(name)
+                item.setData(QtCore.Qt.UserRole, identifier)
+                item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
+                item.setCheckState(QtCore.Qt.Checked if identifier in initial else QtCore.Qt.Unchecked)
+                widget.addItem(item)
+            return field(key, caption, widget, lambda: self.checked_parts(widget))
+        part_entries = [(entry["name"], entry["id"]) for entry in parts]
+        sketch_entries = [(obj.Label, obj.Name) for obj in doc.Objects if obj.TypeId == "Sketcher::SketchObject"]
+        current = self.selected()
+        creation = operation in {"revolve", "sweep", "loft"}
+        scoped = creation or operation in {"linear_pattern_parts", "circular_pattern_parts", "mirror_parts"}
+        if creation:
+            if operation == "loft":
+                sections = checklist("sections", "Sections · drag to order", sketch_entries, [obj.Name for obj in Gui.Selection.getSelection() if obj.TypeId == "Sketcher::SketchObject"])
+                sections.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+                sections.setDefaultDropAction(QtCore.Qt.MoveAction)
+            else:
+                choice("profile", "Profile", sketch_entries, current)
+        if scoped:
+            choice("operation", "Operation", [("New", "new"), ("Add", "add"), ("Remove", "remove"), ("Intersect", "intersect")], "new" if not creation or not parts else "add")
+            choice("merge_scope", "Merge scope", [("Auto · touching parts", "auto"), ("Selected parts", "explicit")], "auto")
+            checklist("scope_parts", "Parts", part_entries, selected_parts)
+        if operation == "revolve":
+            vector("axis_origin", "Axis origin", [0, 0, 0], "mm")
+            vector("axis_direction", "Axis direction", [0, 1, 0])
+            quantity("angle", "Angle", 360, "deg")
+        elif operation == "sweep":
+            path_references = self.geometry_references("Edge")
+            choice("path_by", "Path source", [("Curve feature", "feature"), ("Selected edge", "selected")], "selected" if len(path_references) == 1 else "feature")
+            entries = [(obj.Label, obj.Name) for obj in doc.Objects if hasattr(obj, "Shape") and obj.Shape.Edges]
+            choice("path", "Path", entries)
+            values["selected_path"] = lambda: path_references[0] if len(path_references) == 1 else None
+            selected_hint = QtGui.QLabel("Selected edge · query retained" if len(path_references) == 1 else "Select one path edge in the viewport before opening Sweep.")
+            selected_hint.setWordWrap(True)
+            form.addRow("Selected path", selected_hint)
+            fields["path_hint"] = selected_hint
+        elif operation == "boolean_parts":
+            checklist("targets", "Target parts", part_entries, selected_parts[:1])
+            checklist("tools", "Tool parts", part_entries, selected_parts[1:])
+            choice("kind", "Operation", [("Union", "union"), ("Subtract", "subtract"), ("Intersect", "intersect")], "union")
+            widget = QtGui.QCheckBox("Keep tool parts")
+            field("keep_tools", "", widget, widget.isChecked)
+        elif operation == "split_part":
+            choice("part", "Part", part_entries, (selected_parts or [None])[0])
+            choice("split_by", "Split by", [("Plane", "plane"), ("Selected face", "face"), ("Sketch plane", "sketch")], "plane")
+            vector("origin", "Plane origin", [0, 0, 0], "mm")
+            vector("normal", "Plane normal", [1, 0, 0])
+            choice("sketch", "Sketch", sketch_entries, current)
+            refs = self.geometry_references("Face")
+            values["face"] = lambda: refs[0] if refs else None
+        elif operation == "transform_part":
+            choice("part", "Part", part_entries, (selected_parts or [None])[0])
+            choice("transform_by", "Transform by", [("Translation / rotation", "placement"), ("Coordinate system", "coordinate_system")], "placement")
+            vector("translation", "Translation", [0, 0, 0], "mm")
+            vector("rotation_axis", "Rotation axis", [0, 0, 1])
+            quantity("rotation_angle", "Rotation", 0, "deg")
+            vector("coordinate_origin", "Target origin", [0, 0, 0], "mm")
+            vector("coordinate_x", "Target X", [1, 0, 0])
+            vector("coordinate_y", "Target Y", [0, 1, 0])
+            vector("coordinate_z", "Target Z", [0, 0, 1])
+            widget = QtGui.QCheckBox("Create a copy")
+            field("copy", "", widget, widget.isChecked)
+        elif operation in {"linear_pattern_parts", "circular_pattern_parts", "mirror_parts"}:
+            checklist("parts", "Parts", part_entries, selected_parts)
+            if operation == "linear_pattern_parts":
+                vector("direction", "Direction", [1, 0, 0])
+                quantity("spacing", "Spacing", 20)
+            else:
+                vector("origin", "Origin", [0, 0, 0], "mm")
+                vector("normal" if operation == "mirror_parts" else "axis_direction",
+                       "Plane normal" if operation == "mirror_parts" else "Axis direction", [1, 0, 0] if operation == "mirror_parts" else [0, 0, 1])
+            if operation != "mirror_parts":
+                count = QtGui.QSpinBox()
+                count.setRange(2, 100)
+                count.setValue(3)
+                field("count", "Count · including source", count, count.value)
+            if operation == "circular_pattern_parts":
+                quantity("angle", "Angle", 360, "deg")
+        elif operation in {"fillet", "chamfer", "shell"}:
+            choice("part", "Part", part_entries, (selected_parts or [None])[0])
+            references = self.geometry_references("Face" if operation == "shell" else "Edge")
+            reference_text = QtGui.QLabel(str(len(references)) + " selected reference(s) · re-evaluated on rebuild" if references else "Select faces / edges in the viewport before opening this tool.")
+            reference_text.setWordWrap(True)
+            form.addRow("Faces" if operation == "shell" else "Edges", reference_text)
+            values["faces" if operation == "shell" else "edges"] = lambda: references
+            quantity("thickness" if operation == "shell" else ("size" if operation == "chamfer" else "radius"),
+                     "Thickness" if operation == "shell" else ("Size" if operation == "chamfer" else "Radius"), 1)
+            if operation == "shell":
+                widget = QtGui.QCheckBox("Reverse wall direction")
+                field("reversed", "", widget, widget.isChecked)
+        layout.addLayout(form)
+        hint = QtGui.QLabel("Updating preview…")
+        hint.setWordWrap(True)
+        hint.setObjectName("KurtShapeStudioPreviewHint")
+        layout.addWidget(hint)
+        buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
+        buttons.button(QtGui.QDialogButtonBox.Ok).setText("Confirm")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.resize(470, min(730, 230 + form.rowCount() * 35))
+        def proposal():
+            result = {key: getter() for key, getter in values.items()}
+            if scoped:
+                result["merge_scope"] = "auto" if result["merge_scope"] == "auto" else result.pop("scope_parts")
+                result.pop("scope_parts", None)
+            if operation in {"revolve", "circular_pattern_parts"}:
+                result["axis"] = {"origin": result.pop("axis_origin", result.pop("origin", [0, 0, 0])), "direction": result.pop("axis_direction")}
+            if operation == "sweep":
+                path_by, selected_path = result.pop("path_by"), result.pop("selected_path")
+                if path_by == "selected":
+                    result["path"] = selected_path
+            if operation == "split_part":
+                kind = result.pop("split_by")
+                origin, normal = result.pop("origin"), result.pop("normal")
+                face, sketch = result.pop("face"), result.pop("sketch")
+                if kind == "plane":
+                    result["plane"] = {"origin": origin, "normal": normal}
+                elif kind == "face":
+                    result["face"] = face
+                else:
+                    result["sketch"] = sketch
+            if operation == "transform_part":
+                method = result.pop("transform_by")
+                rotation = {"axis": result.pop("rotation_axis"), "angle": result.pop("rotation_angle")}
+                coordinates = {"origin": result.pop("coordinate_origin"), "x": result.pop("coordinate_x"),
+                               "y": result.pop("coordinate_y"), "z": result.pop("coordinate_z")}
+                if method == "coordinate_system":
+                    result.pop("translation")
+                    result["coordinate_system"] = coordinates
+                else:
+                    result["rotation"] = rotation
+            return dict(result, op=operation)
+        def status(result):
+            valid = bool(result and result.valid)
+            buttons.button(QtGui.QDialogButtonBox.Ok).setEnabled(valid)
+            hint.setText("Preview · valid current parts" if valid else result.error["message"] if result else "Updating preview…")
+        # QDialog hides before exec_ returns. Keep the staged task alive for
+        # its final guarded evaluation and clear it immediately after commit.
+        adapter = DebouncedExtrusionPreview(self.core, dialog, status=status,
+                                            allowed=lambda: self.studio_dialog is dialog)
+        def schedule(*args):
+            try:
+                def visible(key, state):
+                    if key in fields:
+                        fields[key].setVisible(state)
+                        caption = form.labelForField(fields[key])
+                        if caption:
+                            caption.setVisible(state)
+                if scoped:
+                    merging = fields["operation"].currentData() != "new"
+                    visible("merge_scope", merging)
+                    visible("scope_parts", merging and fields["merge_scope"].currentData() == "explicit")
+                if operation == "split_part":
+                    kind = fields["split_by"].currentData()
+                    visible("origin", kind == "plane")
+                    visible("normal", kind == "plane")
+                    visible("sketch", kind == "sketch")
+                if operation == "sweep":
+                    selected_path = fields["path_by"].currentData() == "selected"
+                    visible("path", not selected_path)
+                    visible("path_hint", selected_path)
+                if operation == "transform_part":
+                    coordinates = fields["transform_by"].currentData() == "coordinate_system"
+                    for key in ("translation", "rotation_axis", "rotation_angle"):
+                        visible(key, not coordinates)
+                    for key in ("coordinate_origin", "coordinate_x", "coordinate_y", "coordinate_z"):
+                        visible(key, coordinates)
+                if adapter.evaluator:
+                    adapter.schedule(proposal())
+                    if adapter.result is None:
+                        status(None)
+            except Exception as exc:
+                adapter.overlay.clear()
+                buttons.button(QtGui.QDialogButtonBox.Ok).setEnabled(False)
+                hint.setText(str(exc))
+        for widget in fields.values():
+            for control in [widget] + widget.findChildren(QtGui.QWidget):
+                if isinstance(control, QtGui.QComboBox):
+                    control.currentIndexChanged.connect(schedule)
+                elif isinstance(control, QtGui.QListWidget):
+                    control.itemChanged.connect(schedule)
+                    control.model().rowsMoved.connect(schedule)
+                elif isinstance(control, QtGui.QAbstractSpinBox):
+                    control.lineEdit().textChanged.connect(schedule)
+                elif isinstance(control, QtGui.QCheckBox):
+                    control.toggled.connect(schedule)
+        self.studio_dialog = dialog
+        def begin():
+            adapter.begin(doc, tokens["_expected_revision"])
+            schedule()
+        QtCore.QTimer.singleShot(0, begin)
+        accepted = dialog.exec_() == QtGui.QDialog.Accepted
+        result = None
+        if accepted:
+            adapter.schedule(proposal())
+            evaluated = adapter.flush()
+            if evaluated and evaluated.valid:
+                request = dict(evaluated.proposal)
+                request.pop("op")
+                request["id"] = self.unique(label.split()[0].replace("/", "") or "Feature")
+                result = self.operation(operation, **request, **tokens)
+        adapter.close()
+        self.studio_dialog = None
+        if result:
+            self.select_feature(result.get("created_feature", request["id"]))
+            self.fit()
+        return result
 
     def parameters(self, *args, show=False):
         if self.workspace_mode == "assembly":
@@ -1200,6 +1746,13 @@ class Panel(QtGui.QDockWidget):
                  "Groove": "Revolve remove", "AdditivePipe": "Sweep", "SubtractivePipe": "Sweep remove",
                  "AdditiveLoft": "Loft", "SubtractiveLoft": "Loft remove", "Thickness": "Shell",
                  "PolarPattern": "Circular pattern", "LinearPattern": "Linear pattern", "Plane": "Plane"}.get(kind, kind)
+        obj = self.document().getObject(feature["id"])
+        if obj and getattr(obj, "KurtShapeStudioOperation", ""):
+            intent = json.loads(obj.KurtShapeStudioOperation)
+            label = {"pad": "Extrude", "pocket": "Remove material", "revolve": "Revolve",
+                     "sweep": "Sweep", "loft": "Loft", "split_part": "Split part", "transform_part": "Transform / copy part",
+                     "linear_pattern_parts": "Linear part pattern", "circular_pattern_parts": "Circular part pattern",
+                     "mirror_parts": "Mirror parts", "boolean_parts": "Boolean parts", "delete_part": "Delete part"}.get(intent["op"], label)
         self.editor_help.setText(label)
         self.configure_editor("parameters", feature["type"] == "Sketcher::SketchObject")
         self.parameter_value()
@@ -1210,9 +1763,16 @@ class Panel(QtGui.QDockWidget):
         self.preview_hint.setVisible(mode == "extrude")
         if mode != "extrude" and hasattr(self, "extrusion_preview"):
             self.extrusion_preview.clear()
-        for control in [self.parameter, self.value, self.formula, self.depth, self.end_type, self.reverse]:
-            visible = (mode == "parameters" and control in [self.parameter, self.value, self.formula]) or (mode == "extrude" and control in [self.depth, self.end_type, self.reverse])
-            if control == self.end_type and self.task != "pocket":
+        for control in [self.parameter, self.value, self.formula, self.depth, self.end_type, self.end_face, self.reverse,
+                        self.result_operation, self.merge_scope, self.merge_parts]:
+            visible = (mode == "parameters" and control in [self.parameter, self.value, self.formula]) or (mode == "extrude" and control in [self.depth, self.end_type, self.end_face, self.reverse, self.result_operation, self.merge_scope, self.merge_parts])
+            if mode == "parameters" and not self.parameter.count():
+                visible = False
+            if control in [self.merge_scope, self.merge_parts] and self.result_operation.currentData() == "new":
+                visible = False
+            if control == self.merge_parts and self.merge_scope.currentData() != "explicit":
+                visible = False
+            if control == self.end_face and self.end_type.currentIndex() != 2:
                 visible = False
             control.setVisible(visible)
             label = self.form.labelForField(control)
@@ -1316,7 +1876,7 @@ class Panel(QtGui.QDockWidget):
         if not doc:
             self.notify("Create or open a project first.")
             return
-        return self.operation("create_body", id=self.unique("Body"), name="Part " + str(len(bodies(doc)) + 1))
+        return self.operation("create_body", id=self.unique("Body"), name="Part " + str(len(self.sketch_owners()) + 1))
 
     def new(self):
         self.cancel_placement()
@@ -1424,7 +1984,9 @@ class Panel(QtGui.QDockWidget):
         for selected in Gui.Selection.getSelectionEx():
             for sub in selected.SubElementNames:
                 if sub.startswith("Face"):
-                    return self.begin_sketch(support={"feature": selected.Object.Name, "subelement": sub})
+                    support = self.reference_from_geometry(selected.Object, sub, "Face")
+                    body = owner(self.document(), selected.Object)
+                    return self.begin_sketch(support=support, **({"body": body.Name} if body else {}))
             if selected.Object.TypeId in {"App::Plane", "PartDesign::Plane"}:
                 return self.begin_sketch(support={"feature": selected.Object.Name})
         Gui.Selection.clearSelection()
@@ -1469,8 +2031,9 @@ class Panel(QtGui.QDockWidget):
             return
         support = {"feature": identifier}
         if subelement:
-            support["subelement"] = subelement
-        if not self.begin_sketch(support=support):
+            support = self.reference_from_geometry(self.document().getObject(identifier), subelement, "Face")
+        body = owner(self.document(), self.document().getObject(identifier))
+        if not self.begin_sketch(support=support, **({"body": body.Name} if body else {})):
             self.selecting_support = False
 
     def begin_sketch(self, **attachment):
@@ -1576,9 +2139,20 @@ class Panel(QtGui.QDockWidget):
         self.extrusion_preview.clear()
         self.task, self.task_profile = ("pocket" if cut else "pad"), (obj.Name if obj and obj.TypeId == "Sketcher::SketchObject" else None)
         self.task_document = self.document().Name
+        self.studio_operation_explicit = False
+        self.up_to_face_reference = None
+        self.end_face.setText("Use selected face")
+        profile_owner = owner(self.document(), obj)
+        self.result_operation.blockSignals(True)
+        default = "remove" if cut else ("add" if profile_owner and not profile_owner.Shape.isNull() and profile_owner.Shape.Solids else "new")
+        self.result_operation.setCurrentIndex(self.result_operation.findData(default))
+        self.result_operation.blockSignals(False)
+        self.merge_scope.setCurrentIndex(0)
+        self.fill_merge_parts(self.merge_parts, [entry["id"] for entry in self.studio_parts() if entry["body"] == (profile_owner.Name if profile_owner else "")])
         self.editor_title.setText("Remove material" if cut else "Extrude")
         self.editor_help.setText(obj.Label + " · " + ("Remove material" if cut else "Extrude") if self.task_profile else "Select a closed sketch profile from the history.")
         self.end_type.setCurrentIndex(1 if cut else 0)
+        self.end_type.model().item(1).setEnabled(True)
         self.depth.setEnabled(not cut)
         self.reverse.setChecked(False)
         self.configure_editor("extrude")
@@ -1590,10 +2164,22 @@ class Panel(QtGui.QDockWidget):
     def extrusion_proposal(self):
         proposal = {"op": self.task, "profile": self.task_profile,
                     "length": self.depth.lineEdit().text()}
+        if ((self.state or {}).get("studio", {}).get("enabled") or self.studio_operation_explicit
+                or self.merge_scope.currentData() == "explicit" or self.task == "pad" and self.end_type.currentIndex() == 1):
+            proposal["operation"] = self.result_operation.currentData()
+            proposal["merge_scope"] = self.scope_value(self.merge_scope, self.merge_parts)
         if self.task == "pad" or self.reverse.isChecked():
             proposal["reversed"] = self.reverse.isChecked()
         if self.task == "pocket":
             proposal["through_all"] = self.end_type.currentIndex() == 1
+        elif self.end_type.currentIndex() == 1:
+            proposal.pop("length", None)
+            proposal["end_type"] = "through_all"
+        if self.end_type.currentIndex() == 2:
+            proposal.pop("length", None)
+            proposal.pop("through_all", None)
+            proposal["end_type"] = "up_to_face"
+            proposal["up_to_face"] = self.up_to_face_reference
         return proposal
 
     def begin_preview(self):
@@ -1607,6 +2193,14 @@ class Panel(QtGui.QDockWidget):
     def schedule_preview(self, *args):
         if not hasattr(self, "extrusion_preview") or self.task not in {"pad", "pocket"}:
             return
+        self.end_face.setVisible(self.end_type.currentIndex() == 2)
+        end_label = self.form.labelForField(self.end_face)
+        if end_label:
+            end_label.setVisible(self.end_face.isVisible())
+        self.merge_parts.setVisible(self.result_operation.currentData() != "new" and self.merge_scope.currentData() == "explicit")
+        scope_label = self.form.labelForField(self.merge_parts)
+        if scope_label:
+            scope_label.setVisible(self.merge_parts.isVisible())
         if self.task_profile:
             if self.extrusion_preview.evaluator is None:
                 self.preview_status(None)
@@ -1630,7 +2224,8 @@ class Panel(QtGui.QDockWidget):
         if result is None:
             self.preview_hint.setText("Select a closed sketch to preview the extrusion." if not self.task_profile else "Preview cleared. Start Extrude again to refresh.")
         elif result.valid:
-            self.preview_hint.setText("Preview · removed material" if self.task == "pocket" else "Preview · added material")
+            operation = result.proposal.get("operation", "remove" if self.task == "pocket" else "add")
+            self.preview_hint.setText("Preview · removed material" if operation in {"remove", "intersect"} else "Preview · added material")
         else:
             self.preview_hint.setText(result.error["message"])
 
@@ -1660,9 +2255,10 @@ class Panel(QtGui.QDockWidget):
             if result:
                 obj = self.document().getObject(args["id"])
                 self.document().getObject(profile).ViewObject.Visibility = False
-                obj.ViewObject.Visibility = True
+                if obj:
+                    obj.ViewObject.Visibility = True
                 self.task = self.task_profile = self.task_document = None
-                self.select_feature(obj.Name)
+                self.select_feature(obj.Name if obj else result.get("created_feature", args["id"]))
                 self.parameters(show=True)
             else:
                 self.begin_preview()
@@ -1957,6 +2553,10 @@ class Panel(QtGui.QDockWidget):
         callbacks = {
             "local.new": self.new, "local.open": self.open, "local.save": self.save,
             "sketch.start": self.start_sketch, "feature.extrude": lambda: self.extrude(False),
+            "feature.revolve": lambda: self.studio_from_sketch("revolve"),
+            "feature.fillet": lambda: self.studio_tool("fillet"),
+            "history.rollback_up": lambda: self.move_rollback(-1),
+            "history.rollback_down": lambda: self.move_rollback(1),
             "general.cancel": self.cancel_task, "general.accept": lambda: self.accept_task() if self.task else False,
             "general.accept_repeat": self.accept_repeat,
             "general.undo": lambda: self.history_move("undo"), "general.redo": lambda: self.history_move("redo"),
@@ -1976,6 +2576,7 @@ class Panel(QtGui.QDockWidget):
             callbacks[f"view.pan_{direction}"] = lambda a=pans[direction]: self.view_step(a, pan=True)
         callbacks.update(self.general_actions.callbacks())
         callbacks["sketch.pierce"] = self.pierce
+        callbacks["sketch.project"] = self.project_selected_geometry
         callbacks.update({"assembly.insert": self.insert_assembly_part,
                           "assembly.fasten": lambda: self.assembly_joint("fixed"),
                           "assembly.mates": self.toggle_assembly_joints,
@@ -1984,6 +2585,10 @@ class Panel(QtGui.QDockWidget):
         return callbacks
 
     def eventFilter(self, watched, event):
+        if watched is self.rollback_bar and event.type() in {QtCore.QEvent.FocusIn, QtCore.QEvent.MouseButtonPress}:
+            self.rollback_selected = True
+        elif event.type() == QtCore.QEvent.MouseButtonPress:
+            self.rollback_selected = False
         if event.type() == QtCore.QEvent.Show and isinstance(watched, QtGui.QDockWidget) and (watched.objectName() == "Report view" or watched.windowTitle() == "Report view"):
             # Native OutputWindow preferences may request this dock on any
             # report entry. Messages is the app's explicitly opened log view.

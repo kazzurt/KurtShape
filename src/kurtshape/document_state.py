@@ -1,4 +1,7 @@
-"""Cheap native invalidation. Callbacks never hash, validate or rebuild geometry."""
+"""Native invalidation and reference refresh at native recompute boundaries.
+
+Ordinary changes only invalidate caches; selector work runs during recompute.
+"""
 import FreeCAD as App
 
 
@@ -44,9 +47,17 @@ class DocumentState:
             self.invalidate(doc, geometry=False)
 
     def slotRecomputedDocument(self, doc):
+        from . import studio
+        studio.native_recomputed(doc)
         self.invalidate(doc, intent=False)
         if not self.controller.busy and not getattr(App, "GuiUp", False):
             self.state(doc)["snapshot_pending"] = True
+
+    def slotRecomputedObject(self, obj):
+        meta = obj.Document.getObject("KurtShapeProject")
+        if not self.controller.busy and meta and self.controller.documents.get(meta.DocumentId) == obj.Document:
+            from . import selectors
+            selectors.native_recomputed(obj)
 
     def slotCommitTransaction(self, doc):
         self.invalidate(doc, intent=False, geometry=False)
@@ -60,8 +71,10 @@ class DocumentState:
     slotRedoDocument = slotAbortTransaction
 
     def slotDeletedDocument(self, doc):
-        from . import assembly
+        from . import assembly, studio, selectors
         assembly.clear_cache(doc)
+        studio.native_recomputed(doc)
+        selectors.clear_cache(doc)
         self.states.pop(doc.Name, None)
         self.controller.evaluations.pop(doc.Name, None)
         self.controller.unmanaged.pop(doc.Name, None)

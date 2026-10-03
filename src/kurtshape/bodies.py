@@ -25,6 +25,10 @@ def results(doc):
     assemblies = [obj for obj in doc.Objects if obj.TypeId == "Assembly::AssemblyObject"]
     if assemblies:
         return assembly.result_objects(doc)
+    from . import studio
+    studio_results = studio.results(doc)
+    if studio_results is not None:
+        return studio_results
     native_bodies = bodies(doc)
     members = {obj.Name for body in native_bodies for obj in body.Group}
     standalone = [obj for obj in doc.Objects if obj.Name not in members and obj not in native_bodies

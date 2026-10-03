@@ -20,6 +20,9 @@ from .bodies import bodies, owner, origin_plane, results as native_results
 from .recovery import RecoveryStore
 from .timing import Timings
 from . import assembly as native_assembly
+from . import studio
+from . import selectors as native_selectors
+from . import reference_tools
 
 ROOT = Path(__file__).resolve().parents[2]
 WRITE_ROOT = ROOT.parent.resolve()
@@ -96,6 +99,22 @@ def native_parameters(obj):
     if obj.TypeId == "PartDesign::Pad" or (obj.TypeId == "PartDesign::Pocket" and str(obj.Type) == "Length"):
         expression=next((value for path,value in obj.ExpressionEngine if path.lstrip(".")=="Length"),None)
         params["Length"] = {"value": obj.Length.Value, "unit": "mm", "editable":expression is None,"expression":expression}
+    tool = getattr(obj, "KurtShapeTool", None) or obj
+    for native_property, public_name, unit in (("LengthFwd", "Length", "mm"), ("Angle", "Angle", "rad"),
+                                             ("Radius", "Radius", "mm"), ("Size", "Size", "mm"), ("Value", "Thickness", "mm")):
+        supported = ((tool.TypeId == "Part::Extrusion" and native_property == "LengthFwd") or
+                     (tool.TypeId == "Part::Revolution" and native_property == "Angle") or
+                     (tool.TypeId == "PartDesign::Fillet" and native_property == "Radius") or
+                     (tool.TypeId == "PartDesign::Chamfer" and native_property == "Size") or
+                     (tool.TypeId == "PartDesign::Thickness" and native_property == "Value"))
+        if not supported:
+            continue
+        value = getattr(tool, native_property)
+        numeric = float(value.Value if hasattr(value, "Value") else value)
+        expression = next((value for path, value in tool.ExpressionEngine if path.lstrip(".") == native_property), None)
+        params[public_name] = {"value": math.radians(numeric) if unit == "rad" else numeric,
+                               "unit": unit, "editable": expression is None, "expression": expression,
+                               "native_feature": tool.Name, "native_property": native_property}
     return params
 
 
@@ -129,7 +148,8 @@ def native_intent(doc, objects=None):
             continue
         item = {"id": obj.Name, "type": obj.TypeId, "label": obj.Label, "properties": {}}
         for key in obj.PropertiesList:
-            if key in {"Shape", "InternalShape", "ExpressionEngine", "Geometry", "Constraints", "Proxy", "PlacementList", "Visibility"}:
+            if key in {"Shape", "InternalShape", "ExpressionEngine", "Geometry", "Constraints", "Proxy", "PlacementList", "Visibility",
+                       "QueryHealth", "QueryResolutionLog"}:
                 continue
             try:
                 if "Shape" in obj.getTypeIdOfProperty(key):
@@ -166,12 +186,12 @@ def measurements(shape):
 
 
 class Controller:
-    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates"}
+    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
                     "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}
     MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line",
-                 "pad", "pocket", "set_parameter", "set_expression", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "rebuild"}
-    EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "set_parameter", "set_expression", "pierce", "finish_sketch_edit", "undo", "redo"}
+                 "pad", "pocket", "set_parameter", "set_expression", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "rebuild"} | studio.OPS | reference_tools.OPS
+    EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "set_parameter", "set_expression", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
     CREATE_OPS = {"new", "open", "recover", "import_step"}
     OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
     ARGS = {
@@ -200,9 +220,19 @@ class Controller:
         "move_assembly_joint": {"assembly", "joint", "value"},
         "move_assembly_instance": {"assembly", "instance", "position_mm", "rotation_xyzw"},
         "delete_assembly_object": {"assembly", "feature", "cascade"}, "solve_assembly": {"assembly"},
+        "resolve_selector": {"selector"},
     }
+    for _op, _args in studio.ARGS.items():
+        ARGS[_op] = ARGS.get(_op, set()) | set(_args)
+    for _op, _args in reference_tools.ARGS.items():
+        ARGS[_op] = ARGS.get(_op, set()) | set(_args)
+    ARGS["pad"] |= {"end_type", "up_to_face"}
+    ARGS["pocket"] |= {"end_type", "up_to_face"}
     for _op in MODEL_OPS - {"create_body", "rebuild"} | {"begin_sketch_edit"}:
         ARGS[_op] = ARGS[_op] | {"body"}
+    for _op in MODEL_OPS:
+        if "id" in ARGS[_op]:
+            ARGS[_op] |= {"source_feature_id", "source_feature_name"}
 
     def __init__(self):
         self.documents = {}
@@ -228,7 +258,29 @@ class Controller:
         return self.timings.measure("intent", intent_signature, doc)
 
     def _recompute(self, doc):
-        return self.timings.measure("native_recompute", doc.recompute)
+        began = time.perf_counter()
+        totals = {"native_recompute_ms": 0.0, "selector_evaluation_ms": 0.0}
+        def native_pass():
+            result = native_selectors.recompute(doc)
+            metrics = native_selectors.rebuild_metrics(doc)
+            for key in totals:
+                totals[key] += metrics.get(key, 0.0)
+            return result
+        studio.prepare_recompute(doc)
+        result = native_pass()
+        for attempt in range(len(studio.order(doc)) + 1):
+            if not studio.sync_auto_scopes(doc):
+                break
+            studio.prepare_recompute(doc)
+            result = native_pass()
+        else:
+            raise OperationError("unstable_merge_scope", "Auto merge scopes did not stabilize during rebuild")
+        studio.hide_internal(doc)
+        for label, key in (("native_recompute", "native_recompute_ms"),
+                           ("selector_evaluation", "selector_evaluation_ms")):
+            self.timings.record(label, totals[key])
+        self.timings.record("managed_rebuild", (time.perf_counter() - began) * 1000)
+        return result
 
     def _meta(self, doc):
         return self.unmanaged[doc.Name] if doc.Name in self.unmanaged else metadata(doc)
@@ -241,15 +293,24 @@ class Controller:
 
     def _body(self, doc, request=None, target=None):
         request = request or {}
-        selected = doc.getObject(request["body"]) if isinstance(request.get("body"), str) else None
+        try:
+            selected = studio.current_body(doc, request["body"]) if isinstance(request.get("body"), str) else None
+        except OperationError as exc:
+            if exc.code == "missing_part":
+                raise OperationError("missing_body", "body must identify a native PartDesign Body") from exc
+            raise
         if "body" in request and (selected is None or selected.TypeId != "PartDesign::Body"):
             raise OperationError("missing_body", "body must identify a native PartDesign Body")
         candidate = owner(doc, target)
+        # A selected historical feature remains owned by its native generation.
+        # Stable logical part IDs resolve to the current Body only for new work.
+        if candidate and selected and getattr(candidate, "KurtShapePartId", candidate.Name) == getattr(selected, "KurtShapePartId", selected.Name):
+            selected = candidate
         if selected and target and candidate != selected:
             raise OperationError("cross_body_reference", "Feature and support must belong to the selected Body")
         if selected or candidate:
             return selected or candidate
-        eligible = bodies(doc)
+        eligible = studio.current_parts(doc) if studio.enabled(doc) else bodies(doc)
         if len(eligible) != 1:
             raise OperationError("ambiguous_body" if eligible else "missing_body", "Choose an explicit body ID")
         return eligible[0]
@@ -294,6 +355,14 @@ class Controller:
     def attach(self, doc, managed=True):
         if managed:
             self.unmanaged.pop(doc.Name, None)
+            # Keep complete native lineage available to the verified selector
+            # decoder. This affects naming caches, not authored geometry.
+            if doc.UseHasher:
+                doc.UseHasher = False
+                # FreeCAD marks existing imported/native shapes touched when
+                # the naming cache mode changes. Complete that cache migration
+                # before reporting the freshly attached document's build state.
+                doc.recompute()
         if not managed:
             from types import SimpleNamespace
             self.unmanaged[doc.Name] = SimpleNamespace(DocumentId=str(uuid.uuid4()), Revision=str(uuid.uuid4()),
@@ -478,9 +547,11 @@ class Controller:
 
     def _build_status(self, doc):
         errors = native_assembly.validation_errors(doc, self.observer.state(doc)["generation"])
+        errors.extend(studio.validation_errors(doc))
+        errors.extend(native_selectors.reference_errors(doc))
         pending = []
         for obj in doc.Objects:
-            if obj.Name == METADATA:
+            if obj.Name == METADATA or not studio.is_active(obj):
                 continue
             flags = set(obj.State)
             if "Touched" in flags and obj.TypeId.startswith(("Sketcher::","PartDesign::", "Part::", "Assembly::", "App::Link")):
@@ -522,12 +593,32 @@ class Controller:
             if "SourceFeatureId" in obj.PropertiesList:
                 f["source_feature_id"] = obj.SourceFeatureId
                 f["source_feature_name"] = obj.SourceFeatureName
+            f["reference_health"] = json.loads(getattr(obj, "QueryHealth", "[]"))
+            f["selectors"] = json.loads(getattr(obj, "QueryInputs", "{}"))
             features.append(f)
+        # Hidden native helpers own real inputs (for example an up-to-face Pad
+        # or a split datum). Surface their health on the user-facing operation.
+        feature_rows = {feature["id"]: feature for feature in features}
+        for obj in doc.Objects:
+            operation = getattr(obj, "KurtShapeOperationOwner", "")
+            row = feature_rows.get(operation)
+            if row is None or obj.Name == operation or "QueryInputs" not in obj.PropertiesList:
+                continue
+            row.setdefault("reference_consumers", []).append(obj.Name)
+            for entry in json.loads(getattr(obj, "QueryHealth", "[]")):
+                row["reference_health"].append(dict(entry, native_feature=obj.Name,
+                                                   input=obj.Name + "." + entry["input"]))
+        studio_state = studio.inspect(doc)
+        if studio_state:
+            positions = {name: index for index, name in enumerate(studio_state["feature_order"])}
+            features.sort(key=lambda feature: positions.get(feature["id"], len(positions)))
+            for feature in features:
+                feature["rolled_back"] = feature["id"] in positions and positions[feature["id"]] >= studio_state["rollback_index"]
         available_geometry = self._geometry(doc)
         geometry = available_geometry if meta.BuildStatus=="valid" else None
         evaluated_results = []
         for obj in native_results(doc):
-            flags = set(obj.State) | {flag for member in getattr(obj, "Group", []) for flag in member.State}
+            flags = set(obj.State) | {flag for member in getattr(obj, "Group", []) if studio.is_active(member) for flag in member.State}
             metrics = self._evaluated_shape(doc, obj) if not obj.Shape.isNull() and obj.Shape.Solids else None
             status = "failed" if flags & {"Invalid", "Error"} or metrics and not metrics["valid"] else ("needs_rebuild" if "Touched" in flags else ("valid" if metrics else "sketch_only"))
             if native_assembly.assemblies(doc) and meta.BuildStatus in {"failed", "needs_rebuild"}:
@@ -547,6 +638,7 @@ class Controller:
                 "managed": self.is_managed(doc), "unsupported_objects": unsupported, "bodies": evaluated_results,
                 "import_source": json.loads(getattr(meta, "ImportSource", "{}")) or None,
                 "assembly": native_assembly.inspect(doc),
+                "studio": studio_state,
                 "operations": sorted(self.OPS if self.is_managed(doc) else self.READ_OPS | self.CREATE_OPS | {"adopt"})}
 
     def dispatch(self, request):
@@ -572,6 +664,7 @@ class Controller:
         created_feature = None
         owns_busy = False
         assembly_transaction_id = None
+        model_transaction_id = None
         try:
             self._prune_closed_sketch_edits()
             if not isinstance(request, dict) or request.get("op") not in self.OPS:
@@ -582,7 +675,7 @@ class Controller:
                 raise OperationError("unknown_argument", "Unsupported request fields", fields=sorted(unknown))
             if op == "capabilities":
                 return {"ok": True, "result": {"contract": 2, "session_id": self.ledger.session_id,
-                    "operations": sorted(self.OPS), "preview_operations": ["set_parameter", "set_expression"],
+                    "operations": sorted(self.OPS), "preview_operations": sorted(self.MODEL_OPS - {"rebuild"}),
                     "import_formats": [".step", ".stp"],
                     "assembly": {"level": "single", "source_formats": [".fcstd", ".step", ".stp"], "source_policy": "embedded_shape_snapshot",
                                  "joint_types": ["fixed", "revolute", "slider"], "solver": "native FreeCAD Assembly",
@@ -641,7 +734,7 @@ class Controller:
                     raise
                 if self.is_managed(doc):
                     for obj in doc.Objects:
-                        if obj.TypeId.startswith(("Sketcher::", "PartDesign::")):
+                        if obj.TypeId.startswith(("Sketcher::", "PartDesign::")) or studio.enabled(doc) and obj.TypeId.startswith(("Part::", "App::Link")):
                             obj.touch()
                     self._recompute(doc)
                     if native_assembly.inspect(doc):
@@ -672,6 +765,8 @@ class Controller:
                         self._new_revision(doc)
             else:
                 doc = self._doc(request)
+                if op == "resolve_selector":
+                    return {"ok": True, "result": {"matches": native_selectors.resolve(doc, request.get("selector"))}}
                 if op == "preview":
                     return {"ok": True, "result": self._preview(doc, request)}
                 if not self.is_managed(doc) and op not in self.READ_OPS | {"adopt"}:
@@ -686,7 +781,7 @@ class Controller:
                     if editing:
                         if op not in self.EDIT_OPS:
                             raise OperationError("sketch_edit_active", "Finish or cancel the managed sketch before another operation", feature=editing["feature"])
-                        target = request.get("sketch") if op.startswith("add_") or op == "pierce" else request.get("feature")
+                        target = request.get("sketch") if op.startswith("add_") or op in {"pierce", "project_geometry"} else request.get("feature")
                         if target is not None and target != editing["feature"]:
                             raise OperationError("managed_sketch_mismatch", "Only the sketch in the active edit session may be changed", feature=editing["feature"])
                     if getattr(App, "GuiUp", False):
@@ -772,19 +867,23 @@ class Controller:
                         if op == "duplicate_feature" and doc.HasPendingTransaction:
                             raise OperationError("unmanaged_transaction", "Finish the native transaction before another operation")
                         doc.openTransaction(f"KurtShape: {op}")
+                        model_transaction_id = (App.getActiveTransaction() or (None, None))[1]
                     transaction = True
                     created_feature = self._model_operation(doc, request)
+                    studio.reconcile(doc)
                     self._recompute(doc)
                     errors = self._build_status(doc)
                     if errors and not editing:
                         raise OperationError("build_failed", "Native feature rebuild failed", features=errors)
                     affected = doc.getObject(request.get("profile") or request.get("feature") or created_feature or "")
                     affected_body = owner(doc, affected)
-                    if not editing and affected_body and (op in {"pad", "pocket"} or op in {"set_parameter", "set_expression", "duplicate_feature"} and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject"):
+                    if not editing and affected_body and not studio.enabled(doc) and (op in {"pad", "pocket"} or op in {"set_parameter", "set_expression", "duplicate_feature"} and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject"):
                         if self._meta(doc).BuildStatus != "valid" or len(affected_body.Shape.Solids) != 1:
                             raise OperationError("build_failed", "Operation must produce one valid solid")
                     if not editing:
                         doc.commitTransaction()
+                        if model_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == model_transaction_id:
+                            App.closeActiveTransaction()
                     transaction = False
                     self._new_revision(doc)
                 elif op in {"undo", "redo"}:
@@ -854,6 +953,8 @@ class Controller:
                     doc.abortTransaction()
                     if assembly_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == assembly_transaction_id:
                         App.closeActiveTransaction(True)
+                    if model_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == model_transaction_id:
+                        App.closeActiveTransaction(True)
                     self._recompute(doc)
                     self.signatures[self._meta(doc).DocumentId] = self._signature(doc)
                     self.observer.state(doc).pop("assembly_source_changed", None)
@@ -900,11 +1001,16 @@ class Controller:
             if Gui.Control.activeDialog() or any(Gui.getDocument(name).getInEdit() for name in App.listDocuments()):
                 raise OperationError("sketch_edit_active", "Finish graphical editing before previewing")
         proposal = request.get("proposal")
-        if not isinstance(proposal, dict) or proposal.get("op") not in {"set_parameter", "set_expression"} or set(proposal) - self.ARGS[proposal["op"]] - {"op"}:
-            raise OperationError("unsupported_preview", "Preview accepts a parameter or expression operation only")
+        if not isinstance(proposal, dict) or proposal.get("op") not in self.MODEL_OPS - {"rebuild"} or set(proposal) - self.ARGS[proposal["op"]] - {"op"}:
+            raise OperationError("unsupported_preview", "Preview requires a supported typed modeling operation")
         import tempfile
+        from .extrusion_preview import _capture_gui, _restore_gui
         clone = None
+        preview_transaction_id = None
         active = App.ActiveDocument
+        gui_state = _capture_gui(doc)
+        previous_busy = self.busy
+        self.busy = True
         try:
             with tempfile.TemporaryDirectory(prefix="kurtshape-parameter-preview-") as temporary:
                 path = Path(temporary) / "native-preview.FCStd"
@@ -912,13 +1018,16 @@ class Controller:
                 clone = App.openDocument(str(path), True)
                 failure = None
                 try:
+                    clone.openTransaction("KurtShape: disposable preview")
+                    preview_transaction_id = (App.getActiveTransaction() or (None, None))[1]
                     self._model_operation(clone, proposal)
+                    studio.reconcile(clone)
                     self._recompute(clone)
                     errors = self._build_status(clone)
                     if errors:
                         raise OperationError("build_failed", "Preview could not rebuild", features=errors)
                     affected_body = owner(clone, clone.getObject(proposal.get("feature", "")))
-                    if affected_body and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject":
+                    if affected_body and not studio.enabled(clone) and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject":
                         if self._meta(clone).BuildStatus != "valid" or len(affected_body.Shape.Solids) != 1:
                             raise OperationError("build_failed", "Preview must produce one valid solid in the affected Body")
                 except Exception as exc:
@@ -927,17 +1036,30 @@ class Controller:
                 status = self._meta(clone).BuildStatus
                 evaluated = {"build_status": status, "build_errors": errors,
                              "measurements": self._geometry(clone) if status == "valid" else None}
+                clone.commitTransaction()
+                if preview_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == preview_transaction_id:
+                    App.closeActiveTransaction()
                 return {"base_revision": request["expected_revision"], "proposal": proposal,
                         "valid": failure is None and evaluated["build_status"] in {"valid", "sketch_only"},
                         "error": failure, "build_status": evaluated["build_status"], "build_errors": evaluated["build_errors"],
                         "measurements": evaluated["measurements"], "discarded": True}
         finally:
-            if clone:
-                name = clone.Name
-                App.closeDocument(name)
-                self.evaluations.pop(name, None)
-            if active and self._is_open(active):
-                App.setActiveDocument(active.Name)
+            try:
+                if clone:
+                    name = clone.Name
+                    if clone.HasPendingTransaction:
+                        clone.abortTransaction()
+                    if preview_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == preview_transaction_id:
+                        App.closeActiveTransaction(True)
+                    App.closeDocument(name)
+                    self.evaluations.pop(name, None)
+                    self.observer.states.pop(name, None)
+                if active and self._is_open(active):
+                    App.setActiveDocument(active.Name)
+                if self._is_open(doc):
+                    _restore_gui(doc, gui_state)
+            finally:
+                self.busy = previous_busy
 
     def _adopt(self, source, raw):
         path = write_path(raw, {".fcstd"}, self.settings.roots)
@@ -1122,6 +1244,8 @@ class Controller:
         self._recompute(doc)
         if "Error" in sk.State or "Invalid" in sk.State:
             raise OperationError("attachment_failed", "Native sketch attachment failed", status=sk.getStatusString())
+        if req.get("_support_selector"):
+            native_selectors.bind(sk, "support", req["_support_selector"], native_property="AttachmentSupport")
         return sk
 
     @staticmethod
@@ -1225,6 +1349,24 @@ class Controller:
 
     def _model_operation(self, doc, req):
         op = req["op"]
+        if op in studio.OPS - {"pad", "pocket"} or op in {"pad", "pocket"} and ("operation" in req or "merge_scope" in req):
+            if reference_tools.is_selector(req.get("face")):
+                original_face = req["face"]
+                req = dict(req, face=native_selectors.native_reference(doc, original_face, entity_type="face"),
+                           _face_selector=reference_tools.selector_value(original_face))
+            created = studio.handle(self, doc, req)
+            self._record_source(doc, req, doc.getObject(created) if created else None)
+            return created
+        if op in reference_tools.OPS:
+            created = reference_tools.handle(self, doc, req)
+            self._record_source(doc, req, doc.getObject(created) if created else None)
+            return created
+        if op == "pad" and req.get("end_type") == "through_all":
+            raise OperationError("invalid_argument", "Through all extrusion requires an explicit studio result operation or merge scope")
+        if reference_tools.is_selector(req.get("support")):
+            original = req["support"]
+            req = dict(req, support=native_selectors.native_reference(doc, original, entity_type="face"),
+                       _support_selector=reference_tools.selector_value(original))
         if op == "rename_feature":
             target = doc.getObject(req.get("feature", ""))
             assembly_state = native_assembly.inspect(doc)
@@ -1241,7 +1383,8 @@ class Controller:
         if "support" in req and not isinstance(req["support"], dict):
             raise OperationError("invalid_argument", "support requires a native reference object")
         target = doc.getObject(req.get("feature") or req.get("profile") or req.get("sketch") or req.get("support", {}).get("feature") or "")
-        body = self._body(doc, req, target) if op != "rebuild" else None
+        needs_body = op not in {"rebuild", "set_parameter", "set_expression"} or "body" in req
+        body = self._body(doc, req, target) if needs_body else None
         if op == "create_sketch":
             sk = self._new_sketch(doc, req, "Sketch")
         elif op == "sketch_rectangle":
@@ -1281,14 +1424,26 @@ class Controller:
             feature.Profile=profile
             if "reversed" in req and not isinstance(req["reversed"], bool):
                 raise OperationError("invalid_argument", "reversed must be boolean")
-            if op=="pad":
+            up_to_face = req.get("end_type") == "up_to_face" or "up_to_face" in req
+            if req.get("end_type", "blind") not in {"blind", "through_all", "up_to_face"}:
+                raise OperationError("invalid_argument", "end_type must be blind, through_all or up_to_face")
+            if up_to_face:
+                reference = native_selectors.native_reference(doc, req.get("up_to_face"), entity_type="face")
+                target_face = doc.getObject(reference["feature"])
+                if target_face == feature or feature in target_face.OutListRecursive:
+                    raise OperationError("cyclic_reference", "End face must precede this feature")
+                feature.Type = "UpToFace"
+                feature.UpToFace = (target_face, [reference["subelement"]])
+                if reference_tools.is_selector(req["up_to_face"]):
+                    native_selectors.bind(feature, "up_to_face", reference_tools.selector_value(req["up_to_face"]), native_property="UpToFace")
+            elif op=="pad":
                 feature.Length=number(req["length"],"length",True)
                 feature.Reversed = req.get("reversed", False)
             else:
                 if "through_all" in req and not isinstance(req["through_all"], bool):
                     raise OperationError("invalid_argument", "through_all must be boolean")
                 feature.Reversed=req.get("reversed", False)
-                feature.Type=1 if req.get("through_all",True) else 0
+                feature.Type=1 if req.get("end_type") == "through_all" or req.get("through_all",True) else 0
                 if str(feature.Type)=="Length":
                     feature.Length=number(req["length"],"length",True)
             self._recompute(doc)
@@ -1311,12 +1466,14 @@ class Controller:
                 raise OperationError("missing_reference", "Feature ID does not exist")
             parameter=req["parameter"]
             if parameter not in native_parameters(feature):
-                raise OperationError("unsupported_parameter", "Only named driving sketch dimensions and pad/pocket Length are supported")
+                raise OperationError("unsupported_parameter", "Choose an editable parameter reported by inspect")
             info=native_parameters(feature)[parameter]
+            if info.get("native_feature"):
+                feature = doc.getObject(info["native_feature"])
             if feature.TypeId=="Sketcher::SketchObject" and not feature.Constraints[info["constraint_index"]].Driving:
                 raise OperationError("unsupported_parameter", "This parameter is not a supported driving length dimension")
             value = number(req["value"], "value", info.get("constraint_type") not in {"DistanceX", "DistanceY", "Angle"}, info["unit"]) if op == "set_parameter" else None
-            property_path=(f"Constraints.{info['name']}" if info.get("name") else f"Constraints[{info['constraint_index']}]") if feature.TypeId=="Sketcher::SketchObject" else parameter
+            property_path=(f"Constraints.{info['name']}" if info.get("name") else f"Constraints[{info['constraint_index']}]") if feature.TypeId=="Sketcher::SketchObject" else info.get("native_property", parameter)
             aliases={property_path}
             if feature.TypeId=="Sketcher::SketchObject":
                 aliases.add(f"Constraints[{native_parameters(feature)[parameter]['constraint_index']}]")
@@ -1336,7 +1493,7 @@ class Controller:
                 if feature.solve()!=0:
                     raise OperationError("constraint_conflict", "Dimension produces a sketch solver conflict")
             else:
-                feature.Length=value
+                setattr(feature, property_path, math.degrees(value) if info["unit"] == "rad" else value)
         elif op == "duplicate_feature":
             source = doc.getObject(req["feature"])
             if source is None or source not in body.Group or source.TypeId not in {"Sketcher::SketchObject", "PartDesign::Pad", "PartDesign::Pocket"}:
@@ -1352,6 +1509,10 @@ class Controller:
             return created.Name
         elif op == "pierce":
             sketch = self._profile(doc, req["sketch"])
+            query = req.get("target") if reference_tools.is_selector(req.get("target")) else None
+            if query:
+                reference = native_selectors.native_reference(doc, query, before=sketch, entity_type="edge")
+                req = dict(req, target=reference["feature"], subelement=reference["subelement"])
             source = doc.getObject(req["target"])
             geometry, point = req["geometry"], req.get("point", 1)
             if isinstance(geometry, bool) or not isinstance(geometry, int) or not 0 <= geometry < sketch.GeometryCount or isinstance(point, bool) or point not in {1, 2, 3}:
@@ -1361,12 +1522,16 @@ class Controller:
             if sketch in source.OutListRecursive:
                 raise OperationError("cyclic_reference", "Pierce cannot reference a downstream feature")
             previous = len(sketch.ExternalGeo)
+            external_slot = len(sketch.ExternalGeometry)
             sketch.addExternal(source.Name, req["subelement"], False, True)
             self._recompute(doc)
             external = sketch.ExternalGeo[previous:]
             if len(external) != 1 or not isinstance(external[0], Part.Point):
                 raise OperationError("ambiguous_intersection", "Curve must cross the sketch plane at exactly one point")
             sketch.addConstraint(Sketcher.Constraint("Coincident", geometry, point, -(previous + 1), 1))
+            if query:
+                native_selectors.bind(sketch, "pierce_" + str(previous), reference_tools.selector_value(query),
+                                      mode="external", index=external_slot, intersection=True)
             if sketch.solve() != 0:
                 raise OperationError("constraint_conflict", "Pierce conflicts with existing sketch constraints")
         elif op == "rename_feature":
@@ -1387,15 +1552,22 @@ class Controller:
                     obj.touch()
         if op in {"create_sketch", "sketch_rectangle", "sketch_circle", "pad", "pocket"} and req.get("source_feature_id"):
             created = sk if op in {"create_sketch", "sketch_rectangle", "sketch_circle"} else feature
-            created.Label=str(req.get("source_feature_name",req["source_feature_id"]))
-            for prop,value in [("SourceFeatureId",req["source_feature_id"]),("SourceFeatureName",req.get("source_feature_name",req["source_feature_id"]))]:
-                created.addProperty("App::PropertyString",prop,"Onshape source")
-                setattr(created,prop,str(value))
-                created.setEditorMode(prop,1)
-            meta=self._meta(doc)
-            mapping=json.loads(meta.SourceMapping)
-            mapping[str(req["source_feature_id"])]=created.Name
-            meta.SourceMapping=json.dumps(mapping,sort_keys=True)
+            self._record_source(doc, req, created)
+
+    def _record_source(self, doc, req, created):
+        if created is None or not req.get("source_feature_id"):
+            return
+        created.Label = str(req.get("source_feature_name", req["source_feature_id"]))
+        for prop, value in [("SourceFeatureId", req["source_feature_id"]),
+                            ("SourceFeatureName", req.get("source_feature_name", req["source_feature_id"]))]:
+            if prop not in created.PropertiesList:
+                created.addProperty("App::PropertyString", prop, "Onshape source")
+            setattr(created, prop, str(value))
+            created.setEditorMode(prop, 1)
+        meta = self._meta(doc)
+        mapping = json.loads(meta.SourceMapping)
+        mapping[str(req["source_feature_id"])] = created.Name
+        meta.SourceMapping = json.dumps(mapping, sort_keys=True)
 
     def _save(self, doc, raw):
         path=write_path(raw,{".fcstd"}, self.settings.roots)
@@ -1445,6 +1617,7 @@ class Controller:
                     "engine":{"FreeCAD":App.Version(),"OCCT":Part.OCC_VERSION},
                     "sha256":hashlib.sha256(stage.read_bytes()).hexdigest(),
                     "native_file":doc.FileName or None,"format":path.suffix.lower(),"included_body_ids":[obj.Name for obj in included],"shape":self._geometry(doc, included),
+                    "included_part_ids":[getattr(obj,"KurtShapePartId",obj.Name) for obj in included],
                     "settings":{"linear_deflection_mm":0.05,"angular_deflection_rad":0.1} if path.suffix.lower()==".stl" else {"writer":"FreeCAD Part/OCCT"}}
         sidecar=path.with_suffix(path.suffix+".json")
         temp=sidecar.with_suffix(sidecar.suffix+".saving")

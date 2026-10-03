@@ -17,6 +17,23 @@ import FreeCAD as App
 import Part
 
 from .core import OperationError, measurements, number
+from .bodies import results as native_results
+
+PREVIEW_OPS = {"pad", "pocket", "revolve", "sweep", "loft", "boolean_parts",
+               "split_part", "transform_part", "linear_pattern_parts", "circular_pattern_parts",
+               "mirror_parts", "fillet", "chamfer", "shell"}
+
+
+def _aggregate_shape(document):
+    shapes = [_world_shape(obj) for obj in native_results(document)
+              if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
+    return Part.makeCompound(shapes) if shapes else Part.Shape()
+
+
+def _removal(proposal):
+    if proposal.get("op") in {"fillet", "chamfer", "shell"} or proposal.get("op") == "boolean_parts" and proposal.get("kind") in {"subtract", "intersect"}:
+        return True
+    return proposal.get("operation", "remove" if proposal.get("op") == "pocket" else "add") in {"remove", "intersect"} or proposal.get("op") in {"shell"}
 
 
 @dataclass(frozen=True)
@@ -121,14 +138,26 @@ class ExtrusionEvaluator:
             raise OperationError("sketch_edit_active", "Finish the current native editor before extruding")
 
     def _proposal(self, proposal):
-        if not isinstance(proposal, dict) or proposal.get("op") not in {"pad", "pocket"}:
-            raise OperationError("unsupported_preview", "Preview requires an extrusion or remove operation")
+        if not isinstance(proposal, dict) or proposal.get("op") not in PREVIEW_OPS:
+            raise OperationError("unsupported_preview", "This operation has no geometry preview")
         op = proposal["op"]
         # IDs belong to the final acceptance, not to an ephemeral proposal.
         permitted = self.controller.ARGS[op] - {"id", "source_feature_id", "source_feature_name"}
         if set(proposal) - permitted - {"op"}:
             raise OperationError("invalid_argument", "Unknown extrusion preview argument")
         normalized = dict(proposal)
+        if op not in {"pad", "pocket"}:
+            # Native/typed controller validation owns these operation schemas.
+            # Normalize unit fields so focus-out retains equivalent intent.
+            for key in ("length", "distance", "spacing", "radius", "size", "thickness"):
+                if key in normalized:
+                    normalized[key] = number(normalized[key], key.capitalize(), True)
+            if "angle" in normalized:
+                normalized["angle"] = number(normalized["angle"], "Angle", True, "rad")
+            if isinstance(normalized.get("rotation"), dict):
+                normalized["rotation"] = dict(normalized["rotation"])
+                normalized["rotation"]["angle"] = number(normalized["rotation"].get("angle", 0), "Rotation", unit="rad")
+            return normalized
         if not isinstance(normalized.get("profile"), str):
             raise OperationError("missing_reference", "Select a closed sketch profile")
         if "reversed" in normalized and not isinstance(normalized["reversed"], bool):
@@ -137,7 +166,9 @@ class ExtrusionEvaluator:
             if "through_all" in normalized and not isinstance(normalized["through_all"], bool):
                 raise OperationError("invalid_argument", "through_all must be boolean")
             normalized["through_all"] = normalized.get("through_all", True)
-        if op == "pad" or not normalized["through_all"]:
+        if normalized.get("end_type") in {"up_to_face", "through_all"}:
+            normalized.pop("length", None)
+        elif op == "pad" or not normalized["through_all"]:
             normalized["length"] = number(normalized.get("length"), "Depth", True)
         else:
             # Depth is irrelevant for Through all. Strip invalid/stale text so
@@ -154,9 +185,16 @@ class ExtrusionEvaluator:
         clone, clone_name = None, None
         active = App.activeDocument()
         gui_state = None
+        previous_busy = None
+        transaction_id = None
         try:
             self._guard()
             normalized = self._proposal(proposal)
+            # Native loading/recompute can pump Qt events with the hidden
+            # clone temporarily active. Keep queued controller operations and
+            # the panel's document watcher out of that disposable interval.
+            previous_busy = self.controller.busy
+            self.controller.busy = True
             gui_state = _capture_gui(self.document)
             generation = self.controller.observer.state(self.document)["generation"]
             if self._snapshot is None or generation != self._generation:
@@ -182,8 +220,10 @@ class ExtrusionEvaluator:
                     App.closeDocument(name)
                 raise
             clone_name = clone.Name
-            body = clone.getObject(normalized["body"])
-            previous = _world_shape(body)
+            App.setActiveDocument(clone_name)
+            body = clone.getObject(normalized.get("body", ""))
+            aggregate = "operation" in normalized or normalized["op"] not in {"pad", "pocket"}
+            previous = _aggregate_shape(clone) if aggregate else _world_shape(body)
             operation = dict(normalized, id="KurtShapePreviewExtrusion")
             index = 2
             while clone.getObject(operation["id"]):
@@ -192,17 +232,33 @@ class ExtrusionEvaluator:
             self.evaluations += 1
             # The same whitelisted native operation and validation used by
             # acceptance run here; the clone is never Controller.attach'ed.
-            self.controller._model_operation(clone, operation)
+            clone.openTransaction("Disposable feature preview")
+            transaction_id = (App.getActiveTransaction() or (None, None))[1]
+            created = self.controller._model_operation(clone, operation)
+            if isinstance(created, str):
+                created = clone.getObject(created)
+            from . import studio
+            studio.reconcile(clone)
             self.controller._recompute(clone)
             errors = self.controller._build_status(clone)
-            if errors or self.controller._meta(clone).BuildStatus != "valid" or len(body.Shape.Solids) != 1:
-                raise OperationError("build_failed", "Preview could not produce one valid solid", features=errors)
-            shape = _world_shape(body)
-            material = (previous.cut(shape) if normalized["op"] == "pocket" else
+            if errors or self.controller._meta(clone).BuildStatus != "valid" or not aggregate and len(body.Shape.Solids) != 1:
+                raise OperationError("build_failed", "Preview could not produce valid current parts", features=errors)
+            shape = _aggregate_shape(clone) if aggregate else _world_shape(body)
+            material = (previous.cut(shape) if _removal(normalized) else
                         shape if previous.isNull() else shape.cut(previous))
+            if material.isNull() or material.Volume <= 1e-7:
+                # Split, fillet and a New part overlapping an existing part
+                # can preserve the occupied volume while changing valid intent.
+                # Show the resulting feature geometry in that case.
+                if aggregate and created is not None and hasattr(created, "Shape") and not created.Shape.isNull():
+                    material = _world_shape(created)
             if material.isNull() or not material.isValid() or material.Volume <= 1e-7:
                 raise OperationError("empty_preview", "The extrusion changes no solid material")
-            result = ExtrusionResult(True, self.expected_revision, normalized, body.Name,
+            clone.commitTransaction()
+            if transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == transaction_id:
+                App.closeActiveTransaction()
+            transaction_id = None
+            result = ExtrusionResult(True, self.expected_revision, normalized, body.Name if body else None,
                                      shape, material, measurements(shape))
             self._cache[key] = result
             while len(self._cache) > 8:
@@ -210,18 +266,25 @@ class ExtrusionEvaluator:
             return replace(result, milliseconds=(time.perf_counter() - began) * 1000)
         except Exception as exc:
             return ExtrusionResult(False, self.expected_revision, normalized,
-                                   error={"code": getattr(exc, "code", "preview_failed"), "message": str(exc)},
+                                   error={"code": getattr(exc, "code", "preview_failed"), "message": str(exc),
+                                          **getattr(exc, "details", {})},
                                    milliseconds=(time.perf_counter() - began) * 1000)
         finally:
-            if clone_name:
-                if clone_name in App.listDocuments():
-                    App.closeDocument(clone_name)
-                self.controller.evaluations.pop(clone_name, None)
-                self.controller.observer.states.pop(clone_name, None)
-            if active and self.controller._is_open(active):
-                App.setActiveDocument(active.Name)
-            if self.controller._is_open(self.document):
-                _restore_gui(self.document, gui_state)
+            try:
+                if transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == transaction_id:
+                    App.closeActiveTransaction(True)
+                if clone_name:
+                    if clone_name in App.listDocuments():
+                        App.closeDocument(clone_name)
+                    self.controller.evaluations.pop(clone_name, None)
+                    self.controller.observer.states.pop(clone_name, None)
+                if active and self.controller._is_open(active):
+                    App.setActiveDocument(active.Name)
+                if self.controller._is_open(self.document):
+                    _restore_gui(self.document, gui_state)
+            finally:
+                if previous_busy is not None:
+                    self.controller.busy = previous_busy
 
     def close(self):
         self.closed = True
@@ -249,7 +312,7 @@ class CoinExtrusionOverlay:
         pick = coin.SoPickStyle()
         pick.style = coin.SoPickStyle.UNPICKABLE
         node.addChild(pick)
-        if result.proposal["op"] == "pocket":
+        if _removal(result.proposal):
             depth = coin.SoDepthBuffer()
             # The live solid stays visible. Draw removed material through it
             # without writing depth that could occlude other scene objects.
@@ -263,7 +326,7 @@ class CoinExtrusionOverlay:
         hints.shapeType = coin.SoShapeHints.SOLID
         node.addChild(hints)
         material = coin.SoMaterial()
-        color = (0.96, 0.48, 0.20) if result.proposal["op"] == "pocket" else (0.25, 0.72, 0.96)
+        color = (0.96, 0.48, 0.20) if _removal(result.proposal) else (0.25, 0.72, 0.96)
         material.diffuseColor.setValue(*color)
         material.emissiveColor.setValue(*(channel * 0.25 for channel in color))
         material.transparency = 0.38
@@ -331,6 +394,7 @@ class DebouncedExtrusionPreview:
         self.overlay = CoinExtrusionOverlay()
         self.pending = self.result = None
         self.closed = False
+        self.evaluating = False
         self.timer = QtCore.QTimer(parent)
         self.timer.setSingleShot(True)
         self.timer.setInterval(delay_ms)
@@ -378,16 +442,34 @@ class DebouncedExtrusionPreview:
     def flush(self):
         import FreeCADGui as Gui
         self.timer.stop()
-        if self.closed or self.evaluator is None or self.pending is None:
+        if self.closed or self.evaluator is None or self.pending is None or self.evaluating:
             return None
         if not self.check_lifetime():
             return None
-        result = self.evaluator.evaluate(self.pending)
+        evaluator, proposal = self.evaluator, dict(self.pending)
+        self.lifetime_timer.stop()
+        self.evaluating = True
+        try:
+            result = evaluator.evaluate(proposal)
+        finally:
+            self.evaluating = False
+            if not self.closed:
+                self.lifetime_timer.start()
+        if self.evaluator is not evaluator or not self.check_lifetime():
+            return None
+        if self.pending != proposal:
+            self.timer.start()
+            return None
+        if result.valid:
+            try:
+                evaluator._guard()
+            except Exception as exc:
+                result = replace(result, valid=False, error={"code": getattr(exc, "code", "preview_failed"), "message": str(exc)})
         self.result = result
         self.overlay.clear()
         if result.valid:
             try:
-                self.overlay.show(result, Gui.getDocument(self.evaluator.document_name).activeView())
+                self.overlay.show(result, Gui.getDocument(evaluator.document_name).activeView())
             except Exception as exc:
                 result = replace(result, valid=False, error={"code": "preview_render_failed", "message": str(exc)})
                 self.result = result
@@ -399,6 +481,8 @@ class DebouncedExtrusionPreview:
     def check_lifetime(self):
         if self.closed or self.evaluator is None:
             return False
+        if self.evaluating:
+            return True
         doc = self.evaluator.document
         if (not self.controller._is_open(doc) or App.activeDocument() != doc or
                 self.allowed is not None and not self.allowed() or
