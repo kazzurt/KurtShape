@@ -2,6 +2,7 @@
 from pathlib import Path
 import sys
 import unittest
+import support
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -13,6 +14,7 @@ from kurtshape.core import Controller
 class ReferenceToolTests(unittest.TestCase):
     def setUp(self):
         self.names = set(App.listDocuments())
+        self.folder = support.isolated_session(self, prefix="reference-tools-session-")
         self.core = Controller()
         self.state = self.call("new", name="Typed reference consumers")
         self.call("sketch_rectangle", id="Plate", width=20, height=12)

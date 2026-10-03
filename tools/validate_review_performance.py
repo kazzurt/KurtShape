@@ -5,6 +5,7 @@ from pathlib import Path
 import platform
 import sys
 import time
+from kurtshape_evidence import evidence_dir, external_examples, require_external
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
@@ -13,7 +14,8 @@ import Sketcher
 from kurtshape.core import Controller
 from kurtshape.timing import Timings
 
-output = ROOT / "validation" / "review-followup"
+require_external("Dodec pipe mount.step", "Dodec Hub Conformal.step")
+output = evidence_dir("review-followup")
 output.mkdir(parents=True, exist_ok=True)
 report = {"engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
           "hardware": {"processor": os.environ.get("PROCESSOR_IDENTIFIER"), "logical_processors": os.cpu_count(), "platform": platform.platform()},
@@ -57,7 +59,7 @@ for count in (1, 200):
     App.closeDocument(doc.Name)
 
 for filename in ("Dodec pipe mount.step", "Dodec Hub Conformal.step"):
-    source = ROOT.parent.parent / "Onshape examples" / filename
+    source = external_examples() / filename
     core = Controller()
     doc = App.newDocument("StepReferenceTiming")
     obj = doc.addObject("Part::Feature", "ReferenceGeometry")

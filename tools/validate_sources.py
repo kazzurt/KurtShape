@@ -12,9 +12,12 @@ import hashlib
 import json
 from pathlib import Path
 import time
+import sys
+
+from kurtshape_evidence import evidence_dir, external_examples, require_external
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCES = ROOT.parents[1] / "Onshape examples"
+SOURCES = external_examples()
 
 
 def sha256(path):
@@ -101,6 +104,11 @@ def compare_shapes(reference, candidate, volume_tolerance_mm3=1e-5):
 
 
 def main():
+    require_external()
+    files = sorted(SOURCES.glob("*.step"))
+    if not files:
+        print(f"External examples contain no STEP files: {SOURCES}", file=sys.stderr)
+        return 2
     import FreeCAD
     import Part
     parser = argparse.ArgumentParser(description=__doc__)
@@ -111,17 +119,18 @@ def main():
         parser.error("volume tolerance must be non-negative")
     output = {"FreeCAD_version": FreeCAD.Version(), "OCCT_version": Part.OCC_VERSION,
               "coordinate_policy": "No alignment, no rewriting source files",
-              "sources": [inspect_step(p) for p in sorted(SOURCES.glob("*.step"))]}
+              "sources": [inspect_step(p) for p in files]}
     if args.compare:
         reference, candidate = [Path(p).resolve() for p in args.compare]
         output["comparison"] = {"reference": str(reference), "candidate": str(candidate),
                                 **compare_shapes(Part.read(str(reference)), Part.read(str(candidate)), args.volume_tolerance)}
-    out = ROOT / "validation" / "source-geometry.json"
+    out = evidence_dir("") / "source-geometry.json"
     out.write_text(json.dumps(output, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(json.dumps({"report": str(out), "sources": [{"name": Path(s["path"]).name,
           "solid_count": s["solid_count"], "valid": s["is_valid"], "size_mm": s["bounding_box_mm"]["size"],
           "volume_mm3": s["volume_mm3"], "original_unchanged": s["original_unchanged"]} for s in output["sources"]]}, indent=2))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

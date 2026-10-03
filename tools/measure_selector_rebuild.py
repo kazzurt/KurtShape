@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import statistics
 import sys
+from kurtshape_evidence import evidence_dir
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
@@ -10,7 +11,7 @@ import Part
 from kurtshape import selectors
 
 
-destination = ROOT / "validation" / "u2-selector-performance"
+destination = evidence_dir("u2-selector-performance")
 destination.mkdir(parents=True, exist_ok=True)
 doc = App.newDocument("SelectorPerformance30Features")
 doc.UseHasher = False

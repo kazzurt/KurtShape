@@ -13,10 +13,12 @@ import time
 import traceback
 
 root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
 assert session.is_relative_to(root / "runtime"), "Use an isolated profile"
 assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
-sys.dont_write_bytecode = True
 sys.path.insert(0, str(root / "src"))
 
 
@@ -65,7 +67,7 @@ class HiddenPopupFilter(QtCore.QObject):
 
 hidden_popups = HiddenPopupFilter(application)
 application.installEventFilter(hidden_popups)
-output = root / "validation" / "u2-part-model-spike"
+output = evidence_dir("u2-part-model-spike")
 output.mkdir(parents=True, exist_ok=True)
 fixture_folder = session / "native-carrier-fixtures"
 fixture_folder.mkdir(parents=True, exist_ok=True)

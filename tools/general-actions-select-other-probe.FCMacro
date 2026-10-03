@@ -11,6 +11,9 @@ from PySide import QtCore, QtGui
 from PySide6 import QtTest
 
 root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 main = Gui.getMainWindow()
 main.hide()
 main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
@@ -40,7 +43,7 @@ def probe():
     except Exception:
         report["error"] = traceback.format_exc()
     finally:
-        (root / "validation" / "general-actions-select-other-probe.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        (evidence_dir("") / "general-actions-select-other-probe.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
         for doc in list(App.listDocuments().values()):
             App.closeDocument(doc.Name)
         QtCore.QTimer.singleShot(100, QtGui.QApplication.instance().quit)

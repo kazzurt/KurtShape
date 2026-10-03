@@ -5,6 +5,7 @@ import sys
 import subprocess
 import tempfile
 import unittest
+import support
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,7 @@ from kurtshape import selectors, studio
 class SelectorConsumerTests(unittest.TestCase):
     def setUp(self):
         self.names = set(App.listDocuments())
+        self.folder = support.isolated_session(self, prefix="selector-consumers-session-")
         self.core = Controller()
         self.state = self.call("new", name="Selector consumer acceptance")
         self.call("sketch_rectangle", id="Plate", width=20, height=12)
@@ -67,9 +69,7 @@ class SelectorConsumerTests(unittest.TestCase):
         self.assertEqual(self.doc.Supported.AttachmentSupport[0][1][0], before)
         self.call("redo")
         self.assertEqual(self.doc.Supported.AttachmentSupport[0][1][0], after)
-        directory = ROOT / "validation" / "u2-selector-consumers"
-        directory.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix="selector-reference-relocation-", dir=directory) as temporary:
+        with tempfile.TemporaryDirectory(prefix="selector-reference-relocation-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             path = Path(temporary) / "selector-backed-part.FCStd"
             self.call("save", path=str(path))
             App.closeDocument(self.doc.Name)
@@ -181,8 +181,7 @@ class SelectorConsumerTests(unittest.TestCase):
         self.call("mirror_parts", id="Mirror", parts=["Body"], origin=[0, 0, 0], normal=[1, 0, 0])
         self.assertEqual(len(selectors.resolve(self.doc, {"kind": "created_by", "feature": "Mirror"})), 6)
         self.assertEqual(len(selectors.resolve(self.doc, {"kind": "created_by", "feature": "Pad"})), 36)
-        destination = ROOT / "validation" / "u2-selector-consumers"
-        destination.mkdir(parents=True, exist_ok=True)
+        destination = support.scratch(self, prefix="whole-part-creator-lineage-")
         path = destination / "whole-part-creator-lineage.FCStd"
         self.call("save", path=str(path))
         script = (
@@ -197,12 +196,12 @@ class SelectorConsumerTests(unittest.TestCase):
             "print(json.dumps({'freecad':A.Version(),'fresh_process':True,'forced_recompute':True,'creator_face_counts':actual}));"
             "A.closeDocument(d.Name)"
         )
-        process = subprocess.run([sys.executable, "-B", "-c", script], capture_output=True, text=True,
+        process = support.run_native_proof([sys.executable, "-B", "-c", script], capture_output=True, text=True,
                                  creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), timeout=30)
         self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
         report = json.loads(process.stdout.strip().splitlines()[-1])
         report["recipe"] = "tests.test_selector_consumers.SelectorConsumerTests.test_whole_part_generated_instances_keep_creator_identity"
-        (destination / "fresh-native-creator-report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        (support.evidence_dir("u2-selector-consumers") / "fresh-native-creator-report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 
     def test_pattern_add_preserves_source_and_generated_merge_creators(self):
         self.call("linear_pattern_parts", id="AddedPattern", parts=["Body"], direction=[1, 0, 0],
@@ -225,9 +224,7 @@ class SelectorConsumerTests(unittest.TestCase):
         self.assertEqual(self.state["build_status"], "failed")
         self.assertEqual(json.loads(self.doc.Supported.QueryHealth)[0]["status"], "missing")
         self.assertEqual(self.doc.Supported.AttachmentSupport[0][1][0], "Face5")
-        destination = ROOT / "validation" / "u2-selector-consumers"
-        destination.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix="native-input-divergence-", dir=destination) as temporary:
+        with tempfile.TemporaryDirectory(prefix="native-input-divergence-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             path = Path(temporary) / "incorrect-support.step"
             response = self.core.dispatch({"op": "export", "document_id": self.state["document_id"],
                                            "expected_revision": self.state["revision"], "path": str(path)})

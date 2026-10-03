@@ -2,6 +2,16 @@
 
 Updated October 3, 2026, America/Los_Angeles. Implementation authorized in this chat; **M1 remains incomplete**. Current runnable slice: `Codex/kurtshape`. Prior plans remain in `cadkz-project-planning`; source examples and Claude reference area are preserved in place.
 
+## October 3 long-run foundation: runtime and test isolation
+
+The [Q00a record](long-run/Q00a-foundation-test-isolation.md) tracks the first foundation increment. Assembly resolves its modules from the running pinned FreeCAD installation. The managed-document reactivation guard, target-unit errors and JSON charset transport handling are corrected, with shared contract 2.0 constants. Modeling, save/export publication and profile formats keep their established behavior.
+
+One runner launches fresh isolated native, bridge, shortcut and modeling-workflow processes, checks source hashes and suite coverage, and reports JSON/JUnit. Controller tests grant only their temporary workspace through existing settings. Ordinary source tools and hidden GUI recipes write isolated evidence; tracked reports require explicit opt-in. Exact before/after tree checks supplement the test gates. The initial full GUI baseline recorded two existing failures, which remain named in STATUS.
+
+Final verification passed 147 native, 7 bridge and 22 shortcut tests plus 405 workflow checks. A nonexistent examples override produced exactly three external skips. Interaction, copy and U2 hidden recipes passed 11, 25 and 99 checks; rendered screens were inspected. The local tree stayed unchanged across gates. [Small reports](../validation/2026-10-03-upgrade/foundation-test-isolation/native-tests.json) record provenance; CI remains unrun pending Kurt's push.
+
+M1 remains incomplete and real parametric conversions remain 0/2.
+
 ## October 2–3 U2 Part Studio increment
 
 Kurt authorized implementation using Claude's U2 prompt as a guide, superseding the previous development pause. Work started from `main` at `d9efdcc`; U1 had not landed. The bounded carrier comparison selected native Bodies per logical part. Native tools and versioned native Body outputs preserve geometry/editing authority, while document/object properties carry shared order, rollback, stable part IDs and reference intent. The compound chain rebuilt substantially more slowly in the 30-operation/four-part fixture. [Decision and native evidence](PART_MODEL_DECISION.md).

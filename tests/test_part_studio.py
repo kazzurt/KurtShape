@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import support
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -17,6 +18,7 @@ from kurtshape import studio
 class PartStudioTests(unittest.TestCase):
     def setUp(self):
         self.initial = set(App.listDocuments())
+        self.folder = support.isolated_session(self, prefix="part-studio-session-")
         self.core = Controller()
         self.state = self.core.dispatch({"op": "new", "name": "Studio fixture"})["result"]
 
@@ -132,7 +134,7 @@ class PartStudioTests(unittest.TestCase):
         self.call("rebuild")
         self.assertAlmostEqual(self.volumes()["Body"], 700)
         self.assertFalse(any("Proxy" in prop for prop in self.doc.AttachedSplitHalfspace.PropertiesList))
-        with tempfile.TemporaryDirectory(prefix="studio-relocation-", dir=ROOT / "validation") as temporary:
+        with tempfile.TemporaryDirectory(prefix="studio-relocation-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             source = Path(temporary) / "original.FCStd"
             relocated = Path(temporary) / "relocated.FCStd"
             self.call("save", path=str(source))
@@ -150,7 +152,7 @@ class PartStudioTests(unittest.TestCase):
             # Verify the stored native extension in another runtime process.
             self.call("save", path=str(relocated))
             script = "import FreeCAD as A; d=A.openDocument(" + repr(str(relocated)) + "); d.CuttingSketch.Placement.Base=A.Vector(8,0,0); d.recompute(); assert abs(d.AttachedSplitNegativePart.Shape.Volume-800)<1e-5"
-            proc = subprocess.run([sys.executable, "-B", "-c", script], capture_output=True, text=True,
+            proc = support.run_native_proof([sys.executable, "-B", "-c", script], capture_output=True, text=True,
                                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), timeout=30)
             self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
@@ -219,7 +221,7 @@ class PartStudioTests(unittest.TestCase):
         self.call("split_part", id="Split", part="Body", plane={"origin": [5, 0, 0], "normal": [1, 0, 0]})
         self.call("transform_part", id="Copy", part="Body", translation=[20, 0, 0], copy=True)
         original_order = self.state["studio"]["feature_order"]
-        with tempfile.TemporaryDirectory(prefix="studio-export-recovery-", dir=ROOT / "validation") as temporary:
+        with tempfile.TemporaryDirectory(prefix="studio-export-recovery-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             step = Path(temporary) / "current-parts.step"
             self.call("export", path=str(step))
             exported = Part.read(str(step))
@@ -323,7 +325,7 @@ class PartStudioTests(unittest.TestCase):
                   operation="intersect", merge_scope="auto")
         self.call("set_parameter", feature="AutoProfile", parameter="Width", value=25)
         self.assert_volumes({"Body": 1000, "Second": 500})
-        with tempfile.TemporaryDirectory(prefix="studio-auto-scope-persistence-", dir=ROOT / "validation") as temporary:
+        with tempfile.TemporaryDirectory(prefix="studio-auto-scope-persistence-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             path = Path(temporary) / "auto-scope.FCStd"
             self.call("save", path=str(path))
             App.closeDocument(self.doc.Name)
@@ -382,7 +384,7 @@ class PartStudioTests(unittest.TestCase):
         box = studio.current_part(self.doc, "Body").Shape.BoundBox
         self.assertAlmostEqual(box.XMin, 20)
         self.assertAlmostEqual(box.YMax, 53)
-        with tempfile.TemporaryDirectory(prefix="kurtshape-posed-parts-", dir=ROOT / "validation") as directory:
+        with tempfile.TemporaryDirectory(prefix="kurtshape-posed-parts-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as directory:
             path = Path(directory) / "posed-parts.step"
             self.call("export", path=str(path))
             imported = Part.read(str(path))
@@ -439,7 +441,7 @@ class PartStudioTests(unittest.TestCase):
             self.assertAlmostEqual(shape.BoundBox.XMin, 29)
             self.assertAlmostEqual(shape.BoundBox.YMin, 40)
             self.assertEqual(self.doc.getObject(name).Spine[0].TraceSupport, True)
-        with tempfile.TemporaryDirectory(prefix="studio-posed-sweep-persistence-", dir=ROOT / "validation") as temporary:
+        with tempfile.TemporaryDirectory(prefix="studio-posed-sweep-persistence-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             saved = Path(temporary) / "posed-sweeps.FCStd"
             self.call("save", path=str(saved))
             App.closeDocument(self.doc.Name)

@@ -1,0 +1,95 @@
+{
+  "passed": true,
+  "checks": [
+    "Actual Shift+G creates a native intersection reference and coincident point",
+    "Sketch undo removes Pierce reference and restores point",
+    "Sketch redo restores Pierce",
+    "Finish accepts native Pierce",
+    "Perpendicular remains Shift+L",
+    "Rejected Finish retains the whole conflicting draft and reopens the editor",
+    "Sketch failures retain a red status and log without opening Messages",
+    "Repair followed by Finish succeeds without redrawing",
+    "Explicit Cancel discards the current edit",
+    "25 idle GUI ticks perform no intent hash or BRep validation",
+    "Managed document reactivation restores state after an unmanaged native tab"
+  ],
+  "method": "Separate hidden native GUI; actual Shift+G, constraint failure/repair and native text controls",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "0454cbb1c2d23b8ce0f99cee5819916321f42802",
+  "worktree_diff_sha256": "b8cfebb9be8c8710a3d063d402cbf852b06c1bf722838e33057db14a9ff1c118",
+  "timings": {
+    "intent": {
+      "samples": 31,
+      "median_ms": 0.402,
+      "p95_ms": 0.568,
+      "worst_ms": 0.639
+    },
+    "native_recompute": {
+      "samples": 24,
+      "median_ms": 1.069,
+      "p95_ms": 10.54,
+      "worst_ms": 12.976
+    },
+    "selector_evaluation": {
+      "samples": 24,
+      "median_ms": 0.0,
+      "p95_ms": 0.0,
+      "worst_ms": 0.0
+    },
+    "managed_rebuild": {
+      "samples": 24,
+      "median_ms": 1.253,
+      "p95_ms": 11.416,
+      "worst_ms": 13.231
+    },
+    "inspection": {
+      "samples": 41,
+      "median_ms": 0.87,
+      "p95_ms": 1.163,
+      "worst_ms": 1.81
+    },
+    "operation": {
+      "samples": 41,
+      "median_ms": 1.926,
+      "p95_ms": 49.016,
+      "worst_ms": 507.864
+    },
+    "recovery_checkpoint": {
+      "samples": 3,
+      "median_ms": 0.275,
+      "p95_ms": 239.908,
+      "worst_ms": 239.908
+    },
+    "input_to_feedback": {
+      "samples": 3,
+      "median_ms": 17.055,
+      "p95_ms": 29.613,
+      "worst_ms": 29.613
+    },
+    "input_to_feedback_model": {
+      "samples": 3,
+      "median_ms": 17.055,
+      "p95_ms": 29.613,
+      "worst_ms": 29.613
+    }
+  },
+  "limits": "",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "input_sha256": "a5a7572f61be50b832ae881c154fa353239d8b4300cf739d19b51f3455754d22"
+}

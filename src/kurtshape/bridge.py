@@ -9,6 +9,7 @@ import secrets
 import threading
 import time
 from .request_ledger import RequestLedger
+from .contract import CONTRACT_VERSION, CONTRACT_REVISION
 
 
 class Bridge:
@@ -29,7 +30,8 @@ class Bridge:
                     self.send_error(403)
                     return
                 # Prevent web pages from silently reaching the native local adapter.
-                if self.headers.get("Origin") or self.headers.get("Content-Type")!="application/json":
+                media_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+                if self.headers.get("Origin") is not None or media_type != "application/json":
                     self.send_error(403)
                     return
                 try:
@@ -78,7 +80,7 @@ class Bridge:
         self.server=ThreadingHTTPServer(("127.0.0.1",0),Handler)
         self.server.daemon_threads=True
         self.path=Path(runtime)/"assistant-session.json"
-        self.path.write_text(json.dumps({"url":f"http://127.0.0.1:{self.server.server_port}/operation","token":self.token,"pid":os.getpid(),"contract":2,"session_id":self.ledger.session_id},indent=2))
+        self.path.write_text(json.dumps({"url":f"http://127.0.0.1:{self.server.server_port}/operation","token":self.token,"pid":os.getpid(),"contract":CONTRACT_VERSION,"contract_revision":CONTRACT_REVISION,"session_id":self.ledger.session_id},indent=2))
         self.thread=threading.Thread(target=self.server.serve_forever,daemon=True)
         self.thread.start()
 

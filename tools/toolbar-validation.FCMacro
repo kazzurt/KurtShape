@@ -3,6 +3,8 @@ import os, sys, json, traceback, math
 from pathlib import Path
 sys.dont_write_bytecode = True
 ROOT = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(ROOT / "tools"))
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(ROOT/'src'))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -26,7 +28,7 @@ main.show()
 MODE = os.environ.get('KURTSHAPE_TOOLBAR_MODE', 'toolbar')
 AUDIT_TOOLS = set(os.environ.get('KURTSHAPE_AUDIT_TOOLS','').split(','))-{''}
 AUDIT_MODE = os.environ.get('KURTSHAPE_AUDIT_MODE','both')
-output = ROOT/'validation'/('appearance-pass' if MODE in {'catalog', 'appearance'} else 'toolbar-pass')
+output = evidence_dir('appearance-pass' if MODE in {'catalog', 'appearance'} else 'toolbar-pass')
 output.mkdir(parents=True, exist_ok=True)
 report = {'passed': False, 'version': App.Version(), 'method': 'Actual KurtShape toolbar buttons and native PartDesign Tasks; assistant transport excluded.', 'cases': [], 'native_warnings': []}
 panel = None if MODE == 'catalog' else ui.start()

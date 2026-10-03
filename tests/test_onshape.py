@@ -12,6 +12,7 @@ import sys
 import shutil
 import tempfile
 import unittest
+import support
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -119,6 +120,7 @@ class PreflightTests(unittest.TestCase):
 @unittest.skipUnless(NATIVE, "Bundled FreeCAD Python is required for native rebuild/edit verification")
 class NativeConversionTests(unittest.TestCase):
     def setUp(self):
+        self.folder = support.isolated_session(self, prefix="onshape-conversion-session-")
         self.controller = Controller()
         self.created = []
 
@@ -188,9 +190,9 @@ class NativeConversionTests(unittest.TestCase):
 
     def test_save_reopen_relocate_preserves_native_mapping_and_dependencies(self):
         _, state, doc = self.converted()
-        with tempfile.TemporaryDirectory(prefix="onshape-fixture-persistence-", dir=ROOT / "validation") as directory:
+        with tempfile.TemporaryDirectory(prefix="onshape-fixture-persistence-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as directory:
             working = Path(directory).resolve()
-            self.assertTrue(working.is_relative_to(ROOT.resolve()))
+            self.assertTrue(any(working.is_relative_to(root) for root in self.controller.settings.roots))
             path = working / "fixture.FCStd"
             state = self.change(state, op="save", path=str(path))
             relocated = working / "relocated-fixture.FCStd"

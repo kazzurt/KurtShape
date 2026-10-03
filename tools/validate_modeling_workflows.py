@@ -24,16 +24,20 @@ import time
 import traceback
 import uuid
 
+from kurtshape_evidence import evidence_dir, register_runtime_folder
+
 
 ROOT = Path(__file__).resolve().parents[1]
-RUN = ROOT / "runtime" / "modeling-workflow-validation" / (time.strftime("%Y-%m-%d_%H-%M-%S") + "_" + uuid.uuid4().hex[:8])
-for directory in (RUN / "user-data", RUN / "temporary", RUN / "appdata", RUN / "fixtures"):
+RUN = Path(os.environ["KURTSHAPE_TEST_RUN_DIR"]).resolve() if os.environ.get("KURTSHAPE_TEST_RUN_DIR") else ROOT / "runtime" / "modeling-workflow-validation" / (time.strftime("%Y-%m-%d_%H-%M-%S") + "_" + uuid.uuid4().hex[:8])
+register_runtime_folder(RUN)
+for directory in (RUN / "user-data", RUN / "temporary", RUN / "appdata", RUN / "localappdata", RUN / "fixtures", RUN / "session"):
     directory.mkdir(parents=True, exist_ok=True)
 os.environ.update(FREECAD_USER_HOME=str(RUN / "user-data"),
-                  KURTSHAPE_SESSION_DIR=str(RUN / "user-data" / "session"),
-                  APPDATA=str(RUN / "appdata"), LOCALAPPDATA=str(RUN / "appdata"),
+                  KURTSHAPE_SESSION_DIR=str(RUN / "session"),
+                  APPDATA=str(RUN / "appdata"), LOCALAPPDATA=str(RUN / "localappdata"),
                   TEMP=str(RUN / "temporary"), TMP=str(RUN / "temporary"),
                   PYTHONDONTWRITEBYTECODE="1")
+(RUN / "session" / "settings.json").write_text(json.dumps({"project_roots": [str(RUN)]}), encoding="utf-8")
 
 
 def deny_network(*args, **kwargs):
@@ -58,7 +62,7 @@ from kurtshape.core import Controller, native_intent
 REPORT = {"passed": False, "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
           "network": "Python connect/connect_ex/sendto/create_connection/DNS denied; no bridge/server started.",
           "limits": "Headless synthetic native features; no GUI button/task/preview or Onshape parity claim. Physical disconnect and native C++ networking not intercepted. Only additive sweep/loft and feature patterns are covered.",
-          "recipe": "tools/validate_modeling_workflows.py", "runtime_artifacts": str(RUN.relative_to(ROOT)),
+          "recipe": "tools/validate_modeling_workflows.py", "runtime_artifacts": str(RUN),
           "api_sources": ["Mod/PartDesign/PartDesignTests/" + item for item in
                           ("TestLinearPattern.py", "TestPolarPattern.py", "TestPipe.py", "TestLoft.py")],
           "persistence_note": "FreeCAD 1.1.4 restores deprecated AttacherEngine display text from Engine 3D to Engine Plane for Attacher::AttachEnginePlane and uses the filename as document display label. Comparison checks authoritative AttacherType and every other object intent field exactly; only that known engine display alias is normalized, and the filename display label is checked separately.",
@@ -448,7 +452,7 @@ def main():
     REPORT["passed"] = all(case["passed"] for case in REPORT["cases"])
     REPORT["seconds"] = time.perf_counter() - started
     REPORT["checks"] = sum(len(case.get("checks", [])) for case in REPORT["cases"])
-    output = ROOT / "validation" / "ui-refinement" / "modeling-workflows.json"
+    output = evidence_dir("ui-refinement") / "modeling-workflows.json"
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(REPORT, indent=2), encoding="utf-8")
     print(json.dumps({"passed": REPORT["passed"], "cases": len(REPORT["cases"]), "checks": REPORT["checks"], "report": str(output)}, indent=2))

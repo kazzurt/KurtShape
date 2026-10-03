@@ -23,6 +23,7 @@ from . import assembly as native_assembly
 from . import studio
 from . import selectors as native_selectors
 from . import reference_tools
+from .contract import CONTRACT_VERSION, CONTRACT_REVISION
 
 ROOT = Path(__file__).resolve().parents[2]
 WRITE_ROOT = ROOT.parent.resolve()
@@ -50,7 +51,7 @@ def number(value, name, positive=False, unit="mm"):
         except Exception as exc:
             raise OperationError("invalid_argument", f"{name} requires a finite {unit} quantity") from exc
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
-        raise OperationError("invalid_argument", f"{name} must be a finite number in mm")
+        raise OperationError("invalid_argument", f"{name} must be a finite number in {unit}")
     if positive and value <= 0:
         raise OperationError("invalid_argument", f"{name} must be positive")
     if abs(value) > 1e6:
@@ -674,7 +675,7 @@ class Controller:
             if unknown:
                 raise OperationError("unknown_argument", "Unsupported request fields", fields=sorted(unknown))
             if op == "capabilities":
-                return {"ok": True, "result": {"contract": 2, "session_id": self.ledger.session_id,
+                return {"ok": True, "result": {"contract": CONTRACT_VERSION, "contract_revision": CONTRACT_REVISION, "session_id": self.ledger.session_id,
                     "operations": sorted(self.OPS), "preview_operations": sorted(self.MODEL_OPS - {"rebuild"}),
                     "import_formats": [".step", ".stp"],
                     "assembly": {"level": "single", "source_formats": [".fcstd", ".step", ".stp"], "source_policy": "embedded_shape_snapshot",

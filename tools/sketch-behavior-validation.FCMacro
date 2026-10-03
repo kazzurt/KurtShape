@@ -17,9 +17,11 @@ from PySide import QtCore, QtGui
 from PySide6 import QtTest, QtWidgets
 
 root = Path(os.environ['KURTSHAPE_ROOT']).resolve()
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 session = Path(os.environ['KURTSHAPE_SESSION_DIR']).resolve()
 assert session.is_relative_to(root / 'runtime')
-sys.dont_write_bytecode = True
 sys.path.insert(0, str(root / 'src'))
 from kurtshape import ui
 
@@ -62,7 +64,7 @@ class HiddenPopups(QtCore.QObject):
 
 hidden = HiddenPopups(app)
 app.installEventFilter(hidden)
-output = root / 'validation' / 'sketch-behavior'
+output = evidence_dir("sketch-behavior")
 output.mkdir(parents=True, exist_ok=True)
 report = {'passed': False, 'checks': [], 'probe': [], 'engine': App.Version(),
           'runtime_profile': str(session.relative_to(root)),
@@ -214,8 +216,8 @@ def run():
         # Read only visual preferences; no source projects, GUI state, tokens,
         # recent files, or recovery settings are copied from the user's profile.
         original = root / 'runtime' / 'user-data' / 'user.cfg'
-        visual = ET.parse(original).getroot()
-        base = visual.find(".//FCParamGroup[@Name='Preferences']")
+        visual = ET.parse(original).getroot() if original.is_file() else None
+        base = visual.find(".//FCParamGroup[@Name='Preferences']") if visual is not None else None
         def copy_group(source, destination):
             params = App.ParamGet(destination)
             for item in source:
@@ -232,9 +234,13 @@ def run():
         for selector, destination in [('View', 'View'), ('Mod/Sketcher', 'Mod/Sketcher')]:
             group = base
             for component in selector.split('/'):
+                if group is None:
+                    break
                 group = group.find("FCParamGroup[@Name='" + component + "']")
-            copy_group(group, 'User parameter:BaseApp/Preferences/' + destination)
-        report['visual_preferences_source'] = str(original.relative_to(root))
+            if group is not None:
+                copy_group(group, 'User parameter:BaseApp/Preferences/' + destination)
+        report['visual_preferences_source'] = str(original.relative_to(root)) if original.is_file() else None
+        report['visual_preferences_missing'] = base is None
         panel = ui.start()
         report['stages'] = ['production_panel_started']
         save()

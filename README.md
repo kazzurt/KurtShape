@@ -18,7 +18,7 @@ Save your changes and close any older KurtShape window before launching the upda
 
 The pinned portable engine is installed under `runtime/freecad-1.1.4`. A fresh Windows checkout requires **7-Zip** at `C:\Program Files\7-Zip\7z.exe`; run `install-runtime.ps1`, then `launch-kurtshape.ps1`. The installer downloads the pinned official engine and verifies its SHA256; no global FreeCAD or Python package installation is needed. Runtime binaries, configuration, app data, temporary material and generated files stay local and are excluded from Git. Use one normal application instance for the default assistant session.
 
-The full acceptance checks additionally use the original STEP/FeatureScript files in the local `Onshape examples` folder two levels above this repository. Those source files are kept outside Git; a fresh checkout needs them at that location to run the source inventory and real-part tests. Launching the app and its included acceptance-plate example does not require them.
+The full acceptance checks additionally use the original STEP/FeatureScript files in the local `Onshape examples` folder two levels above this repository, or at `KURTSHAPE_ONSHAPE_EXAMPLES`. Those source files stay outside Git. Default checks skip the three external real-part tests when the folder is unavailable; `run-checks.ps1 -Full` requires the originals and allows no external skips. Launching the app and its included acceptance-plate example does not require them.
 
 ## Modeling workflow
 
@@ -58,7 +58,7 @@ Registration is complete; equivalence is partial. The first single-level Assembl
 
 ## Assistant access
 
-The app owns a token-authenticated loopback bridge; only the GUI thread edits models. The default session file is `runtime/assistant-session.json`. Do not publish it.
+The app owns a token-authenticated loopback bridge; only the GUI thread edits models. The default session file is `runtime/assistant-session.json`; when `KURTSHAPE_SESSION_DIR` is set, the CLI uses that folder's session file. An explicit `--session` takes precedence. Do not publish session files.
 
 ```powershell
 python -B tools\assistant_client.py --json '{"op":"list_documents"}'
@@ -71,12 +71,15 @@ Contract 2 mutations require `request_id` and, for an existing document, its cur
 
 ```powershell
 .\run-checks.ps1
+.\run-checks.ps1 -Full
 .\launch-kurtshape.ps1 -Validation
 .\tools\validate-u2-part-model-gui.ps1
 ```
 
-The first command verifies original source hashes/STEP geometry, runs offline native model tests, transport tests and Qt shortcut routing. The second launches an independent invisible Qt window with separate configuration/session, exercises the actual interface and viewport, records screenshots/native files under `validation/interface-pass`, then exits. It preserves an already-open user window. Other targeted native GUI recipes and reports are listed in [interface pass notes](docs/INTERFACE_PASS.md).
+Checks use one suite runner, `tools/run_native_tests.py`, with fresh native, transport, shortcut and modeling-workflow processes. Sessions, profiles and temporary fixtures stay in isolated scratch. Source hashes/STEP geometry are checked when originals are available; `-Full` requires them. `-WriteEvidence` explicitly refreshes tracked reports, and `-Lint` requests an installed ruff. Ordinary checks leave tracked evidence unchanged.
 
-The third command launches the isolated U2 Part Studio check; wait for its printed process to exit, then read `validation/u2-part-model/gui-result.json`. Its [recipe](validation/u2-part-model/README.md) explains fixtures and source-hash verification.
+The validation launcher opens an independent invisible Qt window with a separate configuration/session, exercises the actual interface and viewport, then exits. Reports, screenshots and fixtures default to the printed session evidence folder; add `-WriteEvidence` to refresh historical validation reports. It preserves an already-open user window. Other targeted recipes are listed in [interface pass notes](docs/INTERFACE_PASS.md).
+
+The U2 command launches the isolated Part Studio check; wait for its printed process to exit, then read the printed report path. Its [recipe](validation/u2-part-model/README.md) explains fixtures and source-hash verification. Small upgrade evidence and the current queue live in [long-run status](docs/long-run/STATUS.md).
 
 Python networking is denied during offline core checks; native C++ networking and physical disconnection are not instrumented. Exact native rebuilds run synchronously. Automated GUI evidence supplements Kurt's hands-on usability review. Original examples and the Claude reference directory are preserved. Full source conversion remains **0/2**; two edited STEP variants per source design are deferred until Kurt provides them.

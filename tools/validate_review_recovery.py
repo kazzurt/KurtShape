@@ -4,11 +4,12 @@ import json
 import os
 from pathlib import Path
 import sys
+from kurtshape_evidence import evidence_dir
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
 from kurtshape.core import Controller
-report_path = ROOT / "validation" / "review-followup" / "recovery-crash.json"
+report_path = evidence_dir("review-followup") / "recovery-crash.json"
 report = json.loads(report_path.read_text())
 assert report["passed"], report
 manifest = Path(report["checkpoint_manifest"])

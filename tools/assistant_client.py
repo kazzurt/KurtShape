@@ -5,6 +5,7 @@ python -B tools/assistant_client.py --json '{"op":"list_documents"}'
 """
 import argparse
 import json
+import os
 from pathlib import Path
 import urllib.request
 import uuid
@@ -15,7 +16,8 @@ ROOT=Path(__file__).resolve().parents[1]
 def send(request,session_path=None):
     if request.get("op") not in {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics"}:
         request.setdefault("request_id", str(uuid.uuid4()))
-    session=json.loads(Path(session_path or ROOT/"runtime"/"assistant-session.json").read_text())
+    session_directory = Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime")))
+    session=json.loads(Path(session_path or session_directory/"assistant-session.json").read_text())
     message=urllib.request.Request(session["url"],data=json.dumps(request).encode(),
         headers={"Authorization":"Bearer "+session["token"],"Content-Type":"application/json"},method="POST")
     # Loopback never uses system proxies or external services.

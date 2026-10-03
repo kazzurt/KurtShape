@@ -20,7 +20,8 @@ import FreeCAD as App
 import Part
 
 ROOT = Path(__file__).resolve().parents[2]
-NATIVE_PATH = ROOT / "runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/Mod/Assembly"
+NATIVE_PATH = Path(App.getHomePath()).resolve() / "Mod" / "Assembly"
+PINNED_FREECAD = ("1", "1", "4")
 KINDS = {"fixed": "Fixed", "revolute": "Revolute", "slider": "Slider"}
 SOLVER_CODES = {0: "solved", -6: "no grounded instance", -4: "over-constrained",
                 -3: "conflicting constraints", -5: "malformed constraints",
@@ -39,6 +40,9 @@ def _error(code, message, **details):
 
 
 def _native():
+    version = App.Version()
+    if tuple(version[:3]) != PINNED_FREECAD:
+        raise _error("assembly_runtime", "KurtShape requires the pinned FreeCAD 1.1.4 runtime", found=version)
     if str(NATIVE_PATH) not in sys.path:
         sys.path.insert(0, str(NATIVE_PATH))
     import Assembly

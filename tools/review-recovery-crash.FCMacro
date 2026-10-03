@@ -6,6 +6,9 @@ import sys
 import time
 import traceback
 root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(root / "src"))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -16,7 +19,7 @@ main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
 from kurtshape.ui import start
 panel = start()
 session = Path(os.environ["KURTSHAPE_SESSION_DIR"])
-output = root / "validation" / "review-followup"
+output = evidence_dir("review-followup")
 output.mkdir(parents=True, exist_ok=True)
 report = {"passed": False, "pid": os.getpid(), "method": "Disposable hidden GUI, real 30-second native checkpoint timer, native autosave enabled at one minute, os._exit without clean shutdown"}
 

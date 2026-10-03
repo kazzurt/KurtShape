@@ -19,10 +19,12 @@ import time
 import traceback
 
 root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
 assert session.is_relative_to(root / "runtime"), "Use an isolated runtime profile"
 assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session), "Use this validation profile's FreeCAD home"
-sys.dont_write_bytecode = True
 sys.path.insert(0, str(root / "src"))
 
 
@@ -72,7 +74,7 @@ class HiddenPopupFilter(QtCore.QObject):
 
 hidden_popups = HiddenPopupFilter(application)
 application.installEventFilter(hidden_popups)
-output = root / "validation" / "ui-refinement"
+output = evidence_dir("ui-refinement")
 output.mkdir(parents=True, exist_ok=True)
 report = {"passed": False, "checks": [], "screens": [], "method": "Actual production Panel and Qt button events, native scenegraph and disposable FCStd evaluation; hidden independent process with no assistant server.",
           "limits": "Synthetic small fixtures. Native renderer automatically adjusts near/far clipping to displayed scene geometry; camera invariance checks retain position/orientation/focus/zoom while excluding those clipping distances. Palette and rendered-glyph checks plus screenshots do not replace Kurt's visual/comfort acceptance. Native notification is triggered with an isolated console warning; the original face-selection popup's exact trigger is not asserted. Native C++ networking and physical offline operation are not intercepted.",

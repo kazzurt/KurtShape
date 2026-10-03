@@ -6,6 +6,7 @@ import shutil
 import sys
 import time
 import unittest
+import support
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"src"))
@@ -15,6 +16,7 @@ from kurtshape.core import Controller, metadata
 
 class NativeCoreTests(unittest.TestCase):
     def setUp(self):
+        self.folder = support.isolated_session(self, prefix="core-native-session-")
         self.core=Controller()
         self.state=self.call(op="new",name="Acceptance plate")
 
@@ -51,7 +53,7 @@ class NativeCoreTests(unittest.TestCase):
         self.call(op="set_parameter",feature="HoleProfile",parameter="Diameter",value=10)
         expected=(80*40-math.pi*5**2)*6
         self.assertAlmostEqual(self.state["measurements"]["volume_mm3"],expected,places=6)
-        folder=ROOT/"validation"/"core-acceptance"
+        folder=support.evidence_dir("core-acceptance")
         relocated=folder/"relocated-plate-project"
         relocated.mkdir(parents=True,exist_ok=True)
         original=folder/"plate.FCStd"
@@ -100,5 +102,5 @@ if __name__=="__main__":
     begin=time.perf_counter()
     suite=unittest.defaultTestLoader.loadTestsFromTestCase(NativeCoreTests)
     result=unittest.TextTestRunner(verbosity=2).run(suite)
-    (ROOT/"validation"/"core-test-result.json").write_text(json.dumps({"tests":result.testsRun,"passed":result.wasSuccessful(),"seconds":time.perf_counter()-begin,"errors":[str(x) for x in result.errors],"failures":[str(x) for x in result.failures]},indent=2))
+    (support.evidence_dir("")/"core-test-result.json").write_text(json.dumps({"tests":result.testsRun,"passed":result.wasSuccessful(),"seconds":time.perf_counter()-begin,"errors":[str(x) for x in result.errors],"failures":[str(x) for x in result.failures]},indent=2))
     sys.exit(0 if result.wasSuccessful() else 1)

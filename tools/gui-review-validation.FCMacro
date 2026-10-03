@@ -6,6 +6,9 @@ import sys
 import traceback
 from unittest.mock import patch
 root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(root / "src"))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -21,7 +24,7 @@ main.show()
 from kurtshape.ui import start
 from kurtshape import core as module
 panel = start()
-output = root / "validation" / "review-followup"
+output = evidence_dir("review-followup")
 output.mkdir(parents=True, exist_ok=True)
 report = {"passed": False, "checks": [], "method": "Separate hidden native GUI; actual Shift+G, constraint failure/repair and native text controls"}
 
@@ -91,6 +94,14 @@ def validate():
             for _ in range(25):
                 panel.tick()
             check("25 idle GUI ticks perform no intent hash or BRep validation",intent.call_count==0 and validity.call_count==0)
+        managed = App.activeDocument()
+        managed_id = panel.state["document_id"]
+        App.newDocument("NativeOnly")
+        panel.tick()
+        App.setActiveDocument(managed.Name)
+        for _ in range(3):
+            panel.tick()
+        check("Managed document reactivation restores state after an unmanaged native tab", panel.state is not None and panel.state["document_id"] == managed_id)
         report.update(passed=True,timings=panel.core.timings.report(),engine={"FreeCAD":App.Version(),"OCCT":Part.OCC_VERSION})
     except Exception:
         report["error"]=traceback.format_exc()

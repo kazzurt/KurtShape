@@ -10,10 +10,12 @@ Provenance records the source absolute path and SHA256, initially imported Body/
 
 ## Reproduction and evidence
 
+Updated October 3 foundation: ordinary recipes write to the printed isolated-session evidence directory and leave tracked reports unchanged. Use `-WriteEvidence` explicitly to refresh historical evidence. The three real-part tests require `KURTSHAPE_ONSHAPE_EXAMPLES` or the original examples folder; `run-checks.ps1 -Full` requires those fixtures with zero skips. The validation paths and counts below are historical records.
+
 The automated native regression is `tests/test_step_import.py`, included in the offline suite:
 
 ```powershell
-& runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin/python.exe -B tools/validate_offline.py
+& runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin/python.exe -B tools/run_native_tests.py --suite native --require-native
 .\validate-review-gui.ps1 -Scenario step
 ```
 

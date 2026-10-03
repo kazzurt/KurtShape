@@ -14,10 +14,12 @@ import time
 import traceback
 
 root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir, external_examples
 session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
 assert session.is_relative_to(root / "runtime"), "Use an isolated runtime profile"
 assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
-sys.dont_write_bytecode = True
 sys.path.insert(0, str(root / "src"))
 
 
@@ -66,7 +68,7 @@ class HiddenPopupFilter(QtCore.QObject):
 
 hidden_popups = HiddenPopupFilter(application)
 application.installEventFilter(hidden_popups)
-output = root / "validation" / "assembly-step-import"
+output = evidence_dir("assembly-step-import")
 output.mkdir(parents=True, exist_ok=True)
 report = {"passed": False, "checks": [], "method": "Actual production Panel, native STEP parser, Insert file chooser, solid picker and Qt button events in an independent hidden GUI; isolated profile and no assistant server",
           "limits": "Synthetic Qt mouse events, one original three-solid STEP fixture. Native C++ networking and physical offline operation are not intercepted.",
@@ -187,7 +189,7 @@ def validate():
         panel.tick()
         QtTest.QTest.qWait(150)
         check("Typed Assembly creation activates its native workspace", panel.workspace_mode == "assembly" and panel.assembly_bar.isVisible())
-        path = root.parents[1] / "Onshape examples" / "Dodec pipe mount.step"
+        path = external_examples() / "Dodec pipe mount.step"
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         baseline = measurements(Part.read(str(path)).Solids[1])
         report["source"] = {"path": str(path), "sha256": digest, "selected_solid": "Solid2", "measurements": baseline}

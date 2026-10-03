@@ -2,12 +2,11 @@
 import hashlib
 import json
 import math
-import os
 from pathlib import Path
 import shutil
 import sys
-import tempfile
 import unittest
+import support
 from unittest.mock import patch
 import uuid
 
@@ -21,10 +20,7 @@ from kurtshape.core import Controller, OperationError, intent_signature, measure
 class AssemblyWorkflowTests(unittest.TestCase):
     def setUp(self):
         self.names = set(App.listDocuments())
-        self.temporary = tempfile.TemporaryDirectory(prefix="assembly-native-fixture-", dir=ROOT / "runtime")
-        self.folder = Path(self.temporary.name)
-        self.environment = patch.dict(os.environ, {"KURTSHAPE_SESSION_DIR": str(self.folder)})
-        self.environment.start()
+        self.folder = support.isolated_session(self, prefix="assembly-native-fixture-")
         self.core = Controller()
         self.state = None
         self.call("new", name="Assembly acceptance")
@@ -34,8 +30,6 @@ class AssemblyWorkflowTests(unittest.TestCase):
         self.core.close()
         for name in set(App.listDocuments()) - self.names:
             App.closeDocument(name)
-        self.environment.stop()
-        self.temporary.cleanup()
 
     @property
     def doc(self):
@@ -320,8 +314,9 @@ class AssemblyWorkflowTests(unittest.TestCase):
         self.assertEqual(provenance["sha256"], hashlib.sha256(exported.read_bytes()).hexdigest())
         self.assertEqual(provenance["revision"], self.state["revision"])
 
+    @support.requires_external("Dodec pipe mount.step", "Dodec Hub Conformal.step")
     def test_original_three_solid_steps_insert_explicit_bodies_and_preserve_sources(self):
-        source_paths = [ROOT.parents[1] / "Onshape examples" / filename
+        source_paths = [support.external(filename)
                         for filename in ("Dodec pipe mount.step", "Dodec Hub Conformal.step")]
         digests = {path: hashlib.sha256(path.read_bytes()).hexdigest() for path in source_paths}
         projects = []
@@ -365,12 +360,13 @@ class AssemblyWorkflowTests(unittest.TestCase):
         self.assertEqual(len(Part.read(str(output)).Solids), 7)
         self.assertTrue(all(hashlib.sha256(path.read_bytes()).hexdigest() == digest for path, digest in digests.items()))
 
+    @support.requires_external("Dodec pipe mount.step", "Dodec Hub Conformal.step")
     def test_original_steps_insert_directly_as_three_solid_choices(self):
         self.call("create_assembly")
         names = set(App.listDocuments())
         expected_volume = 0
         for source_index, filename in enumerate(("Dodec pipe mount.step", "Dodec Hub Conformal.step")):
-            path = ROOT.parents[1] / "Onshape examples" / filename
+            path = support.external(filename)
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
             baseline = Part.read(str(path)).Solids
             candidates = self.call("assembly_candidates", path=str(path))["candidates"]

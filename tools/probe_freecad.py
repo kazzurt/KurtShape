@@ -2,12 +2,13 @@
 import json
 from pathlib import Path
 import time
+from kurtshape_evidence import evidence_dir
 import FreeCAD as App
 import Part
 import Sketcher
 
 ROOT = Path(__file__).resolve().parents[1]
-out = ROOT / "validation" / "foundation-probe"
+out = evidence_dir("foundation-probe")
 out.mkdir(exist_ok=True)
 start = time.perf_counter()
 doc = App.newDocument("FoundationProbe")

@@ -15,10 +15,12 @@ import time
 import traceback
 
 root = Path(os.environ['KURTSHAPE_ROOT']).resolve()
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 session = Path(os.environ['KURTSHAPE_SESSION_DIR']).resolve()
 assert session.is_relative_to(root / 'runtime'), 'Use a private validation profile'
 assert Path(os.environ['FREECAD_USER_HOME']).resolve().is_relative_to(session)
-sys.dont_write_bytecode = True
 sys.path.insert(0, str(root / 'src'))
 
 
@@ -69,7 +71,7 @@ original_mime = clipboard.mimeData()
 if original_mime is not None:
     for mime_format in original_mime.formats():
         original_clipboard.setData(mime_format, QtCore.QByteArray(original_mime.data(mime_format)))
-output = root / 'validation' / 'messages-behavior'
+output = evidence_dir("messages-behavior")
 output.mkdir(parents=True, exist_ok=True)
 result = {
     'passed': False,

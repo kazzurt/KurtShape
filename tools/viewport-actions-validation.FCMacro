@@ -13,6 +13,8 @@ from pivy import coin
 from PySide import QtCore, QtGui
 from PySide6 import QtWidgets, QtTest
 ROOT = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(ROOT / "tools"))
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(ROOT/'src'))
 from kurtshape.viewport_actions import callbacks, VISUAL_EXTENSION, _validate_views
 from kurtshape.navigation import apply_navigation, allow_sketch_3d
@@ -135,7 +137,7 @@ def validate():
         allow_sketch_3d(sketch, view)
         saved_intent = editable_intent(doc)
         saved_flags = [sketch.getConstruction(i) for i in range(sketch.GeometryCount)]
-        roundtrip_path = ROOT/'validation'/'viewport-actions-named-view-roundtrip.FCStd'
+        roundtrip_path = evidence_dir("") / "viewport-actions-named-view-roundtrip.FCStd"
         doc.saveAs(str(roundtrip_path))
         original_name = doc.Name
         App.closeDocument(original_name)
@@ -190,7 +192,7 @@ def validate():
     except Exception:
         report['error'] = traceback.format_exc()
     report['check_count'] = len(report['checks'])
-    (ROOT/'validation'/'viewport-actions-test-result.json').write_text(json.dumps(report, indent=2))
+    (evidence_dir("") / "viewport-actions-test-result.json").write_text(json.dumps(report, indent=2))
     for widget in QtWidgets.QApplication.topLevelWidgets():
         if isinstance(widget, QtWidgets.QDialog):
             widget.close()

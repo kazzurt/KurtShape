@@ -5,12 +5,20 @@ import os
 from pathlib import Path
 import sys
 import traceback
+from kurtshape_evidence import evidence_dir, register_runtime_folder
 
 ROOT = Path(__file__).resolve().parents[1]
-SESSION = ROOT / "runtime" / "assembly-fresh-reopen-validation"
+REPORT_DIR = evidence_dir("assembly-workflow")
+SESSION = Path(os.environ.get("KURTSHAPE_SESSION_DIR", ROOT / "runtime" / "assembly-fresh-reopen-validation")).resolve()
+register_runtime_folder(SESSION)
 SESSION.mkdir(parents=True, exist_ok=True)
 os.environ["KURTSHAPE_SESSION_DIR"] = str(SESSION)
-os.environ["FREECAD_USER_HOME"] = str(SESSION / "user-data")
+for name, subfolder in (("FREECAD_USER_HOME", "user-data"), ("TEMP", "temporary"),
+                        ("TMP", "temporary"), ("APPDATA", "appdata"),
+                        ("LOCALAPPDATA", "localappdata")):
+    folder = SESSION / subfolder
+    folder.mkdir(parents=True, exist_ok=True)
+    os.environ[name] = str(folder)
 sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
 from kurtshape.core import Controller
@@ -22,7 +30,7 @@ original_fingerprint = assembly_adapter._geometry_fingerprint
 def record_fingerprint(source):
     native_brep = source.Shape.copy(True, False).exportBrepToString()
     digest = hashlib.sha256(native_brep.encode("utf-8")).hexdigest()
-    working = ROOT / "validation/assembly-workflow/assembly-gui-projects-working"
+    working = REPORT_DIR / "assembly-gui-projects-working"
     working.mkdir(parents=True, exist_ok=True)
     path = working / ("snapshot-fingerprint-headless-" + digest + ".brep")
     if not path.exists():
@@ -37,7 +45,7 @@ def main():
     report = {"passed": False, "method": "Fresh independent bundled native Python process; relocated GUI-produced FCStd; original source path is absent"}
     core = None
     try:
-        gui_report = json.loads((ROOT / "validation/assembly-workflow/gui-test-result.json").read_text(encoding="utf-8"))
+        gui_report = json.loads((REPORT_DIR / "gui-test-result.json").read_text(encoding="utf-8"))
         assert gui_report["passed"], "Complete the assembly GUI recipe first"
         report["fixture"] = gui_report["fixtures"]["relocated"]
         core = Controller()
@@ -60,7 +68,7 @@ def main():
         report["error"] = traceback.format_exc()
         raise
     finally:
-        (ROOT / "validation/assembly-workflow/fresh-process-reopen-result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        (REPORT_DIR / "fresh-process-reopen-result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
         if core:
             core.close()
         for name in list(App.listDocuments()):

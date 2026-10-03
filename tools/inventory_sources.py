@@ -9,9 +9,12 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import sys
+
+from kurtshape_evidence import evidence_dir, external_examples, require_external
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCES = ROOT.parents[1] / "Onshape examples"
+SOURCES = external_examples()
 
 
 def balanced_end(text, start, opening="{", closing="}"):
@@ -69,7 +72,7 @@ def inventory(path):
         record["conversion_status"] = "unsupported_source_representation"
         record["native_feature_id"] = None
     return {
-        "source_relative_path": str(path.relative_to(ROOT.parents[1])),
+        "source_relative_path": str(path.relative_to(ROOT.parents[1])) if path.is_relative_to(ROOT.parents[1]) else str(path),
         "source_sha256": hashlib.sha256(raw).hexdigest(), "source_bytes": len(raw),
         "representation": "generated Part Studio FeatureScript, not API feature JSON",
         "feature_script_version": re.search(r"FeatureScript\s+(\d+)", text)[1],
@@ -104,12 +107,18 @@ def inventory(path):
 
 
 def main():
-    results = [inventory(p) for p in sorted(SOURCES.glob("*.txt"))]
-    out = ROOT / "validation" / "source-inventory.json"
+    require_external()
+    files = sorted(SOURCES.glob("*.txt"))
+    if not files:
+        print(f"External examples contain no generated source .txt files: {SOURCES}", file=sys.stderr)
+        return 2
+    results = [inventory(p) for p in files]
+    out = evidence_dir("") / "source-inventory.json"
     out.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
     for r in results:
         print(json.dumps({k: r[k] for k in ["source_relative_path", "feature_count", "families", "main_configuration", "compressed_query_count"]}, indent=2))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -2,11 +2,10 @@
 import hashlib
 import json
 import math
-import os
 from pathlib import Path
 import sys
-import tempfile
 import unittest
+import support
 from unittest.mock import patch
 import uuid
 
@@ -22,10 +21,7 @@ from kurtshape.request_ledger import RequestLedger
 class ReviewFollowupTests(unittest.TestCase):
     def setUp(self):
         self.names = set(App.listDocuments())
-        self.temporary = tempfile.TemporaryDirectory(prefix="review-followup-native-", dir=ROOT / "runtime")
-        self.folder = Path(self.temporary.name)
-        self.environment = patch.dict(os.environ, {"KURTSHAPE_SESSION_DIR": str(self.folder)})
-        self.environment.start()
+        self.folder = support.isolated_session(self, prefix="review-followup-native-")
         self.core = Controller()
         self.state = None
         self.call("new")
@@ -34,8 +30,6 @@ class ReviewFollowupTests(unittest.TestCase):
         self.core.close()
         for name in set(App.listDocuments()) - self.names:
             App.closeDocument(name)
-        self.environment.stop()
-        self.temporary.cleanup()
 
     @property
     def doc(self):
@@ -246,15 +240,15 @@ class ReviewFollowupTests(unittest.TestCase):
         self.reject("unsupported_adoption", "adopt", path=str(self.folder / "copy.FCStd"))
 
     def test_user_granted_project_folder_persists_and_bridge_cannot_self_grant(self):
-        with tempfile.TemporaryDirectory(prefix="review-project-folder-", dir=ROOT.parent.parent) as folder:
-            path = Path(folder) / "user-part.FCStd"
-            self.reject("path_outside_workspace", "save", path=str(path))
-            self.core.settings.grant_destination(path)
-            self.call("save", path=str(path))
-            from kurtshape.settings import Settings
-            reloaded = Settings(ROOT)
-            self.assertIn(path.parent.resolve(), reloaded.roots)
-            self.assertEqual(reloaded.last_directory, str(path.parent))
+        folder = support.ungranted_scratch(self, self.core.settings.roots, prefix="review-project-folder-")
+        path = folder / "user-part.FCStd"
+        self.reject("path_outside_workspace", "save", path=str(path))
+        self.core.settings.grant_destination(path)
+        self.call("save", path=str(path))
+        from kurtshape.settings import Settings
+        reloaded = Settings(ROOT)
+        self.assertIn(path.parent.resolve(), reloaded.roots)
+        self.assertEqual(reloaded.last_directory, str(path.parent))
 
     def test_pierce_follows_crossing_curve_and_undo_removes_native_reference(self):
         self.call("create_sketch", id="Crossing", plane="XZ")

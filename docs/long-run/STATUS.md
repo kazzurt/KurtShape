@@ -1,18 +1,18 @@
 # Long run status
 
 Program: C:\Users\Kurtz\Documents\KURT\CADkz\Claude\prompts\2026-10-03_codex_long-run-program.md
-Program SHA-256 when last read: BFD1820915CDEDE335C2FF421163F1A404E666211402E81DB8E936631D3C2995, 2026-10-03 13:45 America/Los_Angeles
-Updated: 2026-10-03 13:49 America/Los_Angeles
-State: BETWEEN INCREMENTS
-Last green commit: initialization commit receives tag longrun/start
+Program SHA-256 when last read: BFD1820915CDEDE335C2FF421163F1A404E666211402E81DB8E936631D3C2995, 2026-10-03 14:09 America/Los_Angeles
+Updated: 2026-10-03 14:37 America/Los_Angeles
+State: IN PROGRESS Q00a since 2026-10-03 13:56 America/Los_Angeles
+Last green commit: 0454cbb (tag longrun/start)
 Green copy: not created; Q01 follows Q00a
-Free disk: 60.4 GiB
+Free disk: 60.1 GiB
 
 ## Queue
 
 | Q | Increment | State | Commit | Tests native/bridge/shortcut | Note |
 |---|---|---|---|---|---|
-| Q00a | Foundation: fixes, isolation, one runner | NEXT | | | GUI baseline before edits |
+| Q00a | Foundation: fixes, isolation, one runner | IN PROGRESS; gates green | tag pending | 147/7/22 | 405 workflows; exactly 3 external skips without examples |
 | Q01 | Green copy | QUEUED | | | Needs Q00a |
 | Q00b | Foundation: CI, GUI runner, benchmarks, lint | QUEUED | | | Needs Q00a |
 | Q02 | Keyboard and command registry | QUEUED | | | Needs Q00a |
@@ -55,6 +55,13 @@ Free disk: 60.4 GiB
 
 ## Try this (newest first)
 
+### Q00a foundation (tag pending)
+
+1. Switch from a separate FreeCAD document tab back to the KurtShape project; the interaction recipe verified state returns after an unmanaged tab.
+2. Run run-checks.ps1 -Full; the recipe verified 147/7/22 plus 405 workflow checks with original source hashes unchanged.
+3. Run an isolated check with a nonexistent KURTSHAPE_ONSHAPE_EXAMPLES override; the recipe verified exactly three external skips.
+4. Copy a feature, save and reopen its project; review-copy verified retained native dependencies and restored the clipboard.
+
 ### Messages copy controls (69dc29c)
 
 1. Open Messages and use Copy all; the hidden recipe verified exact Unicode and newlines.
@@ -69,7 +76,10 @@ Free disk: 60.4 GiB
 
 ## Red at baseline
 
-- None in run-checks: 141 native, 4 bridge, 22 shortcut tests passed; 0 skips. Native suite 170.872 s. GUI baseline is pending Q00a.
+- None in run-checks: 141 native, 4 bridge, 22 shortcut tests passed; 0 skips. Native suite 170.872 s. GUI baseline completed: 14 pass, 2 red, plus Messages pass.
+
+- interface: Confirm creates valid native solid failed after 11 checks; task remained open after depth change (screenshot inspected).
+- carrier-spike: historical pre-U2 history expectation failed after 17 checks.
 
 ## Parked work
 
@@ -85,9 +95,30 @@ Free disk: 60.4 GiB
 
 Existing reports: kurtshape-problem-20261002-075903-f80b59d0.json, kurtshape-problem-20261002-080303-4731a62a.json, kurtshape-problem-20261002-080518-cb77b2bc.json, kurtshape-problem-20261002-085826-d3479fc2.json, kurtshape-problem-20261002-181622-afd5a3ef.json. No green tree exists. No Kurt-owned tracked changes at initialization.
 
+Own recipe report: kurtshape-problem-20261003-204924-ac7dc9ee.json came from the baseline review-copy check and is not a new user instruction.
+
 ## Log
 
 - 2026-10-03 13:40: Started first steps. Located repo under Codex/kurtshape. Fetch succeeded after Windows credentials required broader access and a command-only safe.directory exception; no config file changed.
 - 2026-10-03 13:42: Messages recipe passed 34 checks, exited, restored clipboard; screenshot inspected and independent read-only review found 0 issues. Committed 69dc29c.
 - 2026-10-03 13:43: Merged origin/claude/clever-cerf-fe9sjf with --no-ff; exactly 9 review files, no conflict.
 - 2026-10-03 13:45: Baseline run-checks passed 141/4/22, no skips. Preserved native report in runtime/longrun; restored exactly 4 rewritten tracked evidence paths. Completed full program and required first-step source reading. Initialization records ready for longrun/start.
+
+- 2026-10-03 13:56: Q00a started; full program re-read, unchanged SHA-256. GUI baseline completed before source/script/macro edits; U2 99, refinement 106, interaction 10, other results in runtime/longrun/gui-baseline-results.json. Probe verifies pinned runtime home/OCCT/Assembly module. Plan recreated after baseline wrapper had restored/deleted in-flight records.
+- 2026-10-03 14:09: Resumed after compaction; program/STATUS/NOTES/spec re-read, git state explained by Q00a. Source implementation reviewed; closing PID records for fresh-native proofs and exact-byte local tree hashing before consolidated gates. No user notes or new user reports.
+
+- 2026-10-03 14:11: Consolidated Q00a Full gate started; staged explicit implementation paths, exact-byte local tree snapshot captured. Read-only runner review ongoing.
+
+- 2026-10-03 14:14: Full gate attempt 1 failed: new rejected-header bridge test hit Windows ConnectionAbortedError 10053; native147, shortcuts22 and405 workflow checks passed, no skips, source hashes unchanged. Interaction passed11, process1352 exited0 and screenshot inspected. Local tree attempt1 failed only new tools/__pycache__, diffhash unchanged. Closing premature helper imports and deterministic header-only rejection requests; independent review identified reporting/class-inventory/process-cleanup gaps being repaired. NOTES remains empty.
+
+- 2026-10-03 14:16: Removed only the new evidence-helper .pyc and its verified-empty tools cache directory. All 23 macros initialize bytecode suppression before helper import; new bridge guards test header-only rejections without changing HTTP or no-mutation assertions. Runner robustness corrections and failure probes in progress; living M1 record updated.
+
+- 2026-10-03 14:24: Failure injection passed 9 checks; deliberate untracked validation JSON was rejected and exactfile removed, normaltreecompare passed. Full attempt 2, missing examples andinteraction/copy/U2 gates launched in isolated sessions; final inventory edge review waits for hash gates to finish.
+
+- 2026-10-03 14:27: Full attempt 2 and missing examples gate passed 147/7/22 plus405 workflow checks, missingfixtures exactly3 external skips. Interaction/copy/U2 passed 11/25/99; owned PIDs50368/20328/71560 exited, source hashes unchanged, U2finalparts andmerge-scope screenshots inspected. Treeattempt2 passed 978a7c0d...42ff9d; no newcache. Missing-source tools each exit2 before report write. Startup thumbnail andcaught native notify Access violation match prior tracked STEP GUI evidence; no new warning class. Closing last inventory name-collision review finding before final record.
+
+- 2026-10-03 14:32: Minimal inventory collision fix frozen; expanded failure probe passed 10 checks. Final Full and missing examples gates started for the final source version. No GUI code changed since11/25/99 passed; final review pending, all user notes still empty.
+
+- 2026-10-03 14:37: Final Full and missing-example gates passed on the final source; exact tree SHA256 dff506781293741634eff0f038b41acf13e1ffd2cc1140dc87e056ae18e4fc60 unchanged. Recorded explicit small evidence and living docs; preparing focused commit/tag, then Q01. Final native suite 94.629 s; this is elapsed validation, not a benchmark.
+
+- 2026-10-03 14:39: Final independent read-only review found0 remaining actionable issues;10 infrastructure findings and2 gate corrections addressed. Evidence regenerated after final M1 record; focused commit/tag next.

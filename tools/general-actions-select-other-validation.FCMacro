@@ -5,7 +5,9 @@ from pathlib import Path
 import sys
 import traceback
 root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
 sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(root / "src"))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -134,7 +136,7 @@ def validate():
         report["status_message"] = panel.message.text()
     finally:
         actions.close()
-        (root / "validation" / "general-actions-select-other-result.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        (evidence_dir("") / "general-actions-select-other-result.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
         for doc in list(App.listDocuments().values()):
             App.closeDocument(doc.Name)
         QtCore.QTimer.singleShot(100, QtGui.QApplication.instance().quit)

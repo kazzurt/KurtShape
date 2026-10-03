@@ -1,11 +1,9 @@
 """Native preview results must match acceptance without changing live intent."""
 import json
-import os
 from pathlib import Path
 import sys
-import tempfile
 import unittest
-from unittest.mock import patch
+import support
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -17,9 +15,7 @@ from kurtshape.extrusion_preview import ExtrusionEvaluator
 class ExtrusionPreviewTests(unittest.TestCase):
     def setUp(self):
         self.names = set(App.listDocuments())
-        self.temporary = tempfile.TemporaryDirectory(prefix="extrusion-preview-tests-", dir=ROOT / "runtime")
-        self.environment = patch.dict(os.environ, {"KURTSHAPE_SESSION_DIR": self.temporary.name})
-        self.environment.start()
+        self.folder = support.isolated_session(self, prefix="extrusion-preview-tests-")
         self.core = Controller()
         self.state = None
         self.previews = []
@@ -31,8 +27,6 @@ class ExtrusionPreviewTests(unittest.TestCase):
         self.core.close()
         for name in set(App.listDocuments()) - self.names:
             App.closeDocument(name)
-        self.environment.stop()
-        self.temporary.cleanup()
 
     @property
     def doc(self):

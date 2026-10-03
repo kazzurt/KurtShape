@@ -6,6 +6,7 @@ import time
 import urllib.error
 import urllib.request
 from assistant_client import send,ROOT
+from kurtshape_evidence import evidence_dir
 
 start=time.perf_counter()
 listing=send({"op":"list_documents"})
@@ -35,5 +36,5 @@ report={"passed":True,"seconds":time.perf_counter()-start,"document_id":state["d
         "baseline_volume_mm3":baseline,"edited_volume_mm3":(2400-math.pi*16)*8,"roundtrip_ms":reply["result"]["operation_ms"],
         "checks":["Codex CLI inspects live GUI native document","actual thickness edit to 8 mm","stale replay rejected","native undo restores baseline","unauthenticated request rejected"],
         "Claude_client":"not configured or exercised; transport is reusable, acceptance remains pending"}
-(ROOT/"validation"/"live-bridge-result.json").write_text(json.dumps(report,indent=2))
+(evidence_dir("")/"live-bridge-result.json").write_text(json.dumps(report,indent=2))
 print(json.dumps(report,indent=2))

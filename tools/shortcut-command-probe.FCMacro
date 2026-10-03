@@ -1,12 +1,16 @@
 """Isolated command inventory; never imports or starts the KurtShape UI."""
 import json
 import os
+import sys
 from pathlib import Path
 import FreeCAD as App
 import FreeCADGui as Gui
 from PySide import QtCore
 
 root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 
 def inventory():
     try:
@@ -18,7 +22,7 @@ def inventory():
             except Exception as exc:
                 results[workbench] = {"error": str(exc)}
         payload = {"freecad_version": App.Version(), "workbenches": results}
-        (root / "validation" / "onshape-shortcuts-command-probe.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        (evidence_dir("") / "onshape-shortcuts-command-probe.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
     finally:
         Gui.getMainWindow().close()
 

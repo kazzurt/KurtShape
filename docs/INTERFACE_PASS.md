@@ -12,6 +12,8 @@ The complete Onshape Windows default table is registered with context precedence
 
 ## Verification records and recipes
 
+Superseded October 3 by the [Q00a foundation](long-run/Q00a-foundation-test-isolation.md): `tools/run_native_tests.py --suite native --require-native` is the native entry point, and `run-checks.ps1` runs all suites in isolated processes. Ordinary GUI recipes print their session evidence paths; `-WriteEvidence` explicitly refreshes the historical tracked reports listed below. Historical counts remain records of their original increments.
+
 The completed core/transport/keyboard suites total **70 passing tests** (47 + 2 + 21). The integrated actual interface walkthrough passes **36 checks**; the navigation, general actions, select-other, viewport tools and normal/hover selection reports pass another 16, 25, 8, 40 and 20 checks respectively. These are bounded automated checks, with hands-on usability acceptance still pending.
 
 The native model toolbar passes eight scenarios plus 39 active-feature guards. Fillet, Chamfer and Revolve were accepted as valid native solids and appeared in history; Mirror and Pattern were tested for dialog entry and exact restoration on Cancel. Direct assistant New/Open/Save/parameter requests reject during native editing and preserve the model, document inventory and edit dialog.

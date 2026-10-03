@@ -5,6 +5,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import support
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -17,6 +18,7 @@ from kurtshape.core import Controller, intent_signature
 class SketchPlaneTests(unittest.TestCase):
     def setUp(self):
         self.initial_names = set(App.listDocuments())
+        self.folder = support.isolated_session(self, prefix="sketch-plane-session-")
         self.core = Controller()
         self.state = self.call("new", name="Sketch plane acceptance")
 
@@ -90,7 +92,7 @@ class SketchPlaneTests(unittest.TestCase):
         self.call("undo")
         self.assertAlmostEqual(sk.Placement.Base.z, 6, places=7)
         self.call("redo")
-        with tempfile.TemporaryDirectory(prefix="face-attached-relocation-", dir=ROOT/"validation") as temporary:
+        with tempfile.TemporaryDirectory(prefix="face-attached-relocation-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             working = Path(temporary)
             source = working/"face-part.FCStd"
             relocated = working/"relocated-face-part.FCStd"
@@ -304,7 +306,7 @@ class SketchPlaneTests(unittest.TestCase):
     def test_closed_native_document_lease_is_not_reused_on_same_uuid_reopen(self):
         self.plate()
         identifier = self.state["document_id"]
-        with tempfile.TemporaryDirectory(prefix="closed-sketch-lease-reopen-", dir=ROOT/"validation") as temporary:
+        with tempfile.TemporaryDirectory(prefix="closed-sketch-lease-reopen-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             saved = Path(temporary)/"accepted-part.FCStd"
             self.call("save", path=str(saved))
             self.call("begin_sketch_edit", feature="Plate")
@@ -336,7 +338,7 @@ class SketchPlaneTests(unittest.TestCase):
         self.assertIs(self.core.sketch_edits[identifier], live_lease)
         self.call("inspect")
         self.call("finish_sketch_edit", cancel=True)
-        with tempfile.TemporaryDirectory(prefix="direct-attach-closed-lease-", dir=ROOT/"validation") as temporary:
+        with tempfile.TemporaryDirectory(prefix="direct-attach-closed-lease-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             saved = Path(temporary)/"accepted-sketch.FCStd"
             self.call("save", path=str(saved))
             self.call("begin_sketch_edit", feature="Managed")

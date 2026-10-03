@@ -5,11 +5,14 @@ import sys
 import threading
 import time
 import unittest
+import urllib.error
 import urllib.request
+import support
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"src"))
 from kurtshape.bridge import Bridge
+from kurtshape import contract
 from kurtshape.request_ledger import RequestLedger
 
 
@@ -43,11 +46,10 @@ class RetryController(DummyController):
 
 
 class BridgeTimeoutTests(unittest.TestCase):
-    def create(self,delay=0,retry=False):
-        folder=ROOT/"validation"/"bridge-timeout-session"
-        folder.mkdir(exist_ok=True)
+    def create(self,delay=0,retry=False,request_timeout=0.08):
+        folder=support.scratch(self, prefix="bridge-timeout-session-")
         controller=RetryController(delay) if retry else DummyController(delay)
-        bridge=Bridge(controller,folder,request_timeout=0.08)
+        bridge=Bridge(controller,folder,request_timeout=request_timeout)
         self.addCleanup(bridge.close)
         return bridge,controller
 
@@ -107,6 +109,65 @@ class BridgeTimeoutTests(unittest.TestCase):
         self.assertEqual(controller.ledger.status("cancelled-once")["status"],"cancelled")
         self.assertEqual(self.request(bridge,payload),response)
         self.assertEqual(controller.calls,0)
+
+    def test_rejects_missing_token_wrong_path_origin_header_non_json_and_oversize(self):
+        bridge, controller = self.create()
+        headers = {"Content-Type": "application/json", "Authorization": "Bearer " + bridge.token,
+                   "Content-Length": "14"}
+        cases = [
+            ("missing token", "/operation", {"Content-Type": "application/json", "Content-Length": "14"}, 403),
+            ("wrong path", "/other", headers, 403),
+            ("Origin", "/operation", dict(headers, Origin="https://example.invalid"), 403),
+            ("empty Origin", "/operation", dict(headers, Origin=""), 403),
+            ("non JSON", "/operation", dict(headers, **{"Content-Type": "text/plain"}), 403),
+            ("oversize", "/operation", dict(headers, **{"Content-Length": "65537"}), 413),
+        ]
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        for label, path, request_headers, status in cases:
+            with self.subTest(label=label):
+                # These guards reject the headers before consuming a body.
+                # Sending only headers avoids a Windows reset from unread data.
+                request = urllib.request.Request(f"http://127.0.0.1:{bridge.server.server_port}" + path,
+                                                 data=None, headers=request_headers, method="POST")
+                with self.assertRaises(urllib.error.HTTPError) as rejected:
+                    opener.open(request, timeout=3)
+                self.assertEqual(rejected.exception.code, status)
+                rejected.exception.close()
+                self.assertEqual(controller.calls, 0)
+                self.assertTrue(bridge.pending.empty())
+
+    def test_accepts_json_media_type_with_charset(self):
+        bridge, controller = self.create(request_timeout=1)
+        request = urllib.request.Request(f"http://127.0.0.1:{bridge.server.server_port}/operation",
+                                         data=b'{"op":"dummy"}',
+                                         headers={"Content-Type": "application/json; charset=utf-8",
+                                                  "Authorization": "Bearer " + bridge.token}, method="POST")
+        results, errors = [], []
+        def send():
+            try:
+                opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+                with opener.open(request, timeout=3) as response:
+                    results.append(json.loads(response.read()))
+            except Exception as exc:
+                errors.append(exc)
+        worker = threading.Thread(target=send)
+        worker.start()
+        deadline = time.monotonic() + 2
+        while bridge.pending.empty() and worker.is_alive() and time.monotonic() < deadline:
+            threading.Event().wait(0.002)
+        bridge.tick()
+        worker.join(timeout=3)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(len(results), 1)
+        self.assertTrue(results[0]["ok"], results)
+        self.assertEqual(controller.calls, 1)
+
+    def test_session_file_reports_shared_contract_constant(self):
+        bridge, _ = self.create()
+        session = json.loads(bridge.path.read_text(encoding="utf-8"))
+        self.assertEqual(session["contract"], contract.CONTRACT_VERSION)
+        self.assertEqual(session["contract_revision"], contract.CONTRACT_REVISION)
 
 
 if __name__=="__main__":

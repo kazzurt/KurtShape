@@ -6,13 +6,14 @@ This spike deliberately does not implement selectors or infer native creators.
 from pathlib import Path
 import json
 import itertools
+from kurtshape_evidence import evidence_dir
 import FreeCAD as App
 import Part
 import Sketcher
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DESTINATION = ROOT / "validation" / "u2-part-model-spike"
+DESTINATION = evidence_dir("u2-part-model-spike")
 DESTINATION.mkdir(parents=True, exist_ok=True)
 
 

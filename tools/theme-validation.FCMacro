@@ -7,6 +7,8 @@ import traceback
 
 sys.dont_write_bytecode = True
 root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(root / "src"))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -29,7 +31,7 @@ main.hide()
 main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
 main.resize(1440, 920)
 main.show()
-output = root / "validation" / "appearance-pass"
+output = evidence_dir("appearance-pass")
 output.mkdir(parents=True, exist_ok=True)
 report = {"passed": False, "checks": [], "contrast": [], "screenshots": [],
           "method": "Actual invisible native KurtShape GUI, hostile inherited dark palette/stylesheet, dynamic popup/dialog/native Pad task checks; transport excluded"}

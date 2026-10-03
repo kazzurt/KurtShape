@@ -12,10 +12,13 @@ from PySide import QtCore, QtGui
 from PySide6 import QtTest, QtWidgets
 
 ROOT = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(ROOT / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(ROOT / "src"))
 from kurtshape.core import Controller, metadata
 
-REPORT = ROOT / "validation" / "sketch-lifecycle-result.json"
+REPORT = evidence_dir("") / "sketch-lifecycle-result.json"
 report = {"pid": os.getpid(), "stages": [], "passed": False}
 main = Gui.getMainWindow()
 main.hide()
@@ -132,7 +135,7 @@ def run():
         assert doc.Profile.GeometryCount == 5
         stage("redo_prior_accepted_edit_does_not_resurrect_cancelled_line")
         assert not doc.RedoCount
-        saved = ROOT / "validation" / "sketch-lifecycle-project.FCStd"
+        saved = evidence_dir("") / "sketch-lifecycle-project.FCStd"
         undo_before_save = doc.UndoCount
         dispatch("save", path=str(saved))
         assert not Gui.getDocument(doc.Name).Modified

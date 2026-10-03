@@ -4,6 +4,8 @@ from pathlib import Path
 from collections import Counter
 sys.dont_write_bytecode = True
 ROOT = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(ROOT / "tools"))
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(ROOT/'src'))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -12,7 +14,7 @@ from PySide6 import QtWidgets, QtTest
 from kurtshape.core import native_intent
 from kurtshape import ui
 
-OUT = ROOT/'validation'/'appearance-pass'
+OUT = evidence_dir("appearance-pass")
 OUT.mkdir(parents=True, exist_ok=True)
 REPORT = OUT/'layout-test-result.json'
 app = QtWidgets.QApplication.instance()

@@ -13,6 +13,9 @@ import traceback
 import uuid
 
 root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(root / "src"))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -30,7 +33,7 @@ main.hide()
 main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
 main.show()
 panel = start()
-output = root / "validation" / "assembly-workflow"
+output = evidence_dir("assembly-workflow")
 working = output / "assembly-gui-projects-working"
 working.mkdir(parents=True, exist_ok=True)
 report = {"passed": False, "checks": [], "method": "Independent hidden FreeCAD GUI, isolated profile; actual KurtShape dialogs, keyboard visibility, native history, rendered viewport and authenticated local HTTP bridge requests"}

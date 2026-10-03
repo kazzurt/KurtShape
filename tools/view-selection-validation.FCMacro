@@ -7,6 +7,8 @@ import traceback
 
 sys.dont_write_bytecode = True
 root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(root / "src"))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -147,7 +149,7 @@ def validate():
         report["error"] = traceback.format_exc()
         report["status_message"] = panel.message.text() if panel else "Panel initialization failed"
     finally:
-        (root / "validation" / "view-selection-result.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        (evidence_dir("") / "view-selection-result.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
         if panel:
             panel.shutdown()
         for doc in list(App.listDocuments().values()):

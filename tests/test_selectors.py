@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+import support as test_support
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -16,6 +17,7 @@ from kurtshape.core import OperationError
 
 class SelectorTests(unittest.TestCase):
     def setUp(self):
+        self.folder = test_support.isolated_session(self, prefix="selector-native-session-")
         self.doc = App.newDocument("SelectorAcceptance")
         self.doc.UseHasher = False
         self.doc.UndoMode = 1
@@ -148,9 +150,7 @@ class SelectorTests(unittest.TestCase):
         query.recompute(self.doc)
         self.doc.commitTransaction()
         expected = support.QueryInputs
-        directory = ROOT / "validation" / "u2-selectors"
-        directory.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix="selector-relocation-", dir=directory) as temporary:
+        with tempfile.TemporaryDirectory(prefix="selector-relocation-", dir=test_support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             path = Path(temporary) / "selector-part.FCStd"
             self.doc.saveAs(str(path))
             App.closeDocument(self.doc.Name)

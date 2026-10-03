@@ -7,6 +7,9 @@ import sys
 import traceback
 
 root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(root / "src"))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -21,7 +24,7 @@ main.hide()
 main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
 main.resize(1440, 920)
 main.show()
-output = root / "validation" / "ui-refinement-preview"
+output = evidence_dir("ui-refinement-preview")
 output.mkdir(parents=True, exist_ok=True)
 report = {"passed": False, "checks": [], "method": "Separate hidden FreeCAD 1.1.4 GUI; native BRep plus transient Coin geometry"}
 core = Controller()

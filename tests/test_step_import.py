@@ -1,11 +1,10 @@
 """Native neutral-geometry import, modeling and atomic publication gates."""
 import hashlib
 import json
-import os
 from pathlib import Path
 import sys
-import tempfile
 import unittest
+import support
 from unittest.mock import patch
 import uuid
 
@@ -19,10 +18,7 @@ from kurtshape.core import Controller, intent_signature, measurements, Operation
 class StepImportTests(unittest.TestCase):
     def setUp(self):
         self.names = set(App.listDocuments())
-        self.temporary = tempfile.TemporaryDirectory(prefix="step-import-native-", dir=ROOT / "runtime")
-        self.folder = Path(self.temporary.name)
-        self.environment = patch.dict(os.environ, {"KURTSHAPE_SESSION_DIR": str(self.folder)})
-        self.environment.start()
+        self.folder = support.isolated_session(self, prefix="step-import-native-")
         self.core = Controller()
         self.state = self.call("new")["result"]
         self.call("sketch_rectangle", id="ExistingSketch", width=10, height=10)
@@ -32,8 +28,6 @@ class StepImportTests(unittest.TestCase):
         self.core.close()
         for name in set(App.listDocuments()) - self.names:
             App.closeDocument(name)
-        self.environment.stop()
-        self.temporary.cleanup()
 
     @property
     def doc(self):
@@ -54,10 +48,11 @@ class StepImportTests(unittest.TestCase):
         (shape if shape is not None else Part.makeBox(10, 20, 30, App.Vector(4, 5, 6))).exportStep(str(path))
         return path
 
+    @support.requires_external("Dodec pipe mount.step", "Dodec Hub Conformal.step")
     def test_real_three_solid_parts_preserve_geometry_source_and_native_roundtrip(self):
         for filename in ("Dodec pipe mount.step", "Dodec Hub Conformal.step"):
             with self.subTest(filename=filename):
-                path = ROOT.parents[1] / "Onshape examples" / filename
+                path = support.external(filename)
                 digest = hashlib.sha256(path.read_bytes()).hexdigest()
                 expected = measurements(Part.read(str(path)))
                 self.call("import_step", path=str(path))

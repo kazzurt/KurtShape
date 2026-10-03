@@ -5,6 +5,7 @@ import sys
 import unittest
 import json
 import tempfile
+import support
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -20,7 +21,7 @@ class RouterTests(unittest.TestCase):
                                      native_runner=self.commands.append)
 
     def test_user_override_conflicts_reject_and_perpendicular_keeps_shift_l(self):
-        with tempfile.TemporaryDirectory(prefix="shortcut-override-") as folder:
+        with tempfile.TemporaryDirectory(prefix="shortcut-override-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as folder:
             path = Path(folder) / "shortcuts.user.json"
             path.write_text(json.dumps({"schema_version": 1, "bindings": {"sketch.pierce": "Ctrl+Alt+G"}}))
             registry = load_registry(user_path=path)

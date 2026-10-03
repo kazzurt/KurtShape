@@ -13,6 +13,8 @@ from PySide import QtCore, QtGui
 from PySide6 import QtTest, QtWidgets
 
 ROOT = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(ROOT / "tools"))
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(ROOT / 'src'))
 main = Gui.getMainWindow()
 main.hide()
@@ -159,7 +161,7 @@ def validate():
         after = snapshot(view)
         assert Gui.activeDocument().getInEdit() and after['orientation'] == before['orientation'] and after['height'] > 0
         report['checks'].append({'mode':'double_middle_fit_while_editing','before':before,'after':after})
-        view.saveImage(str(ROOT / 'validation' / 'navigation-sketch-3d.png'),1000,700,'White')
+        view.saveImage(str(evidence_dir("") / "navigation-sketch-3d.png"),1000,700,'White')
         Gui.activeDocument().resetEdit()
         sketch.Placement.Rotation = App.Rotation(App.Vector(1,0,0),37)
         doc.recompute()
@@ -176,7 +178,7 @@ def validate():
         report['passed'] = True
     except Exception:
         report['error'] = traceback.format_exc()
-    (ROOT / 'validation' / 'navigation-test-result.json').write_text(json.dumps(report, indent=2))
+    (evidence_dir("") / "navigation-test-result.json").write_text(json.dumps(report, indent=2))
     for name in list(App.listDocuments()):
         App.closeDocument(name)
     QtCore.QTimer.singleShot(250, main.close)

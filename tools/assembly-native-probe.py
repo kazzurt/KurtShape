@@ -4,16 +4,17 @@ import hashlib
 from pathlib import Path
 import sys
 import traceback
+from kurtshape_evidence import evidence_dir, external_examples
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / "runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311"
-sys.path.insert(0, str(RUNTIME / "Mod/Assembly"))
 import FreeCAD as App
+RUNTIME = Path(App.getHomePath()).resolve()
+sys.path.insert(0, str(RUNTIME / "Mod/Assembly"))
 import Part
 import Assembly
 import JointObject
 
-OUT = ROOT / "validation/assembly-workflow/native-probe"
+OUT = evidence_dir("assembly-workflow/native-probe")
 OUT.mkdir(parents=True, exist_ok=True)
 report = {"version": App.Version(), "gui_up": App.GuiUp, "cases": []}
 
@@ -99,7 +100,7 @@ try:
     report["geometry_mass_probe"] = {"sources": [], "placed_solids": []}
     shapes = []
     for filename in ("Dodec pipe mount.step", "Dodec Hub Conformal.step"):
-        path = ROOT.parents[1] / "Onshape examples" / filename
+        path = external_examples() / filename
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         shape = Part.read(str(path))
         report["geometry_mass_probe"]["sources"].append({"file": filename, "sha256": digest,

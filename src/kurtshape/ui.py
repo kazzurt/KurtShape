@@ -970,7 +970,7 @@ class Panel(QtGui.QDockWidget):
         if (self.task_document and (not doc or doc.Name != self.task_document)) or (self.placement_document and (not doc or doc.Name != self.placement_document)):
             self.cancel_task()
         if doc and any(self.core._is_open(d) and d.Name == doc.Name for d in self.core.documents.values()):
-            if not processed and not self.core.needs_refresh(doc) and self.last_document == doc.Name:
+            if self.state is not None and not processed and not self.core.needs_refresh(doc) and self.last_document == doc.Name:
                 if self.state.get("active_sketch_edit") and not self.active_sketch() and not self.finishing_sketch and not self.entering_sketch:
                     self.finish_sketch()
                 return
@@ -992,6 +992,7 @@ class Panel(QtGui.QDockWidget):
         elif self.state is not None:
             self.cancel_placement()
             self.state = None
+            self.last_document = self.last_status = None
             self.features.clear()
             self.parts.clear()
             self.items.clear()

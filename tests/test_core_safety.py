@@ -8,17 +8,19 @@ import stat
 import sys
 import tempfile
 import unittest
+import support
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
 import Part
-from kurtshape.core import Controller
+from kurtshape.core import Controller, OperationError, number
 
 
 class CoreSafetyTests(unittest.TestCase):
     def setUp(self):
         self.initial_names = set(App.listDocuments())
+        self.folder = support.isolated_session(self, prefix="core-safety-session-")
         self.core = Controller()
         self.state = None
 
@@ -54,9 +56,9 @@ class CoreSafetyTests(unittest.TestCase):
         self.assertAlmostEqual(state["retained_geometry_measurements"]["volume_mm3"], accepted_volume, places=7)
         pad = next(feature for feature in state["features"] if feature["id"] == "Pad")
         self.assertEqual(pad["parameters"]["Length"]["value"], 12)
-        with tempfile.TemporaryDirectory(prefix="touched-native-export-safety-", dir=ROOT / "validation") as temporary:
+        with tempfile.TemporaryDirectory(prefix="touched-native-export-safety-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             working = Path(temporary).resolve()
-            self.assertTrue(working.is_relative_to(ROOT.resolve()))
+            self.assertTrue(any(working.is_relative_to(root) for root in self.core.settings.roots))
             path = working / "stale-plate.step"
             response = self.core.dispatch({"op": "export", "path": str(path),
                 "document_id": state["document_id"], "expected_revision": state["revision"]})
@@ -70,9 +72,9 @@ class CoreSafetyTests(unittest.TestCase):
         doc = self.plate()
         original_id = self.state["document_id"]
         original_name = doc.Name
-        with tempfile.TemporaryDirectory(prefix="duplicate-project-identity-safety-", dir=ROOT / "validation") as temporary:
+        with tempfile.TemporaryDirectory(prefix="duplicate-project-identity-safety-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             working = Path(temporary).resolve()
-            self.assertTrue(working.is_relative_to(ROOT.resolve()))
+            self.assertTrue(any(working.is_relative_to(root) for root in self.core.settings.roots))
             original_file = working / "original.FCStd"
             copied_file = working / "relocated-copy.FCStd"
             self.operation("save", path=str(original_file))
@@ -94,9 +96,9 @@ class CoreSafetyTests(unittest.TestCase):
 
     def test_readonly_export_sidecar_failure_preserves_both_outputs_and_retry_hash(self):
         self.plate()
-        with tempfile.TemporaryDirectory(prefix="export-provenance-pair-safety-", dir=ROOT / "validation") as temporary:
+        with tempfile.TemporaryDirectory(prefix="export-provenance-pair-safety-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:
             working = Path(temporary).resolve()
-            self.assertTrue(working.is_relative_to(ROOT.resolve()))
+            self.assertTrue(any(working.is_relative_to(root) for root in self.core.settings.roots))
             path = working / "plate.step"
             sidecar = path.with_suffix(".step.json")
             self.operation("export", path=str(path))
@@ -124,6 +126,17 @@ class CoreSafetyTests(unittest.TestCase):
             exported = Part.read(str(path))
             self.assertTrue(exported.isValid())
             self.assertAlmostEqual(exported.Volume, 20 * 10 * 12, places=7)
+
+
+    def test_number_error_names_target_unit(self):
+        for unit in ("deg", "rad"):
+            for invalid in (float("nan"), float("inf"), True):
+                with self.subTest(unit=unit, invalid=invalid):
+                    with self.assertRaises(OperationError) as rejected:
+                        number(invalid, "angle", unit=unit)
+                    self.assertEqual(rejected.exception.code, "invalid_argument")
+                    self.assertIn(unit, str(rejected.exception))
+                    self.assertNotIn("mm", str(rejected.exception))
 
 
 if __name__ == "__main__":

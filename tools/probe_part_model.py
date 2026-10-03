@@ -11,15 +11,16 @@ import subprocess
 import sys
 import time
 import traceback
+from kurtshape_evidence import evidence_dir
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / "runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311"
-sys.path.insert(0, str(RUNTIME / "Mod/Part"))
 import FreeCAD as App
+RUNTIME = Path(App.getHomePath()).resolve()
+sys.path.insert(0, str(RUNTIME / "Mod/Part"))
 import Part
 import Sketcher
 
-OUT = ROOT / "validation/u2-part-model-spike"
+OUT = evidence_dir("u2-part-model-spike")
 WORK = OUT / "native-carrier-fixtures-working"
 WORK.mkdir(parents=True, exist_ok=True)
 

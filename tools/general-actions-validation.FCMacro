@@ -4,9 +4,12 @@ import os
 from pathlib import Path
 import sys
 import traceback
+from unittest.mock import patch
 
 root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
 sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(root / "src"))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -14,6 +17,7 @@ from PySide import QtCore, QtGui
 from PySide6 import QtTest, QtWidgets
 from kurtshape.core import Controller, metadata
 from kurtshape.general_actions import GeneralActions
+from kurtshape import general_actions as general_actions_module
 
 main = Gui.getMainWindow()
 main.hide()
@@ -134,9 +138,9 @@ def validate():
         actions.paste()
         check("Source change rejects stale feature clipboard without mutation", len(doc.Objects) == count and "changed" in panel.message.text())
         saved_clone_name = clone_name
-        call("save", path=str(root / "validation" / "general-actions-native-copy.FCStd"))
+        call("save", path=str(evidence_dir("") / "general-actions-native-copy.FCStd"))
         App.closeDocument(doc.Name)
-        call("open", path=str(root / "validation" / "general-actions-native-copy.FCStd"))
+        call("open", path=str(evidence_dir("") / "general-actions-native-copy.FCStd"))
         doc = App.activeDocument()
         check("Pasted features reopen and freshly rebuild from native dependencies", metadata(doc).DocumentId == original_id and doc.getObject(saved_clone_name).Profile[0] == doc.Profile and panel.state["build_status"] == "valid")
         select(doc.Profile)
@@ -215,9 +219,11 @@ def validate():
         check("Managed sketch lease blocks document switching", App.activeDocument() == second)
         Gui.activeDocument().resetEdit()
         call("finish_sketch_edit")
-        path = actions.save_report("Automated validation report: native copy/paste and document switching")
+        report_root = evidence_dir("general-actions-working")
+        with patch.object(general_actions_module, "ROOT", report_root):
+            path = actions.save_report("Automated validation report: native copy/paste and document switching")
         data = json.loads(path.read_text())
-        check("Problem report stays local and excludes transport credentials", path.is_relative_to(root / "validation" / "user-reports") and not any(word in json.dumps(data).lower() for word in ["bearer", "token", "assistant-session"]))
+        check("Problem report stays local and excludes transport credentials", path.is_relative_to(report_root / "validation" / "user-reports") and not any(word in json.dumps(data).lower() for word in ["bearer", "token", "assistant-session"]))
         report["local_report_path"] = str(path)
         check("Fit selection native command is installed", "Std_ViewFitSelection" in Gui.listCommands())
         report["passed"] = True
@@ -229,7 +235,7 @@ def validate():
         if Gui.activeDocument() and Gui.activeDocument().getInEdit():
             Gui.activeDocument().resetEdit()
         actions.close()
-        (root / "validation" / "general-actions-gui-result.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
+        (evidence_dir("") / "general-actions-gui-result.json").write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
         for doc in list(App.listDocuments().values()):
             App.closeDocument(doc.Name)
         QtCore.QTimer.singleShot(100, QtGui.QApplication.instance().quit)

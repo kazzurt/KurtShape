@@ -3,6 +3,8 @@ import os, sys, json, traceback, time, math
 from pathlib import Path
 sys.dont_write_bytecode = True
 root = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(root / "tools"))
+from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(root/'src'))
 import FreeCAD as App
 import FreeCADGui as Gui
@@ -14,7 +16,7 @@ main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
 main.resize(1440,920)
 main.show()
 report = {'passed':False,'checks':[], 'method':'Actual isolated Qt window, native viewport, keyboard and mouse events; user hands-on acceptance remains pending'}
-output = root/'validation'/'interface-pass'
+output = evidence_dir("interface-pass")
 output.mkdir(parents=True, exist_ok=True)
 try:
     from kurtshape.ui import start
@@ -66,7 +68,7 @@ def bridge_call(request):
     sys.path.insert(0,str(root/'tools'))
     from assistant_client import send
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        future=pool.submit(send,request,root/'runtime'/'interface-validation'/'assistant-session.json')
+        future=pool.submit(send,request,Path(os.environ['KURTSHAPE_SESSION_DIR'])/'assistant-session.json')
         for i in range(100):
             if future.done():
                 return future.result()
