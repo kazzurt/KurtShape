@@ -1,0 +1,289 @@
+{
+  "freecad": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)"
+  ],
+  "occt": "7.8.1",
+  "holes": 60,
+  "growth": [
+    {
+      "features": 14,
+      "faces": 7,
+      "sketch_op": {
+        "total_ms": 23.88,
+        "native_recompute_ms": 3.14,
+        "intent_signature_ms": 1.96,
+        "inspection_ms": 8.07,
+        "overhead_ms": 20.74
+      },
+      "pocket_op": {
+        "total_ms": 77.95,
+        "native_recompute_ms": 29.89,
+        "intent_signature_ms": 2.2,
+        "inspection_ms": 12.45,
+        "overhead_ms": 48.05
+      }
+    },
+    {
+      "features": 32,
+      "faces": 16,
+      "sketch_op": {
+        "total_ms": 150.82,
+        "native_recompute_ms": 14.32,
+        "intent_signature_ms": 7.27,
+        "inspection_ms": 64.81,
+        "overhead_ms": 136.5
+      },
+      "pocket_op": {
+        "total_ms": 425.16,
+        "native_recompute_ms": 100.56,
+        "intent_signature_ms": 7.64,
+        "inspection_ms": 86.11,
+        "overhead_ms": 324.6
+      }
+    },
+    {
+      "features": 52,
+      "faces": 26,
+      "sketch_op": {
+        "total_ms": 488.66,
+        "native_recompute_ms": 37.4,
+        "intent_signature_ms": 12.42,
+        "inspection_ms": 230.55,
+        "overhead_ms": 451.26
+      },
+      "pocket_op": {
+        "total_ms": 1168.06,
+        "native_recompute_ms": 260.6,
+        "intent_signature_ms": 14.08,
+        "inspection_ms": 231.95,
+        "overhead_ms": 907.46
+      }
+    },
+    {
+      "features": 72,
+      "faces": 36,
+      "sketch_op": {
+        "total_ms": 1127.85,
+        "native_recompute_ms": 102.02,
+        "intent_signature_ms": 19.57,
+        "inspection_ms": 509.45,
+        "overhead_ms": 1025.84
+      },
+      "pocket_op": {
+        "total_ms": 2578.91,
+        "native_recompute_ms": 578.21,
+        "intent_signature_ms": 18.04,
+        "inspection_ms": 512.78,
+        "overhead_ms": 2000.7
+      }
+    },
+    {
+      "features": 92,
+      "faces": 46,
+      "sketch_op": {
+        "total_ms": 2174.72,
+        "native_recompute_ms": 156.7,
+        "intent_signature_ms": 26.1,
+        "inspection_ms": 974.62,
+        "overhead_ms": 2018.03
+      },
+      "pocket_op": {
+        "total_ms": 5015.53,
+        "native_recompute_ms": 948.61,
+        "intent_signature_ms": 24.59,
+        "inspection_ms": 981.9,
+        "overhead_ms": 4066.92
+      }
+    },
+    {
+      "features": 112,
+      "faces": 56,
+      "sketch_op": {
+        "total_ms": 3677.16,
+        "native_recompute_ms": 286.96,
+        "intent_signature_ms": 32.81,
+        "inspection_ms": 1649.84,
+        "overhead_ms": 3390.2
+      },
+      "pocket_op": {
+        "total_ms": 8268.55,
+        "native_recompute_ms": 1488.71,
+        "intent_signature_ms": 32.8,
+        "inspection_ms": 1722.53,
+        "overhead_ms": 6779.84
+      }
+    },
+    {
+      "features": 132,
+      "faces": 66,
+      "sketch_op": {
+        "total_ms": 5702.45,
+        "native_recompute_ms": 393.86,
+        "intent_signature_ms": 42.41,
+        "inspection_ms": 2583.9,
+        "overhead_ms": 5308.59
+      },
+      "pocket_op": {
+        "total_ms": 12419.5,
+        "native_recompute_ms": 2171.85,
+        "intent_signature_ms": 40.94,
+        "inspection_ms": 2672.4,
+        "overhead_ms": 10247.64
+      }
+    }
+  ],
+  "final_model": {
+    "objects": 132,
+    "faces": 66,
+    "edges": 192
+  },
+  "tip_sketch_edit": [
+    {
+      "total_ms": 6251.0,
+      "native_recompute_ms": 830.1,
+      "intent_signature_ms": 40.06,
+      "inspection_ms": 2688.16,
+      "overhead_ms": 5420.9
+    },
+    {
+      "total_ms": 6024.56,
+      "native_recompute_ms": 737.81,
+      "intent_signature_ms": 43.59,
+      "inspection_ms": 2665.5,
+      "overhead_ms": 5286.75
+    },
+    {
+      "total_ms": 6208.75,
+      "native_recompute_ms": 817.95,
+      "intent_signature_ms": 41.45,
+      "inspection_ms": 2697.61,
+      "overhead_ms": 5390.8
+    },
+    {
+      "total_ms": 6123.05,
+      "native_recompute_ms": 845.87,
+      "intent_signature_ms": 41.86,
+      "inspection_ms": 2668.26,
+      "overhead_ms": 5277.18
+    },
+    {
+      "total_ms": 6467.86,
+      "native_recompute_ms": 872.84,
+      "intent_signature_ms": 41.58,
+      "inspection_ms": 2693.32,
+      "overhead_ms": 5595.02
+    }
+  ],
+  "upstream_pad_edit": [
+    {
+      "total_ms": 18161.18,
+      "native_recompute_ms": 12922.17,
+      "intent_signature_ms": 43.11,
+      "inspection_ms": 2555.1,
+      "overhead_ms": 5239.0
+    },
+    {
+      "total_ms": 18523.47,
+      "native_recompute_ms": 13422.48,
+      "intent_signature_ms": 41.37,
+      "inspection_ms": 2503.51,
+      "overhead_ms": 5100.99
+    },
+    {
+      "total_ms": 18197.35,
+      "native_recompute_ms": 13143.53,
+      "intent_signature_ms": 40.5,
+      "inspection_ms": 2541.46,
+      "overhead_ms": 5053.82
+    }
+  ],
+  "intent_signature_ms": {
+    "median": 40.19,
+    "max": 54.2,
+    "n": 5
+  },
+  "native_intent_ms": {
+    "median": 36.57,
+    "max": 85.02,
+    "n": 3
+  },
+  "native_intent_by_type_ms_total": {
+    "App::FeaturePython": 0.01,
+    "PartDesign::Body": 0.83,
+    "App::Origin": 0.01,
+    "App::Line": 0.02,
+    "App::Plane": 0.01,
+    "App::Point": 0.03,
+    "Sketcher::SketchObject": 13.25,
+    "PartDesign::Pad": 0.26,
+    "PartDesign::Pocket": 16.43
+  },
+  "inspect_warm_ms": {
+    "median": 17.59,
+    "max": 18.52,
+    "n": 10
+  },
+  "inspect_after_invalidate_ms": {
+    "median": 4954.85,
+    "max": 4954.85,
+    "n": 1
+  },
+  "isValid_ms": {
+    "median": 1871.4,
+    "max": 1897.74,
+    "n": 3
+  },
+  "measurements_ms": {
+    "median": 2328.73,
+    "max": 2342.16,
+    "n": 3
+  },
+  "mass_props_only_ms": {
+    "median": 179.17,
+    "max": 185.64,
+    "n": 3
+  },
+  "build_status_warm_ms": {
+    "median": 1.62,
+    "max": 3.81,
+    "n": 10
+  },
+  "checkpoint_ms": {
+    "median": 1272.48,
+    "max": 1292.8,
+    "n": 3
+  },
+  "saveCopy_only_ms": {
+    "median": 1147.87,
+    "max": 1155.09,
+    "n": 3
+  },
+  "fcstd_bytes": 937701,
+  "testzip_ms": {
+    "median": 40.33,
+    "max": 43.93,
+    "n": 3
+  },
+  "preview_current_ms": {
+    "cold_snapshot": 15702.29,
+    "warm": {
+      "median": 15118.79,
+      "max": 15216.03,
+      "n": 3
+    }
+  },
+  "preview_direct_occt_ms": {
+    "median": 573.73,
+    "max": 589.91,
+    "n": 3
+  },
+  "native_open_ms": {
+    "median": 2297.62,
+    "max": 2321.79,
+    "n": 2
+  },
+  "open_full_rebuild_recompute_ms": 12655.78
+}

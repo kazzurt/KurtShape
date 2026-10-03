@@ -1,0 +1,86 @@
+{
+  "startup_ms": 5567.7,
+  "model": {
+    "objects": 92,
+    "tree_items": 86
+  },
+  "gui_sketch_plus_pocket_ms_last10": [
+    11107.0,
+    12109.1,
+    12525.0,
+    13260.0,
+    14009.9,
+    15308.4,
+    16088.7,
+    17155.9,
+    18525.8,
+    19277.6
+  ],
+  "panel_refresh": {
+    "median_ms": 6.699,
+    "max_ms": 9.048,
+    "n": 10
+  },
+  "tick_idle": {
+    "median_ms": 0.005,
+    "max_ms": 0.03,
+    "n": 200
+  },
+  "tick_after_refresh_flag": {
+    "median_ms": 16.808,
+    "max_ms": 18.169,
+    "n": 10
+  },
+  "gui_tip_parameter_edit": {
+    "median_ms": 6916.582,
+    "max_ms": 6980.755,
+    "n": 5
+  },
+  "checkpoint_projects_forced": {
+    "median_ms": 366.762,
+    "max_ms": 373.901,
+    "n": 3
+  },
+  "checkpoint_projects_idle": {
+    "median_ms": 1.056,
+    "max_ms": 1.509,
+    "n": 20
+  },
+  "app_event_filters": {
+    "count": 5,
+    "us_per_event_with": 407.03,
+    "us_per_event_without": 239.21
+  },
+  "timings_report": {
+    "intent": {
+      "samples": 222,
+      "median_ms": 19.539,
+      "p95_ms": 32.367,
+      "worst_ms": 174.985
+    },
+    "native_recompute": {
+      "samples": 210,
+      "median_ms": 75.875,
+      "p95_ms": 4017.535,
+      "worst_ms": 4955.859
+    },
+    "inspection": {
+      "samples": 319,
+      "median_ms": 217.341,
+      "p95_ms": 973.535,
+      "worst_ms": 1110.823
+    },
+    "operation": {
+      "samples": 319,
+      "median_ms": 641.811,
+      "p95_ms": 6661.16,
+      "worst_ms": 12773.768
+    },
+    "recovery_checkpoint": {
+      "samples": 25,
+      "median_ms": 1.066,
+      "p95_ms": 373.87,
+      "worst_ms": 434.083
+    }
+  }
+}

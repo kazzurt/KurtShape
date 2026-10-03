@@ -1,0 +1,104 @@
+"""Profile the real KurtShape Qt shell under Xvfb (unmodified src/kurtshape).
+
+Environment: KURTSHAPE_ROOT=<repo>, KURTSHAPE_SESSION_DIR=<scratch>, KURTSHAPE_NO_DEMO=1,
+FREECAD_USER_HOME=<scratch>/user-data, BENCH_GUI_OUT=<result.json>, BENCH_HOLES=40.
+Run: xvfb-run -a freecad -u <scratch>/user.cfg -s <scratch>/system.cfg bench_gui.FCMacro
+"""
+import json
+import math
+import os
+import statistics
+import sys
+import time
+import traceback
+
+OUT = os.environ["BENCH_GUI_OUT"]
+results = {}
+try:
+    sys.dont_write_bytecode = True
+    sys.path.insert(0, os.path.join(os.environ["KURTSHAPE_ROOT"], "src"))
+    import FreeCAD as App
+    import FreeCADGui as Gui
+    from PySide import QtCore, QtGui
+
+    def timed(fn, repeat=1):
+        samples = []
+        for _ in range(repeat):
+            t = time.perf_counter()
+            fn()
+            samples.append((time.perf_counter() - t) * 1000)
+        return {"median_ms": round(statistics.median(samples), 3), "max_ms": round(max(samples), 3), "n": repeat}
+
+    t0 = time.perf_counter()
+    from kurtshape.ui import start
+    panel = start()
+    QtGui.QApplication.processEvents()
+    results["startup_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+
+    N = int(os.environ.get("BENCH_HOLES", "40"))
+    panel.operation("sketch_rectangle", id="Plate", width=600, height=600)
+    panel.operation("pad", id="Pad", profile="Plate", length=12)
+    grid = int(math.ceil(math.sqrt(N)))
+    pitch = 600 / (grid + 1)
+    op_samples = []
+    for i in range(N):
+        x, y = pitch * (1 + i % grid), pitch * (1 + i // grid)
+        t = time.perf_counter()
+        panel.operation("sketch_circle", id=f"H{i}", x=x, y=y, diameter=pitch * 0.45)
+        panel.operation("pocket", id=f"P{i}", profile=f"H{i}")
+        op_samples.append((time.perf_counter() - t) * 1000)
+    QtGui.QApplication.processEvents()
+    doc = App.ActiveDocument
+    results["model"] = {"objects": len(doc.Objects), "tree_items": len(panel.items)}
+    results["gui_sketch_plus_pocket_ms_last10"] = [round(v, 1) for v in op_samples[-10:]]
+
+    # Feature-tree rebuild (runs after every revision change, including each sketch click)
+    results["panel_refresh"] = timed(panel.refresh, repeat=10)
+    # Idle timer service (runs every 25 ms)
+    results["tick_idle"] = timed(panel.tick, repeat=200)
+    core = panel.core
+    def tick_dirty():
+        core.observer.state(doc)["refresh"] = True
+        panel.tick()
+    results["tick_after_refresh_flag"] = timed(tick_dirty, repeat=10)
+    # GUI-driven parameter edit on the newest feature (small native recompute)
+    k = [0]
+    def tip_edit():
+        k[0] += 1
+        panel.operation("set_parameter", feature=f"H{N-1}", parameter="Diameter", value=str(pitch * (0.40 + 0.01 * (k[0] % 3))))
+    results["gui_tip_parameter_edit"] = timed(tip_edit, repeat=5)
+    # Recovery checkpoint after a change (timer every 1 s; writes at most every 30 s)
+    def forced_checkpoint():
+        core.recovery.last.clear()
+        panel.checkpoint_projects()
+    results["checkpoint_projects_forced"] = timed(forced_checkpoint, repeat=3)
+    results["checkpoint_projects_idle"] = timed(panel.checkpoint_projects, repeat=20)
+
+    # Application-level Python event filters: cost per event on an unrelated widget
+    app = QtGui.QApplication.instance()
+    label = panel.message
+    def send_moves(count=3000):
+        for i in range(count):
+            ev = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(5 + i % 7, 5), QtCore.QPointF(5 + i % 7, 5),
+                                   QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+            app.sendEvent(label, ev)
+    with_filters = timed(send_moves, repeat=3)
+    from kurtshape import navigation
+    filters = [panel, panel.workspace_preferences, panel.router._filter, navigation._double_middle_filter,
+               getattr(app, "_kurtshape_theme_filter", None)]
+    filters = [f for f in filters if f is not None]
+    for f in filters:
+        app.removeEventFilter(f)
+    without_filters = timed(send_moves, repeat=3)
+    for f in filters:
+        app.installEventFilter(f)
+    results["app_event_filters"] = {"count": len(filters),
+        "us_per_event_with": round(with_filters["median_ms"] * 1000 / 3000, 2),
+        "us_per_event_without": round(without_filters["median_ms"] * 1000 / 3000, 2)}
+    results["timings_report"] = core.timings.report()
+except Exception:
+    results["error"] = traceback.format_exc()
+finally:
+    with open(OUT, "w") as handle:
+        json.dump(results, handle, indent=2)
+    os._exit(0)
