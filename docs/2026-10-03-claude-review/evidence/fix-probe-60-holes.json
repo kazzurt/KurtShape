@@ -1,0 +1,21 @@
+{
+  "holes": 60,
+  "objects": 132,
+  "lazy_last_sketch_op": {
+    "total_ms": 485,
+    "native_ms": 369
+  },
+  "lazy_last_pocket_op": {
+    "total_ms": 2676,
+    "native_ms": 2337
+  },
+  "lazy_tip_edit": {
+    "total_median_ms": 964,
+    "native_median_ms": 832
+  },
+  "current_tip_edit": {
+    "total_median_ms": 6301,
+    "native_median_ms": 805
+  },
+  "prism_only_preview_ms": 4.43
+}
