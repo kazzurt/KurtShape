@@ -103,7 +103,7 @@ class RouterTests(unittest.TestCase):
 
 
 try:
-    import FreeCAD  # Provides the bundled PySide compatibility module.
+    import FreeCAD  # noqa: F401  # Provides the bundled PySide compatibility module.
     from PySide import QtCore, QtGui
     from PySide6 import QtTest
     QT_AVAILABLE = True

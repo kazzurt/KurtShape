@@ -1,7 +1,6 @@
 """Exercise the actual open GUI document over the assistant transport."""
 import json
 import math
-from pathlib import Path
 import time
 import urllib.error
 import urllib.request

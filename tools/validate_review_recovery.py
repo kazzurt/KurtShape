@@ -1,6 +1,7 @@
 """Reopen a checkpoint after the controlled GUI crash; preserve its source."""
 import hashlib
 import json
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 import sys
@@ -26,6 +27,7 @@ assert abs(doc.Pad.Shape.Volume - 1800) < 1e-6
 response = core.dispatch({"op": "finish_sketch_edit", "document_id": state["document_id"], "expected_revision": state["revision"], "cancel": True})
 assert response["ok"], response
 assert doc.Unfinished.GeometryCount == 0
+assert abs(doc.Pad.Shape.Volume - 1800) < 1e-6
 assert hashlib.sha256(source.read_bytes()).hexdigest() == source_hash
 report.update(reopened_checkpoint=True, recovered_unsaved_volume_mm3=doc.Pad.Shape.Volume,
               recovered_draft=True, explicit_cancel_restored_accepted_sketch=True, original_file_unchanged=True,
@@ -46,5 +48,7 @@ if native_archive:
     App.closeDocument(recovered_native.Name)
 else:
     report["native_autosave_reopened"] = False
+report["verification_pid"] = os.getpid()
+report["verification_utc"] = datetime.now(timezone.utc).isoformat()
 report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
 print(json.dumps({key:report[key] for key in ("passed", "reopened_checkpoint", "recovered_draft", "saved_project_reopened", "original_file_unchanged")}))

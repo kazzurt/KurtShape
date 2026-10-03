@@ -11,7 +11,7 @@ import FreeCAD as App
 RUNTIME = Path(App.getHomePath()).resolve()
 sys.path.insert(0, str(RUNTIME / "Mod/Assembly"))
 import Part
-import Assembly
+import Assembly  # noqa: F401
 import JointObject
 
 OUT = evidence_dir("assembly-workflow/native-probe")

@@ -24,6 +24,7 @@ from . import studio
 from . import selectors as native_selectors
 from . import reference_tools
 from .contract import CONTRACT_VERSION, CONTRACT_REVISION
+from .native_content import native_content_fingerprints
 
 ROOT = Path(__file__).resolve().parents[2]
 WRITE_ROOT = ROOT.parent.resolve()
@@ -927,7 +928,8 @@ class Controller:
                 Gui.getDocument(doc.Name).Modified = True
             result["operation_ms"] = round((time.perf_counter() - start) * 1000, 2)
             return {"ok": True, "result": result}
-        except Exception as exc:
+        except Exception as caught:
+            exc = caught
             if transaction and doc:
                 ended_edit = self._meta(doc).DocumentId in self.sketch_edits
                 if ended_edit:
@@ -1499,8 +1501,13 @@ class Controller:
             source = doc.getObject(req["feature"])
             if source is None or source not in body.Group or source.TypeId not in {"Sketcher::SketchObject", "PartDesign::Pad", "PartDesign::Pocket"}:
                 raise OperationError("unsupported_feature", "Duplicate supports a native sketch, Pad or Pocket in this Body")
-            if req.get("fingerprint") and hashlib.sha256(bytes(source.dumpContent())).hexdigest() != req["fingerprint"]:
-                raise OperationError("changed_source", "Copied feature changed; copy it again")
+            if req.get("fingerprint"):
+                try:
+                    fingerprints = native_content_fingerprints(bytes(source.dumpContent()))
+                except ValueError as exc:
+                    raise OperationError("changed_source", "Copied feature changed; copy it again") from exc
+                if req["fingerprint"] not in fingerprints:
+                    raise OperationError("changed_source", "Copied feature changed; copy it again")
             previous_tip = body.Tip
             created = doc.copyObject(source, False)
             body.addObject(created)

@@ -1,5 +1,6 @@
 """Native regression gates for the accepted Claude review follow-up."""
 import hashlib
+import io
 import json
 import math
 from pathlib import Path
@@ -8,6 +9,7 @@ import unittest
 import support
 from unittest.mock import patch
 import uuid
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -16,6 +18,8 @@ import Part
 from kurtshape import core as module
 from kurtshape.core import Controller, intent_signature, number
 from kurtshape.request_ledger import RequestLedger
+from kurtshape.general_actions import GeneralActions
+from kurtshape.native_content import native_content_fingerprints
 
 
 class ReviewFollowupTests(unittest.TestCase):
@@ -113,6 +117,147 @@ class ReviewFollowupTests(unittest.TestCase):
         self.assertIsNone(self.doc.getObject(name))
         self.call("set_parameter", feature="Plate", parameter="Width", value=25)
         self.reject("changed_source", "duplicate_feature", feature="Plate", fingerprint=fingerprint)
+
+    @staticmethod
+    def _repack_native_archive(entries, timestamp=(2000, 1, 1, 0, 0, 0)):
+        """Change only ZIP packaging around complete captured native payloads."""
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for name, payload in entries:
+                info = zipfile.ZipInfo(name, date_time=timestamp)
+                info.compress_type = zipfile.ZIP_DEFLATED
+                archive.writestr(info, payload)
+        return output.getvalue()
+
+    def test_native_content_fingerprint_preserves_all_members_and_ignores_zip_timestamps(self):
+        self.plate()
+        native = bytes(self.doc.Pad.dumpContent())
+        with zipfile.ZipFile(io.BytesIO(native)) as archive:
+            entries = [(info.filename, archive.read(info)) for info in archive.infolist()]
+        self.assertTrue(entries)
+        self.assertEqual(len(entries), len({name for name, _ in entries}))
+        first = self._repack_native_archive(entries)
+        second = self._repack_native_archive(entries, timestamp=(2002, 2, 2, 2, 2, 2))
+        canonical, raw = native_content_fingerprints(first)
+        later_canonical, later_raw = native_content_fingerprints(second)
+        self.assertEqual(raw, hashlib.sha256(first).hexdigest())
+        self.assertEqual(later_raw, hashlib.sha256(second).hexdigest())
+        self.assertNotEqual(raw, later_raw)
+        self.assertEqual(canonical, later_canonical)
+        self.assertEqual(canonical, native_content_fingerprints(native)[0])
+
+        class NativeDump:
+            def __init__(self, payload):
+                self.payload = payload
+
+            def dumpContent(self):
+                return self.payload
+
+        self.assertEqual(GeneralActions._fingerprint(NativeDump(first)), canonical)
+        self.assertEqual(GeneralActions._fingerprint(NativeDump(second)), canonical)
+        for index, (name, payload) in enumerate(entries):
+            with self.subTest(member=name, change="payload"):
+                changed = list(entries)
+                changed[index] = (name, payload + b"\x00")
+                self.assertNotEqual(canonical, native_content_fingerprints(self._repack_native_archive(changed))[0])
+            with self.subTest(member=name, change="name"):
+                changed = list(entries)
+                changed[index] = ("changed-member/" + name, payload)
+                self.assertNotEqual(canonical, native_content_fingerprints(self._repack_native_archive(changed))[0])
+        empty_name = "fingerprint-empty-member.bin"
+        self.assertNotIn(empty_name, {name for name, _ in entries})
+        with_empty = entries + [(empty_name, b"")]
+        empty_digest = native_content_fingerprints(self._repack_native_archive(with_empty))[0]
+        self.assertNotEqual(canonical, empty_digest)
+        self.assertNotEqual(empty_digest, native_content_fingerprints(self._repack_native_archive(entries + [(empty_name, b"\x00")]))[0])
+        self.assertNotEqual(empty_digest, native_content_fingerprints(self._repack_native_archive(entries + [(empty_name + ".renamed", b"")]))[0])
+        for payload in (b"not a native ZIP", first[:-22]):
+            with self.subTest(change="malformed", payload=payload[:16]):
+                with self.assertRaises(ValueError):
+                    native_content_fingerprints(payload)
+        # Construct duplicate names without emitting an unrelated zipfile warning.
+        with patch("warnings.warn"):
+            duplicate = self._repack_native_archive(entries + [entries[0]])
+        with self.assertRaises(ValueError):
+            native_content_fingerprints(duplicate)
+
+    def _duplicate_native_state(self):
+        """Capture accepted revision/history, intent and evaluated geometry."""
+        geometry = {}
+        for obj in self.doc.Objects:
+            if hasattr(obj, "Shape") and not obj.Shape.isNull():
+                shape, box = obj.Shape, obj.Shape.BoundBox
+                geometry[obj.Name] = (shape.Volume, shape.Area,
+                                     box.XMin, box.YMin, box.ZMin, box.XMax, box.YMax, box.ZMax,
+                                     len(shape.Solids), len(shape.Faces), len(shape.Edges), len(shape.Vertexes))
+        return {"revision": module.metadata(self.doc).Revision,
+                "undo": self.doc.UndoCount, "redo": self.doc.RedoCount,
+                "pending": self.doc.HasPendingTransaction,
+                "objects": sorted(obj.Name for obj in self.doc.Objects),
+                "tip": self.doc.Body.Tip.Name,
+                "intent": intent_signature(self.doc), "geometry": geometry}
+
+    def _assert_canonical_native_duplicate(self, source, *, changed_length, stale_length, expected_volume):
+        """Exercise editable native features through the real shared controller."""
+        native = bytes(source.dumpContent())
+        with zipfile.ZipFile(io.BytesIO(native)) as archive:
+            entries = [(info.filename, archive.read(info)) for info in archive.infolist()]
+        fingerprint = native_content_fingerprints(self._repack_native_archive(entries))[0]
+        other_wrapper = self._repack_native_archive(entries, timestamp=(2002, 2, 2, 2, 2, 2))
+        self.assertEqual(fingerprint, native_content_fingerprints(other_wrapper)[0])
+        source_length, source_volume = source.Length.Value, source.Shape.Volume
+        profile, support = source.Profile[0], source.Profile[0].AttachmentSupport
+        undo, objects = self.doc.UndoCount, {obj.Name for obj in self.doc.Objects}
+        self.call("duplicate_feature", feature=source.Name, fingerprint=fingerprint)
+        created_name = self.state["created_feature"]
+        created = self.doc.getObject(created_name)
+        self.assertEqual({obj.Name for obj in self.doc.Objects} - objects, {created_name})
+        self.assertEqual(created.TypeId, source.TypeId)
+        self.assertEqual(created.Profile, source.Profile)
+        self.assertEqual(created.Profile[0], profile)
+        self.assertEqual(created.Profile[0].AttachmentSupport, support)
+        self.assertAlmostEqual(created.Length.Value, source_length)
+        self.assertTrue(created.Shape.isValid())
+        self.assertEqual(self.state["build_status"], "valid")
+        self.assertEqual(self.state["measurements"]["solid_count"], 1)
+        self.assertEqual(self.doc.UndoCount, undo + 1)
+        self.call("set_parameter", feature=created_name, parameter="Length", value=changed_length)
+        self.assertAlmostEqual(created.Length.Value, changed_length)
+        self.assertAlmostEqual(source.Length.Value, source_length)
+        self.assertAlmostEqual(source.Shape.Volume, source_volume)
+        self.assertAlmostEqual(self.doc.Body.Shape.Volume, expected_volume)
+        self.assertTrue(self.doc.Body.Shape.isValid())
+        self.assertEqual(len(self.doc.Body.Shape.Solids), 1)
+        self.call("undo")
+        self.assertAlmostEqual(self.doc.getObject(created_name).Length.Value, source_length)
+        self.call("undo")
+        self.assertIsNone(self.doc.getObject(created_name))
+        self.assertEqual({obj.Name for obj in self.doc.Objects}, objects)
+        self.assertAlmostEqual(self.doc.Body.Shape.Volume, source_volume)
+        self.assertEqual(self.doc.Body.Tip.Name, source.Name)
+        self.call("set_parameter", feature=source.Name, parameter="Length", value=stale_length)
+        self.assertNotEqual(fingerprint, native_content_fingerprints(bytes(source.dumpContent()))[0])
+        before = self._duplicate_native_state()
+        self.reject("changed_source", "duplicate_feature", feature=source.Name, fingerprint=fingerprint)
+        self.assertEqual(self._duplicate_native_state(), before)
+        self.call("inspect")
+        self.assertEqual(self.state["revision"], before["revision"])
+        self.assertEqual(self.state["build_status"], "valid")
+        self.assertEqual(self._duplicate_native_state(), before)
+
+    def test_canonical_pad_duplicate_is_editable_one_undo_and_stale_guarded(self):
+        self.plate()
+        self._assert_canonical_native_duplicate(self.doc.Pad, changed_length=8, stale_length=7,
+                                               expected_volume=20 * 10 * 8)
+
+    def test_canonical_pocket_duplicate_is_editable_one_undo_and_stale_guarded(self):
+        self.plate()
+        self.call("sketch_circle", id="CutProfile", x=10, y=5, diameter=4)
+        self.call("pocket", id="Pocket", profile="CutProfile", through_all=False, length=2)
+        self.assertEqual(str(self.doc.Pocket.Type), "Length")
+        self.assertAlmostEqual(self.doc.Body.Shape.Volume, 20 * 10 * 6 - math.pi * 2 ** 2 * 2)
+        self._assert_canonical_native_duplicate(self.doc.Pocket, changed_length=4, stale_length=3,
+                                               expected_volume=20 * 10 * 6 - math.pi * 2 ** 2 * 4)
 
     def test_request_replay_precedes_stale_revision_and_never_repeats_undo(self):
         self.plate()

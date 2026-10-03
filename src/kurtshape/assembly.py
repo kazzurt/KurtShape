@@ -45,7 +45,7 @@ def _native():
         raise _error("assembly_runtime", "KurtShape requires the pinned FreeCAD 1.1.4 runtime", found=version)
     if str(NATIVE_PATH) not in sys.path:
         sys.path.insert(0, str(NATIVE_PATH))
-    import Assembly
+    import Assembly  # noqa: F401
     import JointObject
     import Preferences
     if Path(JointObject.__file__).resolve().parent != NATIVE_PATH.resolve():

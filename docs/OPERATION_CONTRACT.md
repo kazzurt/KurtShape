@@ -39,6 +39,10 @@ Standalone modeling failures abort their transaction and retain accepted geometr
 
 October 3 Q24a validation hardening shortens diagnostic Assembly BREP fixture names while retaining their complete SHA-256 identifiers and the production geometry fingerprint algorithm. This affects isolated verification only; typed operations, revision/replay, save/export publication and profile formats remain contract 2.0. The contributor boundaries are described in [ARCHITECTURE.md](../ARCHITECTURE.md).
 
+October 3 Q00b validation infrastructure adds isolated runtime checks, blocking hidden GUI recipes and repeatable plate/studio benchmarks. Benchmark instrumentation is temporary and restored after each measurement; it does not add persisted model data or new operations. Transport, typed mutation, write-root, replay and revision semantics remain contract 2.0. Fresh CI checks tracked and ignored tree cleanliness; local checks preserve the existing checkout's exact status and diff bytes.
+
+Feature Copy fingerprints every exact member name and complete payload in the native feature archive, including empty entries, so ZIP timestamps alone cannot reject an unchanged source. Duplicate or malformed members fail closed. The optional `duplicate_feature.fingerprint` also accepts the current raw archive SHA256 for existing callers; those legacy raw digests remain sensitive to serialization timestamps. Both candidates come from one current dump. Actual source changes still reject with `changed_source`, and copies retain editable parameters, dependencies and one undo step. This guard correction adds no operation field, persisted property or profile format; contract remains 2.0.
+
 Legacy single-Body rebuilds retain explicit feature visibility. Logical-part visibility synchronization applies only to studio-enabled documents.
 
 Hidden validation follows the active document view; a fresh single-view window is accepted before the MDI active-window flag is initialized. Typed document selection and revision rules are unchanged.

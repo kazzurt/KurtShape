@@ -1,0 +1,1586 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "native",
+      "passed": true,
+      "counts": {
+        "tests": 150,
+        "passed": 150,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "pid": 34824,
+      "seconds": 98.5709268997889
+    },
+    {
+      "name": "bridge",
+      "passed": true,
+      "counts": {
+        "tests": 7,
+        "passed": 7,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "pid": 60780,
+      "seconds": 4.2566317999735475
+    },
+    {
+      "name": "shortcuts",
+      "passed": true,
+      "counts": {
+        "tests": 22,
+        "passed": 22,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "pid": 50612,
+      "seconds": 0.5710975998081267
+    },
+    {
+      "name": "workflows",
+      "passed": true,
+      "counts": {
+        "tests": 6,
+        "passed": 6,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "pid": 47168,
+      "seconds": 4.301545900059864
+    },
+    {
+      "name": "six native workflows",
+      "passed": true,
+      "count": 405,
+      "cases": [
+        {
+          "name": "linear-feature-pattern",
+          "passed": true,
+          "editable_fixture": "runtime\\test-tmp\\regression-run-20261003-201201-40776-dd560abb\\workflows\\fixtures\\linear-feature-pattern.FCStd",
+          "measurements": {
+            "valid": true,
+            "solid_count": 1,
+            "volume_mm3": 2879.999999999998,
+            "area_mm2": 2047.9999999999998,
+            "bbox_mm": {
+              "min": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "max": [
+                40.0,
+                16.0,
+                9.0
+              ],
+              "size": [
+                40.0,
+                16.0,
+                9.0
+              ]
+            },
+            "center_of_mass_mm": [
+              19.94444444444446,
+              7.777777777777783,
+              2.5000000000000018
+            ]
+          },
+          "checks": [
+            "linear feature pattern: current valid solid",
+            "linear feature pattern: one real valid solid",
+            "linear feature pattern: analytical volume",
+            "linear feature pattern: controller volume agrees",
+            "LinearPattern: creation undo removes feature",
+            "LinearPattern creation undo: current valid solid",
+            "LinearPattern creation undo: one real valid solid",
+            "LinearPattern creation undo: analytical volume",
+            "LinearPattern creation undo: controller volume agrees",
+            "LinearPattern: creation redo restores native ownership",
+            "LinearPattern creation redo: current valid solid",
+            "LinearPattern creation redo: one real valid solid",
+            "LinearPattern creation redo: analytical volume",
+            "LinearPattern creation redo: controller volume agrees",
+            "linear count 3 to 4: current valid solid",
+            "linear count 3 to 4: one real valid solid",
+            "linear count 3 to 4: analytical volume",
+            "linear count 3 to 4: controller volume agrees",
+            "linear count 3 to 4 undo: current valid solid",
+            "linear count 3 to 4 undo: one real valid solid",
+            "linear count 3 to 4 undo: analytical volume",
+            "linear count 3 to 4 undo: controller volume agrees",
+            "linear count 3 to 4 redo: current valid solid",
+            "linear count 3 to 4 redo: one real valid solid",
+            "linear count 3 to 4 redo: analytical volume",
+            "linear count 3 to 4 redo: controller volume agrees",
+            "linear spacing 20/3 to 9 mm: current valid solid",
+            "linear spacing 20/3 to 9 mm: one real valid solid",
+            "linear spacing 20/3 to 9 mm: analytical volume",
+            "linear spacing 20/3 to 9 mm: controller volume agrees",
+            "linear boss center 0 at spacing 9",
+            "linear boss center 1 at spacing 9",
+            "linear boss center 2 at spacing 9",
+            "linear boss center 3 at spacing 9",
+            "linear spacing 20/3 to 9 mm undo: current valid solid",
+            "linear spacing 20/3 to 9 mm undo: one real valid solid",
+            "linear spacing 20/3 to 9 mm undo: analytical volume",
+            "linear spacing 20/3 to 9 mm undo: controller volume agrees",
+            "linear boss center 0 at spacing 6.666666666666667",
+            "linear boss center 1 at spacing 6.666666666666667",
+            "linear boss center 2 at spacing 6.666666666666667",
+            "linear boss center 3 at spacing 6.666666666666667",
+            "linear spacing 20/3 to 9 mm redo: current valid solid",
+            "linear spacing 20/3 to 9 mm redo: one real valid solid",
+            "linear spacing 20/3 to 9 mm redo: analytical volume",
+            "linear spacing 20/3 to 9 mm redo: controller volume agrees",
+            "linear boss center 0 at spacing 9",
+            "linear boss center 1 at spacing 9",
+            "linear boss center 2 at spacing 9",
+            "linear boss center 3 at spacing 9",
+            "linear spacing changes actual instance location",
+            "linear upstream boss height: current valid solid",
+            "linear upstream boss height: one real valid solid",
+            "linear upstream boss height: analytical volume",
+            "linear upstream boss height: controller volume agrees",
+            "linear upstream boss height undo: current valid solid",
+            "linear upstream boss height undo: one real valid solid",
+            "linear upstream boss height undo: analytical volume",
+            "linear upstream boss height undo: controller volume agrees",
+            "linear upstream boss height redo: current valid solid",
+            "linear upstream boss height redo: one real valid solid",
+            "linear upstream boss height redo: analytical volume",
+            "linear upstream boss height redo: controller volume agrees",
+            "LinearPattern: native dependency links",
+            "LinearPattern: owned by expected part",
+            "Boss: native dependency links",
+            "Boss: owned by expected part",
+            "linear parameters preserved",
+            "linear boss center 0 at spacing 9",
+            "linear boss center 1 at spacing 9",
+            "linear boss center 2 at spacing 9",
+            "linear boss center 3 at spacing 9",
+            "reopen: same managed project identity",
+            "reopen: filename display label",
+            "reopen: native intent preserved except documented display alias",
+            "reopen and fresh rebuild: current valid solid",
+            "reopen and fresh rebuild: one real valid solid",
+            "reopen and fresh rebuild: analytical volume",
+            "reopen and fresh rebuild: controller volume agrees",
+            "LinearPattern: native dependency links",
+            "LinearPattern: owned by expected part",
+            "Boss: native dependency links",
+            "Boss: owned by expected part",
+            "linear parameters preserved",
+            "linear boss center 0 at spacing 9",
+            "linear boss center 1 at spacing 9",
+            "linear boss center 2 at spacing 9",
+            "linear boss center 3 at spacing 9",
+            "reopen: saved editable native file"
+          ]
+        },
+        {
+          "name": "circular-feature-pattern",
+          "passed": true,
+          "editable_fixture": "runtime\\test-tmp\\regression-run-20261003-201201-40776-dd560abb\\workflows\\fixtures\\circular-feature-pattern.FCStd",
+          "measurements": {
+            "valid": true,
+            "solid_count": 1,
+            "volume_mm3": 3429.0483813932597,
+            "area_mm2": 2293.3626371205473,
+            "bbox_mm": {
+              "min": [
+                -16.0,
+                -16.0,
+                0.0
+              ],
+              "max": [
+                16.0,
+                16.0,
+                9.000000000000002
+              ],
+              "size": [
+                32.0,
+                32.0,
+                9.000000000000002
+              ]
+            },
+            "center_of_mass_mm": [
+              -8.070938779408819e-16,
+              0.25377143229113225,
+              2.2782867613376063
+            ]
+          },
+          "checks": [
+            "circular feature pattern: current valid solid",
+            "circular feature pattern: one real valid solid",
+            "circular feature pattern: analytical volume",
+            "circular feature pattern: controller volume agrees",
+            "CircularPattern: creation undo removes feature",
+            "CircularPattern creation undo: current valid solid",
+            "CircularPattern creation undo: one real valid solid",
+            "CircularPattern creation undo: analytical volume",
+            "CircularPattern creation undo: controller volume agrees",
+            "CircularPattern: creation redo restores native ownership",
+            "CircularPattern creation redo: current valid solid",
+            "CircularPattern creation redo: one real valid solid",
+            "CircularPattern creation redo: analytical volume",
+            "CircularPattern creation redo: controller volume agrees",
+            "circular count 4 to 6: current valid solid",
+            "circular count 4 to 6: one real valid solid",
+            "circular count 4 to 6: analytical volume",
+            "circular count 4 to 6: controller volume agrees",
+            "circular count 4 to 6 undo: current valid solid",
+            "circular count 4 to 6 undo: one real valid solid",
+            "circular count 4 to 6 undo: analytical volume",
+            "circular count 4 to 6 undo: controller volume agrees",
+            "circular count 4 to 6 redo: current valid solid",
+            "circular count 4 to 6 redo: one real valid solid",
+            "circular count 4 to 6 redo: analytical volume",
+            "circular count 4 to 6 redo: controller volume agrees",
+            "circular angular extent 360 to 180 degrees: current valid solid",
+            "circular angular extent 360 to 180 degrees: one real valid solid",
+            "circular angular extent 360 to 180 degrees: analytical volume",
+            "circular angular extent 360 to 180 degrees: controller volume agrees",
+            "circular boss at 0 degrees",
+            "circular boss at 36 degrees",
+            "circular boss at 72 degrees",
+            "circular boss at 108 degrees",
+            "circular boss at 144 degrees",
+            "circular boss at 180 degrees",
+            "circular angular extent 360 to 180 degrees undo: current valid solid",
+            "circular angular extent 360 to 180 degrees undo: one real valid solid",
+            "circular angular extent 360 to 180 degrees undo: analytical volume",
+            "circular angular extent 360 to 180 degrees undo: controller volume agrees",
+            "circular boss at 0 degrees",
+            "circular boss at 60 degrees",
+            "circular boss at 120 degrees",
+            "circular boss at 180 degrees",
+            "circular boss at 240 degrees",
+            "circular boss at 300 degrees",
+            "circular angular extent 360 to 180 degrees redo: current valid solid",
+            "circular angular extent 360 to 180 degrees redo: one real valid solid",
+            "circular angular extent 360 to 180 degrees redo: analytical volume",
+            "circular angular extent 360 to 180 degrees redo: controller volume agrees",
+            "circular boss at 0 degrees",
+            "circular boss at 36 degrees",
+            "circular boss at 72 degrees",
+            "circular boss at 108 degrees",
+            "circular boss at 144 degrees",
+            "circular boss at 180 degrees",
+            "circular extent changes actual instance location",
+            "circular upstream boss height: current valid solid",
+            "circular upstream boss height: one real valid solid",
+            "circular upstream boss height: analytical volume",
+            "circular upstream boss height: controller volume agrees",
+            "circular upstream boss height undo: current valid solid",
+            "circular upstream boss height undo: one real valid solid",
+            "circular upstream boss height undo: analytical volume",
+            "circular upstream boss height undo: controller volume agrees",
+            "circular upstream boss height redo: current valid solid",
+            "circular upstream boss height redo: one real valid solid",
+            "circular upstream boss height redo: analytical volume",
+            "circular upstream boss height redo: controller volume agrees",
+            "CircularPattern: native dependency links",
+            "CircularPattern: owned by expected part",
+            "circular parameters preserved",
+            "circular boss at 0 degrees",
+            "circular boss at 36 degrees",
+            "circular boss at 72 degrees",
+            "circular boss at 108 degrees",
+            "circular boss at 144 degrees",
+            "circular boss at 180 degrees",
+            "reopen: same managed project identity",
+            "reopen: filename display label",
+            "reopen: native intent preserved except documented display alias",
+            "reopen and fresh rebuild: current valid solid",
+            "reopen and fresh rebuild: one real valid solid",
+            "reopen and fresh rebuild: analytical volume",
+            "reopen and fresh rebuild: controller volume agrees",
+            "CircularPattern: native dependency links",
+            "CircularPattern: owned by expected part",
+            "circular parameters preserved",
+            "circular boss at 0 degrees",
+            "circular boss at 36 degrees",
+            "circular boss at 72 degrees",
+            "circular boss at 108 degrees",
+            "circular boss at 144 degrees",
+            "circular boss at 180 degrees",
+            "reopen: saved editable native file"
+          ]
+        },
+        {
+          "name": "offset-plane",
+          "passed": true,
+          "editable_fixture": "runtime\\test-tmp\\regression-run-20261003-201201-40776-dd560abb\\workflows\\fixtures\\offset-plane.FCStd",
+          "measurements": {
+            "valid": true,
+            "solid_count": 1,
+            "volume_mm3": 24.0,
+            "area_mm2": 52.0,
+            "bbox_mm": {
+              "min": [
+                0.0,
+                0.0,
+                12.0
+              ],
+              "max": [
+                4.0,
+                3.0,
+                14.0
+              ],
+              "size": [
+                4.0,
+                3.0,
+                2.0
+              ]
+            },
+            "center_of_mass_mm": [
+              2.0,
+              1.5,
+              13.0
+            ]
+          },
+          "checks": [
+            "offset plane creation undo",
+            "OffsetPlane: native dependency links",
+            "OffsetPlane: owned by expected part",
+            "extrude on offset plane: current valid solid",
+            "extrude on offset plane: one real valid solid",
+            "extrude on offset plane: analytical volume",
+            "extrude on offset plane: controller volume agrees",
+            "offset plane position 7",
+            "attached sketch follows offset 7",
+            "real solid follows offset 7",
+            "offset plane edit 7 to 12 mm: current valid solid",
+            "offset plane edit 7 to 12 mm: one real valid solid",
+            "offset plane edit 7 to 12 mm: analytical volume",
+            "offset plane edit 7 to 12 mm: controller volume agrees",
+            "offset plane position 12",
+            "attached sketch follows offset 12",
+            "real solid follows offset 12",
+            "offset plane edit 7 to 12 mm undo: current valid solid",
+            "offset plane edit 7 to 12 mm undo: one real valid solid",
+            "offset plane edit 7 to 12 mm undo: analytical volume",
+            "offset plane edit 7 to 12 mm undo: controller volume agrees",
+            "offset plane position 7",
+            "attached sketch follows offset 7",
+            "real solid follows offset 7",
+            "offset plane edit 7 to 12 mm redo: current valid solid",
+            "offset plane edit 7 to 12 mm redo: one real valid solid",
+            "offset plane edit 7 to 12 mm redo: analytical volume",
+            "offset plane edit 7 to 12 mm redo: controller volume agrees",
+            "offset plane position 12",
+            "attached sketch follows offset 12",
+            "real solid follows offset 12",
+            "Profile: native dependency links",
+            "Profile: owned by expected part",
+            "Pad: native dependency links",
+            "Pad: owned by expected part",
+            "offset plane position 12",
+            "attached sketch follows offset 12",
+            "real solid follows offset 12",
+            "reopen: same managed project identity",
+            "reopen: filename display label",
+            "reopen: native intent preserved except documented display alias",
+            "reopen and fresh rebuild: current valid solid",
+            "reopen and fresh rebuild: one real valid solid",
+            "reopen and fresh rebuild: analytical volume",
+            "reopen and fresh rebuild: controller volume agrees",
+            "Profile: native dependency links",
+            "Profile: owned by expected part",
+            "Pad: native dependency links",
+            "Pad: owned by expected part",
+            "offset plane position 12",
+            "attached sketch follows offset 12",
+            "real solid follows offset 12",
+            "reopen: saved editable native file"
+          ]
+        },
+        {
+          "name": "angled-plane",
+          "passed": true,
+          "editable_fixture": "runtime\\test-tmp\\regression-run-20261003-201201-40776-dd560abb\\workflows\\fixtures\\angled-plane.FCStd",
+          "measurements": {
+            "valid": true,
+            "solid_count": 1,
+            "volume_mm3": 24.000000000000004,
+            "area_mm2": 52.000000000000014,
+            "bbox_mm": {
+              "min": [
+                0.0,
+                -1.7320508075688774,
+                10.0
+              ],
+              "max": [
+                4.0,
+                1.500000000000002,
+                13.598076211353316
+              ],
+              "size": [
+                4.0,
+                3.2320508075688794,
+                3.598076211353316
+              ]
+            },
+            "center_of_mass_mm": [
+              2.0,
+              -0.11602540378443833,
+              11.799038105676662
+            ]
+          },
+          "checks": [
+            "angled plane creation undo",
+            "AngledPlane: native dependency links",
+            "AngledPlane: owned by expected part",
+            "extrude on angled plane: current valid solid",
+            "extrude on angled plane: one real valid solid",
+            "extrude on angled plane: analytical volume",
+            "extrude on angled plane: controller volume agrees",
+            "angled plane edit 30 to 60 degrees: current valid solid",
+            "angled plane edit 30 to 60 degrees: one real valid solid",
+            "angled plane edit 30 to 60 degrees: analytical volume",
+            "angled plane edit 30 to 60 degrees: controller volume agrees",
+            "angled plane normal 60",
+            "attached sketch normal 60",
+            "solid depth along angled normal",
+            "angled plane edit 30 to 60 degrees undo: current valid solid",
+            "angled plane edit 30 to 60 degrees undo: one real valid solid",
+            "angled plane edit 30 to 60 degrees undo: analytical volume",
+            "angled plane edit 30 to 60 degrees undo: controller volume agrees",
+            "angled plane normal 30",
+            "attached sketch normal 30",
+            "solid depth along angled normal",
+            "angled plane edit 30 to 60 degrees redo: current valid solid",
+            "angled plane edit 30 to 60 degrees redo: one real valid solid",
+            "angled plane edit 30 to 60 degrees redo: analytical volume",
+            "angled plane edit 30 to 60 degrees redo: controller volume agrees",
+            "angled plane normal 60",
+            "attached sketch normal 60",
+            "solid depth along angled normal",
+            "upstream support plane 5 to 10 mm: current valid solid",
+            "upstream support plane 5 to 10 mm: one real valid solid",
+            "upstream support plane 5 to 10 mm: analytical volume",
+            "upstream support plane 5 to 10 mm: controller volume agrees",
+            "upstream support position 10",
+            "sketch follows upstream plane 10",
+            "upstream support plane 5 to 10 mm undo: current valid solid",
+            "upstream support plane 5 to 10 mm undo: one real valid solid",
+            "upstream support plane 5 to 10 mm undo: analytical volume",
+            "upstream support plane 5 to 10 mm undo: controller volume agrees",
+            "upstream support position 5",
+            "sketch follows upstream plane 5",
+            "upstream support plane 5 to 10 mm redo: current valid solid",
+            "upstream support plane 5 to 10 mm redo: one real valid solid",
+            "upstream support plane 5 to 10 mm redo: analytical volume",
+            "upstream support plane 5 to 10 mm redo: controller volume agrees",
+            "upstream support position 10",
+            "sketch follows upstream plane 10",
+            "AngledPlane: native dependency links",
+            "AngledPlane: owned by expected part",
+            "Profile: native dependency links",
+            "Profile: owned by expected part",
+            "angled plane normal 60",
+            "attached sketch normal 60",
+            "solid depth along angled normal",
+            "upstream support position 10",
+            "sketch follows upstream plane 10",
+            "reopen: same managed project identity",
+            "reopen: filename display label",
+            "reopen: native intent preserved except documented display alias",
+            "reopen and fresh rebuild: current valid solid",
+            "reopen and fresh rebuild: one real valid solid",
+            "reopen and fresh rebuild: analytical volume",
+            "reopen and fresh rebuild: controller volume agrees",
+            "AngledPlane: native dependency links",
+            "AngledPlane: owned by expected part",
+            "Profile: native dependency links",
+            "Profile: owned by expected part",
+            "angled plane normal 60",
+            "attached sketch normal 60",
+            "solid depth along angled normal",
+            "upstream support position 10",
+            "sketch follows upstream plane 10",
+            "reopen: saved editable native file"
+          ]
+        },
+        {
+          "name": "additive-sweep",
+          "passed": true,
+          "editable_fixture": "runtime\\test-tmp\\regression-run-20261003-201201-40776-dd560abb\\workflows\\fixtures\\additive-sweep.FCStd",
+          "measurements": {
+            "valid": true,
+            "solid_count": 1,
+            "volume_mm3": 848.2300164692441,
+            "area_mm2": 622.0353454107791,
+            "bbox_mm": {
+              "min": [
+                -3.0,
+                -3.0,
+                -6.661338147750939e-16
+              ],
+              "max": [
+                3.0,
+                3.0000000000000067,
+                30.0
+              ],
+              "size": [
+                6.0,
+                6.000000000000007,
+                30.0
+              ]
+            },
+            "center_of_mass_mm": [
+              -2.513030859427964e-16,
+              3.295282950490329e-15,
+              15.000000000000002
+            ]
+          },
+          "checks": [
+            "straight-path circular sweep: current valid solid",
+            "straight-path circular sweep: one real valid solid",
+            "straight-path circular sweep: analytical volume",
+            "straight-path circular sweep: controller volume agrees",
+            "Sweep: creation undo removes feature",
+            "Sweep: creation undo leaves sketches only",
+            "Sweep: creation redo restores native ownership",
+            "Sweep creation redo: current valid solid",
+            "Sweep creation redo: one real valid solid",
+            "Sweep creation redo: analytical volume",
+            "Sweep creation redo: controller volume agrees",
+            "upstream sweep path length: current valid solid",
+            "upstream sweep path length: one real valid solid",
+            "upstream sweep path length: analytical volume",
+            "upstream sweep path length: controller volume agrees",
+            "upstream sweep path undo: current valid solid",
+            "upstream sweep path undo: one real valid solid",
+            "upstream sweep path undo: analytical volume",
+            "upstream sweep path undo: controller volume agrees",
+            "upstream sweep profile diameter: current valid solid",
+            "upstream sweep profile diameter: one real valid solid",
+            "upstream sweep profile diameter: analytical volume",
+            "upstream sweep profile diameter: controller volume agrees",
+            "upstream sweep profile undo: current valid solid",
+            "upstream sweep profile undo: one real valid solid",
+            "upstream sweep profile undo: analytical volume",
+            "upstream sweep profile undo: controller volume agrees",
+            "Sweep: native dependency links",
+            "Sweep: owned by expected part",
+            "sweep path remains constrained",
+            "sweep path length persists",
+            "sweep profile radius persists",
+            "reopen: same managed project identity",
+            "reopen: filename display label",
+            "reopen: native intent preserved except documented display alias",
+            "reopen and fresh rebuild: current valid solid",
+            "reopen and fresh rebuild: one real valid solid",
+            "reopen and fresh rebuild: analytical volume",
+            "reopen and fresh rebuild: controller volume agrees",
+            "Sweep: native dependency links",
+            "Sweep: owned by expected part",
+            "sweep path remains constrained",
+            "sweep path length persists",
+            "sweep profile radius persists",
+            "reopen: saved editable native file"
+          ]
+        },
+        {
+          "name": "additive-loft",
+          "passed": true,
+          "editable_fixture": "runtime\\test-tmp\\regression-run-20261003-201201-40776-dd560abb\\workflows\\fixtures\\additive-loft.FCStd",
+          "measurements": {
+            "valid": true,
+            "solid_count": 1,
+            "volume_mm3": 697.433569096934,
+            "area_mm2": 474.99088530960904,
+            "bbox_mm": {
+              "min": [
+                -4.0,
+                -4.0,
+                0.0
+              ],
+              "max": [
+                4.0,
+                4.0,
+                18.0
+              ],
+              "size": [
+                8.0,
+                8.0,
+                18.0
+              ]
+            },
+            "center_of_mass_mm": [
+              -9.780444425881806e-16,
+              1.1564823173178725e-17,
+              8.14864864864865
+            ]
+          },
+          "checks": [
+            "circular frustum loft: current valid solid",
+            "circular frustum loft: one real valid solid",
+            "circular frustum loft: analytical volume",
+            "circular frustum loft: controller volume agrees",
+            "Loft: creation undo removes feature",
+            "Loft: creation undo leaves sketches only",
+            "Loft: creation redo restores native ownership",
+            "Loft creation redo: current valid solid",
+            "Loft creation redo: one real valid solid",
+            "Loft creation redo: analytical volume",
+            "Loft creation redo: controller volume agrees",
+            "upstream loft plane separation 12 to 18 mm: current valid solid",
+            "upstream loft plane separation 12 to 18 mm: one real valid solid",
+            "upstream loft plane separation 12 to 18 mm: analytical volume",
+            "upstream loft plane separation 12 to 18 mm: controller volume agrees",
+            "upstream loft plane separation 12 to 18 mm undo: current valid solid",
+            "upstream loft plane separation 12 to 18 mm undo: one real valid solid",
+            "upstream loft plane separation 12 to 18 mm undo: analytical volume",
+            "upstream loft plane separation 12 to 18 mm undo: controller volume agrees",
+            "upstream loft plane separation 12 to 18 mm redo: current valid solid",
+            "upstream loft plane separation 12 to 18 mm redo: one real valid solid",
+            "upstream loft plane separation 12 to 18 mm redo: analytical volume",
+            "upstream loft plane separation 12 to 18 mm redo: controller volume agrees",
+            "upstream loft section diameter: current valid solid",
+            "upstream loft section diameter: one real valid solid",
+            "upstream loft section diameter: analytical volume",
+            "upstream loft section diameter: controller volume agrees",
+            "upstream loft section undo: current valid solid",
+            "upstream loft section undo: one real valid solid",
+            "upstream loft section undo: analytical volume",
+            "upstream loft section undo: controller volume agrees",
+            "Loft: native dependency links",
+            "Loft: owned by expected part",
+            "Section: native dependency links",
+            "Section: owned by expected part",
+            "loft separation persists",
+            "loft section radius persists",
+            "reopen: same managed project identity",
+            "reopen: filename display label",
+            "reopen: native intent preserved except documented display alias",
+            "reopen and fresh rebuild: current valid solid",
+            "reopen and fresh rebuild: one real valid solid",
+            "reopen and fresh rebuild: analytical volume",
+            "reopen and fresh rebuild: controller volume agrees",
+            "Loft: native dependency links",
+            "Loft: owned by expected part",
+            "Section: native dependency links",
+            "Section: owned by expected part",
+            "loft separation persists",
+            "loft section radius persists",
+            "reopen: saved editable native file"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "local CI",
+      "passed": true,
+      "checks": [
+        {
+          "name": "runtime layout",
+          "passed": true
+        },
+        {
+          "name": "plate benchmark",
+          "passed": true,
+          "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-local\\run-20261004-031349-1f41dbc4a674490a82f44ef31c4ea9e9\\evidence\\perf\\bench-20.json"
+        },
+        {
+          "name": "exact local tree comparison",
+          "passed": true
+        }
+      ],
+      "sections": {
+        "edits": {
+          "status": "ok",
+          "metrics": [
+            "add_pocket.auto_scope_sync_ms",
+            "add_pocket.inspection_ms",
+            "add_pocket.intent_signature_ms",
+            "add_pocket.managed_rebuild_ms",
+            "add_pocket.native_recompute_ms",
+            "add_pocket.overhead_ms",
+            "add_pocket.selector_evaluation_ms",
+            "add_pocket.total_ms",
+            "add_sketch.auto_scope_sync_ms",
+            "add_sketch.inspection_ms",
+            "add_sketch.intent_signature_ms",
+            "add_sketch.managed_rebuild_ms",
+            "add_sketch.native_recompute_ms",
+            "add_sketch.overhead_ms",
+            "add_sketch.selector_evaluation_ms",
+            "add_sketch.total_ms",
+            "tip_edit.auto_scope_sync_ms",
+            "tip_edit.inspection_ms",
+            "tip_edit.intent_signature_ms",
+            "tip_edit.managed_rebuild_ms",
+            "tip_edit.native_recompute_ms",
+            "tip_edit.overhead_ms",
+            "tip_edit.selector_evaluation_ms",
+            "tip_edit.total_ms",
+            "upstream_edit.auto_scope_sync_ms",
+            "upstream_edit.inspection_ms",
+            "upstream_edit.intent_signature_ms",
+            "upstream_edit.managed_rebuild_ms",
+            "upstream_edit.native_recompute_ms",
+            "upstream_edit.overhead_ms",
+            "upstream_edit.selector_evaluation_ms",
+            "upstream_edit.total_ms"
+          ]
+        },
+        "inspect": {
+          "status": "ok",
+          "metrics": [
+            "inspect_after_change_ms",
+            "inspect_warm_ms"
+          ]
+        },
+        "checkpoint": {
+          "status": "ok",
+          "metrics": [
+            "checkpoint_ms"
+          ]
+        },
+        "preview": {
+          "status": "ok",
+          "metrics": [
+            "preview_first_ms",
+            "preview_update_ms"
+          ]
+        },
+        "open": {
+          "status": "ok",
+          "metrics": [
+            "kurtshape_open_ms",
+            "native_open_ms"
+          ]
+        }
+      },
+      "fixture": {
+        "kind": "plate",
+        "holes": 20,
+        "grid": 5,
+        "pitch_mm": 100.0,
+        "hole_diameter_mm": 45.0,
+        "objects": 52,
+        "faces": 26,
+        "expected_volume_mm3": 3938296.49258884
+      },
+      "repeat": 3,
+      "timings": {
+        "tip_edit.total_ms": {
+          "median": 309.75000001490116,
+          "p95": 317.7557000890374,
+          "worst": 317.7557000890374,
+          "samples": [
+            309.75000001490116,
+            317.7557000890374,
+            309.0198999270797
+          ]
+        },
+        "tip_edit.native_recompute_ms": {
+          "median": 50.99119991064072,
+          "p95": 51.480199908837676,
+          "worst": 51.480199908837676,
+          "samples": [
+            50.99119991064072,
+            51.480199908837676,
+            49.485500203445554
+          ]
+        },
+        "tip_edit.overhead_ms": {
+          "median": 259.5343997236341,
+          "p95": 266.27550018019974,
+          "worst": 266.27550018019974,
+          "samples": [
+            258.75880010426044,
+            266.27550018019974,
+            259.5343997236341
+          ]
+        },
+        "tip_edit.intent_signature_ms": {
+          "median": 6.7656999453902245,
+          "p95": 7.5634999666363,
+          "worst": 7.5634999666363,
+          "samples": [
+            6.180000025779009,
+            7.5634999666363,
+            6.7656999453902245
+          ]
+        },
+        "tip_edit.inspection_ms": {
+          "median": 128.96839994937181,
+          "p95": 130.38159999996424,
+          "worst": 130.38159999996424,
+          "samples": [
+            128.96839994937181,
+            130.38159999996424,
+            127.50549986958504
+          ]
+        },
+        "tip_edit.selector_evaluation_ms": {
+          "median": 0.0,
+          "p95": 0.0,
+          "worst": 0.0,
+          "samples": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "tip_edit.auto_scope_sync_ms": {
+          "median": 0.0067998189479112625,
+          "p95": 0.006800051778554916,
+          "worst": 0.006800051778554916,
+          "samples": [
+            0.005899928510189056,
+            0.006800051778554916,
+            0.0067998189479112625
+          ]
+        },
+        "tip_edit.managed_rebuild_ms": {
+          "median": 51.51719995774329,
+          "p95": 52.04840004444122,
+          "worst": 52.04840004444122,
+          "samples": [
+            51.51719995774329,
+            52.04840004444122,
+            49.991700099781156
+          ]
+        },
+        "upstream_edit.total_ms": {
+          "median": 760.2944001555443,
+          "p95": 843.0333998985589,
+          "worst": 843.0333998985589,
+          "samples": [
+            692.0504001900554,
+            760.2944001555443,
+            843.0333998985589
+          ]
+        },
+        "upstream_edit.native_recompute_ms": {
+          "median": 462.4709999188781,
+          "p95": 529.9944998696446,
+          "worst": 529.9944998696446,
+          "samples": [
+            409.37480004504323,
+            462.4709999188781,
+            529.9944998696446
+          ]
+        },
+        "upstream_edit.overhead_ms": {
+          "median": 297.8234002366662,
+          "p95": 313.0389000289142,
+          "worst": 313.0389000289142,
+          "samples": [
+            282.67560014501214,
+            297.8234002366662,
+            313.0389000289142
+          ]
+        },
+        "upstream_edit.intent_signature_ms": {
+          "median": 7.535400101915002,
+          "p95": 8.526999969035387,
+          "worst": 8.526999969035387,
+          "samples": [
+            6.827600067481399,
+            7.535400101915002,
+            8.526999969035387
+          ]
+        },
+        "upstream_edit.inspection_ms": {
+          "median": 151.38139994814992,
+          "p95": 153.6761000752449,
+          "worst": 153.6761000752449,
+          "samples": [
+            141.4537001401186,
+            151.38139994814992,
+            153.6761000752449
+          ]
+        },
+        "upstream_edit.selector_evaluation_ms": {
+          "median": 0.0,
+          "p95": 0.0,
+          "worst": 0.0,
+          "samples": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "upstream_edit.auto_scope_sync_ms": {
+          "median": 0.009500188753008842,
+          "p95": 0.010999850928783417,
+          "worst": 0.010999850928783417,
+          "samples": [
+            0.009500188753008842,
+            0.010999850928783417,
+            0.006400048732757568
+          ]
+        },
+        "upstream_edit.managed_rebuild_ms": {
+          "median": 463.02700019441545,
+          "p95": 530.562800122425,
+          "worst": 530.562800122425,
+          "samples": [
+            409.9043000023812,
+            463.02700019441545,
+            530.562800122425
+          ]
+        },
+        "add_sketch.total_ms": {
+          "median": 287.5057999044657,
+          "p95": 301.79559998214245,
+          "worst": 301.79559998214245,
+          "samples": [
+            301.79559998214245,
+            287.5057999044657,
+            276.54649992473423
+          ]
+        },
+        "add_sketch.native_recompute_ms": {
+          "median": 18.867199774831533,
+          "p95": 20.3704999294132,
+          "worst": 20.3704999294132,
+          "samples": [
+            18.867199774831533,
+            20.3704999294132,
+            18.36719992570579
+          ]
+        },
+        "add_sketch.overhead_ms": {
+          "median": 267.1352999750525,
+          "p95": 282.9284002073109,
+          "worst": 282.9284002073109,
+          "samples": [
+            282.9284002073109,
+            267.1352999750525,
+            258.17929999902844
+          ]
+        },
+        "add_sketch.intent_signature_ms": {
+          "median": 6.848999997600913,
+          "p95": 7.596199866384268,
+          "worst": 7.596199866384268,
+          "samples": [
+            7.596199866384268,
+            6.848999997600913,
+            6.444999948143959
+          ]
+        },
+        "add_sketch.inspection_ms": {
+          "median": 134.05510014854372,
+          "p95": 140.40020015090704,
+          "worst": 140.40020015090704,
+          "samples": [
+            140.40020015090704,
+            134.05510014854372,
+            126.83459999971092
+          ]
+        },
+        "add_sketch.selector_evaluation_ms": {
+          "median": 0.0,
+          "p95": 0.0,
+          "worst": 0.0,
+          "samples": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "add_sketch.auto_scope_sync_ms": {
+          "median": 0.011100200936198235,
+          "p95": 0.011299969628453255,
+          "worst": 0.011299969628453255,
+          "samples": [
+            0.011299969628453255,
+            0.009699957445263863,
+            0.011100200936198235
+          ]
+        },
+        "add_sketch.managed_rebuild_ms": {
+          "median": 19.898199941962957,
+          "p95": 21.36589982546866,
+          "worst": 21.36589982546866,
+          "samples": [
+            19.898199941962957,
+            21.36589982546866,
+            19.4089999422431
+          ]
+        },
+        "add_pocket.total_ms": {
+          "median": 689.5562999416143,
+          "p95": 697.5748999975622,
+          "worst": 697.5748999975622,
+          "samples": [
+            697.5748999975622,
+            678.2314002048224,
+            689.5562999416143
+          ]
+        },
+        "add_pocket.native_recompute_ms": {
+          "median": 138.9969999436289,
+          "p95": 147.464900277555,
+          "worst": 147.464900277555,
+          "samples": [
+            138.97700025700033,
+            147.464900277555,
+            138.9969999436289
+          ]
+        },
+        "add_pocket.overhead_ms": {
+          "median": 550.5592999979854,
+          "p95": 558.5978997405618,
+          "worst": 558.5978997405618,
+          "samples": [
+            558.5978997405618,
+            530.7664999272674,
+            550.5592999979854
+          ]
+        },
+        "add_pocket.intent_signature_ms": {
+          "median": 6.621100008487701,
+          "p95": 7.8072999604046345,
+          "worst": 7.8072999604046345,
+          "samples": [
+            6.593599915504456,
+            6.621100008487701,
+            7.8072999604046345
+          ]
+        },
+        "add_pocket.inspection_ms": {
+          "median": 146.3407000992447,
+          "p95": 151.15769999101758,
+          "worst": 151.15769999101758,
+          "samples": [
+            146.3407000992447,
+            135.88330009952188,
+            151.15769999101758
+          ]
+        },
+        "add_pocket.selector_evaluation_ms": {
+          "median": 0.0,
+          "p95": 0.0,
+          "worst": 0.0,
+          "samples": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "add_pocket.auto_scope_sync_ms": {
+          "median": 0.016700010746717453,
+          "p95": 0.02119992859661579,
+          "worst": 0.02119992859661579,
+          "samples": [
+            0.016700010746717453,
+            0.02119992859661579,
+            0.015200348570942879
+          ]
+        },
+        "add_pocket.managed_rebuild_ms": {
+          "median": 141.0211999900639,
+          "p95": 149.4885003194213,
+          "worst": 149.4885003194213,
+          "samples": [
+            141.0211999900639,
+            149.4885003194213,
+            140.7051000278443
+          ]
+        },
+        "inspect_warm_ms": {
+          "median": 8.643199922516942,
+          "p95": 8.985899854451418,
+          "worst": 8.985899854451418,
+          "samples": [
+            8.50269990041852,
+            8.643199922516942,
+            8.985899854451418
+          ]
+        },
+        "inspect_after_change_ms": {
+          "median": 289.9843999184668,
+          "p95": 300.3258998505771,
+          "worst": 300.3258998505771,
+          "samples": [
+            300.3258998505771,
+            276.5098998788744,
+            289.9843999184668
+          ]
+        },
+        "checkpoint_ms": {
+          "median": 231.75869998522103,
+          "p95": 244.40799979493022,
+          "worst": 244.40799979493022,
+          "samples": [
+            192.0932000502944,
+            231.75869998522103,
+            244.40799979493022
+          ]
+        },
+        "preview_first_ms": {
+          "median": 926.2445999775082,
+          "p95": 942.8424001671374,
+          "worst": 942.8424001671374,
+          "samples": [
+            942.8424001671374,
+            926.2445999775082,
+            870.6720999907702
+          ]
+        },
+        "preview_update_ms": {
+          "median": 743.4354999568313,
+          "p95": 787.4330000486225,
+          "worst": 787.4330000486225,
+          "samples": [
+            787.4330000486225,
+            740.0344000197947,
+            743.4354999568313
+          ]
+        },
+        "native_open_ms": {
+          "median": 122.8003001306206,
+          "p95": 128.41770006343722,
+          "worst": 128.41770006343722,
+          "samples": [
+            119.57610002718866,
+            128.41770006343722,
+            122.8003001306206
+          ]
+        },
+        "kurtshape_open_ms": {
+          "median": 1003.0908000189811,
+          "p95": 1047.159800073132,
+          "worst": 1047.159800073132,
+          "samples": [
+            998.9313001278788,
+            1047.159800073132,
+            1003.0908000189811
+          ]
+        }
+      },
+      "engine": {
+        "FreeCAD": [
+          "1",
+          "1",
+          "4",
+          "20260928 (Git shallow)",
+          "Unknown",
+          "2026/09/28 13:46:34",
+          "(HEAD detached at 4fd3bf320)",
+          "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+        ],
+        "OCCT": "7.8.1"
+      },
+      "report_sha256": "b54fe7aea8ea6e344b6ab12fb036a287b8ed90aa6a4aaee38b4ed0535e03ceaa"
+    },
+    {
+      "name": "Native ZIP wrapper diagnostic",
+      "passed": true,
+      "checks": [
+        "Actual unchanged copy/paste outcome and exact hash inputs preserved",
+        "Separated 2200ms native reads and empty-transaction reads recorded",
+        "Preserved raw bytes read back with exact SHA256"
+      ],
+      "snapshot_count": 10,
+      "document_ids": [
+        "92b0d130-4c72-44ed-a87f-a074af988a62",
+        "e14958d7-f07f-4e31-b05a-a39ac8e15a68"
+      ],
+      "pid": 20792,
+      "report_sha256": "b2e8f1fae3aac6d7176dd514c253db7bbbd16caa17cdbaef8dbd0800f22b8735",
+      "source_before": {
+        "src\\kurtshape\\general_actions.py": "31B31DBECE04A993131C5326D4269E6E0ADCB94FFC93AA2AD49CFC12D9F2DB9B",
+        "tools\\general-actions-validation.FCMacro": "F1664997DA0EB3A66E6DC4205D95E5858B4780EA289C187BEBCC6795F570F0A1",
+        "src\\kurtshape\\core.py": "9D15FC30DD9068D6D48A9192B793F8B181295C169BEDEE7C8826CC168664FBC9"
+      },
+      "source_after": {
+        "src\\kurtshape\\general_actions.py": "31B31DBECE04A993131C5326D4269E6E0ADCB94FFC93AA2AD49CFC12D9F2DB9B",
+        "tools\\general-actions-validation.FCMacro": "F1664997DA0EB3A66E6DC4205D95E5858B4780EA289C187BEBCC6795F570F0A1",
+        "src\\kurtshape\\core.py": "9D15FC30DD9068D6D48A9192B793F8B181295C169BEDEE7C8826CC168664FBC9"
+      },
+      "comparisons": [
+        {
+          "left": "timed-no-intent-first",
+          "right": "timed-no-intent-2200ms",
+          "raw_equal": false,
+          "lengths": [
+            3530,
+            3530
+          ],
+          "changed_offsets": [
+            10,
+            1142,
+            1775,
+            2112,
+            2746,
+            3077,
+            3134,
+            3195,
+            3260,
+            3329,
+            3388,
+            3451
+          ],
+          "changed_bytes": [
+            {
+              "offset": 10,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 1142,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 1775,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 2112,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 2746,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 3077,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 3134,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 3195,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 3260,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 3329,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 3388,
+              "before": 229,
+              "after": 230
+            },
+            {
+              "offset": 3451,
+              "before": 229,
+              "after": 230
+            }
+          ],
+          "entry_names_and_payloads_equal": true,
+          "compressed_payloads_equal": true,
+          "only_dos_timestamps_differ": true,
+          "intent_signature_equal": true,
+          "revision_equal": true,
+          "native_intent_equal": true
+        },
+        {
+          "left": "timed-no-intent-first",
+          "right": "empty-native-transaction-2200ms",
+          "raw_equal": false,
+          "lengths": [
+            3530,
+            3530
+          ],
+          "changed_offsets": [
+            10,
+            1142,
+            1775,
+            2112,
+            2746,
+            3077,
+            3134,
+            3195,
+            3260,
+            3329,
+            3388,
+            3451
+          ],
+          "changed_bytes": [
+            {
+              "offset": 10,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 1142,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 1775,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 2112,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 2746,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 3077,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 3134,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 3195,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 3260,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 3329,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 3388,
+              "before": 229,
+              "after": 231
+            },
+            {
+              "offset": 3451,
+              "before": 229,
+              "after": 231
+            }
+          ],
+          "entry_names_and_payloads_equal": true,
+          "compressed_payloads_equal": true,
+          "only_dos_timestamps_differ": true,
+          "intent_signature_equal": true,
+          "revision_equal": true,
+          "native_intent_equal": true
+        },
+        {
+          "left": "empty-native-transaction-first",
+          "right": "empty-native-transaction-2200ms",
+          "raw_equal": false,
+          "lengths": [
+            3530,
+            3530
+          ],
+          "changed_offsets": [
+            10,
+            1142,
+            1775,
+            2112,
+            2746,
+            3077,
+            3134,
+            3195,
+            3260,
+            3329,
+            3388,
+            3451
+          ],
+          "changed_bytes": [
+            {
+              "offset": 10,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 1142,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 1775,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 2112,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 2746,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 3077,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 3134,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 3195,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 3260,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 3329,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 3388,
+              "before": 230,
+              "after": 231
+            },
+            {
+              "offset": 3451,
+              "before": 230,
+              "after": 231
+            }
+          ],
+          "entry_names_and_payloads_equal": true,
+          "compressed_payloads_equal": true,
+          "only_dos_timestamps_differ": true,
+          "intent_signature_equal": true,
+          "revision_equal": true,
+          "native_intent_equal": true
+        }
+      ],
+      "limits": "Two distinct documents: actual Copy/Paste succeeded; separate stable-document reads proved ZIP timestamps. Exact attempt1 consumed bytes were not retained."
+    }
+  ],
+  "method": "Full150/7/22 and405 native workflow checks plus actual local CI20-hole three-repeat benchmark/layout/tree gate",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "8a8d4a47e4104d08398aaaa7be15f3c37ee2ba14",
+  "worktree_diff_sha256": "25b9e683059056e4589e9456804c30a174ea100914d492b8ea72c5a69ad2399e",
+  "timings": {
+    "median": null,
+    "p95": null,
+    "worst": null,
+    "samples": []
+  },
+  "limits": "Headless native and Qt regressions; no GUI acceptance or native C++ networking interception; Hosted CI and Ruff/extraction remain NotRun; actual local CI is retained in checks.",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "counts": {
+    "tests": 185,
+    "passed": 185,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "suites": [
+    {
+      "name": "native",
+      "passed": true,
+      "counts": {
+        "tests": 150,
+        "passed": 150,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 98.5709268997889,
+      "source_unchanged": true
+    },
+    {
+      "name": "bridge",
+      "passed": true,
+      "counts": {
+        "tests": 7,
+        "passed": 7,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 4.2566317999735475,
+      "source_unchanged": true
+    },
+    {
+      "name": "shortcuts",
+      "passed": true,
+      "counts": {
+        "tests": 22,
+        "passed": 22,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 0.5710975998081267,
+      "source_unchanged": true
+    },
+    {
+      "name": "workflows",
+      "passed": true,
+      "counts": {
+        "tests": 6,
+        "passed": 6,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 4.301545900059864,
+      "source_unchanged": true
+    }
+  ],
+  "input_sha256": "2dff02924b28b9f700da19e2689cf66198226cfb6d3efda5bcfbeb3dd632428c"
+}

@@ -9,11 +9,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 import uuid
 
 from .core import ROOT, METADATA, metadata
 from .bodies import owner
+from .native_content import native_content_fingerprints
 
 
 class GeneralActions:
@@ -74,7 +74,7 @@ class GeneralActions:
 
     @staticmethod
     def _fingerprint(obj):
-        return hashlib.sha256(bytes(obj.dumpContent())).hexdigest()
+        return native_content_fingerprints(bytes(obj.dumpContent()))[0]
 
     @staticmethod
     def _clipboard_digest():

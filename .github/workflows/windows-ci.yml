@@ -1,0 +1,172 @@
+name: Windows checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '23 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: pwsh
+
+env:
+  # Configure checkout bytes for each Git process without changing a config file.
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: core.autocrlf
+  GIT_CONFIG_VALUE_0: 'false'
+  PYTHONDONTWRITEBYTECODE: '1'
+  FREECAD_ARCHIVE_SHA256: 4828741fc91ee37fafcdb97a1abacb18b04ba451ac4372d9ff7a7349b36f4d6d
+
+jobs:
+  lint:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install runner lint tool
+        run: python -m pip install ruff==0.16.10
+      - name: Lint without formatting
+        run: ruff check --output-format=github .
+
+  native-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache@v4
+        with:
+          path: runtime/downloads/FreeCAD_1.1.4-Windows-x86_64-py311.7z
+          key: freecad-win64-${{ env.FREECAD_ARCHIVE_SHA256 }}
+      - name: Install pinned portable runtime
+        run: ./install-runtime.ps1
+      - name: Verify runtime layout
+        run: ./tools/ci/check-runtime-layout.ps1
+      - name: Run isolated suites
+        run: |
+          . ./tools/validation-session.ps1
+          $root = (Get-Location).Path
+          $session = Join-Path $root 'runtime/ci-local/github-tests'
+          Initialize-KurtShapeValidationEnvironment -Root $root -Session $session
+          $env:KURTSHAPE_TEST_OUTSIDE = '${{ runner.temp }}'
+          $python = Join-Path $root 'runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin/python.exe'
+          Invoke-KurtShapeValidationPython -Executable $python -Arguments @('-B','tools/run_native_tests.py','--require-native','--report',(Join-Path $session 'evidence/native.json'),'--junit',(Join-Path $session 'evidence/junit.xml')) -Name 'github-native-tests' -TimeoutSeconds 7500
+      - name: Repository stays clean
+        if: always()
+        run: ./tools/ci/assert-clean-tree.ps1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-reports-${{ matrix.os }}
+          path: runtime/ci-local/**/evidence/
+          if-no-files-found: warn
+
+  perf:
+    runs-on: windows-2025
+    needs: native-tests
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache@v4
+        with:
+          path: runtime/downloads/FreeCAD_1.1.4-Windows-x86_64-py311.7z
+          key: freecad-win64-${{ env.FREECAD_ARCHIVE_SHA256 }}
+      - uses: actions/cache/restore@v4
+        with:
+          path: runtime/bench/ci-baseline/
+          key: kurtshape-perf-windows-2025-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: kurtshape-perf-windows-2025-
+      - run: ./install-runtime.ps1
+      - name: Measure plate and studio
+        run: |
+          . ./tools/validation-session.ps1
+          $root = (Get-Location).Path
+          $session = Join-Path $root 'runtime/bench/github-perf'
+          Initialize-KurtShapeValidationEnvironment -Root $root -Session $session
+          $python = Join-Path $root 'runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin/python.exe'
+          $holes = if ('${{ github.event_name }}' -eq 'schedule') { '60' } else { '20' }
+          foreach ($fixture in @('plate','studio')) {
+              $output = Join-Path $session ('evidence/bench-' + $fixture + '.json')
+              Invoke-KurtShapeValidationPython -Executable $python -Arguments @('-B','tools/perf/bench_core.py','--fixture',$fixture,'--holes',$holes,'--repeat','5','--scratch',(Join-Path $session $fixture),'--out',$output) -Name ('github-perf-' + $fixture) -TimeoutSeconds 7200
+              $current = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json -AsHashtable
+              if ($current.passed -isnot [bool] -or -not $current.passed) { throw ('Benchmark has unavailable required sections: ' + $output) }
+              $baseline = Join-Path $root ('runtime/bench/ci-baseline/' + $holes + '/bench-' + $fixture + '.json')
+              $reportArgs = @('-B','tools/perf/report.py',$output)
+              if (Test-Path -LiteralPath $baseline) { $reportArgs += @('--baseline',$baseline) }
+              Invoke-KurtShapeValidationPython -Executable $python -Arguments $reportArgs -Name ('github-perf-table-' + $fixture) -TimeoutSeconds 120
+              if ('${{ github.ref }}' -eq 'refs/heads/main') {
+                  New-Item -ItemType Directory -Force -Path (Split-Path -Parent $baseline) | Out-Null
+                  $best = $current
+                  $best.best_sources = @{}
+                  foreach ($metric in $best.timings.Keys) { $best.best_sources[$metric] = $best.base_commit }
+                  if (Test-Path -LiteralPath $baseline) {
+                      $previous = Get-Content -LiteralPath $baseline -Raw | ConvertFrom-Json -AsHashtable
+                      if ($previous.fixture.kind -ne $current.fixture.kind -or $previous.fixture.holes -ne $current.fixture.holes) { throw 'Cached benchmark fixture changed.' }
+                      foreach ($metric in $previous.timings.Keys) {
+                          if ($best.timings.ContainsKey($metric) -and $previous.timings[$metric].median -lt $best.timings[$metric].median) {
+                              $best.timings[$metric] = $previous.timings[$metric]
+                              $best.best_sources[$metric] = if ($previous.best_sources -and $previous.best_sources.ContainsKey($metric)) { $previous.best_sources[$metric] } else { $previous.base_commit }
+                          }
+                      }
+                  }
+                  $best.method = 'Per-metric best medians from successful hosted runs; raw reports retained as job artifacts.'
+                  $best | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $baseline -Encoding utf8
+              }
+          }
+      - uses: actions/cache/save@v4
+        if: success() && github.ref == 'refs/heads/main'
+        with:
+          path: runtime/bench/ci-baseline/
+          key: kurtshape-perf-windows-2025-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-reports
+          path: runtime/bench/github-perf/evidence/
+
+  gui-recipes:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: windows-2025
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        recipe: [interface, ui-refinement, extrusion-preview, sketch-behavior, review-interaction, review-lifecycle, review-copy, messages, assembly, part-studio, step-import, assembly-step, review-recovery, review-startup, bench-gui]
+    env:
+      QT_OPENGL: software
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/cache@v4
+        with:
+          path: runtime/downloads/FreeCAD_1.1.4-Windows-x86_64-py311.7z
+          key: freecad-win64-${{ env.FREECAD_ARCHIVE_SHA256 }}
+      - run: ./install-runtime.ps1
+      - name: Run blocking hidden recipe
+        run: ./tools/run_gui_recipe.ps1 -Recipe '${{ matrix.recipe }}'
+      - name: Repository stays clean
+        if: always()
+        run: ./tools/ci/assert-clean-tree.ps1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gui-${{ matrix.recipe }}
+          path: runtime/ci-gui/${{ matrix.recipe }}/
+          if-no-files-found: warn

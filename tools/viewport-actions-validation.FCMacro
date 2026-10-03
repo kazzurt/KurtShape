@@ -10,7 +10,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 import Part
 from pivy import coin
-from PySide import QtCore, QtGui
+from PySide import QtCore, QtGui  # noqa: F401
 from PySide6 import QtWidgets, QtTest
 ROOT = Path(os.environ['KURTSHAPE_ROOT'])
 sys.path.insert(0, str(ROOT / "tools"))

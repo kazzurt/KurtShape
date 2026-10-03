@@ -63,6 +63,9 @@ def main():
             packaged["hardware"] = report.get("hardware") or {
                 "processor": os.environ.get("PROCESSOR_IDENTIFIER", platform.processor()),
                 "logical_processors": os.cpu_count(), "platform": platform.platform()}
+            for key in ("fixture", "repeat", "run_id", "sections"):
+                if key in report:
+                    packaged[key] = report[key]
         if "counts" in report:
             packaged["counts"] = report["counts"]
         if "suites" in report:

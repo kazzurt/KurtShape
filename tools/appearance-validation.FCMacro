@@ -434,7 +434,7 @@ def run():
         model_labels={normalized(path[-1].text()) for path in action_paths(panel.model_bar)}
         expected_model={tool.label for _,tools in catalog['groups'] for tool in tools}
         check('Every installed model catalog entry appears in a toolbar/menu',expected_model.issubset(model_labels))
-        compact=inspect_layout('model-compact',1100,760)
+        inspect_layout('model-compact',1100,760)
         popup_probe(panel.model_bar,'model-menu')
         inspect_layout('model-narrow-overflow',800,760)
         shape_action=next(a for a in panel.model_bar.actions() if normalized(a.text())=='Shape tools')

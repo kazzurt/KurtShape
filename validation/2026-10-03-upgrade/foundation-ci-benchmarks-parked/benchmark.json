@@ -1,0 +1,509 @@
+{
+  "passed": true,
+  "checks": [
+    "Native fixture geometry and expected feature/part/query counts verified",
+    "edits metrics measured through the current native APIs",
+    "inspect metrics measured through the current native APIs",
+    "checkpoint metrics measured through the current native APIs",
+    "preview metrics measured through the current native APIs",
+    "open metrics measured through the current native APIs"
+  ],
+  "method": "Bundled native Python; real revision-checked Controller.dispatch and isolated FCStd fixtures",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "7a20a63d2642100da668184ea0d72b635c7c4640",
+  "worktree_diff_sha256": "82a95c894aed7dcc345f49ef147f26b4e13d1a584cc228b61db7db5e36c1b45d",
+  "timings": {
+    "tip_edit.total_ms": {
+      "median": 321.8297001440078,
+      "p95": 379.19160001911223,
+      "worst": 379.19160001911223,
+      "samples": [
+        379.19160001911223,
+        320.49000007100403,
+        321.8297001440078
+      ]
+    },
+    "tip_edit.native_recompute_ms": {
+      "median": 52.10540001280606,
+      "p95": 60.86139986291528,
+      "worst": 60.86139986291528,
+      "samples": [
+        60.86139986291528,
+        51.36439995840192,
+        52.10540001280606
+      ]
+    },
+    "tip_edit.overhead_ms": {
+      "median": 269.72430013120174,
+      "p95": 318.33020015619695,
+      "worst": 318.33020015619695,
+      "samples": [
+        318.33020015619695,
+        269.1256001126021,
+        269.72430013120174
+      ]
+    },
+    "tip_edit.intent_signature_ms": {
+      "median": 6.95640011690557,
+      "p95": 11.11950003542006,
+      "worst": 11.11950003542006,
+      "samples": [
+        11.11950003542006,
+        6.95640011690557,
+        6.208899896591902
+      ]
+    },
+    "tip_edit.inspection_ms": {
+      "median": 133.83399997837842,
+      "p95": 156.87859989702702,
+      "worst": 156.87859989702702,
+      "samples": [
+        156.87859989702702,
+        133.83399997837842,
+        132.1181000676006
+      ]
+    },
+    "tip_edit.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "tip_edit.auto_scope_sync_ms": {
+      "median": 0.00700005330145359,
+      "p95": 0.0076999422162771225,
+      "worst": 0.0076999422162771225,
+      "samples": [
+        0.0076999422162771225,
+        0.005699926987290382,
+        0.00700005330145359
+      ]
+    },
+    "tip_edit.managed_rebuild_ms": {
+      "median": 52.710700081661344,
+      "p95": 61.478700023144484,
+      "worst": 61.478700023144484,
+      "samples": [
+        61.478700023144484,
+        51.911700051277876,
+        52.710700081661344
+      ]
+    },
+    "upstream_edit.total_ms": {
+      "median": 680.0325000658631,
+      "p95": 695.4287001863122,
+      "worst": 695.4287001863122,
+      "samples": [
+        671.1732998955995,
+        695.4287001863122,
+        680.0325000658631
+      ]
+    },
+    "upstream_edit.native_recompute_ms": {
+      "median": 418.6719001736492,
+      "p95": 421.8202999327332,
+      "worst": 421.8202999327332,
+      "samples": [
+        408.36760005913675,
+        421.8202999327332,
+        418.6719001736492
+      ]
+    },
+    "upstream_edit.overhead_ms": {
+      "median": 262.80569983646274,
+      "p95": 273.608400253579,
+      "worst": 273.608400253579,
+      "samples": [
+        262.80569983646274,
+        273.608400253579,
+        261.36059989221394
+      ]
+    },
+    "upstream_edit.intent_signature_ms": {
+      "median": 6.808500038459897,
+      "p95": 7.0454999804496765,
+      "worst": 7.0454999804496765,
+      "samples": [
+        7.0454999804496765,
+        6.808500038459897,
+        6.309200078248978
+      ]
+    },
+    "upstream_edit.inspection_ms": {
+      "median": 130.79839991405606,
+      "p95": 133.86929989792407,
+      "worst": 133.86929989792407,
+      "samples": [
+        130.79839991405606,
+        133.86929989792407,
+        128.92199982888997
+      ]
+    },
+    "upstream_edit.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "upstream_edit.auto_scope_sync_ms": {
+      "median": 0.006600050255656242,
+      "p95": 0.0067998189479112625,
+      "worst": 0.0067998189479112625,
+      "samples": [
+        0.006600050255656242,
+        0.006400048732757568,
+        0.0067998189479112625
+      ]
+    },
+    "upstream_edit.managed_rebuild_ms": {
+      "median": 419.2206999287009,
+      "p95": 422.3339001182467,
+      "worst": 422.3339001182467,
+      "samples": [
+        408.89439987950027,
+        422.3339001182467,
+        419.2206999287009
+      ]
+    },
+    "add_sketch.total_ms": {
+      "median": 307.01770004816353,
+      "p95": 320.28539991006255,
+      "worst": 320.28539991006255,
+      "samples": [
+        293.1389999575913,
+        307.01770004816353,
+        320.28539991006255
+      ]
+    },
+    "add_sketch.native_recompute_ms": {
+      "median": 20.961400121450424,
+      "p95": 21.386499982327223,
+      "worst": 21.386499982327223,
+      "samples": [
+        20.961400121450424,
+        20.898600108921528,
+        21.386499982327223
+      ]
+    },
+    "add_sketch.overhead_ms": {
+      "median": 286.119099939242,
+      "p95": 298.89889992773533,
+      "worst": 298.89889992773533,
+      "samples": [
+        272.17759983614087,
+        286.119099939242,
+        298.89889992773533
+      ]
+    },
+    "add_sketch.intent_signature_ms": {
+      "median": 7.672100095078349,
+      "p95": 7.909999927505851,
+      "worst": 7.909999927505851,
+      "samples": [
+        7.4951001442968845,
+        7.672100095078349,
+        7.909999927505851
+      ]
+    },
+    "add_sketch.inspection_ms": {
+      "median": 143.1919999886304,
+      "p95": 143.74570013023913,
+      "worst": 143.74570013023913,
+      "samples": [
+        134.97529993765056,
+        143.1919999886304,
+        143.74570013023913
+      ]
+    },
+    "add_sketch.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "add_sketch.auto_scope_sync_ms": {
+      "median": 0.012499978765845299,
+      "p95": 0.016500242054462433,
+      "worst": 0.016500242054462433,
+      "samples": [
+        0.011700205504894257,
+        0.012499978765845299,
+        0.016500242054462433
+      ]
+    },
+    "add_sketch.managed_rebuild_ms": {
+      "median": 22.05299981869757,
+      "p95": 22.554400144144893,
+      "worst": 22.554400144144893,
+      "samples": [
+        22.05299981869757,
+        22.013999987393618,
+        22.554400144144893
+      ]
+    },
+    "add_pocket.total_ms": {
+      "median": 747.6186000276357,
+      "p95": 815.7561998814344,
+      "worst": 815.7561998814344,
+      "samples": [
+        747.6186000276357,
+        815.7561998814344,
+        718.1009999476373
+      ]
+    },
+    "add_pocket.native_recompute_ms": {
+      "median": 147.01830013655126,
+      "p95": 180.24969985708594,
+      "worst": 180.24969985708594,
+      "samples": [
+        147.01830013655126,
+        180.24969985708594,
+        145.52719984203577
+      ]
+    },
+    "add_pocket.overhead_ms": {
+      "median": 600.6002998910844,
+      "p95": 635.5065000243485,
+      "worst": 635.5065000243485,
+      "samples": [
+        600.6002998910844,
+        635.5065000243485,
+        572.5738001056015
+      ]
+    },
+    "add_pocket.intent_signature_ms": {
+      "median": 7.281200028955936,
+      "p95": 7.910299813374877,
+      "worst": 7.910299813374877,
+      "samples": [
+        7.281200028955936,
+        7.2351000271737576,
+        7.910299813374877
+      ]
+    },
+    "add_pocket.inspection_ms": {
+      "median": 157.3789999820292,
+      "p95": 158.46219984814525,
+      "worst": 158.46219984814525,
+      "samples": [
+        157.3789999820292,
+        158.46219984814525,
+        147.87079999223351
+      ]
+    },
+    "add_pocket.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "add_pocket.auto_scope_sync_ms": {
+      "median": 0.018500257283449173,
+      "p95": 0.018700025975704193,
+      "worst": 0.018700025975704193,
+      "samples": [
+        0.018500257283449173,
+        0.018700025975704193,
+        0.016200123354792595
+      ]
+    },
+    "add_pocket.managed_rebuild_ms": {
+      "median": 148.95439986139536,
+      "p95": 182.22939991392195,
+      "worst": 182.22939991392195,
+      "samples": [
+        148.95439986139536,
+        182.22939991392195,
+        147.33040030114353
+      ]
+    },
+    "inspect_warm_ms": {
+      "median": 6.884400034323335,
+      "p95": 7.5025002006441355,
+      "worst": 7.5025002006441355,
+      "samples": [
+        6.884400034323335,
+        6.721499841660261,
+        7.5025002006441355
+      ]
+    },
+    "inspect_after_change_ms": {
+      "median": 267.2780998982489,
+      "p95": 271.77669992670417,
+      "worst": 271.77669992670417,
+      "samples": [
+        267.2780998982489,
+        262.2833999339491,
+        271.77669992670417
+      ]
+    },
+    "checkpoint_ms": {
+      "median": 264.66319989413023,
+      "p95": 267.4406999722123,
+      "worst": 267.4406999722123,
+      "samples": [
+        212.26150006987154,
+        264.66319989413023,
+        267.4406999722123
+      ]
+    },
+    "preview_first_ms": {
+      "median": 864.2434000503272,
+      "p95": 903.5050000529736,
+      "worst": 903.5050000529736,
+      "samples": [
+        903.5050000529736,
+        864.2434000503272,
+        845.2681999187917
+      ]
+    },
+    "preview_update_ms": {
+      "median": 713.2382998242974,
+      "p95": 714.2958000767976,
+      "worst": 714.2958000767976,
+      "samples": [
+        704.9440999981016,
+        714.2958000767976,
+        713.2382998242974
+      ]
+    },
+    "native_open_ms": {
+      "median": 115.25549995712936,
+      "p95": 115.70309987291694,
+      "worst": 115.70309987291694,
+      "samples": [
+        115.70309987291694,
+        115.25549995712936,
+        110.0488998927176
+      ]
+    },
+    "kurtshape_open_ms": {
+      "median": 956.8761000409722,
+      "p95": 972.8449999820441,
+      "worst": 972.8449999820441,
+      "samples": [
+        949.9320001341403,
+        972.8449999820441,
+        956.8761000409722
+      ]
+    }
+  },
+  "limits": "Synthetic native fixtures; wall time includes controller work. No user comfort, Onshape parity or hosted CI claim. Profile and native geometry artifacts remain in isolated scratch.",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_processors": 32,
+    "platform": "Windows-10-10.0.26200-SP0"
+  },
+  "fixture": {
+    "kind": "plate",
+    "holes": 20,
+    "grid": 5,
+    "pitch_mm": 100.0,
+    "hole_diameter_mm": 45.0,
+    "objects": 52,
+    "faces": 26,
+    "expected_volume_mm3": 3938296.49258884
+  },
+  "repeat": 3,
+  "run_id": "2026-10-03T23:04:20.037861+00:00/25924",
+  "sections": {
+    "edits": {
+      "status": "ok",
+      "metrics": [
+        "add_pocket.auto_scope_sync_ms",
+        "add_pocket.inspection_ms",
+        "add_pocket.intent_signature_ms",
+        "add_pocket.managed_rebuild_ms",
+        "add_pocket.native_recompute_ms",
+        "add_pocket.overhead_ms",
+        "add_pocket.selector_evaluation_ms",
+        "add_pocket.total_ms",
+        "add_sketch.auto_scope_sync_ms",
+        "add_sketch.inspection_ms",
+        "add_sketch.intent_signature_ms",
+        "add_sketch.managed_rebuild_ms",
+        "add_sketch.native_recompute_ms",
+        "add_sketch.overhead_ms",
+        "add_sketch.selector_evaluation_ms",
+        "add_sketch.total_ms",
+        "tip_edit.auto_scope_sync_ms",
+        "tip_edit.inspection_ms",
+        "tip_edit.intent_signature_ms",
+        "tip_edit.managed_rebuild_ms",
+        "tip_edit.native_recompute_ms",
+        "tip_edit.overhead_ms",
+        "tip_edit.selector_evaluation_ms",
+        "tip_edit.total_ms",
+        "upstream_edit.auto_scope_sync_ms",
+        "upstream_edit.inspection_ms",
+        "upstream_edit.intent_signature_ms",
+        "upstream_edit.managed_rebuild_ms",
+        "upstream_edit.native_recompute_ms",
+        "upstream_edit.overhead_ms",
+        "upstream_edit.selector_evaluation_ms",
+        "upstream_edit.total_ms"
+      ]
+    },
+    "inspect": {
+      "status": "ok",
+      "metrics": [
+        "inspect_after_change_ms",
+        "inspect_warm_ms"
+      ]
+    },
+    "checkpoint": {
+      "status": "ok",
+      "metrics": [
+        "checkpoint_ms"
+      ]
+    },
+    "preview": {
+      "status": "ok",
+      "metrics": [
+        "preview_first_ms",
+        "preview_update_ms"
+      ]
+    },
+    "open": {
+      "status": "ok",
+      "metrics": [
+        "kurtshape_open_ms",
+        "native_open_ms"
+      ]
+    }
+  },
+  "input_sha256": "c41270fd62d6d08da86275fc0d1fdf4bccce9233130ad0e98dba404c7d8848d0"
+}

@@ -65,7 +65,8 @@ function Register-KurtShapeValidationProcess {
 }
 
 function Invoke-KurtShapeValidationPython {
-    param([string]$Executable, [string[]]$Arguments, [string]$Name)
+    param([string]$Executable, [string[]]$Arguments, [string]$Name,
+        [switch]$PassThru, [ValidateRange(0,7500)][int]$TimeoutSeconds = 0)
     $processFolder = Join-Path $env:KURTSHAPE_SESSION_DIR 'process-logs'
     New-Item -ItemType Directory -Force -Path $processFolder | Out-Null
     $stamp = [Guid]::NewGuid().ToString('N')
@@ -73,10 +74,34 @@ function Invoke-KurtShapeValidationPython {
     $stderr = Join-Path $processFolder ($Name + '-' + $stamp + '-stderr.txt')
     $quoted = @($Arguments | ForEach-Object { '"' + $_ + '"' })
     $process = Start-Process -FilePath $Executable -ArgumentList $quoted -WorkingDirectory $env:KURTSHAPE_ROOT -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-    Register-KurtShapeValidationProcess -Process $process -Executable $Executable -Arguments $quoted
-    $process.WaitForExit()
-    $process.Refresh()
-    if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout | Write-Host }
-    if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr | Write-Host }
-    if ($process.ExitCode -ne 0) { throw ($Name + ' failed with exit code ' + $process.ExitCode + '. Logs: ' + $processFolder) }
+    $ownershipTransferred = $false
+    try {
+        Register-KurtShapeValidationProcess -Process $process -Executable $Executable -Arguments $quoted
+        if ($TimeoutSeconds -gt 0) {
+            if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+                if (-not $process.HasExited) {
+                    try { Stop-Process -Id $process.Id -Force -ErrorAction Stop }
+                    catch { if (-not $process.HasExited) { throw } }
+                }
+                if (-not $process.WaitForExit(5000)) { throw ($Name + ' owned process did not exit after timeout: ' + $process.Id) }
+                throw ($Name + ' timed out after ' + $TimeoutSeconds + ' seconds. Logs: ' + $processFolder)
+            }
+        } else { $process.WaitForExit() }
+        $process.Refresh()
+        if (Test-Path -LiteralPath $stdout) { Get-Content -LiteralPath $stdout | Write-Host }
+        if (Test-Path -LiteralPath $stderr) { Get-Content -LiteralPath $stderr | Write-Host }
+        if ($process.ExitCode -ne 0) { throw ($Name + ' failed with exit code ' + $process.ExitCode + '. Logs: ' + $processFolder) }
+        if ($PassThru) { $ownershipTransferred = $true; $process }
+    } catch {
+        $failure = $_
+        if (-not $process.HasExited) {
+            try {
+                Stop-Process -Id $process.Id -Force -ErrorAction Stop
+                if (-not $process.WaitForExit(5000)) { throw ('Owned process remains running: ' + $process.Id) }
+            } catch { Write-Warning ($Name + ' cleanup failed for owned PID ' + $process.Id + ': ' + $_.Exception.Message) }
+        }
+        throw $failure
+    } finally {
+        if (-not $ownershipTransferred) { $process.Dispose() }
+    }
 }

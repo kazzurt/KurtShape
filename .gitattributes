@@ -1,0 +1,5 @@
+*.FCStd binary
+*.step -text
+*.stp -text
+*.stl -text
+*.png binary

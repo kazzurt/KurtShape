@@ -1,5 +1,5 @@
 """Resolve native ownership without depending on GUI focus or internal names."""
-import FreeCAD as App
+import FreeCAD as App  # noqa: F401
 
 
 def bodies(doc):

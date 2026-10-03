@@ -12,8 +12,8 @@ try {
                 else { Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'Onshape examples' }
     $hasExamples = (Test-Path -LiteralPath $examples -PathType Container) -and @(Get-ChildItem -LiteralPath $examples -File).Count -gt 0
     if ($hasExamples) {
-        Invoke-KurtShapeValidationPython -Executable $pythonPath -Arguments @('-B','tools\inventory_sources.py') -Name 'source-inventory'
-        Invoke-KurtShapeValidationPython -Executable $pythonPath -Arguments @('-B','tools\validate_sources.py') -Name 'source-validation'
+        Invoke-KurtShapeValidationPython -Executable $pythonPath -Arguments @('-B','tools\inventory_sources.py') -Name 'source-inventory' -TimeoutSeconds 120
+        Invoke-KurtShapeValidationPython -Executable $pythonPath -Arguments @('-B','tools\validate_sources.py') -Name 'source-validation' -TimeoutSeconds 120
     } elseif ($Full) {
         throw ('Full validation requires a nonempty external examples folder: ' + $examples)
     } else {
@@ -23,7 +23,7 @@ try {
     New-Item -ItemType Directory -Force -Path $reportFolder | Out-Null
     $nativeArgs = @('-B','tools\run_native_tests.py','--require-native','--report',(Join-Path $reportFolder 'native.json'),'--junit',(Join-Path $reportFolder 'junit.xml'))
     if ($Full) { $nativeArgs += '--require-external' }
-    Invoke-KurtShapeValidationPython -Executable $pythonPath -Arguments $nativeArgs -Name 'all-test-suites'
+    Invoke-KurtShapeValidationPython -Executable $pythonPath -Arguments $nativeArgs -Name 'all-test-suites' -TimeoutSeconds 7500
     Write-Output ('Report: ' + (Join-Path $reportFolder 'native.json'))
     if ($Lint) {
         $ruff = Get-Command ruff -ErrorAction SilentlyContinue

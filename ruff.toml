@@ -1,0 +1,9 @@
+required-version = "==0.16.10"
+target-version = "py311"
+line-length = 160
+extend-include = ["*.FCMacro"]
+extend-exclude = ["runtime", "validation", "docs/2026-10-03-claude-review/evidence"]
+
+[lint]
+select = ["F", "E9", "PLE"]
+unfixable = ["F401"]

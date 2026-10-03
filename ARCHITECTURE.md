@@ -1,6 +1,6 @@
 # KurtShape architecture
 
-This describes the application inherited from main `7a20a63` (`longrun/Q01`), with wire contract **2.0**. Q24a changes validation fixtures and documentation, not these application paths. Queue state and parked work are recorded in [STATUS.md](docs/long-run/STATUS.md); a parked implementation is not shipped behavior.
+This describes the application inherited from main `7a20a63` (`longrun/Q01`), with wire contract **2.0**. Q24a bounds validation fixtures; Q00b adds CI and benchmark tooling and corrects the feature Copy fingerprint guard. Queue state and parked work are recorded in [STATUS.md](docs/long-run/STATUS.md); a parked implementation is not shipped behavior.
 
 ## Native document ownership
 
@@ -25,6 +25,8 @@ flowchart LR
 `Controller.OPS`, operation subsets and `ARGS` are explicit sets and argument tables; `_dispatch` implements the branches. `studio.OPS/ARGS` and `reference_tools.OPS/ARGS` extend them. Mutations check document identity, expected revision, managed ownership, busy state and graphical/edit leases before native transactions. Successful changes recompute, validate and commit; failures abort or restore the leased sketch draft. Managed sketch editing keeps bounded native `dumpContent` buffers for edit undo/redo and reconciles native editor commits at Finish or Cancel. Reopening a project assigns a fresh session revision.
 
 `Panel.operation` inspects the current document, supplies its revision and selected Body, calls the controller and refreshes the shell. Native workbench commands are another legitimate writer: `Panel.native_command` guards reference files and active editors before invoking them. Document observation reconciles those changes.
+
+[native_content.py](src/kurtshape/native_content.py) hashes exact archive member names and complete payloads for feature Copy, excluding serialization wrapper timestamps. The controller accepts that content fingerprint or the current raw archive SHA256 from one dump; actual source changes remain guarded. This ephemeral fingerprint adds no editable model or persisted geometry verdict.
 
 [shortcuts.py](src/kurtshape/shortcuts.py) loads `shortcuts.json` and optional profile `shortcuts.user.json`. Its Qt event filter selects a context, then invokes a callback or guarded native command. Help, search and S use this shortcut metadata. Toolbar/menu callbacks are wired separately in `ui.py`; [feature_tools.py](src/kurtshape/feature_tools.py) supplies installed native tool metadata. There is no unified operation/toolbar/keyboard descriptor registry on this baseline.
 
@@ -60,4 +62,4 @@ Keep GUI application access to `App`, `Gui`, live documents, native shapes and O
 
 ## Future queue work
 
-Q00b CI/performance infrastructure and Q02a TOML keymaps/chords/unified command routing are parked. Q03 fast status, Q04 operation descriptors, Q07 the lightweight preview engine, Q09 idle recovery, Q11 incremental intent/summaries, Q14 the event-driven shell, Q16 import/export workers and Q18 live assembly links remain future work. Their planned APIs, caches, timers and performance targets must not be treated as current guarantees. See [OPERATION_CONTRACT.md](docs/OPERATION_CONTRACT.md) for the landed contract and the queue's individual plans before extending a subsystem.
+Q00b supplies isolated local CI, a blocking hidden recipe runner and plate/studio performance baselines; hosted CI awaits Kurt's push. Q02a TOML keymaps/chords/unified command routing remains parked. Q03 fast status, Q04 operation descriptors, Q07 the lightweight preview engine, Q09 idle recovery, Q11 incremental intent/summaries, Q14 the event-driven shell, Q16 import/export workers and Q18 live assembly links remain future work. Their planned APIs, caches, timers and performance targets must not be treated as current guarantees. See [OPERATION_CONTRACT.md](docs/OPERATION_CONTRACT.md) for the landed contract and the queue's individual plans before extending a subsystem.

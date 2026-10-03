@@ -22,7 +22,7 @@ Double-click **KurtShape.cmd** in this directory, or run:
 
 Save your changes and close any older KurtShape window before launching the updated interface. Already-running processes keep the code they loaded. Startup opens an empty part studio; **Example** explicitly opens the development acceptance plate.
 
-The pinned portable engine is installed under `runtime/freecad-1.1.4`. A fresh Windows checkout requires **7-Zip** at `C:\Program Files\7-Zip\7z.exe`; run `install-runtime.ps1`, then `launch-kurtshape.ps1`. The installer downloads the pinned official engine and verifies its SHA256; no global FreeCAD or Python package installation is needed. Runtime binaries, configuration, app data, temporary material and generated files stay local and are excluded from Git. Use one normal application instance for the default assistant session.
+The pinned portable engine is installed under `runtime/freecad-1.1.4`. A fresh Windows checkout requires **7-Zip**, resolved from `KURTSHAPE_7Z`, PATH, or `C:\Program Files\7-Zip\7z.exe`; run `install-runtime.ps1`, then `launch-kurtshape.ps1`. The installer accepts `-RuntimeRoot` for a separate extraction, downloads the pinned official engine and verifies its SHA256 before extraction; no global FreeCAD or Python package installation is needed. Runtime binaries, configuration, app data, temporary material and generated files stay local and are excluded from Git. Use one normal application instance for the default assistant session.
 
 The full acceptance checks additionally use the original STEP/FeatureScript files in the local `Onshape examples` folder two levels above this repository, or at `KURTSHAPE_ONSHAPE_EXAMPLES`. Those source files stay outside Git. Default checks skip the three external real-part tests when the folder is unavailable; `run-checks.ps1 -Full` requires the originals and allows no external skips. Launching the app and its included acceptance-plate example does not require them.
 
@@ -78,6 +78,8 @@ Contract 2 mutations require `request_id` and, for an existing document, its cur
 ```powershell
 .\run-checks.ps1
 .\run-checks.ps1 -Full
+.\tools\ci\run-local.ps1 -SkipNativeTests
+.\tools\run_gui_recipe.ps1 -Recipe interface
 .\launch-kurtshape.ps1 -Validation
 .\tools\validate-u2-part-model-gui.ps1
 ```
@@ -85,6 +87,12 @@ Contract 2 mutations require `request_id` and, for an existing document, its cur
 Checks use one suite runner, `tools/run_native_tests.py`, with fresh native, transport, shortcut and modeling-workflow processes. Sessions, profiles and temporary fixtures stay in isolated scratch. Source hashes/STEP geometry are checked when originals are available; `-Full` requires them. `-WriteEvidence` explicitly refreshes tracked reports, and `-Lint` requests an installed ruff. Ordinary checks leave tracked evidence unchanged.
 
 The [architecture overview](ARCHITECTURE.md) describes the current controller, observers, preview, recovery and assembly boundaries. Assembly validation retains complete SHA-256 identifiers in shorter diagnostic fixture names so private profiles can exercise the same save, relocated reopen and export checks within Windows path limits. The [Q24a record](docs/long-run/Q24a-bounded-validation-architecture.md) records the isolated long-profile verification.
+
+Local CI verifies the pinned runtime, compares exact Git status and diff bytes around checks, and measures a 20-hole plate. `-SkipNativeTests` omits the native suites; use it after a separately verified run-checks invocation. Fresh GitHub checkouts additionally require that only `runtime/` is ignored; the Windows workflow awaits Kurt's push. The blocking GUI runner creates a new profile for every recipe, waits for its owned process, and requires a fresh passing report. Hosted GUI rendering remains unverified.
+
+The performance harness in `tools/perf` measures controller edits, inspection, checkpoints, previews and opens, plus the U2 studio's selectors and auto-scope rebuilds. Use isolated session settings and `--fixture plate --holes 60 --repeat 5` or `--fixture studio --repeat 5` for local baselines. Its reporter shows samples and target comparisons; enforcement is opt-in. See the [Q00b resume record](docs/long-run/Q00b-foundation-ci-benchmarks-resume.md) for current reproducible commands and measured limits; the [original record](docs/long-run/Q00b-foundation-ci-benchmarks.md) preserves the earlier parking evidence. Ruff is optional locally and pinned in the workflow; the long run never installs it into FreeCAD.
+
+Feature Copy compares complete stored feature content, so changing ZIP timestamps during FreeCAD serialization does not make an unchanged source stale. Changes to the copied feature still require copying it again; pasted sketches, extrudes and removals retain editable parameters and existing dependencies.
 
 The validation launcher opens an independent invisible Qt window with a separate configuration/session, exercises the actual interface and viewport, then exits. Reports, screenshots and fixtures default to the printed session evidence folder; add `-WriteEvidence` to refresh historical validation reports. It preserves an already-open user window. Other targeted recipes are listed in [interface pass notes](docs/INTERFACE_PASS.md).
 

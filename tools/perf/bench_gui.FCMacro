@@ -1,0 +1,184 @@
+"""Measure the real Qt shell in the recipe runner's hidden isolated process.
+
+BENCH_HOLES and BENCH_REPEAT parameterize the historical GUI recipe. Native
+controller metrics use the same plate geometry as the headless harness.
+"""
+import json
+import os
+from pathlib import Path
+import sys
+import time
+import traceback
+
+ROOT = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(ROOT / "tools" / "perf"))
+sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "src"))
+from bench_core import Benchmark, base_report, prepare_environment, resolve_output, run_sections, summary, timed
+from kurtshape_evidence import evidence_dir
+
+OUTPUT = None
+REPORT = {"passed": False, "checks": [], "sections": {}, "timings": {}}
+panel = None
+
+
+def add_section(name, function):
+    try:
+        metrics = {key: summary(values) for key, values in function().items()}
+        REPORT["timings"].update(metrics)
+        REPORT["sections"][name] = {"status": "ok", "metrics": sorted(metrics)}
+        REPORT["checks"].append(name + " measured inside the hidden GUI process")
+    except Exception:
+        REPORT["sections"][name] = {"status": "unavailable", "metrics": [], "error": traceback.format_exc()}
+
+
+def validate():
+    began = time.perf_counter()
+    benchmark = None
+    try:
+        if HOLES < 1 or REPEAT < 1:
+            raise RuntimeError("BENCH_HOLES and BENCH_REPEAT must be positive")
+        benchmark = Benchmark(SCRATCH, "plate", HOLES, REPEAT, panel=panel)
+        REPORT["fixture"] = benchmark.build()
+        REPORT["engine"] = {"FreeCAD": App.Version(), "OCCT": benchmark.Part.OCC_VERSION}
+        REPORT["growth"] = benchmark.growth
+        REPORT["checks"].append("Real native plate volume and feature geometry verified")
+        QtGui.QApplication.processEvents()
+        REPORT["model"] = {"objects": len(benchmark.doc.Objects), "tree_items": len(panel.items)}
+
+        def shell():
+            refresh = timed(panel.refresh, REPEAT)[1]
+            idle = timed(panel.tick, max(200, REPEAT))[1]
+
+            def dirty_tick():
+                panel.core.observer.state(benchmark.doc)["refresh"] = True
+                panel.tick()
+            dirty = timed(dirty_tick, REPEAT)[1]
+            return {"panel_refresh_ms": refresh, "tick_idle_ms": idle, "tick_after_refresh_flag_ms": dirty}
+        add_section("shell", shell)
+
+        def checkpoints():
+            forced = []
+            for _ in range(REPEAT):
+                panel.core.recovery.last.clear()
+                began = time.perf_counter()
+                panel.checkpoint_projects()
+                forced.append((time.perf_counter() - began) * 1000)
+                identifier = panel.core.identifier(benchmark.doc)
+                revision = panel.core._meta(benchmark.doc).Revision
+                assert panel.core.recovery.last.get(identifier, (None, None))[1] == revision, "GUI checkpoint did not capture the current document revision"
+                _, record = panel.core.recovery.read(panel.core.recovery.directory / (identifier + ".json"))
+                assert record["revision"] == revision, "GUI checkpoint manifest has the wrong revision"
+            idle = timed(panel.checkpoint_projects, max(20, REPEAT))[1]
+            return {"checkpoint_projects_forced_ms": forced, "checkpoint_projects_idle_ms": idle}
+        add_section("gui_checkpoint", checkpoints)
+
+        def filters():
+            from kurtshape import navigation
+            app = QtGui.QApplication.instance()
+            installed = [panel, panel.workspace_preferences, panel.router._filter,
+                         navigation._double_middle_filter, getattr(app, "_kurtshape_theme_filter", None)]
+            installed = [item for item in installed if item is not None]
+            count = 3000
+
+            def moves():
+                for index in range(count):
+                    point = QtCore.QPointF(5 + index % 7, 5)
+                    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, point, point,
+                                             QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+                    app.sendEvent(panel.message, event)
+            with_filters = timed(moves, REPEAT)[1]
+            removed = []
+            try:
+                for item in installed:
+                    app.removeEventFilter(item)
+                    removed.append(item)
+                without_filters = timed(moves, REPEAT)[1]
+            finally:
+                for item in removed:
+                    app.installEventFilter(item)
+            REPORT["app_event_filters"] = {"count": len(installed),
+                                            "classes": [type(item).__name__ for item in installed],
+                                            "events_per_sample": count,
+                                            "us_per_event_with": summary(with_filters)["median"] * 1000 / count,
+                                            "us_per_event_without": summary(without_filters)["median"] * 1000 / count}
+            return {"app_event_filters_with_ms": with_filters,
+                    "app_event_filters_without_ms": without_filters}
+        add_section("event_filters", filters)
+        run_sections(benchmark, REPORT, ["edits", "inspect", "checkpoint", "preview"])
+        REPORT["passed"] = all(section["status"] == "ok" for section in REPORT["sections"].values())
+        panel.isometric()
+        panel.fit()
+        QtGui.QApplication.processEvents()
+        screenshot = evidence_dir("perf") / "bench-gui-working" / "plate-viewport.png"
+        screenshot.parent.mkdir(parents=True, exist_ok=True)
+        if not panel.main.grab().save(str(screenshot)):
+            raise RuntimeError("Could not save the benchmark viewport screenshot")
+        REPORT["screenshot"] = str(screenshot)
+        REPORT["controller_timings"] = panel.core.timings.report()
+    except Exception:
+        REPORT.update(passed=False, error=traceback.format_exc())
+    finally:
+        REPORT["seconds"] = time.perf_counter() - began
+        cleanup_errors = []
+        if panel:
+            for cleanup in (lambda: panel.timer.stop(), lambda: panel.recovery_timer.stop(), lambda: panel.bridge.close()):
+                try:
+                    cleanup()
+                except Exception:
+                    cleanup_errors.append(traceback.format_exc())
+        try:
+            document_names = list(App.listDocuments())
+        except Exception:
+            cleanup_errors.append(traceback.format_exc())
+            document_names = []
+        for name in document_names:
+            try:
+                App.closeDocument(name)
+            except Exception:
+                cleanup_errors.append(traceback.format_exc())
+        if cleanup_errors:
+            REPORT.update(passed=False, cleanup_errors=cleanup_errors)
+        try:
+            OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+            OUTPUT.write_text(json.dumps(REPORT, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+            print(json.dumps({"passed": REPORT["passed"], "report": str(OUTPUT), "sections": REPORT["sections"]}), flush=True)
+        finally:
+            QtCore.QTimer.singleShot(250, QtGui.QApplication.instance().quit)
+
+
+try:
+    OUTPUT = resolve_output(os.environ.get("BENCH_GUI_OUT"), "bench-gui.json")
+    HOLES = int(os.environ.get("BENCH_HOLES", "20"))
+    REPEAT = int(os.environ.get("BENCH_REPEAT", "3"))
+    REPORT = base_report("plate", HOLES, "Hidden FreeCAD GUI; Qt events synthesized inside this process; native fixture through Panel.operation")
+    REPORT.update(gui_process_pid=os.getpid(), repeat=REPEAT)
+    session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+    SCRATCH = prepare_environment(session / "benchmark-working")
+    import FreeCAD as App
+    import FreeCADGui as Gui
+    from PySide import QtCore, QtGui
+    main = Gui.getMainWindow()
+    main.hide()
+    main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+    main.resize(1200, 800)
+    main.show()
+    began = time.perf_counter()
+    from kurtshape.ui import start
+    panel = start()
+    QtGui.QApplication.processEvents()
+    REPORT["timings"]["startup_ms"] = summary([(time.perf_counter() - began) * 1000])
+    REPORT["sections"]["startup"] = {"status": "ok", "metrics": ["startup_ms"]}
+    REPORT["checks"].append("Qt shell started using the isolated profile")
+    QtCore.QTimer.singleShot(1800, validate)
+except Exception:
+    REPORT.update(passed=False, error=traceback.format_exc())
+    try:
+        if OUTPUT is not None:
+            OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+            OUTPUT.write_text(json.dumps(REPORT, indent=2) + "\n", encoding="utf-8")
+        print(REPORT["error"], flush=True)
+    finally:
+        from PySide import QtCore, QtGui
+        QtCore.QTimer.singleShot(250, QtGui.QApplication.instance().quit)

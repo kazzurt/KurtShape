@@ -1,0 +1,156 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "native",
+      "passed": true,
+      "counts": {
+        "tests": 147,
+        "passed": 147,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "rejected_skips": []
+    },
+    {
+      "name": "bridge",
+      "passed": true,
+      "counts": {
+        "tests": 7,
+        "passed": 7,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "rejected_skips": []
+    },
+    {
+      "name": "shortcuts",
+      "passed": true,
+      "counts": {
+        "tests": 22,
+        "passed": 22,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "rejected_skips": []
+    },
+    {
+      "name": "workflows",
+      "passed": true,
+      "counts": {
+        "tests": 6,
+        "passed": 6,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "rejected_skips": []
+    }
+  ],
+  "method": "Fresh isolated Python subprocess per suite",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "7a20a63d2642100da668184ea0d72b635c7c4640",
+  "worktree_diff_sha256": "82a95c894aed7dcc345f49ef147f26b4e13d1a584cc228b61db7db5e36c1b45d",
+  "timings": {
+    "median": null,
+    "p95": null,
+    "worst": null,
+    "samples": []
+  },
+  "limits": "Headless native and Qt regressions; no GUI acceptance or native C++ networking interception",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "counts": {
+    "tests": 182,
+    "passed": 182,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "suites": [
+    {
+      "name": "native",
+      "passed": true,
+      "counts": {
+        "tests": 147,
+        "passed": 147,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 107.34114889986813,
+      "source_unchanged": true
+    },
+    {
+      "name": "bridge",
+      "passed": true,
+      "counts": {
+        "tests": 7,
+        "passed": 7,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 3.7751736000645906,
+      "source_unchanged": true
+    },
+    {
+      "name": "shortcuts",
+      "passed": true,
+      "counts": {
+        "tests": 22,
+        "passed": 22,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 0.7007422999013215,
+      "source_unchanged": true
+    },
+    {
+      "name": "workflows",
+      "passed": true,
+      "counts": {
+        "tests": 6,
+        "passed": 6,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 5.002237799810246,
+      "source_unchanged": true
+    }
+  ],
+  "input_sha256": "ca11992590970201567eca42fbb82477fafdb617286d9a7c618ffdc01ca859b1"
+}

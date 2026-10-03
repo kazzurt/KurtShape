@@ -1,0 +1,118 @@
+{
+  "passed": false,
+  "checks": [
+    {
+      "name": "interface",
+      "passed": true,
+      "checks": 41,
+      "pid": 69680,
+      "exit_code": 0,
+      "screenshots": 4
+    },
+    {
+      "name": "ui-refinement",
+      "passed": true,
+      "checks": 106,
+      "pid": 43232,
+      "exit_code": 0,
+      "screenshots": 8
+    },
+    {
+      "name": "refinement-preview",
+      "passed": true,
+      "checks": 20,
+      "pid": 49996,
+      "exit_code": 0,
+      "screenshots": 0
+    },
+    {
+      "name": "sketch-behavior",
+      "passed": true,
+      "checks": 28,
+      "pid": 66720,
+      "exit_code": 0,
+      "screenshots": 7
+    },
+    {
+      "name": "review-copy",
+      "passed": true,
+      "checks": 25,
+      "pid": 68896,
+      "exit_code": 0,
+      "screenshots": 0
+    },
+    {
+      "name": "review-lifecycle",
+      "passed": true,
+      "checks": null,
+      "pid": 62236,
+      "exit_code": 0,
+      "screenshots": 0
+    },
+    {
+      "name": "review-recovery",
+      "passed": true,
+      "checks": null,
+      "pid": 1220,
+      "exit_code": -1073740791,
+      "screenshots": 0
+    },
+    {
+      "name": "review-interaction",
+      "passed": true,
+      "checks": 11,
+      "pid": 3092,
+      "exit_code": 0,
+      "screenshots": 1
+    },
+    {
+      "name": "review-startup",
+      "passed": true,
+      "checks": null,
+      "pid": 61444,
+      "exit_code": 0,
+      "screenshots": 0
+    },
+    {
+      "name": "review-baseline",
+      "passed": true,
+      "checks": null,
+      "pid": 46900,
+      "exit_code": 0,
+      "screenshots": 0
+    },
+    {
+      "name": "step-import",
+      "passed": true,
+      "checks": 19,
+      "pid": 50220,
+      "exit_code": 0,
+      "screenshots": 5
+    },
+    {
+      "name": "assembly",
+      "passed": false,
+      "checks": 7,
+      "pid": 1612,
+      "exit_code": 0,
+      "screenshots": 4
+    }
+  ],
+  "method": "Incomplete full hidden GUI set: three failed attempts, mandatory park. Results reflect each final completed recipe; six recipes not reached.",
+  "engine": {},
+  "base_commit": "7a20a63d2642100da668184ea0d72b635c7c4640",
+  "worktree_diff_sha256": "82a95c894aed7dcc345f49ef147f26b4e13d1a584cc228b61db7db5e36c1b45d",
+  "timings": {
+    "median": null,
+    "p95": null,
+    "worst": null,
+    "samples": []
+  },
+  "limits": "34unique screenshots across all attempts inspected. Native recovery/draft/Cancel/originalfile proof passed; native autosave and abnormal termination cause unverified. STEP19 passed after shorter session name; Assembly7 failed at264char BREP helper path. No five-repeat60hole/studio baselines or fullGUI pass.",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "input_sha256": "45fe720278ff94b8f3ac1363361b615376c4769a929718317c262ac8c2b564cf"
+}

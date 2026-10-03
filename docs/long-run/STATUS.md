@@ -1,12 +1,12 @@
 # Long run status
 
 Program: C:\Users\Kurtz\Documents\KURT\CADkz\Claude\prompts\2026-10-03_codex_long-run-program.md
-Program SHA-256 when last read: BFD1820915CDEDE335C2FF421163F1A404E666211402E81DB8E936631D3C2995, 2026-10-03 18:52 America/Los_Angeles
-Updated: 2026-10-03 19:13 America/Los_Angeles
-State: IN PROGRESS Q24a since 2026-10-03 18:12
-Last green commit: 7a20a63 (tag longrun/Q01)
-Green copy: at longrun/Q01 (7a20a63)
-Free disk: 55.3 GiB
+Program SHA-256 when last read: BFD1820915CDEDE335C2FF421163F1A404E666211402E81DB8E936631D3C2995, 2026-10-03 20:55 America/Los_Angeles
+Updated: 2026-10-03 20:57 America/Los_Angeles
+State: IN PROGRESS Q00b resumed 2026-10-03 19:18; original start 2026-10-03 15:26
+Last green commit: 660acc5 (tag longrun/Q24a)
+Green copy: at longrun/Q24a (660acc5)
+Free disk: 52.6 GiB
 
 ## Queue
 
@@ -14,7 +14,7 @@ Free disk: 55.3 GiB
 |---|---|---|---|---|---|
 | Q00a | Foundation: fixes, isolation, one runner | DONE | 259a61b | 147/7/22 | 405 workflows; exactly 3 external skips without examples |
 | Q01 | Green copy | DONE | 7a20a63 | 147/7/22 | Green interface41;31 script probes;405 workflow checks |
-| Q00b | Foundation: CI, GUI runner, benchmarks, lint | PARKED | WIP branch below | 147/7/22 +405 | Three full GUI failures; Assembly fingerprint path264chars. Baselines incomplete |
+| Q00b | Foundation: CI, GUI runner, benchmarks, lint | IN PROGRESS (tag pending) | Own untagged8a8d4a4 | 150/7/22 +405 | Full18:17 pass+exact carrier;77 images;67 five-repeat metrics passed; final evidence packaging |
 | Q02a | Keyboard registry, keymap, chords and palette | PARKED | d8cdb1b WIP | 147/7/59 +405 | Three GUI failures; hidden combo popup blocker, no Q02a tag |
 | Q02b | Native shortcut audit and behavior bindings | BLOCKED | | | Needs parked Q02a; completes Q02 |
 | Q03 | Fast build status | BLOCKED | | | Needs Q00b |
@@ -38,7 +38,7 @@ Free disk: 55.3 GiB
 | Q21 | Configurations | BLOCKED | | | Needs Q12/Q13 |
 | Q22 | Sketcher behaviors | BLOCKED | | | Needs Q05/Q13 |
 | Q23 | Feature repair and control | BLOCKED | | | Needs Q12 |
-| Q24a | Hardening: bounded validation fixtures and current architecture | IN PROGRESS | | 147/7/22 +405 | Assembly58/native4; full17:16 pass,1 exact baseline;76 images inspected; record/commit next |
+| Q24a | Hardening: bounded validation fixtures and current architecture | DONE | 660acc5 | 147/7/22 +405 | Assembly58/native4; full17:16 pass,1 exact baseline;76 images inspected; green updated |
 | Q24b | Hardening: hidden controls, display and final stale-doc sweep | QUEUED | | | Remaining Q24; final handoff after eligible work |
 
 ## Questions for Kurt (answer in NOTES.md or in the chat)
@@ -58,7 +58,13 @@ Free disk: 55.3 GiB
 
 ## Try this (newest first)
 
-### Q24a bounded Assembly validation (tag pending)
+### Q00b CI and benchmark foundation (tag pending)
+
+1. Copy an Extrude or Remove into its Body, change the original and copy dimensions independently, then undo; the unchanged Copy25 recipe and new Pad/Pocket native tests verified actual editable dependencies and one-step copies.
+2. Save, relocate and reopen an Assembly without its original source; Assembly58 and fresh native4 verified four embedded occurrences, three joints and complete geometry fingerprints.
+3. Recover an unfinished sketch checkpoint, then explicitly Cancel; the fresh native proof verified draft1→0, unsaved1800mm3 and original1200mm3 with original bytes unchanged.
+4. Run run-checks.ps1 -Full, then tools/ci/run-local.ps1 -SkipNativeTests; isolated gates verified150/7/22+405, pinned layout, all five benchmark sections and unchanged source/tree.
+### Q24a bounded Assembly validation (660acc5)
 
 1. Create an Assembly and insert a saved multi-body source; the hidden recipe selected a body and retained four occurrences with three solved joints.
 2. Move a revolute joint45 degrees and a slider23mm, then undo and redo; the recipe verified actual native placement, history and revision consequences.
@@ -90,7 +96,18 @@ Free disk: 55.3 GiB
 
 | Metric | Fixture | Baseline | Best | Latest | Target | Open? |
 |---|---|---|---|---|---|---|
-| Baselines | Plate/studio | Q00b parked; 20-hole3repeat smoke only | | | Five-repeat60hole/studio unavailable until Q00b lands | Yes |
+| Tip edit overhead ms | Plate60 | 3914.570 | 3914.570 | 3914.570 | 150 phase0 /50 phase1; Q03/Q11 | Yes |
+| Changed inspect ms | Plate60 | 3075.623 | 3075.623 | 3075.623 | 20; Q03 | Yes |
+| Warm inspect ms | Plate60 | 23.343 | 23.343 | 23.343 | Q03 measured follow-up | Yes |
+| First preview ms | Plate60 | 10956.598 | 10956.598 | 10956.598 | 50; Q07 | Yes |
+| Preview update ms | Plate60 | 9115.445 | 9115.445 | 9115.445 | Q07 measured follow-up | Yes |
+| Checkpoint ms | Plate60 | 1586.709 | 1586.709 | 1586.709 | 16; Q09 | Yes |
+| Native / managed open ms | Plate60 | 1750.139 /16187.745 | 1750.139 /16187.745 | 1750.139 /16187.745 | Q03 open without rebuild | Yes |
+| Full rebuild ms | Studio | 1222.620 | 1222.620 | 1222.620 | 1.5× post-Q03 median, pending | Yes |
+| Rebuild selector /auto-scope ms | Studio | 397.702 /22.161 | 397.702 /22.161 | 397.702 /22.161 | Exact bounded Q03 evaluation | Yes |
+| Rebuild kernel recompute ms | Studio | 170.005 | 170.005 | 170.005 | Comparison baseline | No |
+| Changed /warm inspect ms | Studio | 2108.505 /1731.540 | 2108.505 /1731.540 | 2108.505 /1731.540 | Q03 | Yes |
+| Tip edit overhead ms | Studio | 4250.458 | 4250.458 | 4250.458 | Q03/Q11 | Yes |
 
 ## Red at baseline
 
@@ -104,7 +121,7 @@ Free disk: 55.3 GiB
 | Q | Branch | Cause | What would unblock it |
 |---|---|---|---|
 | Initial decision-dependent items | None | Questions above | Kurt's answer |
-| Q00b | longrun/parked-Q00b-ci-benchmarks | FullGUI failed3times: crash-status proof, STEPpath, Assembly264charBREP helper. Native/localCI/probes passed;34images inspected | Land bounded private native fixture paths preserving fingerprint/geometry assertions; then unpark |
+| Q00b | longrun/parked-Q00b-ci-benchmarks | FullGUI failed3times: crash-status proof, STEPpath, Assembly264charBREP helper. Native/localCI/probes passed;34images inspected | Blocker landed as longrun/Q24a (660acc5); resuming by cherry-pick, original branch retained |
 | Q02a | longrun/parked-Q02a-keyboard-registry | Three keyboard GUI failures; owned processes exited normally. Latest reached16 checks, expected combo popup absent/unverified | Land proven bounded hidden Qt control interaction with diagnostic popup/view/click/selection state and unchanged exact assertions |
 
 ## Notes handled
@@ -263,3 +280,35 @@ Own recipe report: kurtshape-problem-20261003-204924-ac7dc9ee.json came from the
 - 2026-10-03 19:11: Final diff-whitespace check attempt 1 found only a new blank line at STATUS EOF. Removing the extra trailing newline before retry; no source or assertion change, NOTES empty.
 
 - 2026-10-03 19:13: Final independent review read all 11 files and complete reports: 0 material findings. Packaged provenance matches final exact seven-path diff. Full/Assembly/cadence/visual/tree gates complete, whitespace retry passed; committing and tagging Q24a, then guarded green update.
+
+- 2026-10-03 19:14: Finished Q24a at 660acc57b4b3b6da79d765e76e37e02990243050, tagged longrun/Q24a; guarded green update advanced to same tag, both tracked trees clean before STATUS update. Q00b fixture blocker has landed; full program reread and eligible unpark follow. Q02a remains parked.
+
+- 2026-10-03 19:18: Q00b resumed after full unchanged program and complete brief Increment0/parked plan reads; main and green at Q24a, only STATUS changed, no new reports or notes, 54.8GiB free. Q24a landed and proved the bounded native fixture blocker. Original three GUI failures remain recorded; new resumed gates begin only after plan/cherry-pick/review, with fresh attempt receipts. No Q02a retry.
+
+- 2026-10-03 19:28: Resume audit re-read full program, STATUS/NOTES/invariants/facts and Q00b specs; unchanged program/reports, 54.4GiB free. Resolved three own documentation conflicts preserving Q24a and historical Q00b records; cherry-picked WIP as untagged8a8d4a4 with Kurt identity, parked branch retained. Restored-source review found recovery proof integration and unbounded new CI calls; focused infrastructure repairs before freeze, no application assertion edits or real process starts.
+
+- 2026-10-03 19:34: Resumed runner controlled probe attempt1 passed164checks then failed only scratch case construction: PowerShell concatenated the new six-case array into false-flag mode because parentheses were missing. Receipt e0b6667568c445c2a9a7963d0ef5cc07 preserved; no real process, no production gate failure. NOTES empty. Authorize scratch-only correction before a uniquely named attempt2. Caller/installer/ownership controlled probe independently passed122; native/CI wrapper preflight fixed fresh run-folder binding beforelaunch. Seven protected live/runtime root families now rejected by new verifier.
+
+- 2026-10-03 19:34: Controlled runner attempt2 completed before the requested hold reached the agent; it had reported attempt1 before retry but the parent Log was still being written. Both receipts retained; no real launches and no further retries. Enforce parent Log/NOTES acknowledgment before any future failed-gate retry. Independent runner/verifier/full18 review found0remaining; CI exact boolean guards receive a focused prefreeze hardening/probe. Perf source review0; private baseline driver corrected one own -join expression before freeze, no actual benchmark run.
+
+- 2026-10-03 19:37: Q00b resumed source frozen and explicitpaths staged; exacttree e81c312486d2376c131245081089b7f2d30334ba5ae130eecd51652b1f8f55d8 captured. Final149 caller/installer and198 runner controlled checks pass, independent full source/wrapper reviews0remaining; prior failed harness receipt preserved. Full native plus localCI and serial actual18GUI resumeattempt1 start on this source. Five-repeat native baselines wait until both CPU gates finish. No new notes/reports.
+
+- 2026-10-03 19:40: Q00b resumed fullGUIattempt1 failed at review-copy after2checks, ownedPID27596 exit0/freshfalseJSON; exactsource tree e81c3124 unchanged. Firstfour passed41/106/20/28. Paste changed_source rejection requires precise immutable source/fingerprint diagnosis beforeanyretry; no recovery/laterrecipes or benchmarks ran. Native/CI gate still running; no source edits until it exits. NOTES empty.
+
+- 2026-10-03 19:43: Resumed nativeCIattempt1 passed147/7/22 plus405/no skips/allsourcehashesunchanged; local20hole3repeatallfive metricsections and exacttree e81c3124 passed. Shellsessions50099/55458 closedexit0/1; allownedGUIproducersexited. Copy guard preflight passed but Controller duplicate_feature rejected after inspect/transaction; unchangedmacro's firsttwo checks are permissive about actualclonecreation. Authorize ONE separate bounded private dumpContent/ZIP/transaction/timing diagnostic, no fullGUIretry or productionedit. Need causalproof before correction; prior gatecount1 retained, NOTESempty.
+
+- 2026-10-03 20:03: Resume audit read full unchanged program/STATUS/NOTES/brief/spec, explained main8a8d4a4 Q00b changes, no new reports/notes. Single diagnostic PID20792 exited0/sourceunchanged: immediate Copy createdPad001; unchanged timed dumps differ only12ZIP timestamp bytes with allsix exact payloads/revision/intent/history equal. Original failed gate boundary remains inferred. Plan recorded before minimal stable-content guard correction, preserving current raw-hash callers, original native test and all25GUI assertions; no Assembly fingerprint change. Full/localCI/full18 retry2 only after final review/freeze; prior receipts retained.
+
+- 2026-10-03 20:12: Copy canonical guard and three new native regressions frozen; expected150/7/22+405, existing raw-SHA native test/all25GUI assertions unchanged. Root full source/test review0remaining; independent helper/core review0 and final regression review inprogress read-only. Diagnostic timedfixture is a second document, so its different map payloads do not evidence original source mutation afterpaste. Explicitstage/tree6ceb38171b5fcf66775e875c2ff2390cdd829d75fb5f6174109338e140e7aa68; full native/localCI and resumedfull18GUIattempt2 start oncorrected source withnew immutable receipts. Attempt1 failure loggedbeforethisretry, NOTESempty; baselines waituntil CPUgatesclose.
+
+- 2026-10-03 20:15: Final independent fingerprint source/test review0remaining, allhashesmatch. Corrected CopyGUI25passedunchanged, lifecycle22stages passed. NativeCIattempt2 finishedexit0:150/7/22+405/zero skips/sourceunchanged andlocal20hole3repeatallfive sections; exacttree6ceb3817unchanged. Nativevalidation98.571s is elapsedchecktime, notbenchmark. GUI49989 continuesrecovery/laterrecipes, no sourceedits or baseline launch untilallownedCPUgatesexit.
+
+- 2026-10-03 20:21: Full18attempt2completed:17passes+exactcarrier17baseline, rawpassedfalse/gatepassedtrue;GUI49989exit0/77images, immutableaggregatea9fd3d8218f1740cedd535d8f36107e5cd72fe52dc7b1aa22a06981ad46091f7. Root17middleimagesdirectlyinspected; recovery65936abnormal acceptedonlyfresh40996tenchecks/elevenflags/draft1Cancel0/1800source1200/originalunchanged. Middlevisualproofconstructionattempt1 stoppedbeforewrite becauseSTEPlogthumbnail linesincludeHH:mm:ss prefixes; correctonlyscratch comparison normalization, preservefullrawwarnings. No newnativewarningclass or GUIretry. NOTESempty. NewnativeonlyAssemblyhelperpendingreview; serialbaselineafteritexits.
+
+- 2026-10-03 20:29: Resume audit read full unchanged program/STATUS/NOTES/brief/spec; main8a8d4a4 and all changes explained, no new user reports. Fresh independent Assembly native13820 exited0, four original checks/full64 fingerprint readback/producer immutable passed. All CPU gates closed; first serial five-repeat plate60/studio baseline starts. Final41-image proof construction stopped beforewrite on one missing image-note entry and JSON-only retry already completed; no native/source change, both proof paths preserved. Parent logging-before-retry rule reiterated; no further retries without acknowledgment.
+
+- 2026-10-03 20:55: Resume audit read complete unchanged program/STATUS/NOTES/invariants/facts/Q00b specs; main8a8d4a4 and all own changes explained, no new user reports, 52.6GiB free. Paired plate60/studio first baselines passed all67 metrics/five samples with six owned exits0/source snapshot unchanged; final exacttree6ceb3817 passed before final living-doc edits. All77 images directly inspected. Two final doc and four private publisher preflight findings repaired before actual publication; preparing explicit final record_evidence reports, tag and guarded green update. No new source or assertion edits after final gates.
+
+- 2026-10-03 20:57: Actual evidence publication attempt1 passed, owned53080 exit0/no timeout, three reports bound to final diff25b9e683 and53 immutable inputs unchanged. Final independent docs/preflight review0. A separate read-only root provenance inspection command failed before reading diff because PowerShell array concatenation split safe.directory incorrectly; fixing only inspection argument construction before retry, no publication/native rerun or file changes. NOTES empty.
+
+- 2026-10-03 20:58: Read-only provenance inspection retry passed final diff25b9e683059056e4589e9456804c30a174ea100914d492b8ea72c5a69ad2399e; all three public reports passed and53 input hashes remain exact. Full source/test/script and final living-doc reviews0remaining; all required gates complete, no assertion weakened. Preparing own untaggedWIP amend, longrun/Q00b and guarded green update; original parked branch retained.

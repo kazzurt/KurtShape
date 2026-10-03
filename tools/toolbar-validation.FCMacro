@@ -8,7 +8,7 @@ from kurtshape_evidence import evidence_dir
 sys.path.insert(0, str(ROOT/'src'))
 import FreeCAD as App
 import FreeCADGui as Gui
-from PySide import QtCore, QtGui
+from PySide import QtCore, QtGui  # noqa: F401
 from PySide6 import QtWidgets, QtTest
 from kurtshape.core import native_intent
 from kurtshape import ui

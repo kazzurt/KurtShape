@@ -1,0 +1,16 @@
+{
+  "minimum_plate_holes": 60,
+  "regression_factor": 1.2,
+  "regression_slack_ms": 5,
+  "requires_second_run": true,
+  "phase0": {
+    "tip_edit.overhead_ms": 150,
+    "inspect_after_change_ms": 20
+  },
+  "phase1": {
+    "tip_edit.overhead_ms": 50,
+    "inspect_after_change_ms": 20,
+    "preview_first_ms": 50,
+    "checkpoint_ms": 16
+  }
+}

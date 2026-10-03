@@ -1,0 +1,2531 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "passed": true,
+      "required_metric_count": 39,
+      "report_sha256": "2a3ce46cbc9742e8ffe51606481fef5be7def3632ca2b1bbb66706154f39a57c",
+      "name": "plate five-repeat native baseline",
+      "repeat": 5,
+      "geometry_checks": [
+        "Native fixture geometry and expected feature/part/query counts verified",
+        "edits metrics measured through the current native APIs",
+        "inspect metrics measured through the current native APIs",
+        "checkpoint metrics measured through the current native APIs",
+        "preview metrics measured through the current native APIs",
+        "open metrics measured through the current native APIs"
+      ],
+      "budgets": {
+        "phase0": {
+          "metrics": [
+            {
+              "confirmation_ms": null,
+              "target_open": true,
+              "samples": 5,
+              "best_ms": null,
+              "suspected_regression": false,
+              "name": "tip_edit.overhead_ms",
+              "regression_limit_ms": null,
+              "median_ms": 3914.570399792865,
+              "target_ms": 150,
+              "failed": false
+            },
+            {
+              "confirmation_ms": null,
+              "target_open": true,
+              "samples": 5,
+              "best_ms": null,
+              "suspected_regression": false,
+              "name": "inspect_after_change_ms",
+              "regression_limit_ms": null,
+              "median_ms": 3075.6226000376046,
+              "target_ms": 20,
+              "failed": false
+            }
+          ],
+          "failed": false,
+          "evaluated": true,
+          "reason": "Absolute targets measured honestly; confirmed regression requires an earlier comparable best and a separate second run."
+        },
+        "phase1": {
+          "metrics": [
+            {
+              "confirmation_ms": null,
+              "target_open": true,
+              "samples": 5,
+              "best_ms": null,
+              "suspected_regression": false,
+              "name": "tip_edit.overhead_ms",
+              "regression_limit_ms": null,
+              "median_ms": 3914.570399792865,
+              "target_ms": 50,
+              "failed": false
+            },
+            {
+              "confirmation_ms": null,
+              "target_open": true,
+              "samples": 5,
+              "best_ms": null,
+              "suspected_regression": false,
+              "name": "inspect_after_change_ms",
+              "regression_limit_ms": null,
+              "median_ms": 3075.6226000376046,
+              "target_ms": 20,
+              "failed": false
+            },
+            {
+              "confirmation_ms": null,
+              "target_open": true,
+              "samples": 5,
+              "best_ms": null,
+              "suspected_regression": false,
+              "name": "preview_first_ms",
+              "regression_limit_ms": null,
+              "median_ms": 10956.598299788311,
+              "target_ms": 50,
+              "failed": false
+            },
+            {
+              "confirmation_ms": null,
+              "target_open": true,
+              "samples": 5,
+              "best_ms": null,
+              "suspected_regression": false,
+              "name": "checkpoint_ms",
+              "regression_limit_ms": null,
+              "median_ms": 1586.7087000515312,
+              "target_ms": 16,
+              "failed": false
+            }
+          ],
+          "failed": false,
+          "evaluated": true,
+          "reason": "Absolute targets measured honestly; confirmed regression requires an earlier comparable best and a separate second run."
+        }
+      },
+      "fixture": {
+        "kind": "plate",
+        "holes": 60,
+        "grid": 8,
+        "pitch_mm": 66.66666666666667,
+        "hole_diameter_mm": 30.000000000000004,
+        "objects": 132,
+        "faces": 66,
+        "expected_volume_mm3": 3811061.9901184533
+      }
+    },
+    {
+      "passed": true,
+      "required_metric_count": 28,
+      "report_sha256": "76387f4f311f10224a9a7bcec228786066de88798039f7099076ad529a96763c",
+      "name": "studio five-repeat native baseline",
+      "repeat": 5,
+      "geometry_checks": [
+        "Native fixture geometry and expected feature/part/query counts verified",
+        "rebuild metrics measured through the current native APIs",
+        "edits metrics measured through the current native APIs",
+        "inspect metrics measured through the current native APIs",
+        "checkpoint metrics measured through the current native APIs",
+        "preview metrics measured through the current native APIs",
+        "open metrics measured through the current native APIs"
+      ],
+      "budgets": {
+        "metrics": [],
+        "failed": false,
+        "evaluated": false,
+        "reason": "Studio thresholds are established after Q03; this records the first real local baseline only."
+      },
+      "fixture": {
+        "kind": "studio",
+        "base_features": 30,
+        "base_parts": 4,
+        "selector_consumers": 11,
+        "scoped_operations": [
+          "BenchAutoCut: remove/auto",
+          "BenchExplicitAdd: add/Part1"
+        ],
+        "studio_features": 34,
+        "logical_parts": 4,
+        "objects": 160
+      }
+    },
+    {
+      "name": "Paired first local baseline provenance",
+      "passed": true,
+      "owned_processes": [
+        {
+          "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate",
+          "fixture": "plate",
+          "name": "plate-five-repeat-native",
+          "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\evidence\\perf\\bench-plate-five-repeat.json",
+          "executable": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\freecad-1.1.4\\FreeCAD_1.1.4-Windows-x86_64-py311\\bin\\python.exe",
+          "exited_utc": "2026-10-04T03:40:51.4415808+00:00",
+          "arguments": [
+            "\"-B\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\perf\\bench_core.py\"",
+            "\"--fixture\"",
+            "\"plate\"",
+            "\"--holes\"",
+            "\"60\"",
+            "\"--repeat\"",
+            "\"5\"",
+            "\"--sections\"",
+            "\"edits,inspect,checkpoint,preview,open\"",
+            "\"--scratch\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\plate-fixture-working\"",
+            "\"--out\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\evidence\\perf\\bench-plate-five-repeat.json\""
+          ],
+          "timed_out": false,
+          "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\plate-five-repeat-native-stdout.txt",
+          "started_utc": "2026-10-04T03:29:31.7324988+00:00",
+          "exit_code": 0,
+          "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\plate-five-repeat-native-stderr.txt",
+          "pid": 37696
+        },
+        {
+          "exit_code": 0,
+          "exited_utc": "2026-10-04T03:40:51.8667046+00:00",
+          "started_utc": "2026-10-04T03:40:51.6569125+00:00",
+          "timed_out": false,
+          "executable": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\freecad-1.1.4\\FreeCAD_1.1.4-Windows-x86_64-py311\\bin\\python.exe",
+          "arguments": [
+            "\"-B\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\perf\\report.py\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\evidence\\perf\\bench-plate-five-repeat.json\"",
+            "\"--phase\"",
+            "\"phase0\""
+          ],
+          "fixture": "plate",
+          "name": "plate-phase0-table",
+          "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\plate-phase0-table-stderr.txt",
+          "pid": 55972,
+          "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\plate-phase0-table-stdout.txt"
+        },
+        {
+          "exit_code": 0,
+          "exited_utc": "2026-10-04T03:40:52.0969380+00:00",
+          "started_utc": "2026-10-04T03:40:51.8931965+00:00",
+          "timed_out": false,
+          "executable": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\freecad-1.1.4\\FreeCAD_1.1.4-Windows-x86_64-py311\\bin\\python.exe",
+          "arguments": [
+            "\"-B\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\perf\\report.py\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\evidence\\perf\\bench-plate-five-repeat.json\"",
+            "\"--phase\"",
+            "\"phase1\""
+          ],
+          "fixture": "plate",
+          "name": "plate-phase1-table",
+          "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\plate-phase1-table-stderr.txt",
+          "pid": 66160,
+          "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\plate-phase1-table-stdout.txt"
+        },
+        {
+          "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio",
+          "fixture": "studio",
+          "name": "studio-five-repeat-native",
+          "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\evidence\\perf\\bench-studio-five-repeat.json",
+          "executable": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\freecad-1.1.4\\FreeCAD_1.1.4-Windows-x86_64-py311\\bin\\python.exe",
+          "exited_utc": "2026-10-04T03:43:31.9526240+00:00",
+          "arguments": [
+            "\"-B\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\perf\\bench_core.py\"",
+            "\"--fixture\"",
+            "\"studio\"",
+            "\"--holes\"",
+            "\"60\"",
+            "\"--repeat\"",
+            "\"5\"",
+            "\"--sections\"",
+            "\"rebuild,edits,inspect,checkpoint,preview,open\"",
+            "\"--scratch\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\studio-fixture-working\"",
+            "\"--out\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\evidence\\perf\\bench-studio-five-repeat.json\""
+          ],
+          "timed_out": false,
+          "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\studio-five-repeat-native-stdout.txt",
+          "started_utc": "2026-10-04T03:40:52.1520723+00:00",
+          "exit_code": 0,
+          "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\studio-five-repeat-native-stderr.txt",
+          "pid": 53080
+        },
+        {
+          "exit_code": 0,
+          "exited_utc": "2026-10-04T03:43:32.1341652+00:00",
+          "started_utc": "2026-10-04T03:43:31.9861174+00:00",
+          "timed_out": false,
+          "executable": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\freecad-1.1.4\\FreeCAD_1.1.4-Windows-x86_64-py311\\bin\\python.exe",
+          "arguments": [
+            "\"-B\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\perf\\report.py\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\evidence\\perf\\bench-studio-five-repeat.json\"",
+            "\"--phase\"",
+            "\"phase0\""
+          ],
+          "fixture": "studio",
+          "name": "studio-phase0-table",
+          "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\studio-phase0-table-stderr.txt",
+          "pid": 33004,
+          "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\studio-phase0-table-stdout.txt"
+        },
+        {
+          "exit_code": 0,
+          "exited_utc": "2026-10-04T03:43:32.3012086+00:00",
+          "started_utc": "2026-10-04T03:43:32.1430523+00:00",
+          "timed_out": false,
+          "executable": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\freecad-1.1.4\\FreeCAD_1.1.4-Windows-x86_64-py311\\bin\\python.exe",
+          "arguments": [
+            "\"-B\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\perf\\report.py\"",
+            "\"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\evidence\\perf\\bench-studio-five-repeat.json\"",
+            "\"--phase\"",
+            "\"phase1\""
+          ],
+          "fixture": "studio",
+          "name": "studio-phase1-table",
+          "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\studio-phase1-table-stderr.txt",
+          "pid": 47756,
+          "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\studio-phase1-table-stdout.txt"
+        }
+      ],
+      "required_metric_count": 67,
+      "source_snapshot_sha256": "b074d70cff8713daecff0e90b4c8d0b819b74eb195b3c8ae2c05e433bb929115",
+      "results": [
+        {
+          "source_snapshot_sha256": "b074d70cff8713daecff0e90b4c8d0b819b74eb195b3c8ae2c05e433bb929115",
+          "checks": [
+            "Native fixture geometry and expected feature/part/query counts verified",
+            "edits metrics measured through the current native APIs",
+            "inspect metrics measured through the current native APIs",
+            "checkpoint metrics measured through the current native APIs",
+            "preview metrics measured through the current native APIs",
+            "open metrics measured through the current native APIs"
+          ],
+          "passed": true,
+          "repeat": 5,
+          "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\evidence\\perf\\bench-plate-five-repeat.json",
+          "fixture": {
+            "kind": "plate",
+            "holes": 60,
+            "grid": 8,
+            "pitch_mm": 66.66666666666667,
+            "hole_diameter_mm": 30.000000000000004,
+            "objects": 132,
+            "faces": 66,
+            "expected_volume_mm3": 3811061.9901184533
+          },
+          "pid": 37696,
+          "input_sha256": "2a3ce46cbc9742e8ffe51606481fef5be7def3632ca2b1bbb66706154f39a57c",
+          "engine": {
+            "FreeCAD": [
+              "1",
+              "1",
+              "4",
+              "20260928 (Git shallow)",
+              "Unknown",
+              "2026/09/28 13:46:34",
+              "(HEAD detached at 4fd3bf320)",
+              "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+            ],
+            "OCCT": "7.8.1"
+          },
+          "required_metric_count": 39,
+          "base_commit": "8a8d4a47e4104d08398aaaa7be15f3c37ee2ba14",
+          "hardware": {
+            "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+            "logical_processors": 32,
+            "platform": "Windows-10-10.0.26200-SP0"
+          },
+          "required_metrics": [
+            "inspect_warm_ms",
+            "inspect_after_change_ms",
+            "checkpoint_ms",
+            "preview_first_ms",
+            "preview_update_ms",
+            "native_open_ms",
+            "kurtshape_open_ms",
+            "add_sketch.total_ms",
+            "add_sketch.overhead_ms",
+            "add_sketch.native_recompute_ms",
+            "add_sketch.intent_signature_ms",
+            "add_sketch.inspection_ms",
+            "add_sketch.selector_evaluation_ms",
+            "add_sketch.auto_scope_sync_ms",
+            "add_sketch.managed_rebuild_ms",
+            "add_pocket.total_ms",
+            "add_pocket.overhead_ms",
+            "add_pocket.native_recompute_ms",
+            "add_pocket.intent_signature_ms",
+            "add_pocket.inspection_ms",
+            "add_pocket.selector_evaluation_ms",
+            "add_pocket.auto_scope_sync_ms",
+            "add_pocket.managed_rebuild_ms",
+            "tip_edit.total_ms",
+            "tip_edit.overhead_ms",
+            "tip_edit.native_recompute_ms",
+            "tip_edit.intent_signature_ms",
+            "tip_edit.inspection_ms",
+            "tip_edit.selector_evaluation_ms",
+            "tip_edit.auto_scope_sync_ms",
+            "tip_edit.managed_rebuild_ms",
+            "upstream_edit.total_ms",
+            "upstream_edit.overhead_ms",
+            "upstream_edit.native_recompute_ms",
+            "upstream_edit.intent_signature_ms",
+            "upstream_edit.inspection_ms",
+            "upstream_edit.selector_evaluation_ms",
+            "upstream_edit.auto_scope_sync_ms",
+            "upstream_edit.managed_rebuild_ms"
+          ],
+          "sections": {
+            "edits": {
+              "status": "ok",
+              "metrics": [
+                "add_pocket.auto_scope_sync_ms",
+                "add_pocket.inspection_ms",
+                "add_pocket.intent_signature_ms",
+                "add_pocket.managed_rebuild_ms",
+                "add_pocket.native_recompute_ms",
+                "add_pocket.overhead_ms",
+                "add_pocket.selector_evaluation_ms",
+                "add_pocket.total_ms",
+                "add_sketch.auto_scope_sync_ms",
+                "add_sketch.inspection_ms",
+                "add_sketch.intent_signature_ms",
+                "add_sketch.managed_rebuild_ms",
+                "add_sketch.native_recompute_ms",
+                "add_sketch.overhead_ms",
+                "add_sketch.selector_evaluation_ms",
+                "add_sketch.total_ms",
+                "tip_edit.auto_scope_sync_ms",
+                "tip_edit.inspection_ms",
+                "tip_edit.intent_signature_ms",
+                "tip_edit.managed_rebuild_ms",
+                "tip_edit.native_recompute_ms",
+                "tip_edit.overhead_ms",
+                "tip_edit.selector_evaluation_ms",
+                "tip_edit.total_ms",
+                "upstream_edit.auto_scope_sync_ms",
+                "upstream_edit.inspection_ms",
+                "upstream_edit.intent_signature_ms",
+                "upstream_edit.managed_rebuild_ms",
+                "upstream_edit.native_recompute_ms",
+                "upstream_edit.overhead_ms",
+                "upstream_edit.selector_evaluation_ms",
+                "upstream_edit.total_ms"
+              ]
+            },
+            "inspect": {
+              "status": "ok",
+              "metrics": [
+                "inspect_after_change_ms",
+                "inspect_warm_ms"
+              ]
+            },
+            "checkpoint": {
+              "status": "ok",
+              "metrics": [
+                "checkpoint_ms"
+              ]
+            },
+            "preview": {
+              "status": "ok",
+              "metrics": [
+                "preview_first_ms",
+                "preview_update_ms"
+              ]
+            },
+            "open": {
+              "status": "ok",
+              "metrics": [
+                "kurtshape_open_ms",
+                "native_open_ms"
+              ]
+            }
+          },
+          "budgets": {
+            "phase0": {
+              "metrics": [
+                {
+                  "confirmation_ms": null,
+                  "target_open": true,
+                  "samples": 5,
+                  "best_ms": null,
+                  "suspected_regression": false,
+                  "name": "tip_edit.overhead_ms",
+                  "regression_limit_ms": null,
+                  "median_ms": 3914.570399792865,
+                  "target_ms": 150,
+                  "failed": false
+                },
+                {
+                  "confirmation_ms": null,
+                  "target_open": true,
+                  "samples": 5,
+                  "best_ms": null,
+                  "suspected_regression": false,
+                  "name": "inspect_after_change_ms",
+                  "regression_limit_ms": null,
+                  "median_ms": 3075.6226000376046,
+                  "target_ms": 20,
+                  "failed": false
+                }
+              ],
+              "failed": false,
+              "evaluated": true,
+              "reason": "Absolute targets measured honestly; confirmed regression requires an earlier comparable best and a separate second run."
+            },
+            "phase1": {
+              "metrics": [
+                {
+                  "confirmation_ms": null,
+                  "target_open": true,
+                  "samples": 5,
+                  "best_ms": null,
+                  "suspected_regression": false,
+                  "name": "tip_edit.overhead_ms",
+                  "regression_limit_ms": null,
+                  "median_ms": 3914.570399792865,
+                  "target_ms": 50,
+                  "failed": false
+                },
+                {
+                  "confirmation_ms": null,
+                  "target_open": true,
+                  "samples": 5,
+                  "best_ms": null,
+                  "suspected_regression": false,
+                  "name": "inspect_after_change_ms",
+                  "regression_limit_ms": null,
+                  "median_ms": 3075.6226000376046,
+                  "target_ms": 20,
+                  "failed": false
+                },
+                {
+                  "confirmation_ms": null,
+                  "target_open": true,
+                  "samples": 5,
+                  "best_ms": null,
+                  "suspected_regression": false,
+                  "name": "preview_first_ms",
+                  "regression_limit_ms": null,
+                  "median_ms": 10956.598299788311,
+                  "target_ms": 50,
+                  "failed": false
+                },
+                {
+                  "confirmation_ms": null,
+                  "target_open": true,
+                  "samples": 5,
+                  "best_ms": null,
+                  "suspected_regression": false,
+                  "name": "checkpoint_ms",
+                  "regression_limit_ms": null,
+                  "median_ms": 1586.7087000515312,
+                  "target_ms": 16,
+                  "failed": false
+                }
+              ],
+              "failed": false,
+              "evaluated": true,
+              "reason": "Absolute targets measured honestly; confirmed regression requires an earlier comparable best and a separate second run."
+            }
+          },
+          "timings": {
+            "tip_edit.total_ms": {
+              "median": 4435.604199999943,
+              "p95": 5027.676299912855,
+              "worst": 5027.676299912855,
+              "samples": [
+                5027.676299912855,
+                4089.8516001179814,
+                4435.604199999943,
+                4651.159199886024,
+                4011.364399921149
+              ]
+            },
+            "tip_edit.native_recompute_ms": {
+              "median": 501.40370009467006,
+              "p95": 706.1415000353009,
+              "worst": 706.1415000353009,
+              "samples": [
+                706.1415000353009,
+                442.05490010790527,
+                521.0338002070785,
+                501.40370009467006,
+                498.37610009126365
+              ]
+            },
+            "tip_edit.overhead_ms": {
+              "median": 3914.570399792865,
+              "p95": 4321.534799877554,
+              "worst": 4321.534799877554,
+              "samples": [
+                4321.534799877554,
+                3647.796700010076,
+                3914.570399792865,
+                4149.755499791354,
+                3512.9882998298854
+              ]
+            },
+            "tip_edit.intent_signature_ms": {
+              "median": 27.969300048425794,
+              "p95": 49.91329996846616,
+              "worst": 49.91329996846616,
+              "samples": [
+                22.845700150355697,
+                27.969300048425794,
+                33.05210010148585,
+                49.91329996846616,
+                25.22569987922907
+              ]
+            },
+            "tip_edit.inspection_ms": {
+              "median": 1839.8507002275437,
+              "p95": 2212.3202001675963,
+              "worst": 2212.3202001675963,
+              "samples": [
+                1818.0082999169827,
+                1839.8507002275437,
+                2042.5149998627603,
+                2212.3202001675963,
+                1691.9682999141514
+              ]
+            },
+            "tip_edit.selector_evaluation_ms": {
+              "median": 0.0,
+              "p95": 0.0,
+              "worst": 0.0,
+              "samples": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            "tip_edit.auto_scope_sync_ms": {
+              "median": 0.014799879863858223,
+              "p95": 0.02010003663599491,
+              "worst": 0.02010003663599491,
+              "samples": [
+                0.01309998333454132,
+                0.012999866157770157,
+                0.02010003663599491,
+                0.014799879863858223,
+                0.015400117263197899
+              ]
+            },
+            "tip_edit.managed_rebuild_ms": {
+              "median": 504.17720014229417,
+              "p95": 709.43220006302,
+              "worst": 709.43220006302,
+              "samples": [
+                709.43220006302,
+                444.3404998164624,
+                523.3344999141991,
+                504.17720014229417,
+                501.2328999582678
+              ]
+            },
+            "upstream_edit.total_ms": {
+              "median": 11568.415999878198,
+              "p95": 18660.95310007222,
+              "worst": 18660.95310007222,
+              "samples": [
+                18660.95310007222,
+                11568.415999878198,
+                13098.468400072306,
+                11468.53610011749,
+                10323.131799930707
+              ]
+            },
+            "upstream_edit.native_recompute_ms": {
+              "median": 7906.188199995086,
+              "p95": 12416.843899991363,
+              "worst": 12416.843899991363,
+              "samples": [
+                12416.843899991363,
+                7658.837200142443,
+                8516.38779998757,
+                7906.188199995086,
+                7039.749999996275
+              ]
+            },
+            "upstream_edit.overhead_ms": {
+              "median": 3909.5787997357547,
+              "p95": 6244.109200080857,
+              "worst": 6244.109200080857,
+              "samples": [
+                6244.109200080857,
+                3909.5787997357547,
+                4582.080600084737,
+                3562.347900122404,
+                3283.381799934432
+              ]
+            },
+            "upstream_edit.intent_signature_ms": {
+              "median": 21.830799989402294,
+              "p95": 67.18040001578629,
+              "worst": 67.18040001578629,
+              "samples": [
+                67.18040001578629,
+                21.830799989402294,
+                42.2344000544399,
+                21.12900000065565,
+                20.803499966859818
+              ]
+            },
+            "upstream_edit.inspection_ms": {
+              "median": 2044.0899000968784,
+              "p95": 3047.0316000282764,
+              "worst": 3047.0316000282764,
+              "samples": [
+                3047.0316000282764,
+                2044.0899000968784,
+                2203.58969992958,
+                1795.640700031072,
+                1725.263600004837
+              ]
+            },
+            "upstream_edit.selector_evaluation_ms": {
+              "median": 0.0,
+              "p95": 0.0,
+              "worst": 0.0,
+              "samples": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            "upstream_edit.auto_scope_sync_ms": {
+              "median": 0.009499955922365189,
+              "p95": 0.0295999925583601,
+              "worst": 0.0295999925583601,
+              "samples": [
+                0.0295999925583601,
+                0.011899974197149277,
+                0.0070999376475811005,
+                0.009499955922365189,
+                0.006400048732757568
+              ]
+            },
+            "upstream_edit.managed_rebuild_ms": {
+              "median": 7907.837899867445,
+              "p95": 12420.861500082538,
+              "worst": 12420.861500082538,
+              "samples": [
+                12420.861500082538,
+                7660.266799852252,
+                8517.751700012013,
+                7907.837899867445,
+                7041.181199951097
+              ]
+            },
+            "add_sketch.total_ms": {
+              "median": 3467.800899874419,
+              "p95": 3625.091099878773,
+              "worst": 3625.091099878773,
+              "samples": [
+                3603.639999870211,
+                3625.091099878773,
+                3445.510599995032,
+                3467.800899874419,
+                3380.93340001069
+              ]
+            },
+            "add_sketch.native_recompute_ms": {
+              "median": 166.61940002813935,
+              "p95": 180.51939993165433,
+              "worst": 180.51939993165433,
+              "samples": [
+                180.51939993165433,
+                166.61940002813935,
+                172.7928000036627,
+                163.99269993416965,
+                164.88649998791516
+              ]
+            },
+            "add_sketch.overhead_ms": {
+              "median": 3303.8081999402493,
+              "p95": 3458.4716998506337,
+              "worst": 3458.4716998506337,
+              "samples": [
+                3423.1205999385566,
+                3458.4716998506337,
+                3272.7177999913692,
+                3303.8081999402493,
+                3216.046900022775
+              ]
+            },
+            "add_sketch.intent_signature_ms": {
+              "median": 21.190500119701028,
+              "p95": 23.218800080940127,
+              "worst": 23.218800080940127,
+              "samples": [
+                18.988499883562326,
+                23.218800080940127,
+                21.386600099503994,
+                21.190500119701028,
+                20.888700149953365
+              ]
+            },
+            "add_sketch.inspection_ms": {
+              "median": 1684.1830001212656,
+              "p95": 1733.1635002046824,
+              "worst": 1733.1635002046824,
+              "samples": [
+                1684.8571998998523,
+                1684.1830001212656,
+                1584.6029999665916,
+                1733.1635002046824,
+                1671.0701000411063
+              ]
+            },
+            "add_sketch.selector_evaluation_ms": {
+              "median": 0.0,
+              "p95": 0.0,
+              "worst": 0.0,
+              "samples": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            "add_sketch.auto_scope_sync_ms": {
+              "median": 0.01490022987127304,
+              "p95": 0.023900065571069717,
+              "worst": 0.023900065571069717,
+              "samples": [
+                0.01490022987127304,
+                0.023900065571069717,
+                0.013999640941619873,
+                0.01490022987127304,
+                0.012399861589074135
+              ]
+            },
+            "add_sketch.managed_rebuild_ms": {
+              "median": 169.65409996919334,
+              "p95": 183.61980002373457,
+              "worst": 183.61980002373457,
+              "samples": [
+                183.61980002373457,
+                169.65409996919334,
+                175.7851999718696,
+                167.15019987896085,
+                167.73599991574883
+              ]
+            },
+            "add_pocket.total_ms": {
+              "median": 7836.055499967188,
+              "p95": 9013.678299961612,
+              "worst": 9013.678299961612,
+              "samples": [
+                9013.678299961612,
+                7823.46750004217,
+                7408.522599842399,
+                7836.055499967188,
+                8143.11459986493
+              ]
+            },
+            "add_pocket.native_recompute_ms": {
+              "median": 1227.9531999956816,
+              "p95": 1308.0263999290764,
+              "worst": 1308.0263999290764,
+              "samples": [
+                1259.0393999125808,
+                1161.844699876383,
+                1049.9752000905573,
+                1308.0263999290764,
+                1227.9531999956816
+              ]
+            },
+            "add_pocket.overhead_ms": {
+              "median": 6661.622800165787,
+              "p95": 7754.638900049031,
+              "worst": 7754.638900049031,
+              "samples": [
+                7754.638900049031,
+                6661.622800165787,
+                6358.547399751842,
+                6528.029100038111,
+                6915.161399869248
+              ]
+            },
+            "add_pocket.intent_signature_ms": {
+              "median": 22.846000036224723,
+              "p95": 31.581700081005692,
+              "worst": 31.581700081005692,
+              "samples": [
+                31.581700081005692,
+                23.25209998525679,
+                22.070599952712655,
+                22.161300061270595,
+                22.846000036224723
+              ]
+            },
+            "add_pocket.inspection_ms": {
+              "median": 1716.448900057003,
+              "p95": 1946.4169999118894,
+              "worst": 1946.4169999118894,
+              "samples": [
+                1946.4169999118894,
+                1716.448900057003,
+                1737.1110001113266,
+                1691.2122999783605,
+                1706.745499977842
+              ]
+            },
+            "add_pocket.selector_evaluation_ms": {
+              "median": 0.0,
+              "p95": 0.0,
+              "worst": 0.0,
+              "samples": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            },
+            "add_pocket.auto_scope_sync_ms": {
+              "median": 0.0271000899374485,
+              "p95": 0.03409991040825844,
+              "worst": 0.03409991040825844,
+              "samples": [
+                0.03409991040825844,
+                0.024200184270739555,
+                0.0271000899374485,
+                0.028700102120637894,
+                0.026999972760677338
+              ]
+            },
+            "add_pocket.managed_rebuild_ms": {
+              "median": 1232.6392999384552,
+              "p95": 1313.8156000059098,
+              "worst": 1313.8156000059098,
+              "samples": [
+                1264.3840000964701,
+                1167.2837000805885,
+                1054.5348001178354,
+                1313.8156000059098,
+                1232.6392999384552
+              ]
+            },
+            "inspect_warm_ms": {
+              "median": 23.342500207945704,
+              "p95": 24.568900000303984,
+              "worst": 24.568900000303984,
+              "samples": [
+                23.342500207945704,
+                23.919799830764532,
+                24.568900000303984,
+                23.290100041776896,
+                22.875300142914057
+              ]
+            },
+            "inspect_after_change_ms": {
+              "median": 3075.6226000376046,
+              "p95": 3269.1322001628578,
+              "worst": 3269.1322001628578,
+              "samples": [
+                3269.1322001628578,
+                3180.384499952197,
+                3050.591900013387,
+                3075.6226000376046,
+                3036.579799838364
+              ]
+            },
+            "checkpoint_ms": {
+              "median": 1586.7087000515312,
+              "p95": 1625.7005999796093,
+              "worst": 1625.7005999796093,
+              "samples": [
+                1574.7938000131398,
+                1569.1103998105973,
+                1625.7005999796093,
+                1595.47880012542,
+                1586.7087000515312
+              ]
+            },
+            "preview_first_ms": {
+              "median": 10956.598299788311,
+              "p95": 11210.403100121766,
+              "worst": 11210.403100121766,
+              "samples": [
+                11051.578199956566,
+                10344.461399829015,
+                10376.892999978736,
+                11210.403100121766,
+                10956.598299788311
+              ]
+            },
+            "preview_update_ms": {
+              "median": 9115.445300005376,
+              "p95": 9652.708499925211,
+              "worst": 9652.708499925211,
+              "samples": [
+                9336.228100117296,
+                8907.91149996221,
+                9115.445300005376,
+                9086.995500139892,
+                9652.708499925211
+              ]
+            },
+            "native_open_ms": {
+              "median": 1750.139000127092,
+              "p95": 2169.4569000974298,
+              "worst": 2169.4569000974298,
+              "samples": [
+                1750.139000127092,
+                1733.744899975136,
+                1728.6119000054896,
+                2169.4569000974298,
+                2022.7554999291897
+              ]
+            },
+            "kurtshape_open_ms": {
+              "median": 16187.744700117037,
+              "p95": 17009.935199981555,
+              "worst": 17009.935199981555,
+              "samples": [
+                16187.744700117037,
+                17009.082400007173,
+                17009.935199981555,
+                14659.27299996838,
+                15131.742399884388
+              ]
+            }
+          },
+          "first_local_baseline": true,
+          "run_id": "2026-10-04T03:29:32.022786+00:00/37696"
+        },
+        {
+          "source_snapshot_sha256": "b074d70cff8713daecff0e90b4c8d0b819b74eb195b3c8ae2c05e433bb929115",
+          "checks": [
+            "Native fixture geometry and expected feature/part/query counts verified",
+            "rebuild metrics measured through the current native APIs",
+            "edits metrics measured through the current native APIs",
+            "inspect metrics measured through the current native APIs",
+            "checkpoint metrics measured through the current native APIs",
+            "preview metrics measured through the current native APIs",
+            "open metrics measured through the current native APIs"
+          ],
+          "passed": true,
+          "repeat": 5,
+          "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\evidence\\perf\\bench-studio-five-repeat.json",
+          "fixture": {
+            "kind": "studio",
+            "base_features": 30,
+            "base_parts": 4,
+            "selector_consumers": 11,
+            "scoped_operations": [
+              "BenchAutoCut: remove/auto",
+              "BenchExplicitAdd: add/Part1"
+            ],
+            "studio_features": 34,
+            "logical_parts": 4,
+            "objects": 160
+          },
+          "pid": 53080,
+          "input_sha256": "76387f4f311f10224a9a7bcec228786066de88798039f7099076ad529a96763c",
+          "engine": {
+            "FreeCAD": [
+              "1",
+              "1",
+              "4",
+              "20260928 (Git shallow)",
+              "Unknown",
+              "2026/09/28 13:46:34",
+              "(HEAD detached at 4fd3bf320)",
+              "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+            ],
+            "OCCT": "7.8.1"
+          },
+          "required_metric_count": 28,
+          "base_commit": "8a8d4a47e4104d08398aaaa7be15f3c37ee2ba14",
+          "hardware": {
+            "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+            "logical_processors": 32,
+            "platform": "Windows-10-10.0.26200-SP0"
+          },
+          "required_metrics": [
+            "inspect_warm_ms",
+            "inspect_after_change_ms",
+            "checkpoint_ms",
+            "preview_first_ms",
+            "preview_update_ms",
+            "native_open_ms",
+            "kurtshape_open_ms",
+            "tip_edit.total_ms",
+            "tip_edit.overhead_ms",
+            "tip_edit.native_recompute_ms",
+            "tip_edit.intent_signature_ms",
+            "tip_edit.inspection_ms",
+            "tip_edit.selector_evaluation_ms",
+            "tip_edit.auto_scope_sync_ms",
+            "tip_edit.managed_rebuild_ms",
+            "upstream_edit.total_ms",
+            "upstream_edit.overhead_ms",
+            "upstream_edit.native_recompute_ms",
+            "upstream_edit.intent_signature_ms",
+            "upstream_edit.inspection_ms",
+            "upstream_edit.selector_evaluation_ms",
+            "upstream_edit.auto_scope_sync_ms",
+            "upstream_edit.managed_rebuild_ms",
+            "total_rebuild_ms",
+            "native_recompute_ms",
+            "selector_evaluation_ms",
+            "auto_scope_sync_ms",
+            "managed_rebuild_ms"
+          ],
+          "sections": {
+            "rebuild": {
+              "status": "ok",
+              "metrics": [
+                "auto_scope_sync_ms",
+                "managed_rebuild_ms",
+                "native_recompute_ms",
+                "selector_evaluation_ms",
+                "total_rebuild_ms"
+              ]
+            },
+            "edits": {
+              "status": "ok",
+              "metrics": [
+                "tip_edit.auto_scope_sync_ms",
+                "tip_edit.inspection_ms",
+                "tip_edit.intent_signature_ms",
+                "tip_edit.managed_rebuild_ms",
+                "tip_edit.native_recompute_ms",
+                "tip_edit.overhead_ms",
+                "tip_edit.selector_evaluation_ms",
+                "tip_edit.total_ms",
+                "upstream_edit.auto_scope_sync_ms",
+                "upstream_edit.inspection_ms",
+                "upstream_edit.intent_signature_ms",
+                "upstream_edit.managed_rebuild_ms",
+                "upstream_edit.native_recompute_ms",
+                "upstream_edit.overhead_ms",
+                "upstream_edit.selector_evaluation_ms",
+                "upstream_edit.total_ms"
+              ]
+            },
+            "inspect": {
+              "status": "ok",
+              "metrics": [
+                "inspect_after_change_ms",
+                "inspect_warm_ms"
+              ]
+            },
+            "checkpoint": {
+              "status": "ok",
+              "metrics": [
+                "checkpoint_ms"
+              ]
+            },
+            "preview": {
+              "status": "ok",
+              "metrics": [
+                "preview_first_ms",
+                "preview_update_ms"
+              ]
+            },
+            "open": {
+              "status": "ok",
+              "metrics": [
+                "kurtshape_open_ms",
+                "native_open_ms"
+              ]
+            }
+          },
+          "budgets": {
+            "metrics": [],
+            "failed": false,
+            "evaluated": false,
+            "reason": "Studio thresholds are established after Q03; this records the first real local baseline only."
+          },
+          "timings": {
+            "total_rebuild_ms": {
+              "median": 1222.6195000112057,
+              "p95": 1364.6287000738084,
+              "worst": 1364.6287000738084,
+              "samples": [
+                1364.6287000738084,
+                1222.6195000112057,
+                1169.7907999623567,
+                1301.4503000304103,
+                1127.660500118509
+              ]
+            },
+            "native_recompute_ms": {
+              "median": 170.00469868071377,
+              "p95": 191.74949964508414,
+              "worst": 191.74949964508414,
+              "samples": [
+                191.74949964508414,
+                170.00469868071377,
+                165.6877975910902,
+                187.5593992881477,
+                161.355099407956
+              ]
+            },
+            "selector_evaluation_ms": {
+              "median": 397.7017996367067,
+              "p95": 454.2881001252681,
+              "worst": 454.2881001252681,
+              "samples": [
+                397.7017996367067,
+                408.0860000103712,
+                389.449899783358,
+                454.2881001252681,
+                361.4269003737718
+              ]
+            },
+            "auto_scope_sync_ms": {
+              "median": 22.161100059747696,
+              "p95": 29.191300040110946,
+              "worst": 29.191300040110946,
+              "samples": [
+                29.191300040110946,
+                22.161100059747696,
+                22.528499830514193,
+                20.914599997922778,
+                20.068800076842308
+              ]
+            },
+            "managed_rebuild_ms": {
+              "median": 628.4183000680059,
+              "p95": 696.2708001956344,
+              "worst": 696.2708001956344,
+              "samples": [
+                667.4513001926243,
+                628.4183000680059,
+                607.9987001139671,
+                696.2708001956344,
+                570.4141999594867
+              ]
+            },
+            "tip_edit.total_ms": {
+              "median": 4367.217699997127,
+              "p95": 6008.135200012475,
+              "worst": 6008.135200012475,
+              "samples": [
+                2601.503200130537,
+                2849.489500047639,
+                4851.8906000535935,
+                4367.217699997127,
+                6008.135200012475
+              ]
+            },
+            "tip_edit.native_recompute_ms": {
+              "median": 116.76019756123424,
+              "p95": 160.98629753105342,
+              "worst": 160.98629753105342,
+              "samples": [
+                58.61929734237492,
+                103.01139880903065,
+                126.58210564404726,
+                116.76019756123424,
+                160.98629753105342
+              ]
+            },
+            "tip_edit.overhead_ms": {
+              "median": 4250.457502435893,
+              "p95": 5847.148902481422,
+              "worst": 5847.148902481422,
+              "samples": [
+                2542.8839027881622,
+                2746.4781012386084,
+                4725.308494409546,
+                4250.457502435893,
+                5847.148902481422
+              ]
+            },
+            "tip_edit.intent_signature_ms": {
+              "median": 13.00989999435842,
+              "p95": 16.864200122654438,
+              "worst": 16.864200122654438,
+              "samples": [
+                10.75070002116263,
+                10.034799808636308,
+                13.051999965682626,
+                13.00989999435842,
+                16.864200122654438
+              ]
+            },
+            "tip_edit.inspection_ms": {
+              "median": 806.9891999475658,
+              "p95": 1359.5914000179619,
+              "worst": 1359.5914000179619,
+              "samples": [
+                457.6097000390291,
+                503.3538001589477,
+                806.9891999475658,
+                820.0425999239087,
+                1359.5914000179619
+              ]
+            },
+            "tip_edit.selector_evaluation_ms": {
+              "median": 1585.835500387475,
+              "p95": 1923.7385999877006,
+              "worst": 1923.7385999877006,
+              "samples": [
+                949.6708002407104,
+                1159.4049998093396,
+                1923.7385999877006,
+                1585.835500387475,
+                1848.4958005137742
+              ]
+            },
+            "tip_edit.auto_scope_sync_ms": {
+              "median": 469.6088000200689,
+              "p95": 721.4164000470191,
+              "worst": 721.4164000470191,
+              "samples": [
+                469.6088000200689,
+                282.6518998481333,
+                721.4164000470191,
+                387.42200029082596,
+                716.6303002741188
+              ]
+            },
+            "tip_edit.managed_rebuild_ms": {
+              "median": 2258.3008999936283,
+              "p95": 2982.4550000485033,
+              "worst": 2982.4550000485033,
+              "samples": [
+                1575.7081999909133,
+                1656.7605999298394,
+                2982.4550000485033,
+                2258.3008999936283,
+                2930.6199001148343
+              ]
+            },
+            "upstream_edit.total_ms": {
+              "median": 4967.351700179279,
+              "p95": 5389.4036000128835,
+              "worst": 5389.4036000128835,
+              "samples": [
+                4967.351700179279,
+                5045.135099906474,
+                5389.4036000128835,
+                4748.971400083974,
+                4795.852900017053
+              ]
+            },
+            "upstream_edit.native_recompute_ms": {
+              "median": 252.991100307554,
+              "p95": 308.8157963939011,
+              "worst": 308.8157963939011,
+              "samples": [
+                234.9758001510054,
+                296.40639876015484,
+                308.8157963939011,
+                252.991100307554,
+                216.4581015240401
+              ]
+            },
+            "upstream_edit.overhead_ms": {
+              "median": 4732.3759000282735,
+              "p95": 5080.587803618982,
+              "worst": 5080.587803618982,
+              "samples": [
+                4732.3759000282735,
+                4748.7287011463195,
+                5080.587803618982,
+                4495.98029977642,
+                4579.394798493013
+              ]
+            },
+            "upstream_edit.intent_signature_ms": {
+              "median": 16.27540006302297,
+              "p95": 34.233300015330315,
+              "worst": 34.233300015330315,
+              "samples": [
+                16.57309988513589,
+                16.27540006302297,
+                34.233300015330315,
+                15.797400148585439,
+                15.679999953135848
+              ]
+            },
+            "upstream_edit.inspection_ms": {
+              "median": 1349.720099940896,
+              "p95": 1420.7901998888701,
+              "worst": 1420.7901998888701,
+              "samples": [
+                1420.7901998888701,
+                1311.665599932894,
+                1399.6887002140284,
+                1349.720099940896,
+                1294.47660013102
+              ]
+            },
+            "upstream_edit.selector_evaluation_ms": {
+              "median": 1154.5728000346571,
+              "p95": 1213.0060999188572,
+              "worst": 1213.0060999188572,
+              "samples": [
+                1064.1336997505277,
+                1213.0060999188572,
+                1154.5728000346571,
+                1065.975500503555,
+                1188.9402002561837
+              ]
+            },
+            "upstream_edit.auto_scope_sync_ms": {
+              "median": 63.55799990706146,
+              "p95": 71.64520001970232,
+              "worst": 71.64520001970232,
+              "samples": [
+                63.55799990706146,
+                71.64520001970232,
+                64.42479998804629,
+                50.32739997841418,
+                43.995599960908294
+              ]
+            },
+            "upstream_edit.managed_rebuild_ms": {
+              "median": 1601.8910000566393,
+              "p95": 1768.115899991244,
+              "worst": 1768.115899991244,
+              "samples": [
+                1537.302500102669,
+                1721.5527000371367,
+                1768.115899991244,
+                1494.86259999685,
+                1601.8910000566393
+              ]
+            },
+            "inspect_warm_ms": {
+              "median": 1731.539900181815,
+              "p95": 2074.8245001304895,
+              "worst": 2074.8245001304895,
+              "samples": [
+                1883.2282000221312,
+                1731.539900181815,
+                1713.8465999159962,
+                1715.1749001350254,
+                2074.8245001304895
+              ]
+            },
+            "inspect_after_change_ms": {
+              "median": 2108.5052001290023,
+              "p95": 2406.68460004963,
+              "worst": 2406.68460004963,
+              "samples": [
+                2406.68460004963,
+                2108.5052001290023,
+                2181.26119999215,
+                1884.9106999114156,
+                1886.8839000351727
+              ]
+            },
+            "checkpoint_ms": {
+              "median": 1002.115499926731,
+              "p95": 1213.0074999295175,
+              "worst": 1213.0074999295175,
+              "samples": [
+                734.6047000028193,
+                1002.115499926731,
+                1213.0074999295175,
+                1115.627400111407,
+                914.3754998221993
+              ]
+            },
+            "preview_first_ms": {
+              "median": 4307.138900039718,
+              "p95": 4736.4228998776525,
+              "worst": 4736.4228998776525,
+              "samples": [
+                4736.4228998776525,
+                4307.138900039718,
+                4403.498200001195,
+                3266.4906999561936,
+                3336.892700055614
+              ]
+            },
+            "preview_update_ms": {
+              "median": 3329.7425999771804,
+              "p95": 4615.186500130221,
+              "worst": 4615.186500130221,
+              "samples": [
+                4615.186500130221,
+                3329.7425999771804,
+                3790.3451998718083,
+                3173.6229001544416,
+                3265.0079000741243
+              ]
+            },
+            "native_open_ms": {
+              "median": 167.01159998774529,
+              "p95": 228.97999989800155,
+              "worst": 228.97999989800155,
+              "samples": [
+                159.383499994874,
+                228.97999989800155,
+                167.01159998774529,
+                189.47769980877638,
+                150.193199981004
+              ]
+            },
+            "kurtshape_open_ms": {
+              "median": 3733.2663000561297,
+              "p95": 4112.852799938992,
+              "worst": 4112.852799938992,
+              "samples": [
+                3733.2663000561297,
+                4112.852799938992,
+                3878.408299991861,
+                3589.3833998125046,
+                3550.788299879059
+              ]
+            }
+          },
+          "first_local_baseline": true,
+          "run_id": "2026-10-04T03:40:52.404877+00:00/53080"
+        }
+      ],
+      "budget_misses": [
+        {
+          "fixture": "plate",
+          "phase": "phase0",
+          "status": "open absolute target; first baseline has no prior best or independent confirmation",
+          "median_ms": 3914.570399792865,
+          "metric": "tip_edit.overhead_ms",
+          "target_ms": 150
+        },
+        {
+          "fixture": "plate",
+          "phase": "phase0",
+          "status": "open absolute target; first baseline has no prior best or independent confirmation",
+          "median_ms": 3075.6226000376046,
+          "metric": "inspect_after_change_ms",
+          "target_ms": 20
+        },
+        {
+          "fixture": "plate",
+          "phase": "phase1",
+          "status": "open absolute target; first baseline has no prior best or independent confirmation",
+          "median_ms": 3914.570399792865,
+          "metric": "tip_edit.overhead_ms",
+          "target_ms": 50
+        },
+        {
+          "fixture": "plate",
+          "phase": "phase1",
+          "status": "open absolute target; first baseline has no prior best or independent confirmation",
+          "median_ms": 3075.6226000376046,
+          "metric": "inspect_after_change_ms",
+          "target_ms": 20
+        },
+        {
+          "fixture": "plate",
+          "phase": "phase1",
+          "status": "open absolute target; first baseline has no prior best or independent confirmation",
+          "median_ms": 10956.598299788311,
+          "metric": "preview_first_ms",
+          "target_ms": 50
+        },
+        {
+          "fixture": "plate",
+          "phase": "phase1",
+          "status": "open absolute target; first baseline has no prior best or independent confirmation",
+          "median_ms": 1586.7087000515312,
+          "metric": "checkpoint_ms",
+          "target_ms": 16
+        }
+      ],
+      "policy": {
+        "minimum_plate_holes": 60,
+        "regression_factor": 1.2,
+        "regression_slack_ms": 5,
+        "requires_second_run": true,
+        "phase0": {
+          "tip_edit.overhead_ms": 150,
+          "inspect_after_change_ms": 20
+        },
+        "phase1": {
+          "tip_edit.overhead_ms": 50,
+          "inspect_after_change_ms": 20,
+          "preview_first_ms": 50,
+          "checkpoint_ms": 16
+        }
+      }
+    }
+  ],
+  "method": "First local five-repeat plate60 and U2 studio baselines; serial isolated bundled native Python after parent CPU gates complete; real Controller operations and native geometry assertions",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "8a8d4a47e4104d08398aaaa7be15f3c37ee2ba14",
+  "worktree_diff_sha256": "25b9e683059056e4589e9456804c30a174ea100914d492b8ea72c5a69ad2399e",
+  "timings": {
+    "plate.tip_edit.total_ms": {
+      "median": 4435.604199999943,
+      "p95": 5027.676299912855,
+      "worst": 5027.676299912855,
+      "samples": [
+        5027.676299912855,
+        4089.8516001179814,
+        4435.604199999943,
+        4651.159199886024,
+        4011.364399921149
+      ]
+    },
+    "plate.tip_edit.native_recompute_ms": {
+      "median": 501.40370009467006,
+      "p95": 706.1415000353009,
+      "worst": 706.1415000353009,
+      "samples": [
+        706.1415000353009,
+        442.05490010790527,
+        521.0338002070785,
+        501.40370009467006,
+        498.37610009126365
+      ]
+    },
+    "plate.tip_edit.overhead_ms": {
+      "median": 3914.570399792865,
+      "p95": 4321.534799877554,
+      "worst": 4321.534799877554,
+      "samples": [
+        4321.534799877554,
+        3647.796700010076,
+        3914.570399792865,
+        4149.755499791354,
+        3512.9882998298854
+      ]
+    },
+    "plate.tip_edit.intent_signature_ms": {
+      "median": 27.969300048425794,
+      "p95": 49.91329996846616,
+      "worst": 49.91329996846616,
+      "samples": [
+        22.845700150355697,
+        27.969300048425794,
+        33.05210010148585,
+        49.91329996846616,
+        25.22569987922907
+      ]
+    },
+    "plate.tip_edit.inspection_ms": {
+      "median": 1839.8507002275437,
+      "p95": 2212.3202001675963,
+      "worst": 2212.3202001675963,
+      "samples": [
+        1818.0082999169827,
+        1839.8507002275437,
+        2042.5149998627603,
+        2212.3202001675963,
+        1691.9682999141514
+      ]
+    },
+    "plate.tip_edit.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "plate.tip_edit.auto_scope_sync_ms": {
+      "median": 0.014799879863858223,
+      "p95": 0.02010003663599491,
+      "worst": 0.02010003663599491,
+      "samples": [
+        0.01309998333454132,
+        0.012999866157770157,
+        0.02010003663599491,
+        0.014799879863858223,
+        0.015400117263197899
+      ]
+    },
+    "plate.tip_edit.managed_rebuild_ms": {
+      "median": 504.17720014229417,
+      "p95": 709.43220006302,
+      "worst": 709.43220006302,
+      "samples": [
+        709.43220006302,
+        444.3404998164624,
+        523.3344999141991,
+        504.17720014229417,
+        501.2328999582678
+      ]
+    },
+    "plate.upstream_edit.total_ms": {
+      "median": 11568.415999878198,
+      "p95": 18660.95310007222,
+      "worst": 18660.95310007222,
+      "samples": [
+        18660.95310007222,
+        11568.415999878198,
+        13098.468400072306,
+        11468.53610011749,
+        10323.131799930707
+      ]
+    },
+    "plate.upstream_edit.native_recompute_ms": {
+      "median": 7906.188199995086,
+      "p95": 12416.843899991363,
+      "worst": 12416.843899991363,
+      "samples": [
+        12416.843899991363,
+        7658.837200142443,
+        8516.38779998757,
+        7906.188199995086,
+        7039.749999996275
+      ]
+    },
+    "plate.upstream_edit.overhead_ms": {
+      "median": 3909.5787997357547,
+      "p95": 6244.109200080857,
+      "worst": 6244.109200080857,
+      "samples": [
+        6244.109200080857,
+        3909.5787997357547,
+        4582.080600084737,
+        3562.347900122404,
+        3283.381799934432
+      ]
+    },
+    "plate.upstream_edit.intent_signature_ms": {
+      "median": 21.830799989402294,
+      "p95": 67.18040001578629,
+      "worst": 67.18040001578629,
+      "samples": [
+        67.18040001578629,
+        21.830799989402294,
+        42.2344000544399,
+        21.12900000065565,
+        20.803499966859818
+      ]
+    },
+    "plate.upstream_edit.inspection_ms": {
+      "median": 2044.0899000968784,
+      "p95": 3047.0316000282764,
+      "worst": 3047.0316000282764,
+      "samples": [
+        3047.0316000282764,
+        2044.0899000968784,
+        2203.58969992958,
+        1795.640700031072,
+        1725.263600004837
+      ]
+    },
+    "plate.upstream_edit.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "plate.upstream_edit.auto_scope_sync_ms": {
+      "median": 0.009499955922365189,
+      "p95": 0.0295999925583601,
+      "worst": 0.0295999925583601,
+      "samples": [
+        0.0295999925583601,
+        0.011899974197149277,
+        0.0070999376475811005,
+        0.009499955922365189,
+        0.006400048732757568
+      ]
+    },
+    "plate.upstream_edit.managed_rebuild_ms": {
+      "median": 7907.837899867445,
+      "p95": 12420.861500082538,
+      "worst": 12420.861500082538,
+      "samples": [
+        12420.861500082538,
+        7660.266799852252,
+        8517.751700012013,
+        7907.837899867445,
+        7041.181199951097
+      ]
+    },
+    "plate.add_sketch.total_ms": {
+      "median": 3467.800899874419,
+      "p95": 3625.091099878773,
+      "worst": 3625.091099878773,
+      "samples": [
+        3603.639999870211,
+        3625.091099878773,
+        3445.510599995032,
+        3467.800899874419,
+        3380.93340001069
+      ]
+    },
+    "plate.add_sketch.native_recompute_ms": {
+      "median": 166.61940002813935,
+      "p95": 180.51939993165433,
+      "worst": 180.51939993165433,
+      "samples": [
+        180.51939993165433,
+        166.61940002813935,
+        172.7928000036627,
+        163.99269993416965,
+        164.88649998791516
+      ]
+    },
+    "plate.add_sketch.overhead_ms": {
+      "median": 3303.8081999402493,
+      "p95": 3458.4716998506337,
+      "worst": 3458.4716998506337,
+      "samples": [
+        3423.1205999385566,
+        3458.4716998506337,
+        3272.7177999913692,
+        3303.8081999402493,
+        3216.046900022775
+      ]
+    },
+    "plate.add_sketch.intent_signature_ms": {
+      "median": 21.190500119701028,
+      "p95": 23.218800080940127,
+      "worst": 23.218800080940127,
+      "samples": [
+        18.988499883562326,
+        23.218800080940127,
+        21.386600099503994,
+        21.190500119701028,
+        20.888700149953365
+      ]
+    },
+    "plate.add_sketch.inspection_ms": {
+      "median": 1684.1830001212656,
+      "p95": 1733.1635002046824,
+      "worst": 1733.1635002046824,
+      "samples": [
+        1684.8571998998523,
+        1684.1830001212656,
+        1584.6029999665916,
+        1733.1635002046824,
+        1671.0701000411063
+      ]
+    },
+    "plate.add_sketch.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "plate.add_sketch.auto_scope_sync_ms": {
+      "median": 0.01490022987127304,
+      "p95": 0.023900065571069717,
+      "worst": 0.023900065571069717,
+      "samples": [
+        0.01490022987127304,
+        0.023900065571069717,
+        0.013999640941619873,
+        0.01490022987127304,
+        0.012399861589074135
+      ]
+    },
+    "plate.add_sketch.managed_rebuild_ms": {
+      "median": 169.65409996919334,
+      "p95": 183.61980002373457,
+      "worst": 183.61980002373457,
+      "samples": [
+        183.61980002373457,
+        169.65409996919334,
+        175.7851999718696,
+        167.15019987896085,
+        167.73599991574883
+      ]
+    },
+    "plate.add_pocket.total_ms": {
+      "median": 7836.055499967188,
+      "p95": 9013.678299961612,
+      "worst": 9013.678299961612,
+      "samples": [
+        9013.678299961612,
+        7823.46750004217,
+        7408.522599842399,
+        7836.055499967188,
+        8143.11459986493
+      ]
+    },
+    "plate.add_pocket.native_recompute_ms": {
+      "median": 1227.9531999956816,
+      "p95": 1308.0263999290764,
+      "worst": 1308.0263999290764,
+      "samples": [
+        1259.0393999125808,
+        1161.844699876383,
+        1049.9752000905573,
+        1308.0263999290764,
+        1227.9531999956816
+      ]
+    },
+    "plate.add_pocket.overhead_ms": {
+      "median": 6661.622800165787,
+      "p95": 7754.638900049031,
+      "worst": 7754.638900049031,
+      "samples": [
+        7754.638900049031,
+        6661.622800165787,
+        6358.547399751842,
+        6528.029100038111,
+        6915.161399869248
+      ]
+    },
+    "plate.add_pocket.intent_signature_ms": {
+      "median": 22.846000036224723,
+      "p95": 31.581700081005692,
+      "worst": 31.581700081005692,
+      "samples": [
+        31.581700081005692,
+        23.25209998525679,
+        22.070599952712655,
+        22.161300061270595,
+        22.846000036224723
+      ]
+    },
+    "plate.add_pocket.inspection_ms": {
+      "median": 1716.448900057003,
+      "p95": 1946.4169999118894,
+      "worst": 1946.4169999118894,
+      "samples": [
+        1946.4169999118894,
+        1716.448900057003,
+        1737.1110001113266,
+        1691.2122999783605,
+        1706.745499977842
+      ]
+    },
+    "plate.add_pocket.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "plate.add_pocket.auto_scope_sync_ms": {
+      "median": 0.0271000899374485,
+      "p95": 0.03409991040825844,
+      "worst": 0.03409991040825844,
+      "samples": [
+        0.03409991040825844,
+        0.024200184270739555,
+        0.0271000899374485,
+        0.028700102120637894,
+        0.026999972760677338
+      ]
+    },
+    "plate.add_pocket.managed_rebuild_ms": {
+      "median": 1232.6392999384552,
+      "p95": 1313.8156000059098,
+      "worst": 1313.8156000059098,
+      "samples": [
+        1264.3840000964701,
+        1167.2837000805885,
+        1054.5348001178354,
+        1313.8156000059098,
+        1232.6392999384552
+      ]
+    },
+    "plate.inspect_warm_ms": {
+      "median": 23.342500207945704,
+      "p95": 24.568900000303984,
+      "worst": 24.568900000303984,
+      "samples": [
+        23.342500207945704,
+        23.919799830764532,
+        24.568900000303984,
+        23.290100041776896,
+        22.875300142914057
+      ]
+    },
+    "plate.inspect_after_change_ms": {
+      "median": 3075.6226000376046,
+      "p95": 3269.1322001628578,
+      "worst": 3269.1322001628578,
+      "samples": [
+        3269.1322001628578,
+        3180.384499952197,
+        3050.591900013387,
+        3075.6226000376046,
+        3036.579799838364
+      ]
+    },
+    "plate.checkpoint_ms": {
+      "median": 1586.7087000515312,
+      "p95": 1625.7005999796093,
+      "worst": 1625.7005999796093,
+      "samples": [
+        1574.7938000131398,
+        1569.1103998105973,
+        1625.7005999796093,
+        1595.47880012542,
+        1586.7087000515312
+      ]
+    },
+    "plate.preview_first_ms": {
+      "median": 10956.598299788311,
+      "p95": 11210.403100121766,
+      "worst": 11210.403100121766,
+      "samples": [
+        11051.578199956566,
+        10344.461399829015,
+        10376.892999978736,
+        11210.403100121766,
+        10956.598299788311
+      ]
+    },
+    "plate.preview_update_ms": {
+      "median": 9115.445300005376,
+      "p95": 9652.708499925211,
+      "worst": 9652.708499925211,
+      "samples": [
+        9336.228100117296,
+        8907.91149996221,
+        9115.445300005376,
+        9086.995500139892,
+        9652.708499925211
+      ]
+    },
+    "plate.native_open_ms": {
+      "median": 1750.139000127092,
+      "p95": 2169.4569000974298,
+      "worst": 2169.4569000974298,
+      "samples": [
+        1750.139000127092,
+        1733.744899975136,
+        1728.6119000054896,
+        2169.4569000974298,
+        2022.7554999291897
+      ]
+    },
+    "plate.kurtshape_open_ms": {
+      "median": 16187.744700117037,
+      "p95": 17009.935199981555,
+      "worst": 17009.935199981555,
+      "samples": [
+        16187.744700117037,
+        17009.082400007173,
+        17009.935199981555,
+        14659.27299996838,
+        15131.742399884388
+      ]
+    },
+    "studio.total_rebuild_ms": {
+      "median": 1222.6195000112057,
+      "p95": 1364.6287000738084,
+      "worst": 1364.6287000738084,
+      "samples": [
+        1364.6287000738084,
+        1222.6195000112057,
+        1169.7907999623567,
+        1301.4503000304103,
+        1127.660500118509
+      ]
+    },
+    "studio.native_recompute_ms": {
+      "median": 170.00469868071377,
+      "p95": 191.74949964508414,
+      "worst": 191.74949964508414,
+      "samples": [
+        191.74949964508414,
+        170.00469868071377,
+        165.6877975910902,
+        187.5593992881477,
+        161.355099407956
+      ]
+    },
+    "studio.selector_evaluation_ms": {
+      "median": 397.7017996367067,
+      "p95": 454.2881001252681,
+      "worst": 454.2881001252681,
+      "samples": [
+        397.7017996367067,
+        408.0860000103712,
+        389.449899783358,
+        454.2881001252681,
+        361.4269003737718
+      ]
+    },
+    "studio.auto_scope_sync_ms": {
+      "median": 22.161100059747696,
+      "p95": 29.191300040110946,
+      "worst": 29.191300040110946,
+      "samples": [
+        29.191300040110946,
+        22.161100059747696,
+        22.528499830514193,
+        20.914599997922778,
+        20.068800076842308
+      ]
+    },
+    "studio.managed_rebuild_ms": {
+      "median": 628.4183000680059,
+      "p95": 696.2708001956344,
+      "worst": 696.2708001956344,
+      "samples": [
+        667.4513001926243,
+        628.4183000680059,
+        607.9987001139671,
+        696.2708001956344,
+        570.4141999594867
+      ]
+    },
+    "studio.tip_edit.total_ms": {
+      "median": 4367.217699997127,
+      "p95": 6008.135200012475,
+      "worst": 6008.135200012475,
+      "samples": [
+        2601.503200130537,
+        2849.489500047639,
+        4851.8906000535935,
+        4367.217699997127,
+        6008.135200012475
+      ]
+    },
+    "studio.tip_edit.native_recompute_ms": {
+      "median": 116.76019756123424,
+      "p95": 160.98629753105342,
+      "worst": 160.98629753105342,
+      "samples": [
+        58.61929734237492,
+        103.01139880903065,
+        126.58210564404726,
+        116.76019756123424,
+        160.98629753105342
+      ]
+    },
+    "studio.tip_edit.overhead_ms": {
+      "median": 4250.457502435893,
+      "p95": 5847.148902481422,
+      "worst": 5847.148902481422,
+      "samples": [
+        2542.8839027881622,
+        2746.4781012386084,
+        4725.308494409546,
+        4250.457502435893,
+        5847.148902481422
+      ]
+    },
+    "studio.tip_edit.intent_signature_ms": {
+      "median": 13.00989999435842,
+      "p95": 16.864200122654438,
+      "worst": 16.864200122654438,
+      "samples": [
+        10.75070002116263,
+        10.034799808636308,
+        13.051999965682626,
+        13.00989999435842,
+        16.864200122654438
+      ]
+    },
+    "studio.tip_edit.inspection_ms": {
+      "median": 806.9891999475658,
+      "p95": 1359.5914000179619,
+      "worst": 1359.5914000179619,
+      "samples": [
+        457.6097000390291,
+        503.3538001589477,
+        806.9891999475658,
+        820.0425999239087,
+        1359.5914000179619
+      ]
+    },
+    "studio.tip_edit.selector_evaluation_ms": {
+      "median": 1585.835500387475,
+      "p95": 1923.7385999877006,
+      "worst": 1923.7385999877006,
+      "samples": [
+        949.6708002407104,
+        1159.4049998093396,
+        1923.7385999877006,
+        1585.835500387475,
+        1848.4958005137742
+      ]
+    },
+    "studio.tip_edit.auto_scope_sync_ms": {
+      "median": 469.6088000200689,
+      "p95": 721.4164000470191,
+      "worst": 721.4164000470191,
+      "samples": [
+        469.6088000200689,
+        282.6518998481333,
+        721.4164000470191,
+        387.42200029082596,
+        716.6303002741188
+      ]
+    },
+    "studio.tip_edit.managed_rebuild_ms": {
+      "median": 2258.3008999936283,
+      "p95": 2982.4550000485033,
+      "worst": 2982.4550000485033,
+      "samples": [
+        1575.7081999909133,
+        1656.7605999298394,
+        2982.4550000485033,
+        2258.3008999936283,
+        2930.6199001148343
+      ]
+    },
+    "studio.upstream_edit.total_ms": {
+      "median": 4967.351700179279,
+      "p95": 5389.4036000128835,
+      "worst": 5389.4036000128835,
+      "samples": [
+        4967.351700179279,
+        5045.135099906474,
+        5389.4036000128835,
+        4748.971400083974,
+        4795.852900017053
+      ]
+    },
+    "studio.upstream_edit.native_recompute_ms": {
+      "median": 252.991100307554,
+      "p95": 308.8157963939011,
+      "worst": 308.8157963939011,
+      "samples": [
+        234.9758001510054,
+        296.40639876015484,
+        308.8157963939011,
+        252.991100307554,
+        216.4581015240401
+      ]
+    },
+    "studio.upstream_edit.overhead_ms": {
+      "median": 4732.3759000282735,
+      "p95": 5080.587803618982,
+      "worst": 5080.587803618982,
+      "samples": [
+        4732.3759000282735,
+        4748.7287011463195,
+        5080.587803618982,
+        4495.98029977642,
+        4579.394798493013
+      ]
+    },
+    "studio.upstream_edit.intent_signature_ms": {
+      "median": 16.27540006302297,
+      "p95": 34.233300015330315,
+      "worst": 34.233300015330315,
+      "samples": [
+        16.57309988513589,
+        16.27540006302297,
+        34.233300015330315,
+        15.797400148585439,
+        15.679999953135848
+      ]
+    },
+    "studio.upstream_edit.inspection_ms": {
+      "median": 1349.720099940896,
+      "p95": 1420.7901998888701,
+      "worst": 1420.7901998888701,
+      "samples": [
+        1420.7901998888701,
+        1311.665599932894,
+        1399.6887002140284,
+        1349.720099940896,
+        1294.47660013102
+      ]
+    },
+    "studio.upstream_edit.selector_evaluation_ms": {
+      "median": 1154.5728000346571,
+      "p95": 1213.0060999188572,
+      "worst": 1213.0060999188572,
+      "samples": [
+        1064.1336997505277,
+        1213.0060999188572,
+        1154.5728000346571,
+        1065.975500503555,
+        1188.9402002561837
+      ]
+    },
+    "studio.upstream_edit.auto_scope_sync_ms": {
+      "median": 63.55799990706146,
+      "p95": 71.64520001970232,
+      "worst": 71.64520001970232,
+      "samples": [
+        63.55799990706146,
+        71.64520001970232,
+        64.42479998804629,
+        50.32739997841418,
+        43.995599960908294
+      ]
+    },
+    "studio.upstream_edit.managed_rebuild_ms": {
+      "median": 1601.8910000566393,
+      "p95": 1768.115899991244,
+      "worst": 1768.115899991244,
+      "samples": [
+        1537.302500102669,
+        1721.5527000371367,
+        1768.115899991244,
+        1494.86259999685,
+        1601.8910000566393
+      ]
+    },
+    "studio.inspect_warm_ms": {
+      "median": 1731.539900181815,
+      "p95": 2074.8245001304895,
+      "worst": 2074.8245001304895,
+      "samples": [
+        1883.2282000221312,
+        1731.539900181815,
+        1713.8465999159962,
+        1715.1749001350254,
+        2074.8245001304895
+      ]
+    },
+    "studio.inspect_after_change_ms": {
+      "median": 2108.5052001290023,
+      "p95": 2406.68460004963,
+      "worst": 2406.68460004963,
+      "samples": [
+        2406.68460004963,
+        2108.5052001290023,
+        2181.26119999215,
+        1884.9106999114156,
+        1886.8839000351727
+      ]
+    },
+    "studio.checkpoint_ms": {
+      "median": 1002.115499926731,
+      "p95": 1213.0074999295175,
+      "worst": 1213.0074999295175,
+      "samples": [
+        734.6047000028193,
+        1002.115499926731,
+        1213.0074999295175,
+        1115.627400111407,
+        914.3754998221993
+      ]
+    },
+    "studio.preview_first_ms": {
+      "median": 4307.138900039718,
+      "p95": 4736.4228998776525,
+      "worst": 4736.4228998776525,
+      "samples": [
+        4736.4228998776525,
+        4307.138900039718,
+        4403.498200001195,
+        3266.4906999561936,
+        3336.892700055614
+      ]
+    },
+    "studio.preview_update_ms": {
+      "median": 3329.7425999771804,
+      "p95": 4615.186500130221,
+      "worst": 4615.186500130221,
+      "samples": [
+        4615.186500130221,
+        3329.7425999771804,
+        3790.3451998718083,
+        3173.6229001544416,
+        3265.0079000741243
+      ]
+    },
+    "studio.native_open_ms": {
+      "median": 167.01159998774529,
+      "p95": 228.97999989800155,
+      "worst": 228.97999989800155,
+      "samples": [
+        159.383499994874,
+        228.97999989800155,
+        167.01159998774529,
+        189.47769980877638,
+        150.193199981004
+      ]
+    },
+    "studio.kurtshape_open_ms": {
+      "median": 3733.2663000561297,
+      "p95": 4112.852799938992,
+      "worst": 4112.852799938992,
+      "samples": [
+        3733.2663000561297,
+        4112.852799938992,
+        3878.408299991861,
+        3589.3833998125046,
+        3550.788299879059
+      ]
+    }
+  },
+  "limits": "First local baselines, with no earlier comparable local best or independent confirmation. Absolute phase0/phase1 target misses remain open. Studio thresholds are established after Q03. No speed improvement, hosted CI execution or user comfort claim. Other CPU gates finished by explicit parent invocation; unrelated system workload is not controlled.",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_processors": 32,
+    "platform": "Windows-10-10.0.26200-SP0"
+  },
+  "fixture": {
+    "studio_base_features": 30,
+    "studio_selector_consumers": 11,
+    "studio_base_parts": 4,
+    "plate_holes": 60,
+    "kind": "paired-plate60-and-studio"
+  },
+  "repeat": 5,
+  "run_id": "4e5a4704c17e408eb4f3f9a417cead11",
+  "sections": {
+    "plate.edits": {
+      "status": "ok",
+      "metrics": [
+        "add_pocket.auto_scope_sync_ms",
+        "add_pocket.inspection_ms",
+        "add_pocket.intent_signature_ms",
+        "add_pocket.managed_rebuild_ms",
+        "add_pocket.native_recompute_ms",
+        "add_pocket.overhead_ms",
+        "add_pocket.selector_evaluation_ms",
+        "add_pocket.total_ms",
+        "add_sketch.auto_scope_sync_ms",
+        "add_sketch.inspection_ms",
+        "add_sketch.intent_signature_ms",
+        "add_sketch.managed_rebuild_ms",
+        "add_sketch.native_recompute_ms",
+        "add_sketch.overhead_ms",
+        "add_sketch.selector_evaluation_ms",
+        "add_sketch.total_ms",
+        "tip_edit.auto_scope_sync_ms",
+        "tip_edit.inspection_ms",
+        "tip_edit.intent_signature_ms",
+        "tip_edit.managed_rebuild_ms",
+        "tip_edit.native_recompute_ms",
+        "tip_edit.overhead_ms",
+        "tip_edit.selector_evaluation_ms",
+        "tip_edit.total_ms",
+        "upstream_edit.auto_scope_sync_ms",
+        "upstream_edit.inspection_ms",
+        "upstream_edit.intent_signature_ms",
+        "upstream_edit.managed_rebuild_ms",
+        "upstream_edit.native_recompute_ms",
+        "upstream_edit.overhead_ms",
+        "upstream_edit.selector_evaluation_ms",
+        "upstream_edit.total_ms"
+      ]
+    },
+    "plate.inspect": {
+      "status": "ok",
+      "metrics": [
+        "inspect_after_change_ms",
+        "inspect_warm_ms"
+      ]
+    },
+    "plate.checkpoint": {
+      "status": "ok",
+      "metrics": [
+        "checkpoint_ms"
+      ]
+    },
+    "plate.preview": {
+      "status": "ok",
+      "metrics": [
+        "preview_first_ms",
+        "preview_update_ms"
+      ]
+    },
+    "plate.open": {
+      "status": "ok",
+      "metrics": [
+        "kurtshape_open_ms",
+        "native_open_ms"
+      ]
+    },
+    "studio.rebuild": {
+      "status": "ok",
+      "metrics": [
+        "auto_scope_sync_ms",
+        "managed_rebuild_ms",
+        "native_recompute_ms",
+        "selector_evaluation_ms",
+        "total_rebuild_ms"
+      ]
+    },
+    "studio.edits": {
+      "status": "ok",
+      "metrics": [
+        "tip_edit.auto_scope_sync_ms",
+        "tip_edit.inspection_ms",
+        "tip_edit.intent_signature_ms",
+        "tip_edit.managed_rebuild_ms",
+        "tip_edit.native_recompute_ms",
+        "tip_edit.overhead_ms",
+        "tip_edit.selector_evaluation_ms",
+        "tip_edit.total_ms",
+        "upstream_edit.auto_scope_sync_ms",
+        "upstream_edit.inspection_ms",
+        "upstream_edit.intent_signature_ms",
+        "upstream_edit.managed_rebuild_ms",
+        "upstream_edit.native_recompute_ms",
+        "upstream_edit.overhead_ms",
+        "upstream_edit.selector_evaluation_ms",
+        "upstream_edit.total_ms"
+      ]
+    },
+    "studio.inspect": {
+      "status": "ok",
+      "metrics": [
+        "inspect_after_change_ms",
+        "inspect_warm_ms"
+      ]
+    },
+    "studio.checkpoint": {
+      "status": "ok",
+      "metrics": [
+        "checkpoint_ms"
+      ]
+    },
+    "studio.preview": {
+      "status": "ok",
+      "metrics": [
+        "preview_first_ms",
+        "preview_update_ms"
+      ]
+    },
+    "studio.open": {
+      "status": "ok",
+      "metrics": [
+        "kurtshape_open_ms",
+        "native_open_ms"
+      ]
+    }
+  },
+  "input_sha256": "b8a42f3561538d53e42b46b41b48a7f7cc16eac56c3ea4dca5d53aaa3352614b"
+}
