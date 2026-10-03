@@ -69,3 +69,22 @@ New/open and existing-document mutations reject while native graphical editing i
 Current limits: no general expression-evaluation request, arbitrary FeatureScript execution, automatic topology guessing, general multi-body conversion or typed operations for every native GUI feature. Face sketches require a retained native planar support; native lost references/rebuild failures are explicit and no frozen placement is substituted. Native GUI tools can create other features in the same authoritative document. **The two supplied Onshape designs remain 0/2 converted**; synthetic subset fixtures do not count as real migrations.
 
 The token-authenticated loopback adapter sends the same dispatch requests to the GUI thread; CLI clients read its local session file. It does not configure cloud Onshape access or message another assistant. An actual Claude-client session and reference-backed imported-edit equivalence remain M1 acceptance gaps.
+
+## Assembly increment — October 2
+
+All assembly mutations require the existing current document UUID/revision and bridge request ID. GUI dialogs retain their starting revision so an intervening edit rejects instead of applying to a changed assembly. A project contains one single-level native assembly. Sources are embedded shape snapshots with same-document native link occurrences; external source changes never silently update accepted parts. [Policy, workflow and verification](assembly-workflow/WORKFLOW.md).
+
+| Operation | Additional arguments | Behavior |
+|---|---|---|
+| `assembly_candidates` | Absolute existing FCStd `path`; read-only, no document/revision | Return selectable final Body/solid IDs/names/counts; unsafe sources reject without publishing/opening a user document |
+| `create_assembly` | Optional `id`, `name` | Create native Assembly and joint group in this document; one assembly only |
+| `insert_assembly_part` | FCStd `path`, `source_id`; optional `assembly`, `id`, `name` | Embed selected source geometry and create one independent native link occurrence; first insertion grounds automatically |
+| `ground_assembly_instance` | `instance`; optional `assembly` | Change the sole grounded reference and solve |
+| `create_assembly_joint` | `joint_type:fixed/revolute/slider`, `first`, `second`; optional `assembly`, `id`, `name` | Native joint connectors and solver; each reference is `{instance,subelement}` with empty subelement for origin or native Face/Edge/Vertex ID |
+| `edit_assembly_joint` | `joint`; optional `assembly`, `joint_type`, `first`, `second`, `name` | Change references/type/label and solve in one native transaction |
+| `move_assembly_joint` | `joint`, `value`; optional `assembly` | Revolute degrees or slider millimeters; set permitted coordinate and solve, fixed motion rejects |
+| `move_assembly_instance` | `instance`, `position_mm:[x,y,z]`, `rotation_xyzw:[x,y,z,w]`; optional `assembly` | Place a free occurrence, validate and solve; no arbitrary transform code |
+| `delete_assembly_object` | `feature`; optional `assembly`, `cascade:false` | Remove a joint or occurrence; dependent joints need explicit cascade; native undo restores references/placements |
+| `solve_assembly` | Optional `assembly` | Explicit solve of current native assembly intent |
+
+`rename_feature` additionally accepts supported assembly/instance/joint IDs and preserves internal references. Inspection adds `assembly`; capabilities identify native solver, single-level scope, source snapshot policy and motion units. Undo/redo restore transaction placements and solver evidence without rerunning the solver on idle. Assembly current-solid export includes every occurrence globally transformed once, excludes embedded sources, and rejects a `body` filter. Its sidecar includes the inspected assembly state. Solver failure rolls back typed mutations; unresolved native intent is never current valid geometry. Reopen/recovery uses native persistence and rechecks solving. Arbitrary proxy/cross-document safety remains narrow; this is not a general FCStd trust waiver.

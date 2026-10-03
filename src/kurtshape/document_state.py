@@ -22,9 +22,16 @@ class DocumentState:
     def slotChangedObject(self, obj, prop):
         if obj.Name == "KurtShapeProject":
             return
+        if prop == "Shape" and getattr(obj, "KurtShapeEmbeddedSource", False):
+            # An embedded snapshot has no parametric producer. Replacing its
+            # BRep is native intent and must invalidate tokens, not look like
+            # an ordinary derived recompute cache update.
+            self.state(obj.Document)["assembly_source_changed"] = True
+            self.invalidate(obj.Document, intent=True, geometry=True)
+            return
         derived = prop in {"Shape", "InternalShape", "Proxy", "PlacementList", "Visibility"}
         self.invalidate(obj.Document, intent=not derived,
-                        geometry=prop in {"Shape", "InternalShape"})
+                        geometry=prop in {"Shape", "InternalShape", "Placement", "LinkPlacement", "LinkedObject", "Group"})
 
     def slotCreatedObject(self, obj):
         if obj.Name != "KurtShapeProject":
@@ -53,6 +60,8 @@ class DocumentState:
     slotRedoDocument = slotAbortTransaction
 
     def slotDeletedDocument(self, doc):
+        from . import assembly
+        assembly.clear_cache(doc)
         self.states.pop(doc.Name, None)
         self.controller.evaluations.pop(doc.Name, None)
         self.controller.unmanaged.pop(doc.Name, None)

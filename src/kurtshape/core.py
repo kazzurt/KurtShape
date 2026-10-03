@@ -19,6 +19,7 @@ from .request_ledger import RequestLedger
 from .bodies import bodies, owner, origin_plane, results as native_results
 from .recovery import RecoveryStore
 from .timing import Timings
+from . import assembly as native_assembly
 
 ROOT = Path(__file__).resolve().parents[2]
 WRITE_ROOT = ROOT.parent.resolve()
@@ -165,12 +166,14 @@ def measurements(shape):
 
 
 class Controller:
-    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics"}
+    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates"}
+    ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
+                    "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}
     MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line",
                  "pad", "pocket", "set_parameter", "set_expression", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "rebuild"}
     EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "set_parameter", "set_expression", "pierce", "finish_sketch_edit", "undo", "redo"}
     CREATE_OPS = {"new", "open", "recover", "import_step"}
-    OPS = READ_OPS | MODEL_OPS | CREATE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
+    OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
     ARGS = {
         "new": {"name"}, "open": {"path"}, "import_step": {"path"}, "recover": {"path"}, "adopt": {"path"}, "create_body": {"id", "name"}, "inspect": set(), "list_documents": set(),
         "create_sketch": {"id", "plane", "support", "source_feature_id", "source_feature_name"},
@@ -189,6 +192,14 @@ class Controller:
         "pierce": {"sketch", "geometry", "point", "target", "subelement"},
         "save": {"path"}, "export": {"path", "body"},
         "capabilities": set(), "request_status": {"request_id"}, "preview": {"proposal"}, "diagnostics": set(),
+        "assembly_candidates": {"path"}, "create_assembly": {"id", "name"},
+        "insert_assembly_part": {"assembly", "path", "source_id", "id", "name"},
+        "ground_assembly_instance": {"assembly", "instance"},
+        "create_assembly_joint": {"assembly", "joint_type", "first", "second", "id", "name"},
+        "edit_assembly_joint": {"assembly", "joint", "joint_type", "first", "second", "name"},
+        "move_assembly_joint": {"assembly", "joint", "value"},
+        "move_assembly_instance": {"assembly", "instance", "position_mm", "rotation_xyzw"},
+        "delete_assembly_object": {"assembly", "feature", "cascade"}, "solve_assembly": {"assembly"},
     }
     for _op in MODEL_OPS - {"create_body", "rebuild"} | {"begin_sketch_edit"}:
         ARGS[_op] = ARGS[_op] | {"body"}
@@ -245,14 +256,21 @@ class Controller:
 
     def _geometry(self, doc, objects=None):
         objects = native_results(doc) if objects is None else objects
-        shapes = [obj.Shape for obj in objects if not obj.Shape.isNull() and obj.Shape.Solids]
-        if not shapes:
+        solid_objects = [obj for obj in objects if not obj.Shape.isNull() and obj.Shape.Solids]
+        if not solid_objects:
             return None
         generation = self.observer.state(doc)["generation"]
         key = "aggregate:" + ",".join(obj.Name for obj in objects)
         cache = self.evaluations.setdefault(doc.Name, {})
         if key not in cache or cache[key][0] != generation:
-            cache[key] = (generation, measurements(Part.makeCompound(shapes)))
+            shapes = [native_assembly.global_shape(obj) for obj in solid_objects]
+            metrics = measurements(Part.makeCompound(shapes))
+            if native_assembly.assemblies(doc):
+                # OCCT compound mass integration on the supplied curved STEP
+                # parts depends on the aggregate coordinate range. Occurrences
+                # remain independent solids; sum their accepted mass properties.
+                metrics["volume_mm3"] = sum(self._evaluated_shape(doc, obj)["volume_mm3"] for obj in solid_objects)
+            cache[key] = (generation, metrics)
         return dict(cache[key][1])
 
     def close(self):
@@ -269,7 +287,7 @@ class Controller:
         cache = self.evaluations.setdefault(doc.Name, {})
         cached = cache.get(body.Name)
         if cached is None or cached[0] != generation:
-            cached = (generation, measurements(body.Shape))
+            cached = (generation, measurements(native_assembly.global_shape(body)))
             cache[body.Name] = cached
         return dict(cached[1])
 
@@ -299,6 +317,7 @@ class Controller:
                 pass
         self.signatures[meta.DocumentId] = self._signature(doc)
         self.observer.state(doc)["intent_dirty"] = False
+        self.observer.state(doc).pop("assembly_source_changed", None)
         doc.UndoMode = 1
         self._build_status(doc)
         return doc
@@ -318,6 +337,11 @@ class Controller:
         except (NameError,ReferenceError):
             return False
 
+    @staticmethod
+    def _native_edit_active():
+        import FreeCADGui as Gui
+        return bool(Gui.Control.activeDialog() or any(Gui.getDocument(name).getInEdit() for name in App.listDocuments()))
+
     def _prune_closed_sketch_edits(self):
         for identifier in list(self.sketch_edits):
             doc = self.documents.get(identifier)
@@ -329,7 +353,8 @@ class Controller:
         state = self.observer.state(doc)
         if state["intent_dirty"]:
             signature = self._signature(doc)
-            if self.signatures.get(meta.DocumentId) != signature:
+            source_changed = state.pop("assembly_source_changed", False)
+            if self.signatures.get(meta.DocumentId) != signature or source_changed:
                 meta.Revision = str(uuid.uuid4())
                 self.signatures[meta.DocumentId] = signature
             state["intent_dirty"] = False
@@ -452,13 +477,13 @@ class Controller:
                 doc.redo()
 
     def _build_status(self, doc):
-        errors = []
+        errors = native_assembly.validation_errors(doc, self.observer.state(doc)["generation"])
         pending = []
         for obj in doc.Objects:
             if obj.Name == METADATA:
                 continue
             flags = set(obj.State)
-            if "Touched" in flags and obj.TypeId.startswith(("Sketcher::","PartDesign::", "Part::")):
+            if "Touched" in flags and obj.TypeId.startswith(("Sketcher::","PartDesign::", "Part::", "Assembly::", "App::Link")):
                 pending.append(obj.Name)
             if "Invalid" in flags or "Error" in flags:
                 errors.append({"feature": obj.Name, "message": obj.getStatusString()})
@@ -505,11 +530,14 @@ class Controller:
             flags = set(obj.State) | {flag for member in getattr(obj, "Group", []) for flag in member.State}
             metrics = self._evaluated_shape(doc, obj) if not obj.Shape.isNull() and obj.Shape.Solids else None
             status = "failed" if flags & {"Invalid", "Error"} or metrics and not metrics["valid"] else ("needs_rebuild" if "Touched" in flags else ("valid" if metrics else "sketch_only"))
+            if native_assembly.assemblies(doc) and meta.BuildStatus in {"failed", "needs_rebuild"}:
+                status = meta.BuildStatus
             evaluated_results.append({"id": obj.Name, "name": obj.Label, "type": obj.TypeId, "build_status": status,
                                       "measurements": metrics if status == "valid" else None,
                                       "retained_geometry_measurements": metrics if status in {"failed", "needs_rebuild"} else None})
-        unsupported = [obj.Name for obj in doc.Objects if obj.Name != METADATA and (obj.TypeId.endswith("Python") or "Proxy" in obj.PropertiesList
-                       or any(link.Document != doc for link in obj.OutList))]
+        unsupported = [obj.Name for obj in doc.Objects if obj.Name != METADATA and
+                       (any(link.Document != doc for link in obj.OutList) or
+                        (obj.TypeId.endswith("Python") or "Proxy" in obj.PropertiesList) and not native_assembly.safe_object(obj))]
         return {"document_id": meta.DocumentId, "revision": meta.Revision, "name": doc.Label,
                 "native_file": doc.FileName or None, "units": "mm", "build_status": meta.BuildStatus,
                 "build_errors": self._build_status(doc), "features": features,
@@ -518,6 +546,7 @@ class Controller:
                 "active_sketch_edit": self.sketch_edits.get(meta.DocumentId, {}).get("feature"),
                 "managed": self.is_managed(doc), "unsupported_objects": unsupported, "bodies": evaluated_results,
                 "import_source": json.loads(getattr(meta, "ImportSource", "{}")) or None,
+                "assembly": native_assembly.inspect(doc),
                 "operations": sorted(self.OPS if self.is_managed(doc) else self.READ_OPS | self.CREATE_OPS | {"adopt"})}
 
     def dispatch(self, request):
@@ -542,6 +571,7 @@ class Controller:
         draft_history = None
         created_feature = None
         owns_busy = False
+        assembly_transaction_id = None
         try:
             self._prune_closed_sketch_edits()
             if not isinstance(request, dict) or request.get("op") not in self.OPS:
@@ -554,6 +584,9 @@ class Controller:
                 return {"ok": True, "result": {"contract": 2, "session_id": self.ledger.session_id,
                     "operations": sorted(self.OPS), "preview_operations": ["set_parameter", "set_expression"],
                     "import_formats": [".step", ".stp"],
+                    "assembly": {"level": "single", "source_formats": [".fcstd"], "source_policy": "embedded_shape_snapshot",
+                                 "joint_types": ["fixed", "revolute", "slider"], "solver": "native FreeCAD Assembly",
+                                 "motion_units": {"revolute": "deg", "slider": "mm"}, "nested_assemblies": False},
                     "retry": {"scope": "session", "result_limit": self.ledger.limit, "session_request_limit": self.ledger.session_request_limit,
                               "missing_status": "not_recorded does not prove a request never executed; reconcile after restart or eviction"},
                     "request_size_limit_bytes": 65536, "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}}}
@@ -564,6 +597,13 @@ class Controller:
                     "recovery_directory": str(self.recovery.directory), "checkpoint_interval_seconds": self.recovery.interval_seconds}}
             if op == "list_documents":
                 return {"ok": True, "result": {"documents": [self.inspect(d) for d in self.documents.values() if self._is_open(d)]}}
+            if op == "assembly_candidates":
+                if self.busy:
+                    raise OperationError("busy", "Finish the active operation before inspecting an assembly source")
+                if self.sketch_edits or getattr(App, "GuiUp", False) and self._native_edit_active():
+                    raise OperationError("sketch_edit_active", "Finish graphical editing before choosing an assembly source")
+                self.busy = owns_busy = True
+                return {"ok": True, "result": {"candidates": native_assembly.candidates(request.get("path")), "source_policy": "embedded_shape_snapshot"}}
             if op not in self.READ_OPS and self.busy:
                 raise OperationError("busy", "A modeling operation is already active")
             if op in self.CREATE_OPS and any(identifier in self.sketch_edits and self._is_open(existing)
@@ -604,6 +644,14 @@ class Controller:
                         if obj.TypeId.startswith(("Sketcher::", "PartDesign::")):
                             obj.touch()
                     self._recompute(doc)
+                    if native_assembly.inspect(doc):
+                        try:
+                            native_assembly.solve(doc)
+                        except native_assembly.AssemblyError as assembly_error:
+                            self.last_failures[self.identifier(doc)] = {"request": request,
+                                "error": {"code": assembly_error.code, "message": str(assembly_error)}, "rejected": False}
+                            self._meta(doc).LastFailure = json.dumps(self.last_failures[self.identifier(doc)])
+                        self._recompute(doc)
                 if recovery_record:
                     doc.FileName = ""
                     feature = recovery_record.get("sketch")
@@ -643,6 +691,8 @@ class Controller:
                             raise OperationError("managed_sketch_mismatch", "Only the sketch in the active edit session may be changed", feature=editing["feature"])
                     if getattr(App, "GuiUp", False):
                         import FreeCADGui as Gui
+                        if op in self.ASSEMBLY_OPS and self._native_edit_active():
+                            raise OperationError("sketch_edit_active", "Finish graphical editing before changing the assembly")
                         native_edit = Gui.activeDocument().getInEdit() if Gui.activeDocument() else None
                         native_object = getattr(native_edit, "Object", native_edit)
                         managed_native_edit = bool(editing and native_object and native_object.Document == doc
@@ -693,6 +743,25 @@ class Controller:
                     self.sketch_edits.pop(self._meta(doc).DocumentId, None)
                     transaction = False
                     self._recompute(doc)
+                    self._new_revision(doc)
+                elif op in self.ASSEMBLY_OPS:
+                    if op != "create_assembly":
+                        native_assembly.get(doc, request.get("assembly"))
+                    if doc.HasPendingTransaction:
+                        raise OperationError("unmanaged_transaction", "Finish the native transaction before changing the assembly")
+                    doc.openTransaction(f"KurtShape: {op.replace('_', ' ')}")
+                    assembly_transaction_id = (App.getActiveTransaction() or (None, None))[1]
+                    transaction = True
+                    created_feature = native_assembly.handle(doc, request)
+                    created_feature = created_feature.Name if hasattr(created_feature, "Name") else created_feature
+                    self._recompute(doc)
+                    errors = self._build_status(doc)
+                    if errors:
+                        raise OperationError("build_failed", "Assembly could not solve or rebuild", features=errors)
+                    doc.commitTransaction()
+                    if assembly_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == assembly_transaction_id:
+                        App.closeActiveTransaction()
+                    transaction = False
                     self._new_revision(doc)
                 elif op in self.MODEL_OPS:
                     editing = self.sketch_edits.get(self._meta(doc).DocumentId)
@@ -783,11 +852,15 @@ class Controller:
                         self._new_revision(doc)
                 else:
                     doc.abortTransaction()
+                    if assembly_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == assembly_transaction_id:
+                        App.closeActiveTransaction(True)
                     self._recompute(doc)
                     self.signatures[self._meta(doc).DocumentId] = self._signature(doc)
+                    self.observer.state(doc).pop("assembly_source_changed", None)
                     self._build_status(doc)
-            code = exc.code if isinstance(exc, OperationError) else "operation_failed"
-            if not isinstance(exc, OperationError):
+            known_error = isinstance(exc, (OperationError, native_assembly.AssemblyError))
+            code = exc.code if known_error else "operation_failed"
+            if not known_error:
                 log_path = Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime"))) / "kurtshape.log"
                 try:
                     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -795,7 +868,7 @@ class Controller:
                         log.write(traceback.format_exc() + "\n")
                 except OSError:
                     pass
-            error = {"code": code, "message": str(exc), **(exc.details if isinstance(exc, OperationError) else {})}
+            error = {"code": code, "message": str(exc), **(getattr(exc, "details", {}) if known_error else {})}
             if doc and code not in {"stale_revision", "busy", "sketch_edit_active", "managed_sketch_mismatch", "sketch_editor_open"}:
                 self.last_failures[self._meta(doc).DocumentId] = {"request": request, "error": error, "rejected": True}
                 self._meta(doc).LastFailure=json.dumps(self.last_failures[self._meta(doc).DocumentId])
@@ -809,6 +882,7 @@ class Controller:
         meta.Revision = str(uuid.uuid4())
         self.signatures[meta.DocumentId] = self._signature(doc)
         self.observer.state(doc)["intent_dirty"] = False
+        self.observer.state(doc).pop("assembly_source_changed", None)
         self._record_sketch_edit(doc)
         self._build_status(doc)
 
@@ -1151,6 +1225,15 @@ class Controller:
 
     def _model_operation(self, doc, req):
         op = req["op"]
+        if op == "rename_feature":
+            target = doc.getObject(req.get("feature", ""))
+            assembly_state = native_assembly.inspect(doc)
+            ids = ({entry["id"] for entry in assembly_state["instances"] + assembly_state["joints"]} | {assembly_state["id"]}) if assembly_state else set()
+            if target and target.Name in ids:
+                if not isinstance(req.get("name"), str) or not req["name"].strip() or len(req["name"]) > 120 or any(ord(c) < 32 for c in req["name"]):
+                    raise OperationError("invalid_argument", "Name must contain 1 to 120 characters")
+                target.Label = req["name"].strip()
+                return None
         if op == "create_body":
             created = doc.addObject("PartDesign::Body", self._id(doc, req, "Body"))
             created.Label = str(req.get("name", created.Name))[:120]
@@ -1339,18 +1422,26 @@ class Controller:
         if self._meta(doc).BuildStatus!="valid":
             raise OperationError("build_failed", "Only a current valid solid can be exported")
         stage=path.with_name(path.stem + ".exporting" + path.suffix)
+        assembly_state = native_assembly.inspect(doc)
+        if assembly_state and body_id is not None:
+            raise OperationError("invalid_argument", "Assembly export includes every occurrence; omit body")
         included = [self._body(doc, {"body": body_id})] if body_id is not None else native_results(doc)
         included = [obj for obj in included if not obj.Shape.isNull() and obj.Shape.Solids]
-        shape = Part.makeCompound([obj.Shape for obj in included])
+        shape = Part.makeCompound([native_assembly.global_shape(obj) for obj in included])
         if path.suffix.lower()==".stl":
             import MeshPart
             mesh=MeshPart.meshFromShape(Shape=shape,LinearDeflection=0.05,AngularDeflection=0.1,Relative=False)
             mesh.write(str(stage))
+        elif assembly_state:
+            # Write each occurrence's transformed shape exactly once. The native
+            # source storage and Assembly aggregate must never join this list.
+            shape.exportStep(str(stage))
         else:
             Part.export(included,str(stage))
         provenance={"document_id":self._meta(doc).DocumentId,"revision":self._meta(doc).Revision,"units":"mm",
                     "source_mapping":json.loads(self._meta(doc).SourceMapping),
                     "import_source":json.loads(getattr(self._meta(doc), "ImportSource", "{}")) or None,
+                    "assembly": assembly_state,
                     "engine":{"FreeCAD":App.Version(),"OCCT":Part.OCC_VERSION},
                     "sha256":hashlib.sha256(stage.read_bytes()).hexdigest(),
                     "native_file":doc.FileName or None,"format":path.suffix.lower(),"included_body_ids":[obj.Name for obj in included],"shape":self._geometry(doc, included),

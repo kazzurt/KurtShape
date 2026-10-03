@@ -65,6 +65,9 @@ class Panel(QtGui.QDockWidget):
         self.finishing_sketch = False
         self.entering_sketch = False
         self.placement_document = self.task_document = None
+        self.workspace_modes = {}
+        self.workspace_documents = {}
+        self.workspace_mode = "part_studio"
         self.main = Gui.getMainWindow()
         self.main.installEventFilter(self)
         self.main.menuBar().hide()
@@ -277,6 +280,13 @@ class Panel(QtGui.QDockWidget):
         self.document_name.setStyleSheet("font-weight:600;padding:0 14px")
         self.document_name.setMinimumWidth(160)
         self.document_bar.addWidget(self.document_name)
+        self.mode_choice = QtGui.QComboBox()
+        self.mode_choice.setObjectName("KurtShapeWorkspaceMode")
+        self.mode_choice.addItem("Part Studio", "part_studio")
+        self.mode_choice.addItem("Assembly", "assembly")
+        self.mode_choice.setToolTip("Return to an open Part Studio or Assembly; a new Part Studio opens if none is available")
+        self.mode_choice.currentIndexChanged.connect(lambda: self.set_workspace_mode(self.mode_choice.currentData()))
+        self.document_bar.addWidget(self.mode_choice)
         for name, callback, tip in [("New", self.new, "New part studio · Ctrl+N"), ("Open", self.open, "Open FCStd or import STEP / STP · Ctrl+O"), ("Save", self.save, "Save project · Ctrl+S"), ("Export", self.export, "Export current solid · STEP / STL")]:
             self.tool(self.document_bar, name, callback, tip)
         recent = QtGui.QMenu("Recent projects", self.main)
@@ -325,6 +335,28 @@ class Panel(QtGui.QDockWidget):
         for name, callback, tip, icon in [("Rebuild", lambda: self.operation("rebuild"), "Recompute native model", "Std_Refresh"), ("Fit", self.fit, "Fit · F", "Std_ViewFitAll"), ("Normal", self.normal, "Normal · N", "Std_ViewTop"), ("3D", self.isometric, "Isometric · Shift+7", "Std_ViewIsometric"), ("Planes", self.toggle_planes, "Show / hide planes · P", "PartDesign_Plane")]:
             self.tool(self.model_bar, name, callback, tip, icon, modeling=name == "Rebuild", command=icon)
         self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.model_bar)
+        self.assembly_actions = []
+        self.assembly_bar = QtGui.QToolBar("Assembly", self.main)
+        self.assembly_bar.setObjectName("KurtShapeAssemblyBar")
+        self.assembly_bar.setMovable(False)
+        self.assembly_bar.setIconSize(QtCore.QSize(24, 24))
+        for label, callback, tip in [
+            ("Create Assembly", self.create_assembly, "Create one assembly in this project"),
+            ("Insert", self.insert_assembly_part, "Insert a saved FCStd part · I"),
+            ("Ground", self.ground_assembly_instance, "Select an instance and make it the assembly reference"),
+            ("Fixed", lambda: self.assembly_joint("fixed"), "Select two instance references; fasten with a fixed joint · M"),
+            ("Revolute", lambda: self.assembly_joint("revolute"), "Select two axes; permit rotation around their joint axis"),
+            ("Slider", lambda: self.assembly_joint("slider"), "Select two axes; permit translation along their joint axis"),
+            ("Move", self.move_assembly_selection, "Select a revolute / slider joint to move its allowed coordinate, or an unjointed instance"),
+            ("Edit", self.edit_assembly_selection, "Edit the selected joint or unjointed instance placement"),
+            ("Solve", lambda: self.operation("solve_assembly"), "Recompute and solve the assembly")]:
+            self.assembly_actions.append(self.tool(self.assembly_bar, label, callback, tip))
+        self.assembly_bar.addSeparator()
+        self.tool(self.assembly_bar, "Joints", self.toggle_assembly_joints, "Show or hide joints · J / H")
+        self.tool(self.assembly_bar, "Fit", self.fit, "Fit · F", "Std_ViewFitAll", command="Std_ViewFitAll")
+        self.tool(self.assembly_bar, "3D", self.isometric, "Isometric · Shift+7", "Std_ViewIsometric", command="Std_ViewIsometric")
+        self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.assembly_bar)
+        self.assembly_bar.hide()
         self.sketch_bar = QtGui.QToolBar("Sketch", self.main)
         self.sketch_bar.setObjectName("KurtShapeSketchBar")
         self.sketch_bar.setMovable(False)
@@ -384,7 +416,331 @@ class Panel(QtGui.QDockWidget):
                     self.report_connections.append((widget, changed))
 
     def context(self):
-        return "sketch" if self.active_sketch() else "part_studio"
+        return "sketch" if self.active_sketch() else self.workspace_mode
+
+    def set_workspace_mode(self, mode):
+        mode = "assembly" if mode == "assembly" else "part_studio"
+        if self.active_sketch() or self.native_feature_task_active():
+            self.mode_choice.blockSignals(True)
+            self.mode_choice.setCurrentIndex(self.mode_choice.findData(self.workspace_mode))
+            self.mode_choice.blockSignals(False)
+            self.notify("Finish or cancel the current edit before switching workspaces.")
+            return False
+        self.cancel_task()
+        # Assembly copies are occurrence sources, not a destination for part
+        # feature edits. Return to an independent Part Studio document instead.
+        if self.state and ((mode == "part_studio" and self.assembly_state()) or (mode == "assembly" and not self.assembly_state())):
+            candidates = [doc for doc in self.core.documents.values() if self.core._is_open(doc) and doc != self.document()
+                          and self.core.is_managed(doc) and bool(any(obj.TypeId == "Assembly::AssemblyObject" for obj in doc.Objects)) == (mode == "assembly")]
+            remembered = self.workspace_documents.get(mode)
+            target = next((doc for doc in candidates if doc.Name == remembered), candidates[-1] if candidates else None)
+            if target:
+                self.workspace_modes[self.core.identifier(target)] = mode
+                if self.general_actions._activate(target.Name):
+                    return True
+            elif mode == "part_studio":
+                if self.operation("new", name="Untitled part"):
+                    self.notify("Part Studio ready · your assembly stays open in its document tab")
+                    return True
+                return False
+        self.workspace_mode = mode
+        if self.state:
+            self.workspace_modes[self.state["document_id"]] = mode
+        self.mode_choice.blockSignals(True)
+        self.mode_choice.setCurrentIndex(self.mode_choice.findData(mode))
+        self.mode_choice.blockSignals(False)
+        self.editor.hide()
+        self.refresh()
+        self.sync_edit_ui()
+        if mode == "assembly" and not self.assembly_state():
+            self.notify("Create Assembly, then insert parts from saved FCStd projects. Import STEP through Open and save it as FCStd first.")
+        return True
+
+    def assembly_state(self):
+        return (self.state or {}).get("assembly") or {}
+
+    def assembly_ready(self, require_assembly=True):
+        if self.active_sketch() or self.native_feature_task_active():
+            self.notify("Finish or cancel the current edit before an assembly command.")
+            return False
+        if not self.document() or not self.state:
+            self.notify("Create or open a project first.", "error")
+            return False
+        if not self.state.get("managed", True):
+            self.notify("Adopt a copy before editing this native reference.", "error")
+            return False
+        response = self.core.dispatch({"op": "inspect", "document_id": self.core.identifier(self.document())})
+        if not response["ok"]:
+            self.notify(response["error"]["message"], "error")
+            return False
+        self.state = response["result"]
+        if require_assembly and not self.assembly_state():
+            self.notify("Create Assembly before inserting parts or creating joints.", "error")
+            return False
+        return True
+
+    def assembly_tokens(self):
+        return {"_document_id": self.state["document_id"], "_expected_revision": self.state["revision"]}
+
+    def create_assembly(self):
+        if not self.assembly_ready(False):
+            return None
+        if self.assembly_state():
+            self.set_workspace_mode("assembly")
+            self.notify("This project already has its single-level assembly.")
+            return None
+        tokens = self.assembly_tokens()
+        name, accepted = QtGui.QInputDialog.getText(self, "Create Assembly", "Assembly name", text="Assembly")
+        if accepted and name.strip():
+            # Preserve an existing modeled Part Studio as its own project.
+            # The typed create operation still targets a named current document.
+            if not self.document() or self.core.identifier(self.document()) != tokens["_document_id"]:
+                self.notify("The source project is no longer active. Create Assembly again in the intended project.", "error")
+                return None
+            current = self.core.inspect(self.document())
+            if current["document_id"] != tokens["_document_id"] or current["revision"] != tokens["_expected_revision"]:
+                self.notify("The project changed while naming the assembly. Create Assembly again with the current project.", "error")
+                return None
+            modeled = any(obj.TypeId == "Sketcher::SketchObject" or (hasattr(obj, "Shape") and not obj.Shape.isNull() and bool(obj.Shape.Solids)) for obj in self.document().Objects)
+            if modeled:
+                if not self.operation("new", name=name.strip()):
+                    return None
+                tokens = self.assembly_tokens()
+            result = self.operation("create_assembly", id=self.unique("Assembly"), name=name.strip(), **tokens)
+            if result:
+                self.set_workspace_mode("assembly")
+            return result
+
+    def insert_assembly_part(self, path=None, source_id=None):
+        if not self.assembly_ready():
+            return None
+        tokens = self.assembly_tokens()
+        if not path:
+            path = QtGui.QFileDialog.getOpenFileName(self, "Insert saved part into assembly", self.core.settings.last_directory,
+                "FreeCAD project (*.FCStd *.fcstd *.FCSTD)")[0]
+        if not path:
+            return None
+        response = self.core.dispatch({"op": "assembly_candidates", "path": str(path)})
+        if not response["ok"]:
+            self.notify(response["error"]["message"], "error")
+            return None
+        candidates = response["result"].get("candidates", [])
+        if not candidates:
+            self.notify("This FCStd has no eligible Body or solid. Import STEP through Open, save FCStd, then insert it.", "error")
+            return None
+        if source_id is None:
+            dialog = QtGui.QDialog(self.main)
+            dialog.setObjectName("KurtShapeAssemblyInsertDialog")
+            dialog.setWindowTitle("Insert part")
+            layout = QtGui.QVBoxLayout(dialog)
+            help_text = QtGui.QLabel("Choose the Body or solid to embed. Repeat Insert for another independent instance. STEP parts: Open STEP, save FCStd, then choose that project here.")
+            help_text.setWordWrap(True)
+            layout.addWidget(help_text)
+            layout.addWidget(QtGui.QLabel(Path(path).name))
+            parts = QtGui.QListWidget()
+            parts.setObjectName("KurtShapeAssemblyCandidates")
+            for candidate in candidates:
+                item = QtGui.QListWidgetItem(candidate.get("name", candidate["id"]) + " · " + candidate.get("type", "solid") + " · " + str(candidate.get("solid_count", 1)) + " solid(s)")
+                item.setData(QtCore.Qt.UserRole, candidate["id"])
+                parts.addItem(item)
+            parts.setCurrentRow(0)
+            layout.addWidget(parts)
+            buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
+            buttons.button(QtGui.QDialogButtonBox.Ok).setText("Insert")
+            buttons.accepted.connect(dialog.accept)
+            buttons.rejected.connect(dialog.reject)
+            parts.itemDoubleClicked.connect(lambda *_: dialog.accept())
+            layout.addWidget(buttons)
+            dialog.resize(465, 275)
+            if dialog.exec_() != QtGui.QDialog.Accepted:
+                return None
+            source_id = parts.currentItem().data(QtCore.Qt.UserRole)
+        result = self.operation("insert_assembly_part", path=str(path), source_id=source_id, id=self.unique("Instance"), **tokens)
+        if result:
+            self.core.settings.remember(path)
+            self.set_workspace_mode("assembly")
+            self.fit()
+            name = self.document().Name
+            QtCore.QTimer.singleShot(0, lambda: self.frame_import(name))
+        return result
+
+    def assembly_references(self):
+        """Resolve native root/link selection paths to visible occurrence IDs."""
+        instance_ids = {entry["id"] for entry in self.assembly_state().get("instances", [])}
+        references = []
+        for selection in Gui.Selection.getSelectionEx():
+            if selection.Object.Document != self.document():
+                continue
+            paths = list(selection.SubElementNames) or [""]
+            for path in paths:
+                segments = path.split(".")
+                identifier = selection.Object.Name if selection.Object.Name in instance_ids else next((segment for segment in segments if segment in instance_ids), None)
+                if identifier:
+                    subelement = next((segment for segment in reversed(segments) if segment.startswith(("Face", "Edge", "Vertex"))), "")
+                    reference = {"instance": identifier, "subelement": subelement}
+                    if reference not in references:
+                        references.append(reference)
+        return references
+
+    def assembly_selected_id(self):
+        entries = self.assembly_state().get("instances", []) + self.assembly_state().get("joints", [])
+        available = {entry["id"] for entry in entries}
+        references = self.assembly_references()
+        selected = Gui.Selection.getSelection()
+        if len(selected) == 1 and selected[0].Name in available:
+            return selected[0].Name
+        if len(references) == 1:
+            return references[0]["instance"]
+        return self.selected() if self.selected() in available else None
+
+    def ground_assembly_instance(self):
+        if not self.assembly_ready():
+            return None
+        identifier = self.assembly_selected_id()
+        if identifier not in {entry["id"] for entry in self.assembly_state().get("instances", [])}:
+            self.notify("Select one instance in the viewport or instance history, then Ground.")
+            return None
+        return self.operation("ground_assembly_instance", instance=identifier)
+
+    def assembly_joint(self, joint_type="fixed", joint_id=None):
+        if not self.assembly_ready():
+            return None
+        assembly = self.assembly_state()
+        instances = assembly.get("instances", [])
+        if len(instances) < 2:
+            self.notify("Insert at least two instances before connecting a joint.")
+            return None
+        tokens = self.assembly_tokens()
+        joint = next((entry for entry in assembly.get("joints", []) if entry["id"] == joint_id), {})
+        refs = self.assembly_references()
+        if joint:
+            refs = [joint.get("first") or {}, joint.get("second") or {}]
+            joint_type = joint.get("joint_type", joint_type)
+        dialog = QtGui.QDialog(self.main)
+        dialog.setObjectName("KurtShapeAssemblyJointDialog")
+        dialog.setWindowTitle("Edit joint" if joint else "Connect joint")
+        layout = QtGui.QVBoxLayout(dialog)
+        help_text = QtGui.QLabel("Ctrl-select a reference on each instance before opening this tool, or choose them below. Use EdgeN / FaceN / VertexN references; leave blank to use the instance origin. Revolute and slider align the reference axes. Ground one instance first. Move adjusts the allowed rotation or translation.")
+        help_text.setWordWrap(True)
+        layout.addWidget(help_text)
+        form = QtGui.QFormLayout()
+        name = QtGui.QLineEdit(joint.get("name", joint_type.capitalize() + " joint"))
+        name.setObjectName("KurtShapeAssemblyJointName")
+        form.addRow("Name", name)
+        kind = QtGui.QComboBox()
+        kind.setObjectName("KurtShapeAssemblyJointType")
+        for value, label in (("fixed", "Fixed"), ("revolute", "Revolute"), ("slider", "Slider")):
+            kind.addItem(label, value)
+        kind.setCurrentIndex(kind.findData(joint_type))
+        form.addRow("Joint", kind)
+        controls = []
+        for index, label in enumerate(("First", "Second")):
+            reference = refs[index] if len(refs) > index else {}
+            choice = QtGui.QComboBox()
+            choice.setObjectName("KurtShapeAssemblyJoint" + label + "Instance")
+            for instance in instances:
+                choice.addItem(instance["name"], instance["id"])
+            choice.setCurrentIndex(max(0, choice.findData(reference.get("instance", instances[min(index, len(instances) - 1)]["id"]))))
+            element = QtGui.QLineEdit(reference.get("subelement", ""))
+            element.setObjectName("KurtShapeAssemblyJoint" + label + "Reference")
+            element.setPlaceholderText("Instance origin, or Edge1 / Face1 / Vertex1")
+            form.addRow(label + " instance", choice)
+            form.addRow(label + " reference", element)
+            controls.append((choice, element))
+        layout.addLayout(form)
+        buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
+        buttons.button(QtGui.QDialogButtonBox.Ok).setText("Apply joint" if joint else "Create joint")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.resize(485, 350)
+        if dialog.exec_() != QtGui.QDialog.Accepted:
+            return None
+        references = [{"instance": choice.currentData(), "subelement": element.text().strip()} for choice, element in controls]
+        args = {"joint_type": kind.currentData(), "first": references[0], "second": references[1], "name": name.text().strip()}
+        if joint:
+            args["joint"] = joint_id
+        else:
+            args["id"] = self.unique(kind.currentData().capitalize() + "Joint")
+        result = self.operation("edit_assembly_joint" if joint else "create_assembly_joint", **args, **tokens)
+        if result:
+            self.select_feature(joint_id or args["id"])
+        return result
+
+    def move_assembly_selection(self):
+        if not self.assembly_ready():
+            return None
+        identifier = self.assembly_selected_id()
+        assembly = self.assembly_state()
+        joint = next((entry for entry in assembly.get("joints", []) if entry["id"] == identifier), None)
+        instance = next((entry for entry in assembly.get("instances", []) if entry["id"] == identifier), None)
+        if not joint and not instance:
+            self.notify("Select a revolute / slider joint to move its allowed coordinate, or select an unjointed instance.")
+            return None
+        tokens = self.assembly_tokens()
+        if joint and joint.get("joint_type") == "fixed":
+            self.notify("A fixed joint has no permitted motion. Select a revolute or slider joint.")
+            return None
+        dialog = QtGui.QDialog(self.main)
+        dialog.setObjectName("KurtShapeAssemblyMoveDialog")
+        dialog.setWindowTitle("Move " + (joint or instance)["name"])
+        layout = QtGui.QVBoxLayout(dialog)
+        form = QtGui.QFormLayout()
+        fields = []
+        if joint:
+            unit = "deg" if joint.get("joint_type") == "revolute" else "mm"
+            layout.addWidget(QtGui.QLabel("Set the joint's permitted " + ("rotation" if unit == "deg" else "translation") + "; its other constraints remain active."))
+            value = QuantityField(unit)
+            value.setObjectName("KurtShapeAssemblyMoveValue")
+            value.setRange(-100000, 100000)
+            value.setValue(joint.get("value") or 0)
+            form.addRow("Angle" if unit == "deg" else "Distance", value)
+            fields.append(value)
+        else:
+            layout.addWidget(QtGui.QLabel("Free placement applies to an ungrounded instance with no joints. Jointed parts move through their joint coordinate."))
+            obj = self.document().getObject(identifier)
+            values = list(obj.Placement.Base) + list(obj.Placement.Rotation.toEuler())
+            for index, label in enumerate(("X", "Y", "Z", "Yaw", "Pitch", "Roll")):
+                value = QuantityField("mm" if index < 3 else "deg")
+                value.setObjectName("KurtShapeAssemblyMove" + label)
+                value.setRange(-100000, 100000)
+                value.setValue(values[index])
+                form.addRow(label, value)
+                fields.append(value)
+        layout.addLayout(form)
+        buttons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel)
+        buttons.button(QtGui.QDialogButtonBox.Ok).setText("Move and solve")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec_() != QtGui.QDialog.Accepted:
+            return None
+        try:
+            if joint:
+                return self.operation("move_assembly_joint", joint=identifier, value=fields[0].value(), **tokens)
+            values = [field.value() for field in fields]
+            return self.operation("move_assembly_instance", instance=identifier, position_mm=values[:3], rotation_xyzw=list(App.Rotation(*values[3:]).Q), **tokens)
+        except Exception as exc:
+            self.notify(str(exc), "error")
+            return None
+
+    def edit_assembly_selection(self):
+        if not self.assembly_ready():
+            return None
+        identifier = self.assembly_selected_id()
+        joint = next((entry for entry in self.assembly_state().get("joints", []) if entry["id"] == identifier), None)
+        return self.assembly_joint(joint.get("joint_type", "fixed"), identifier) if joint else self.move_assembly_selection()
+
+    def toggle_assembly_joints(self):
+        joints = [self.document().getObject(entry["id"]) for entry in self.assembly_state().get("joints", [])] if self.document() else []
+        if not joints:
+            self.notify("Create a joint first; Fixed, Revolute and Slider connect instance references.")
+            return
+        visible = not any(obj.ViewObject.Visibility for obj in joints if obj)
+        for obj in joints:
+            if obj:
+                obj.ViewObject.Visibility = visible
+        self.refresh()
 
     def document(self):
         return App.activeDocument()
@@ -419,7 +775,21 @@ class Panel(QtGui.QDockWidget):
         return bool(Gui.Control.activeDialog()) and not bool(self.active_sketch())
 
     def tick(self):
-        processed = self.bridge.tick()
+        processed = False
+        if not self.bridge.pending.empty():
+            failures_before = self.core.last_failures.copy()
+            processed = self.bridge.tick()
+            if processed:
+                for identifier, failure in self.core.last_failures.items():
+                    request = failure.get("request", {})
+                    if failure == failures_before.get(identifier) or not failure.get("rejected") or request.get("op") not in self.core.ASSEMBLY_OPS:
+                        continue
+                    request_id = request.get("request_id")
+                    if not request_id or self.core.ledger.status(request_id)["status"] != "failed":
+                        continue
+                    document = self.core.documents.get(identifier)
+                    label = document.Label + " · " if document and self.core._is_open(document) else ""
+                    self.notify(label + failure.get("error", {}).get("message", "Assembly command failed"), "error")
         doc = self.document()
         for identifier in list(self.core.sketch_edits):
             owner = self.core.documents.get(identifier)
@@ -462,10 +832,12 @@ class Panel(QtGui.QDockWidget):
             self.sync_edit_ui()
 
     def operation(self, op, **args):
+        staged_revision = args.pop("_expected_revision", None)
+        staged_document = args.pop("_document_id", None)
         if getattr(self, "feedback_started", None) is not None:
             if op in {"save", "open", "import_step", "adopt", "recover", "export"}:
                 self.feedback_kind = "disk"
-            elif op in self.core.MODEL_OPS | {"begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "new"}:
+            elif op in self.core.MODEL_OPS | self.core.ASSEMBLY_OPS | {"begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "new"}:
                 self.feedback_kind = "model"
         if op != "inspect" and self.native_feature_task_active():
             self.notify("Finish or cancel the current feature before another operation.")
@@ -482,7 +854,10 @@ class Panel(QtGui.QDockWidget):
                 self.notify(response["error"]["message"], "error")
                 return None
             self.state = response["result"]
-            args.update(document_id=self.state["document_id"], expected_revision=self.state["revision"])
+            if staged_document and staged_document != self.state["document_id"]:
+                self.notify("Assembly command canceled because its source project is no longer active.", "error")
+                return None
+            args.update(document_id=self.state["document_id"], expected_revision=staged_revision or self.state["revision"])
             if op in self.core.MODEL_OPS - {"create_body", "rebuild"} and "body" not in args:
                 target = doc.getObject(args.get("feature") or args.get("profile") or args.get("sketch") or args.get("support", {}).get("feature") or "")
                 body = owner(doc, target) or self.active_body()
@@ -514,6 +889,9 @@ class Panel(QtGui.QDockWidget):
         if op == "import_step":
             count = self.state["measurements"]["solid_count"] if self.state["measurements"] else 0
             self.notify(f"STEP imported · {count} solids · geometry only. Save as FCStd to keep your project.")
+        if op in {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint", "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}:
+            assembly = self.assembly_state()
+            self.notify("Assembly " + str(assembly.get("solver_status", "updated")) + " · " + str(len(assembly.get("instances", []))) + " instances · " + str(len(assembly.get("joints", []))) + " joints")
         if op == "recover" and self.state.get("active_sketch_edit"):
             Gui.activeDocument().setEdit(self.state["active_sketch_edit"])
             self.sync_edit_ui()
@@ -523,6 +901,21 @@ class Panel(QtGui.QDockWidget):
         if not self.state:
             return
         doc, selected = self.document(), self.selected()
+        identifier = self.state["document_id"]
+        if self.assembly_state():
+            self.workspace_mode = self.workspace_modes[identifier] = "assembly"
+        else:
+            self.workspace_mode = self.workspace_modes.setdefault(identifier, "part_studio")
+        if self.assembly_state() or self.workspace_mode == "part_studio":
+            self.workspace_documents["assembly" if self.assembly_state() else "part_studio"] = doc.Name
+        self.mode_choice.blockSignals(True)
+        self.mode_choice.setCurrentIndex(self.mode_choice.findData(self.workspace_mode))
+        self.mode_choice.blockSignals(False)
+        if self.workspace_mode == "assembly":
+            self.refresh_assembly(selected)
+            return
+        self.body_choice.show()
+        self.filter.setPlaceholderText("Filter features")
         expanded = {key for key, item in self.items.items() if item.isExpanded()}
         if not self.items:
             expanded.add("origin")
@@ -596,11 +989,72 @@ class Panel(QtGui.QDockWidget):
             self.parameters()
         self.feedback_complete()
 
+    def refresh_assembly(self, selected=None):
+        assembly = self.assembly_state()
+        doc = self.document()
+        self.refreshing = True
+        self.body_choice.hide()
+        self.filter.setPlaceholderText("Filter instances and joints")
+        self.features.blockSignals(True)
+        self.features.clear()
+        self.items = {}
+        for category, label in (("instances", "Instances"), ("joints", "Joints")):
+            group = QtGui.QTreeWidgetItem([label + " (" + str(len(assembly.get(category, []))) + ")"])
+            group.setData(0, QtCore.Qt.UserRole, "assembly_group:" + category)
+            self.features.addTopLevelItem(group)
+            group.setExpanded(True)
+            for entry in assembly.get(category, []):
+                suffix = " · grounded" if entry.get("grounded") else (" · " + str(entry.get("joint_type", entry.get("type", "joint"))) if category == "joints" else "")
+                if category == "joints" and entry.get("suppressed"):
+                    suffix += " · suppressed"
+                item = QtGui.QTreeWidgetItem(group, [entry["name"] + suffix])
+                item.setData(0, QtCore.Qt.UserRole, entry["id"])
+                obj = doc.getObject(entry["id"])
+                if obj:
+                    item.setIcon(0, obj.ViewObject.Icon)
+                item.setToolTip(0, entry["id"] + (" · reference fixed in place" if entry.get("grounded") else ""))
+                self.items[entry["id"]] = item
+        if selected in self.items:
+            self.features.setCurrentItem(self.items[selected])
+        self.features.blockSignals(False)
+        self.refreshing = False
+        self.features_title.setText(assembly.get("name", "Assembly"))
+        self.parts.clear()
+        for entry in assembly.get("instances", []):
+            item = QtGui.QTreeWidgetItem([entry["name"] + (" · grounded" if entry.get("grounded") else "")])
+            item.setData(0, QtCore.Qt.UserRole, entry["id"])
+            obj = doc.getObject(entry["id"])
+            if obj:
+                item.setIcon(0, obj.ViewObject.Icon)
+            self.parts.addTopLevelItem(item)
+        self.parts_title.setText("Instances (" + str(len(assembly.get("instances", []))) + ")")
+        if not assembly:
+            detail = "Create Assembly to begin. Insert saved FCStd parts, ground a reference, then connect native joints."
+        elif self.state["build_status"] in {"failed", "needs_rebuild"}:
+            detail = "Assembly unresolved · see Messages and solve before export"
+        else:
+            detail = "Assembly · " + str(len(assembly.get("instances", []))) + " instances · " + str(len(assembly.get("joints", []))) + " joints · " + str(assembly.get("solver_status", "solved"))
+            if assembly.get("disconnected_count"):
+                detail += " · " + str(assembly["disconnected_count"]) + " unconnected"
+        self.status.setText(detail)
+        self.document_name.setText(self.state["name"])
+        self.main.setWindowTitle(self.state["name"] + " — KurtShape")
+        self.filter_features()
+        self.editor.hide()
+        self.sync_edit_ui()
+        self.feedback_complete()
+
     def filter_features(self, *args):
         text = self.filter.text().lower()
         for i in range(self.features.topLevelItemCount()):
             item = self.features.topLevelItem(i)
-            item.setHidden(bool(text and item.data(0, QtCore.Qt.UserRole) != "origin" and text not in item.text(0).lower()))
+            if self.workspace_mode == "assembly":
+                for j in range(item.childCount()):
+                    child = item.child(j)
+                    child.setHidden(bool(text and text not in child.text(0).lower()))
+                item.setHidden(bool(text and all(item.child(j).isHidden() for j in range(item.childCount()))))
+            else:
+                item.setHidden(bool(text and item.data(0, QtCore.Qt.UserRole) != "origin" and text not in item.text(0).lower()))
 
     def selected(self):
         item = self.features.currentItem()
@@ -635,6 +1089,8 @@ class Panel(QtGui.QDockWidget):
 
     def history_double_click(self, item, column=0):
         key = item.data(0, QtCore.Qt.UserRole)
+        if self.workspace_mode == "assembly":
+            return self.edit_assembly_selection()
         if key.startswith("plane:"):
             if not self.pending_sketch:
                 self.start_sketch()
@@ -652,6 +1108,9 @@ class Panel(QtGui.QDockWidget):
         Gui.Selection.addSelection(self.document().getObject(item.data(0, QtCore.Qt.UserRole)))
 
     def parameters(self, *args, show=False):
+        if self.workspace_mode == "assembly":
+            self.editor.hide()
+            return
         feature = next((f for f in (self.state or {}).get("features", []) if f["id"] == self.selected()), None)
         if not feature or self.task or self.active_sketch():
             if not self.task and not self.active_sketch():
@@ -832,7 +1291,7 @@ class Panel(QtGui.QDockWidget):
         if not path:
             self.core.settings.project_directory.mkdir(parents=True, exist_ok=True)
             imported = self.state.get("import_source")
-            filename = Path(imported["path"]).stem + ".FCStd" if imported else "my-part.FCStd"
+            filename = Path(imported["path"]).stem + ".FCStd" if imported else ("my-assembly.FCStd" if self.assembly_state() else "my-part.FCStd")
             path = QtGui.QFileDialog.getSaveFileName(self, "Save native project", self.state.get("native_file") or str(Path(self.core.settings.last_directory) / filename), "FreeCAD project (*.FCStd)")[0]
         if path:
             self.core.settings.grant_destination(path)
@@ -997,7 +1456,13 @@ class Panel(QtGui.QDockWidget):
                 action.setEnabled(not native_task)
         for action in self.model_actions:
             action.setEnabled(not native_task and (not self.state or self.state.get("managed", True)))
-        self.model_bar.setVisible(not bool(sketch))
+        self.mode_choice.setEnabled(not bool(sketch) and not native_task)
+        assembly = self.assembly_state()
+        for action in self.assembly_actions:
+            action.setEnabled(not bool(sketch) and not native_task and bool(self.state) and self.state.get("managed", True)
+                              and (not assembly if action.text() == "Create Assembly" else bool(assembly)))
+        self.model_bar.setVisible(not bool(sketch) and self.workspace_mode == "part_studio")
+        self.assembly_bar.setVisible(not bool(sketch) and self.workspace_mode == "assembly")
         self.sketch_bar.setVisible(bool(sketch))
         hide_native_panels()
         if sketch:
@@ -1149,6 +1614,13 @@ class Panel(QtGui.QDockWidget):
         self.refresh()
 
     def show_hidden(self):
+        if self.document() and self.workspace_mode == "assembly":
+            for entry in self.assembly_state().get("instances", []):
+                obj = self.document().getObject(entry["id"])
+                if obj:
+                    obj.ViewObject.Visibility = True
+            self.refresh()
+            return
         if self.document():
             for obj in self.document().Objects:
                 if obj.TypeId == "Sketcher::SketchObject" or any(obj == body.Tip or obj == body for body in bodies(self.document())):
@@ -1157,15 +1629,25 @@ class Panel(QtGui.QDockWidget):
 
     def rename_selected(self):
         selected = Gui.Selection.getSelection()
-        obj = selected[0] if len(selected) == 1 else (self.document().getObject(self.selected() or "") if self.document() else None)
+        identifier = self.assembly_selected_id() if self.workspace_mode == "assembly" else None
+        obj = self.document().getObject(identifier) if identifier else (selected[0] if len(selected) == 1 else (self.document().getObject(self.selected() or "") if self.document() else None))
         if obj:
-            name, accepted = QtGui.QInputDialog.getText(self, "Rename feature", "Name", text=obj.Label)
+            tokens = self.assembly_tokens() if self.workspace_mode == "assembly" else {}
+            name, accepted = QtGui.QInputDialog.getText(self, "Rename " + ("assembly object" if identifier else "feature"), "Name", text=obj.Label)
             if accepted:
-                self.operation("rename_feature", feature=obj.Name, name=name)
+                self.operation("rename_feature", feature=obj.Name, name=name, **tokens)
 
     def delete_selected(self):
         if self.active_sketch():
             return self.native_command("Std_Delete")
+        if self.workspace_mode == "assembly":
+            if not self.assembly_ready():
+                return None
+            identifier = self.assembly_selected_id()
+            if identifier:
+                return self.operation("delete_assembly_object", feature=identifier)
+            self.notify("Select an instance or joint to remove. Connected instances require removing their joints first.")
+            return None
         key = self.selected()
         if key and key != "origin" and not key.startswith("plane:"):
             return self.operation("delete_feature", feature=key)
@@ -1182,6 +1664,20 @@ class Panel(QtGui.QDockWidget):
             return
         menu = QtGui.QMenu(self)
         menu.addAction("Hide" if obj.ViewObject.Visibility else "Show", lambda: self.set_visibility(obj, not obj.ViewObject.Visibility))
+        if self.workspace_mode == "assembly":
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(obj)
+            instances = {entry["id"] for entry in self.assembly_state().get("instances", [])}
+            if key in instances:
+                menu.addAction("Ground as reference", self.ground_assembly_instance)
+                menu.addAction("Move free instance", self.move_assembly_selection)
+            else:
+                menu.addAction("Edit joint", self.edit_assembly_selection)
+                menu.addAction("Move allowed coordinate", self.move_assembly_selection)
+            menu.addAction("Rename", self.rename_selected)
+            menu.addAction("Remove", self.delete_selected)
+            menu.exec_(self.features.mapToGlobal(position))
+            return
         if obj.TypeId == "Sketcher::SketchObject":
             menu.addAction("Edit sketch", self.edit_sketch)
         if not key.startswith("plane:"):
@@ -1339,6 +1835,10 @@ class Panel(QtGui.QDockWidget):
             callbacks[f"view.pan_{direction}"] = lambda a=pans[direction]: self.view_step(a, pan=True)
         callbacks.update(self.general_actions.callbacks())
         callbacks["sketch.pierce"] = self.pierce
+        callbacks.update({"assembly.insert": self.insert_assembly_part,
+                          "assembly.fasten": lambda: self.assembly_joint("fixed"),
+                          "assembly.mates": self.toggle_assembly_joints,
+                          "assembly.show_mates": self.toggle_assembly_joints})
         callbacks.update(viewport_callbacks(self))
         return callbacks
 

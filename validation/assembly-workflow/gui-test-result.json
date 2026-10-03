@@ -1,0 +1,433 @@
+{
+  "passed": true,
+  "checks": [
+    "Disposable Part Studio is already known to the panel before shared creation",
+    "Authenticated shared creation automatically activates the Assembly toolbar and history",
+    "Assembly workspace is discoverable and shows its compact toolbar",
+    "Create Assembly toolbar action is discoverable and enabled",
+    "Create makes a native single-level assembly",
+    "Insert toolbar action is discoverable and enabled",
+    "Insert displays both selectable native Bodies",
+    "Insert dialog committed a native instance",
+    "Insert displays both selectable native Bodies",
+    "Insert dialog committed a native instance",
+    "Insert displays both selectable native Bodies",
+    "Insert dialog committed a native instance",
+    "Insert displays both selectable native Bodies",
+    "Insert dialog committed a native instance",
+    "Repeated insertion has four independent occurrence identities",
+    "Assembly history and Instances show all four selectable occurrences",
+    "Actual Y hides the selected assembly occurrence and keeps its embedded source hidden",
+    "Actual Shift+Y restores hidden occurrences without exposing embedded geometry",
+    "Ground toolbar action is discoverable and enabled",
+    "Ground applies to the selected occurrence",
+    "Fixed toolbar action is discoverable and enabled",
+    "Joint name accepts typing without dispatching assembly shortcuts",
+    "Fixed uses the selected native vertex references and solves",
+    "Revolute toolbar action is discoverable and enabled",
+    "Joint name accepts typing without dispatching assembly shortcuts",
+    "Slider toolbar action is discoverable and enabled",
+    "Joint name accepts typing without dispatching assembly shortcuts",
+    "All three native joint families are visible in history",
+    "Move toolbar action is discoverable and enabled",
+    "Actual Move changes permitted revolute rotation by 45 degrees",
+    "Joint movement adds exactly one native undo command",
+    "Undo restores the rotor placement",
+    "Redo restores the permitted rotation",
+    "Move toolbar action is discoverable and enabled",
+    "Actual Move exercises slider translation along native Z",
+    "Rename retains joint identity and updates its visible label",
+    "Edit toolbar action is discoverable and enabled",
+    "Joint name accepts typing without dispatching assembly shortcuts",
+    "Edit applies the staged native joint parameters",
+    "Remove deletes only the selected joint",
+    "Undo restores the native joint and its occurrence references",
+    "Fixed toolbar action is discoverable and enabled",
+    "Joint name accepts typing without dispatching assembly shortcuts",
+    "Native solver conflict is visible and rolls back accepted assembly",
+    "Authenticated shared conflicting joint is rejected by the native solver",
+    "Newly rejected shared Assembly intent is shown in Messages without changing accepted geometry",
+    "Rejected shared joint preserves revision, occurrences, joints and undo history",
+    "Identical shared failure replay returns its outcome without duplicating visible Messages",
+    "Escape cancels a joint dialog without creating a joint",
+    "Solve toolbar action is discoverable and enabled",
+    "Solved occurrences have native visible view providers",
+    "Ordinary Ctrl+S saves native FCStd from Assembly",
+    "Fresh relocated reopen keeps embedded instances and solved joints without the source path",
+    "Assembly STEP export includes each occurrence once",
+    "Original source FCStd bytes are preserved",
+    "Return to Part Studio restores modeling tools",
+    "Existing original modeling project is retained unchanged",
+    "Every scheduled dialog completed without harness error"
+  ],
+  "method": "Independent hidden FreeCAD GUI, isolated profile; actual KurtShape dialogs, keyboard visibility, native history, rendered viewport and authenticated local HTTP bridge requests",
+  "native_messages": "GUI native assembly \u00b7 Native Assembly did not satisfy every requested joint",
+  "assembly": {
+    "id": "Assembly",
+    "name": "GUI native assembly",
+    "supported": true,
+    "solver_status": "solved",
+    "solver_code": 0,
+    "source_policy": "embedded solid snapshots; no external dependencies or automatic updates",
+    "instances": [
+      {
+        "id": "Instance",
+        "name": "Asymmetric block",
+        "grounded": true,
+        "placement": {
+          "base": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "source": {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
+          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "object": "SourceBody"
+        },
+        "embedded_source": "EmbeddedPart",
+        "connected_to_ground": true
+      },
+      {
+        "id": "Instance2",
+        "name": "Asymmetric block001",
+        "grounded": false,
+        "placement": {
+          "base": [
+            3.9999999999999996,
+            6.000000000000001,
+            -8.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "source": {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
+          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "object": "SourceBody"
+        },
+        "embedded_source": "EmbeddedPart",
+        "connected_to_ground": true
+      },
+      {
+        "id": "Instance3",
+        "name": "Asymmetric block002",
+        "grounded": false,
+        "placement": {
+          "base": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.3826834323650899,
+            0.9238795325112867
+          ]
+        },
+        "source": {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
+          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "object": "SourceBody"
+        },
+        "embedded_source": "EmbeddedPart",
+        "connected_to_ground": true
+      },
+      {
+        "id": "Instance4",
+        "name": "Asymmetric block003",
+        "grounded": false,
+        "placement": {
+          "base": [
+            0.0,
+            0.0,
+            23.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "source": {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
+          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "object": "SourceBody"
+        },
+        "embedded_source": "EmbeddedPart",
+        "connected_to_ground": true
+      }
+    ],
+    "joints": [
+      {
+        "id": "FixedJoint",
+        "name": "Fastened fixture",
+        "joint_type": "fixed",
+        "first": {
+          "instance": "Instance",
+          "subelement": "Vertex8"
+        },
+        "second": {
+          "instance": "Instance2",
+          "subelement": "Vertex1"
+        },
+        "references": [
+          {
+            "instance": "Instance",
+            "subelement": "Vertex8"
+          },
+          {
+            "instance": "Instance2",
+            "subelement": "Vertex1"
+          }
+        ],
+        "value": null,
+        "suppressed": false,
+        "detached": [
+          false,
+          false
+        ],
+        "offsets": [
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        ],
+        "unit": null
+      },
+      {
+        "id": "RevoluteJoint",
+        "name": "Edited hinge",
+        "joint_type": "revolute",
+        "first": {
+          "instance": "Instance",
+          "subelement": ""
+        },
+        "second": {
+          "instance": "Instance3",
+          "subelement": ""
+        },
+        "references": [
+          {
+            "instance": "Instance",
+            "subelement": ""
+          },
+          {
+            "instance": "Instance3",
+            "subelement": ""
+          }
+        ],
+        "value": 45.000000000000014,
+        "suppressed": false,
+        "detached": [
+          false,
+          false
+        ],
+        "offsets": [
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        ],
+        "unit": "deg"
+      },
+      {
+        "id": "SliderJoint",
+        "name": "Fixture slider",
+        "joint_type": "slider",
+        "first": {
+          "instance": "Instance",
+          "subelement": ""
+        },
+        "second": {
+          "instance": "Instance4",
+          "subelement": ""
+        },
+        "references": [
+          {
+            "instance": "Instance",
+            "subelement": ""
+          },
+          {
+            "instance": "Instance4",
+            "subelement": ""
+          }
+        ],
+        "value": 23.0,
+        "suppressed": false,
+        "detached": [
+          false,
+          false
+        ],
+        "offsets": [
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        ],
+        "unit": "mm"
+      }
+    ],
+    "disconnected_count": 0
+  },
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "timings": {
+    "intent": {
+      "samples": 37,
+      "median_ms": 2.675,
+      "p95_ms": 6.478,
+      "worst_ms": 7.128
+    },
+    "native_recompute": {
+      "samples": 30,
+      "median_ms": 4.836,
+      "p95_ms": 30.824,
+      "worst_ms": 40.149
+    },
+    "inspection": {
+      "samples": 89,
+      "median_ms": 31.129,
+      "p95_ms": 56.125,
+      "worst_ms": 80.012
+    },
+    "operation": {
+      "samples": 93,
+      "median_ms": 50.931,
+      "p95_ms": 280.642,
+      "worst_ms": 1290.261
+    },
+    "recovery_checkpoint": {
+      "samples": 32,
+      "median_ms": 2.292,
+      "p95_ms": 52.295,
+      "worst_ms": 676.183
+    },
+    "queue_wait": {
+      "samples": 2,
+      "median_ms": 54.725,
+      "p95_ms": 94.53,
+      "worst_ms": 94.53
+    },
+    "input_to_feedback": {
+      "samples": 15,
+      "median_ms": 339.546,
+      "p95_ms": 1098.924,
+      "worst_ms": 1098.924
+    },
+    "input_to_feedback_model": {
+      "samples": 12,
+      "median_ms": 350.378,
+      "p95_ms": 424.944,
+      "worst_ms": 424.944
+    },
+    "input_to_feedback_ordinary": {
+      "samples": 2,
+      "median_ms": 23.557,
+      "p95_ms": 24.525,
+      "worst_ms": 24.525
+    },
+    "input_to_feedback_disk": {
+      "samples": 1,
+      "median_ms": 1098.924,
+      "p95_ms": 1098.924,
+      "worst_ms": 1098.924
+    }
+  },
+  "fixtures": {
+    "native": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\gui-solved-assembly-40576.FCStd",
+    "relocated": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\relocated-assembly-deliverables\\gui-solved-assembly-40576.FCStd",
+    "export": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\relocated-assembly-deliverables\\gui-occurrences-40576.step"
+  },
+  "source_sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4"
+}

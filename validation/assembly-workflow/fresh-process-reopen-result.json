@@ -1,0 +1,336 @@
+{
+  "passed": true,
+  "method": "Fresh independent bundled native Python process; relocated GUI-produced FCStd; original source path is absent",
+  "fixture": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\relocated-assembly-deliverables\\gui-solved-assembly-40576.FCStd",
+  "checks": [
+    "Native reopen restores valid solved assembly",
+    "Four embedded occurrences and three joints survive",
+    "All App::Link sources belong to the reopened document",
+    "Recorded original source path is absent"
+  ],
+  "assembly": {
+    "id": "Assembly",
+    "name": "GUI native assembly",
+    "supported": true,
+    "solver_status": "solved",
+    "solver_code": 0,
+    "source_policy": "embedded solid snapshots; no external dependencies or automatic updates",
+    "instances": [
+      {
+        "id": "Instance",
+        "name": "Asymmetric block",
+        "grounded": true,
+        "placement": {
+          "base": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "source": {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
+          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "object": "SourceBody"
+        },
+        "embedded_source": "EmbeddedPart",
+        "connected_to_ground": true
+      },
+      {
+        "id": "Instance2",
+        "name": "Asymmetric block001",
+        "grounded": false,
+        "placement": {
+          "base": [
+            3.9999999999999996,
+            6.000000000000001,
+            -8.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "source": {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
+          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "object": "SourceBody"
+        },
+        "embedded_source": "EmbeddedPart",
+        "connected_to_ground": true
+      },
+      {
+        "id": "Instance3",
+        "name": "Asymmetric block002",
+        "grounded": false,
+        "placement": {
+          "base": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.3826834323650899,
+            0.9238795325112867
+          ]
+        },
+        "source": {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
+          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "object": "SourceBody"
+        },
+        "embedded_source": "EmbeddedPart",
+        "connected_to_ground": true
+      },
+      {
+        "id": "Instance4",
+        "name": "Asymmetric block003",
+        "grounded": false,
+        "placement": {
+          "base": [
+            0.0,
+            0.0,
+            23.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "source": {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
+          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "object": "SourceBody"
+        },
+        "embedded_source": "EmbeddedPart",
+        "connected_to_ground": true
+      }
+    ],
+    "joints": [
+      {
+        "id": "FixedJoint",
+        "name": "Fastened fixture",
+        "joint_type": "fixed",
+        "first": {
+          "instance": "Instance",
+          "subelement": "Vertex8"
+        },
+        "second": {
+          "instance": "Instance2",
+          "subelement": "Vertex1"
+        },
+        "references": [
+          {
+            "instance": "Instance",
+            "subelement": "Vertex8"
+          },
+          {
+            "instance": "Instance2",
+            "subelement": "Vertex1"
+          }
+        ],
+        "value": null,
+        "suppressed": false,
+        "detached": [
+          false,
+          false
+        ],
+        "offsets": [
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        ],
+        "unit": null
+      },
+      {
+        "id": "RevoluteJoint",
+        "name": "Edited hinge",
+        "joint_type": "revolute",
+        "first": {
+          "instance": "Instance",
+          "subelement": ""
+        },
+        "second": {
+          "instance": "Instance3",
+          "subelement": ""
+        },
+        "references": [
+          {
+            "instance": "Instance",
+            "subelement": ""
+          },
+          {
+            "instance": "Instance3",
+            "subelement": ""
+          }
+        ],
+        "value": 45.000000000000014,
+        "suppressed": false,
+        "detached": [
+          false,
+          false
+        ],
+        "offsets": [
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        ],
+        "unit": "deg"
+      },
+      {
+        "id": "SliderJoint",
+        "name": "Fixture slider",
+        "joint_type": "slider",
+        "first": {
+          "instance": "Instance",
+          "subelement": ""
+        },
+        "second": {
+          "instance": "Instance4",
+          "subelement": ""
+        },
+        "references": [
+          {
+            "instance": "Instance",
+            "subelement": ""
+          },
+          {
+            "instance": "Instance4",
+            "subelement": ""
+          }
+        ],
+        "value": 23.0,
+        "suppressed": false,
+        "detached": [
+          false,
+          false
+        ],
+        "offsets": [
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          {
+            "base": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "rotation": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        ],
+        "unit": "mm"
+      }
+    ],
+    "disconnected_count": 0
+  },
+  "measurements": {
+    "valid": true,
+    "solid_count": 4,
+    "volume_mm3": 767.9999999999999,
+    "area_mm2": 832.0,
+    "bbox_mm": {
+      "min": [
+        -4.9497474683058345,
+        2.0,
+        -8.0
+      ],
+      "max": [
+        9.0,
+        14.0,
+        31.0
+      ],
+      "size": [
+        13.949747468305834,
+        12.0,
+        39.0
+      ]
+    },
+    "center_of_mass_mm": [
+      2.8964466094067256,
+      6.664213562373096,
+      7.75
+    ]
+  },
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ]
+}

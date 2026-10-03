@@ -1,0 +1,373 @@
+"""Actual KurtShape dialogs and rendered native Assembly in an isolated hidden GUI."""
+import hashlib
+import http.client
+import json
+import math
+import os
+from pathlib import Path
+import shutil
+import sys
+import threading
+import time
+import traceback
+import uuid
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape.core import intent_signature
+from kurtshape import assembly as assembly_adapter
+from kurtshape.ui import start
+
+app = QtGui.QApplication.instance()
+app.setAttribute(QtCore.Qt.AA_DontUseNativeDialogs, True)
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.show()
+panel = start()
+output = root / "validation" / "assembly-workflow"
+working = output / "assembly-gui-projects-working"
+working.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "method": "Independent hidden FreeCAD GUI, isolated profile; actual KurtShape dialogs, keyboard visibility, native history, rendered viewport and authenticated local HTTP bridge requests"}
+original_fingerprint = assembly_adapter._geometry_fingerprint
+
+
+def record_fingerprint(source):
+    native_brep = source.Shape.copy(True, False).exportBrepToString()
+    digest = hashlib.sha256(native_brep.encode("utf-8")).hexdigest()
+    path = working / ("snapshot-fingerprint-gui-" + digest + ".brep")
+    if not path.exists():
+        path.write_text(native_brep, encoding="utf-8")
+    return original_fingerprint(source)
+
+
+assembly_adapter._geometry_fingerprint = record_fingerprint
+
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label)
+    report["checks"].append(label)
+
+
+def loopback(request):
+    """Use the real authenticated transport; Qt owns every native mutation."""
+    result = {}
+    def post():
+        connection = http.client.HTTPConnection("127.0.0.1", panel.bridge.server.server_port, timeout=15)
+        try:
+            connection.request("POST", "/operation", body=json.dumps(request),
+                               headers={"Authorization": "Bearer " + panel.bridge.token, "Content-Type": "application/json"})
+            response = connection.getresponse()
+            if response.status != 200:
+                raise AssertionError("Isolated authenticated loopback response status " + str(response.status))
+            result["response"] = json.loads(response.read())
+        except Exception:
+            result["error"] = traceback.format_exc()
+        finally:
+            connection.close()
+    worker = threading.Thread(target=post, daemon=True)
+    worker.start()
+    deadline = time.monotonic() + 20
+    while worker.is_alive() and time.monotonic() < deadline:
+        QtTest.QTest.qWait(25)
+    if worker.is_alive():
+        raise AssertionError("Isolated loopback request did not settle")
+    if "error" in result:
+        raise AssertionError(result["error"])
+    panel.tick()
+    return result["response"]
+
+
+def respond(predicate, callback, remaining=100):
+    """Run during a real modal event loop, waiting for the intended dialog."""
+    def attempt():
+        try:
+            dialog = next((widget for widget in app.topLevelWidgets() if widget.isVisible() and predicate(widget)), None)
+            if dialog:
+                callback(dialog)
+            elif remaining:
+                respond(predicate, callback, remaining - 1)
+            else:
+                raise AssertionError("Expected native GUI dialog did not appear")
+        except Exception:
+            report["dialog_error"] = traceback.format_exc()
+            for widget in app.topLevelWidgets():
+                if isinstance(widget, QtWidgets.QDialog) and widget.isVisible():
+                    widget.reject()
+    QtCore.QTimer.singleShot(100, attempt)
+
+
+def named_dialog(name, callback):
+    respond(lambda widget: widget.objectName() == name, callback)
+
+
+def accept(dialog):
+    buttons = dialog.findChild(QtWidgets.QDialogButtonBox)
+    if buttons:
+        QtTest.QTest.mouseClick(buttons.button(QtWidgets.QDialogButtonBox.Ok), QtCore.Qt.LeftButton)
+    else:
+        dialog.accept()
+
+
+def file_dialog(path, screenshot=None):
+    def choose(dialog):
+        if screenshot:
+            dialog.grab().save(str(output / screenshot))
+        dialog.setDirectory(str(path.parent))
+        dialog.findChild(QtWidgets.QLineEdit, "fileNameEdit").setText(path.name)
+        QtCore.QTimer.singleShot(350, dialog.accept)
+    respond(lambda widget: isinstance(widget, QtWidgets.QFileDialog), choose)
+
+
+def toolbar(label):
+    action = next(action for action in panel.assembly_bar.actions() if action.text() == label)
+    check(label + " toolbar action is discoverable and enabled", action.isEnabled())
+    action.trigger()
+
+
+def select(identity):
+    Gui.Selection.clearSelection()
+    panel.select_feature(identity)
+    panel.history_click(panel.items[identity])
+
+
+def joint_dialog(kind, first, second, name, first_ref="", second_ref="", screenshot=None):
+    def choose(dialog):
+        name_field = dialog.findChild(QtWidgets.QLineEdit, "KurtShapeAssemblyJointName")
+        name_field.clear()
+        name_field.setFocus()
+        QtTest.QTest.keyClicks(name_field, name)
+        check("Joint name accepts typing without dispatching assembly shortcuts", name_field.text() == name)
+        type_field = dialog.findChild(QtWidgets.QComboBox, "KurtShapeAssemblyJointType")
+        type_field.setCurrentIndex(type_field.findData(kind))
+        for role, identity, reference in (("First", first, first_ref), ("Second", second, second_ref)):
+            choice = dialog.findChild(QtWidgets.QComboBox, "KurtShapeAssemblyJoint" + role + "Instance")
+            choice.setCurrentIndex(choice.findData(identity))
+            dialog.findChild(QtWidgets.QLineEdit, "KurtShapeAssemblyJoint" + role + "Reference").setText(reference)
+        if screenshot:
+            dialog.grab().save(str(output / screenshot))
+        accept(dialog)
+    named_dialog("KurtShapeAssemblyJointDialog", choose)
+
+
+def move_dialog(value, screenshot=None):
+    def choose(dialog):
+        field = dialog.findChild(QtWidgets.QWidget, "KurtShapeAssemblyMoveValue")
+        field.setValue(value)
+        if screenshot:
+            dialog.grab().save(str(output / screenshot))
+        accept(dialog)
+    named_dialog("KurtShapeAssemblyMoveDialog", choose)
+
+
+def insert(path, source_id="SourceBody", screenshot=None, actual_file=False):
+    def choose(dialog):
+        choices = dialog.findChild(QtWidgets.QListWidget, "KurtShapeAssemblyCandidates")
+        check("Insert displays both selectable native Bodies", choices.count() == 2)
+        for index in range(choices.count()):
+            if choices.item(index).data(QtCore.Qt.UserRole) == source_id:
+                choices.setCurrentRow(index)
+                break
+        else:
+            raise AssertionError("Intended source Body is missing")
+        if screenshot:
+            dialog.grab().save(str(output / screenshot))
+        accept(dialog)
+    named_dialog("KurtShapeAssemblyInsertDialog", choose)
+    if actual_file:
+        file_dialog(path, "assembly-insert-file-dialog.png")
+        toolbar("Insert")
+    else:
+        panel.insert_assembly_part(path=str(path))
+    check("Insert dialog committed a native instance", bool(panel.state.get("created_feature")))
+    return panel.state["created_feature"]
+
+
+def validate():
+    try:
+        panel.operation("sketch_rectangle", id="OriginalSketch", width=10, height=10)
+        panel.operation("pad", profile="OriginalSketch", length=5)
+        original = panel.document()
+        original_signature = intent_signature(original)
+        panel.operation("new", name="Shared controller workspace probe")
+        workspace_probe = panel.document()
+        panel.tick()
+        check("Disposable Part Studio is already known to the panel before shared creation", panel.workspace_mode == "part_studio" and panel.workspace_modes[panel.state["document_id"]] == "part_studio")
+        shared_creation = loopback({"op": "create_assembly", "id": "SharedAssembly", "name": "Shared controller assembly",
+                                    "document_id": panel.state["document_id"], "expected_revision": panel.state["revision"], "request_id": str(uuid.uuid4())})
+        check("Authenticated shared creation automatically activates the Assembly toolbar and history", shared_creation["ok"] and panel.workspace_mode == "assembly" and panel.assembly_bar.isVisible() and not panel.model_bar.isVisible() and panel.assembly_state().get("id") == "SharedAssembly" and panel.features_title.text() == "Shared controller assembly" and panel.features.topLevelItemCount() == 2)
+        workspace_probe.setClosable(True)
+        App.closeDocument(workspace_probe.Name)
+        App.setActiveDocument(original.Name)
+        Gui.ActiveDocument = Gui.getDocument(original.Name)
+        panel.tick()
+        source = App.newDocument("AssemblyGUIInput")
+        for identity, shape in (("SourceBody", Part.makeBox(4, 6, 8, App.Vector(1, 2, 0))),
+                                ("SecondBody", Part.makeCylinder(2, 7, App.Vector(20, 0, 0)))):
+            body = source.addObject("PartDesign::Body", identity)
+            body.Label = "Asymmetric block" if identity == "SourceBody" else "Alternate cylinder"
+            feature = body.newObject("PartDesign::Feature", identity + "Solid")
+            feature.Shape = shape
+        source.recompute()
+        source_path = working / f"two-selectable-source-bodies-{os.getpid()}.FCStd"
+        source.saveAs(str(source_path))
+        source_digest = hashlib.sha256(source_path.read_bytes()).hexdigest()
+        App.closeDocument(source.Name)
+        App.setActiveDocument(original.Name)
+        Gui.ActiveDocument = Gui.getDocument(original.Name)
+        panel.tick()
+        panel.mode_choice.setCurrentIndex(panel.mode_choice.findData("assembly"))
+        check("Assembly workspace is discoverable and shows its compact toolbar", panel.workspace_mode == "assembly" and panel.assembly_bar.isVisible())
+        def name_assembly(dialog):
+            dialog.setTextValue("GUI native assembly")
+            dialog.grab().save(str(output / "create-assembly-dialog.png"))
+            dialog.accept()
+        respond(lambda widget: isinstance(widget, QtWidgets.QInputDialog), name_assembly)
+        toolbar("Create Assembly")
+        check("Create makes a native single-level assembly", bool(panel.assembly_state()) and panel.document().getObject(panel.assembly_state()["id"]).TypeId == "Assembly::AssemblyObject")
+        assembly_doc = panel.document()
+        first = insert(source_path, screenshot="assembly-body-choice-dialog.png", actual_file=True)
+        embedded = assembly_doc.getObject(first).LinkedObject
+        (working / f"snapshot-after-insert-{os.getpid()}.brep").write_text(embedded.Shape.copy(True, False).exportBrepToString(), encoding="utf-8")
+        fixed = insert(source_path)
+        rotor = insert(source_path)
+        carriage = insert(source_path)
+        check("Repeated insertion has four independent occurrence identities", len({first, fixed, rotor, carriage}) == 4 and len(panel.assembly_state()["instances"]) == 4)
+        check("Assembly history and Instances show all four selectable occurrences", panel.parts.topLevelItemCount() == 4 and all(identity in panel.items for identity in (first, fixed, rotor, carriage)))
+        select(first)
+        main.setFocus()
+        QtTest.QTest.keyClick(main, QtCore.Qt.Key_Y)
+        check("Actual Y hides the selected assembly occurrence and keeps its embedded source hidden", not assembly_doc.getObject(first).ViewObject.Visibility and not embedded.ViewObject.Visibility)
+        QtTest.QTest.keyClick(main, QtCore.Qt.Key_Y, QtCore.Qt.ShiftModifier)
+        check("Actual Shift+Y restores hidden occurrences without exposing embedded geometry", all(assembly_doc.getObject(identity).ViewObject.Visibility for identity in (first, fixed, rotor, carriage)) and not embedded.ViewObject.Visibility)
+        select(first)
+        toolbar("Ground")
+        check("Ground applies to the selected occurrence", [item["id"] for item in panel.assembly_state()["instances"] if item["grounded"]] == [first])
+        joint_dialog("fixed", first, fixed, "Fastened fixture", first_ref="Vertex8", second_ref="Vertex1", screenshot="fixed-joint-dialog.png")
+        toolbar("Fixed")
+        fixed_joint = panel.state["created_feature"]
+        check("Fixed uses the selected native vertex references and solves", panel.assembly_state()["joints"][0]["first"]["subelement"] == "Vertex8" and panel.state["build_status"] == "valid")
+        joint_dialog("revolute", first, rotor, "Fixture hinge", screenshot="revolute-joint-dialog.png")
+        toolbar("Revolute")
+        hinge = panel.state["created_feature"]
+        joint_dialog("slider", first, carriage, "Fixture slider")
+        toolbar("Slider")
+        slider = panel.state["created_feature"]
+        check("All three native joint families are visible in history", len(panel.assembly_state()["joints"]) == 3 and all(identity in panel.items for identity in (fixed_joint, hinge, slider)))
+        select(hinge)
+        before = assembly_doc.getObject(rotor).Placement.copy()
+        undo_count = assembly_doc.UndoCount
+        move_dialog(45, "revolute-move-dialog.png")
+        toolbar("Move")
+        rotated = assembly_doc.getObject(rotor).Placement.copy()
+        check("Actual Move changes permitted revolute rotation by 45 degrees", abs((before.Rotation.inverted() * rotated.Rotation).Angle - math.pi / 4) < 1e-6)
+        check("Joint movement adds exactly one native undo command", assembly_doc.UndoCount == undo_count + 1)
+        panel.history_move("undo")
+        check("Undo restores the rotor placement", (assembly_doc.getObject(rotor).Placement.Rotation.inverted() * before.Rotation).Angle < 1e-6)
+        panel.history_move("redo")
+        check("Redo restores the permitted rotation", (assembly_doc.getObject(rotor).Placement.Rotation.inverted() * rotated.Rotation).Angle < 1e-6)
+        select(slider)
+        move_dialog(23, "slider-move-dialog.png")
+        toolbar("Move")
+        check("Actual Move exercises slider translation along native Z", abs(abs(assembly_doc.getObject(carriage).Placement.Base.z) - 23) < 1e-6)
+        select(hinge)
+        respond(lambda widget: isinstance(widget, QtWidgets.QInputDialog), lambda dialog: (dialog.setTextValue("Renamed hinge"), dialog.accept()))
+        panel.rename_selected()
+        check("Rename retains joint identity and updates its visible label", assembly_doc.getObject(hinge).Label == "Renamed hinge" and panel.items[hinge].text(0).startswith("Renamed hinge"))
+        joint_dialog("revolute", first, rotor, "Edited hinge")
+        toolbar("Edit")
+        check("Edit applies the staged native joint parameters", assembly_doc.getObject(hinge).Label == "Edited hinge")
+        select(hinge)
+        panel.delete_selected()
+        check("Remove deletes only the selected joint", assembly_doc.getObject(hinge) is None and assembly_doc.getObject(rotor) is not None)
+        panel.history_move("undo")
+        check("Undo restores the native joint and its occurrence references", assembly_doc.getObject(hinge) is not None and len(panel.assembly_state()["joints"]) == 3)
+        before_failure = intent_signature(assembly_doc)
+        joint_dialog("fixed", first, fixed, "Conflicting fixed joint")
+        toolbar("Fixed")
+        check("Native solver conflict is visible and rolls back accepted assembly", intent_signature(assembly_doc) == before_failure and len(panel.assembly_state()["joints"]) == 3 and panel.messages_dock.isVisible() and "did not satisfy" in panel.messages.toPlainText().lower())
+        panel.messages.clear()
+        panel.messages_dock.hide()
+        accepted_revision = panel.state["revision"]
+        history_before = (assembly_doc.UndoCount, assembly_doc.RedoCount)
+        shared_conflict = {"op": "create_assembly_joint", "id": "RejectedSharedJoint", "joint_type": "fixed",
+                           "first": {"instance": first, "subelement": ""}, "second": {"instance": fixed, "subelement": ""},
+                           "document_id": panel.state["document_id"], "expected_revision": accepted_revision, "request_id": str(uuid.uuid4())}
+        shared_failure = loopback(shared_conflict)
+        check("Authenticated shared conflicting joint is rejected by the native solver", not shared_failure["ok"] and shared_failure["error"]["code"] == "assembly_solver_failed")
+        failure_message = shared_failure["error"]["message"]
+        check("Newly rejected shared Assembly intent is shown in Messages without changing accepted geometry", panel.messages_dock.isVisible() and panel.messages.toPlainText().count(failure_message) == 1 and panel.state["build_status"] == "valid" and intent_signature(assembly_doc) == before_failure)
+        check("Rejected shared joint preserves revision, occurrences, joints and undo history", panel.state["revision"] == accepted_revision and assembly_doc.getObject("RejectedSharedJoint") is None and len(panel.assembly_state()["instances"]) == 4 and len(panel.assembly_state()["joints"]) == 3 and (assembly_doc.UndoCount, assembly_doc.RedoCount) == history_before)
+        shared_replay = loopback(shared_conflict)
+        check("Identical shared failure replay returns its outcome without duplicating visible Messages", shared_replay["ok"] == shared_failure["ok"] and shared_replay["error"] == shared_failure["error"] and panel.messages.toPlainText().count(failure_message) == 1 and intent_signature(assembly_doc) == before_failure)
+        named_dialog("KurtShapeAssemblyJointDialog", lambda dialog: QtTest.QTest.keyClick(dialog, QtCore.Qt.Key_Escape))
+        panel.assembly_joint("revolute")
+        check("Escape cancels a joint dialog without creating a joint", len(panel.assembly_state()["joints"]) == 3)
+        toolbar("Solve")
+        panel.isometric()
+        panel.fit()
+        QtTest.QTest.qWait(500)
+        for width, height in ((1200, 800), (1600, 1000)):
+            main.resize(width, height)
+            QtTest.QTest.qWait(250)
+            main.grab().save(str(output / f"native-assembly-{width}.png"))
+        check("Solved occurrences have native visible view providers", all(assembly_doc.getObject(identity).ViewObject.Visibility for identity in (first, fixed, rotor, carriage)))
+        native = working / f"gui-solved-assembly-{os.getpid()}.FCStd"
+        (working / f"snapshot-before-save-{os.getpid()}.brep").write_text(embedded.Shape.copy(True, False).exportBrepToString(), encoding="utf-8")
+        file_dialog(native, "assembly-save-dialog.png")
+        main.activateWindow()
+        main.setFocus()
+        QtTest.QTest.keyClick(main, QtCore.Qt.Key_S, QtCore.Qt.ControlModifier)
+        check("Ordinary Ctrl+S saves native FCStd from Assembly", native.is_file() and panel.state["native_file"] == str(native))
+        accepted_id = panel.state["document_id"]
+        relocated_folder = working / "relocated-assembly-deliverables"
+        relocated_folder.mkdir(exist_ok=True)
+        relocated = relocated_folder / native.name
+        shutil.copy2(native, relocated)
+        source_path.rename(source_path.with_name("preserved-source-" + source_path.name))
+        App.closeDocument(assembly_doc.Name)
+        panel.open_path(str(relocated))
+        embedded = panel.document().getObject(first).LinkedObject
+        (working / f"snapshot-after-reopen-{os.getpid()}.brep").write_text(embedded.Shape.copy(True, False).exportBrepToString(), encoding="utf-8")
+        check("Fresh relocated reopen keeps embedded instances and solved joints without the source path", panel.state["document_id"] == accepted_id and panel.state["build_status"] == "valid" and len(panel.assembly_state()["instances"]) == 4 and len(panel.assembly_state()["joints"]) == 3)
+        exported = relocated_folder / f"gui-occurrences-{os.getpid()}.step"
+        panel.operation("export", path=str(exported))
+        check("Assembly STEP export includes each occurrence once", len(Part.read(str(exported)).Solids) == 4)
+        check("Original source FCStd bytes are preserved", hashlib.sha256(source_path.with_name("preserved-source-" + source_path.name).read_bytes()).hexdigest() == source_digest)
+        panel.mode_choice.setCurrentIndex(panel.mode_choice.findData("part_studio"))
+        check("Return to Part Studio restores modeling tools", panel.workspace_mode == "part_studio" and panel.model_bar.isVisible() and not panel.assembly_bar.isVisible())
+        check("Existing original modeling project is retained unchanged", original.Name in App.listDocuments() and intent_signature(original) == original_signature)
+        panel.mode_choice.setCurrentIndex(panel.mode_choice.findData("assembly"))
+        panel.isometric()
+        panel.fit()
+        QtTest.QTest.qWait(400)
+        main.grab().save(str(output / "reopened-native-assembly.png"))
+        check("Every scheduled dialog completed without harness error", "dialog_error" not in report)
+        report.update(passed=True, native_messages=panel.messages.toPlainText(), assembly=panel.assembly_state(),
+                      engine={"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}, timings=panel.core.timings.report(),
+                      fixtures={"native": str(native), "relocated": str(relocated), "export": str(exported)}, source_sha256=source_digest)
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["native_messages"] = panel.messages.toPlainText()
+        report["assembly"] = panel.assembly_state()
+        main.grab().save(str(output / "failure.png"))
+    finally:
+        (output / "gui-test-result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.getDocument(name).setClosable(True)
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

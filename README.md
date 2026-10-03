@@ -36,11 +36,19 @@ The feature bar includes Sweep, Loft, Hole, Shell, Draft and Boolean. **Build, C
 
 The app owns a consistent light palette for fields, popups and native Tasks, including disabled controls. Save and close a previously running window before relaunching to load appearance changes.
 
+## Assembly workflow
+
+Choose **Assembly** in the workspace selector, then **Create Assembly**. **Insert / I** chooses a saved FCStd file and its intended Body/solid; repeat to create independent instances. For STEP parts, Open STEP and Save FCStd first. The first instance is grounded automatically; select another and **Ground** to change the reference.
+
+Ctrl-select a native face/edge/vertex on each of two instances, then choose **Fixed / M**, **Revolute**, or **Slider**. The dialog also allows explicit instance/reference choices; blank reference uses the part origin. Select a revolute/slider joint and **Move** to enter degrees/millimeters. Select a free instance and Move to place it. **Edit** changes joint references/type/name. History context menus rename/remove; dependent instance removal requires cascade. Undo/redo restores the whole command, including placements.
+
+**Ctrl+S** saves the assembly as FCStd; Open restores instances, grounding, joints and solved placements. Export STEP includes all occurrences once at global placement. Parts are embedded geometry snapshots: sources remain unchanged, assemblies relocate without them, and source edits do not automatically update inserted geometry. **Part Studio** returns to an independent modeling document; the assembly stays open in its tab. **J / H** toggles joint visibility. Native solver failures appear in Messages and rejected commands preserve the accepted model. [Policy, limitations and verification](docs/assembly-workflow/WORKFLOW.md).
+
 ## Shortcut coverage
 
 All 126 normalized official Windows default actions/gestures are registered, plus Ctrl+S/N/O local file extensions. Meaning changes by context: Shift+S is sketch creation outside a sketch and Point inside it; Shift+F is edge fillet or sketch fillet. **Shift+/** opens searchable shortcut help; **Alt+C** searches tools.
 
-Registration is complete; equivalence is partial. Kurt deferred assemblies/mates, drawings, Feature Studio code tools, rollback and analysis. Pierce is now implemented; three other advanced sketch meanings remain unavailable. Six mouse/held-modifier entries remain recorded. Live help shows actual availability and provides **Rebind selected / Reset selected** with context validation. [Complete keymap and sources](docs/ONSHAPE_SHORTCUTS.md).
+Registration is complete; equivalence is partial. The first single-level Assembly workflow now implements insertion, grounding and fixed/revolute/slider joints. Nested assemblies, snap/connector tools, advanced mates, drawings, Feature Studio code tools, rollback and analysis remain deferred. Pierce is implemented; three other advanced sketch meanings remain unavailable. Six mouse/held-modifier entries remain recorded. Live help shows actual availability and provides **Rebind selected / Reset selected** with context validation. [Complete keymap and sources](docs/ONSHAPE_SHORTCUTS.md).
 
 ## Assistant access
 

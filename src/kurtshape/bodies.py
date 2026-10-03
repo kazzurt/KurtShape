@@ -19,6 +19,12 @@ def origin_plane(body, plane):
 
 
 def results(doc):
+    # An assembly's current result consists of occurrences, never its hidden
+    # embedded source snapshots or an aggregate that repeats the same shapes.
+    from . import assembly
+    assemblies = [obj for obj in doc.Objects if obj.TypeId == "Assembly::AssemblyObject"]
+    if assemblies:
+        return assembly.result_objects(doc)
     native_bodies = bodies(doc)
     members = {obj.Name for body in native_bodies for obj in body.Group}
     standalone = [obj for obj in doc.Objects if obj.Name not in members and obj not in native_bodies
