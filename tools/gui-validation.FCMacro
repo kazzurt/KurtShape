@@ -29,6 +29,12 @@ except Exception:
 def wait(ms=100):
     QtTest.QTest.qWait(ms)
 
+def wait_for_confirm(timeout_ms=15000):
+    deadline=time.perf_counter()+timeout_ms/1000
+    while not panel.confirm.isEnabled() and time.perf_counter()<deadline:
+        wait(25)
+    require(panel.confirm.isEnabled())
+
 def viewport():
     area=next(a for a in main.findChildren(QtWidgets.QMdiArea) if a.activeSubWindow())
     return next(w for w in area.activeSubWindow().findChildren(QtWidgets.QWidget) if w.metaObject().className() == 'QOpenGLWidget' and w.parentWidget().metaObject().className() == 'Gui::View3DInventorViewer')
@@ -108,10 +114,12 @@ def validate():
         key(QtCore.Qt.Key_E,QtCore.Qt.ShiftModifier)
         check('Shift+E opens contextual extrude settings',panel.task=='pad')
         panel.depth.setValue(6)
+        wait_for_confirm()
         QtTest.QTest.mouseClick(panel.confirm,QtCore.Qt.LeftButton)
         wait()
         check('Confirm creates valid native solid',panel.state['build_status']=='valid' and len(App.activeDocument().Body.Shape.Solids)==1)
         pad=App.activeDocument().Body.Tip
+        pad_name=pad.Name
         panel.select_feature(name)
         panel.parameter.setCurrentIndex(panel.parameter.findText('Width'))
         panel.value.setValue(72)
@@ -180,32 +188,32 @@ def validate():
         require(panel.operation('open',path=str(path)))
         check('Saved native features rebuild after close and reopen',panel.state['build_status']=='valid')
         check('Successful save/reopen clears native modified indicator',not Gui.activeDocument().Modified)
-        panel.select_feature('Pad');panel.parameters(show=True)
+        panel.select_feature(pad_name);panel.parameters(show=True)
         panel.value.lineEdit().setText('1/8 in')
         QtTest.QTest.keyClick(panel.value.lineEdit(),QtCore.Qt.Key_Return);wait()
-        check('Native quantity field applies fractional inches through the controller',abs(App.activeDocument().Pad.Length.Value-3.175)<1e-6)
+        check('Native quantity field applies fractional inches through the controller',abs(App.activeDocument().getObject(pad_name).Length.Value-3.175)<1e-6)
         panel.history_move('undo')
         live=App.activeDocument()
         from kurtshape.core import intent_signature
         before=(intent_signature(live),panel.state['revision'],live.UndoCount,live.RedoCount,Gui.activeDocument().Modified,
                 Gui.activeDocument().activeView().getCamera(),[(s.ObjectName,list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()],live.FileName)
         preview=panel.core.dispatch({'op':'preview','document_id':panel.state['document_id'],'expected_revision':panel.state['revision'],
-                                    'proposal':{'op':'set_parameter','feature':'Pad','parameter':'Length','value':'1 in'}})
+                                    'proposal':{'op':'set_parameter','feature':pad_name,'parameter':'Length','value':'1 in'}})
         after=(intent_signature(live),panel.core.inspect(live)['revision'],live.UndoCount,live.RedoCount,Gui.getDocument(live.Name).Modified,
                Gui.getDocument(live.Name).activeView().getCamera(),[(s.ObjectName,list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()],live.FileName)
         check('Isolated preview preserves live revision, history, modified flag, camera, selection and file',preview['ok'] and preview['result']['valid'] and before==after)
         plate_doc=App.activeDocument().Name
         baseline=panel.state['revision']
-        change={'op':'set_parameter','document_id':panel.state['document_id'],'expected_revision':baseline,'feature':'Pad','parameter':'Length','value':8}
+        change={'op':'set_parameter','document_id':panel.state['document_id'],'expected_revision':baseline,'feature':pad_name,'parameter':'Length','value':8}
         response=bridge_call(change)
-        check('Actual loopback assistant edits the displayed native document',response['ok'] and abs(App.activeDocument().Pad.Length.Value-8)<1e-6)
+        check('Actual loopback assistant edits the displayed native document',response['ok'] and abs(App.activeDocument().getObject(pad_name).Length.Value-8)<1e-6)
         replay=bridge_call(change)
         check('Live assistant identical request replay returns the original result',replay['ok'] and replay['result']==response['result'])
         import uuid
         stale=bridge_call(dict(change,request_id=str(uuid.uuid4())))
         check('A fresh request with stale revision is rejected',not stale['ok'] and stale['error']['code']=='stale_revision')
         key(QtCore.Qt.Key_Z,QtCore.Qt.ControlModifier)
-        check('GUI undo restores actual assistant change',abs(App.activeDocument().Pad.Length.Value-6)<1e-6)
+        check('GUI undo restores actual assistant change',abs(App.activeDocument().getObject(pad_name).Length.Value-6)<1e-6)
         # Verify native geometry tools from the official shortcuts, not just typed fixtures.
         panel.new();Gui.Selection.clearSelection()
         report['new_document']={'active':App.activeDocument().Name,'state_document':panel.core.documents[panel.state['document_id']].Name}

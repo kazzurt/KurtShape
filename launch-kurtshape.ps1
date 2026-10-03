@@ -1,11 +1,80 @@
-param([switch]$Validation, [switch]$WriteEvidence)
+param(
+    [switch]$Validation,
+    [switch]$WriteEvidence,
+    [ValidateNotNullOrEmpty()][string]$RuntimeRoot = (Join-Path $PSScriptRoot 'runtime'),
+    [ValidateNotNullOrEmpty()][string]$SessionRoot = (Join-Path $PSScriptRoot 'runtime'),
+    [switch]$PrintOnly
+)
 $ErrorActionPreference = 'Stop'
-$kurtshapeRoot = $PSScriptRoot
-$runtimePath = Join-Path $kurtshapeRoot 'runtime'
-if ($Validation) { $runtimePath = Join-Path $runtimePath 'interface-validation' }
+$kurtshapeRoot = [IO.Path]::GetFullPath($PSScriptRoot)
+$RuntimeRoot = [IO.Path]::GetFullPath($RuntimeRoot)
+$SessionRoot = [IO.Path]::GetFullPath($SessionRoot)
+if ($Validation) {
+    $protectedFolders = @('user-data','temporary','appdata','localappdata','project-recovery','freecad-1.1.4','downloads')
+    foreach ($liveBase in @((Join-Path $kurtshapeRoot 'runtime'), $RuntimeRoot) | Select-Object -Unique) {
+        foreach ($folder in $protectedFolders) {
+            $protected = (Join-Path $liveBase $folder).TrimEnd('\','/')
+            if ($SessionRoot.TrimEnd('\','/') -eq $protected -or $SessionRoot.StartsWith($protected + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+                throw ('Validation session base cannot be inside a live profile or engine folder: ' + $SessionRoot)
+            }
+        }
+    }
+    $ancestor = Join-Path $SessionRoot 'interface-validation'
+    while ($ancestor) {
+        try { $entry = Get-Item -LiteralPath $ancestor -Force -ErrorAction Stop }
+        catch {
+            if ($_.CategoryInfo.Category -ne [Management.Automation.ErrorCategory]::ObjectNotFound) { throw }
+            $entry = $null
+        }
+        if ($entry -and ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            throw ('Validation session path cannot pass through a junction or symbolic link: ' + $ancestor)
+        }
+        $parent = [IO.Directory]::GetParent($ancestor)
+        $ancestor = if ($parent) { $parent.FullName } else { $null }
+    }
+}
+$runtimePath = if ($Validation) { Join-Path $SessionRoot 'interface-validation' } else { $SessionRoot }
+$exePath = Join-Path $RuntimeRoot 'freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\freecad.exe'
+$macroPath = Join-Path $kurtshapeRoot $(if ($Validation) {'tools\gui-validation.FCMacro'} else {'KurtShape.FCMacro'})
+$userConfigPath = Join-Path $runtimePath 'user-data\user.cfg'
+$systemConfigPath = Join-Path $runtimePath 'user-data\system.cfg'
+$launchArguments = @('-u', ('"'+$userConfigPath+'"'), '-s', ('"'+$systemConfigPath+'"'), '--log-file', ('"'+(Join-Path $runtimePath 'freecad-launch.log')+'"'))
+$launchArguments += ('"'+$macroPath+'"')
+$launchWindowStyle = if ($Validation) { 'Hidden' } else { 'Normal' }
+$launchEnvironment = [ordered]@{
+    KURTSHAPE_ROOT = $kurtshapeRoot
+    KURTSHAPE_SESSION_DIR = $runtimePath
+    KURTSHAPE_NO_DEMO = $(if ($Validation) { '1' } else { $null })
+    FREECAD_USER_HOME = Join-Path $runtimePath 'user-data'
+    TEMP = Join-Path $runtimePath 'temporary'
+    TMP = Join-Path $runtimePath 'temporary'
+    APPDATA = Join-Path $runtimePath 'appdata'
+    LOCALAPPDATA = Join-Path $runtimePath 'localappdata'
+    PYTHONDONTWRITEBYTECODE = '1'
+}
+if ($Validation) {
+    $launchEnvironment.KURTSHAPE_DEMO = $null
+    $launchEnvironment.KURTSHAPE_EVIDENCE_DIR = Join-Path $runtimePath 'evidence'
+    $launchEnvironment.KURTSHAPE_TEST_TMP = Join-Path $runtimePath 'test-tmp'
+    $launchEnvironment.KURTSHAPE_WRITE_EVIDENCE = $(if ($WriteEvidence) { '1' } else { $null })
+}
+if ($PrintOnly) {
+    [ordered]@{
+        executable = $exePath
+        macro = $macroPath
+        session = $runtimePath
+        runtime_root = $RuntimeRoot
+        session_root = $SessionRoot
+        working_directory = $kurtshapeRoot
+        environment = $launchEnvironment
+        arguments = $launchArguments
+        window_style = $launchWindowStyle
+    } | ConvertTo-Json -Depth 5
+    return
+}
 if ($Validation) {
     . (Join-Path $PSScriptRoot 'tools\validation-session.ps1')
-    Initialize-KurtShapeValidationEnvironment -Root $kurtshapeRoot -Session $runtimePath -WriteEvidence:$WriteEvidence
+    Initialize-KurtShapeValidationEnvironment -Root $kurtshapeRoot -Session $runtimePath -SessionBase $SessionRoot -WriteEvidence:$WriteEvidence
 } else {
     foreach ($folder in @('temporary','user-data','appdata','localappdata')) {
         New-Item -ItemType Directory -Force -Path (Join-Path $runtimePath $folder) | Out-Null
@@ -20,15 +89,11 @@ if ($Validation) {
     $env:LOCALAPPDATA = Join-Path $runtimePath 'localappdata'
     $env:PYTHONDONTWRITEBYTECODE = '1'
 }
-if ($Validation) { $env:KURTSHAPE_NO_DEMO = '1' }
-$exePath = Join-Path $kurtshapeRoot 'runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\freecad.exe'
+if ($Validation) {
+    $env:KURTSHAPE_NO_DEMO = '1'
+    Remove-Item Env:KURTSHAPE_DEMO -ErrorAction SilentlyContinue
+}
 if (-not (Test-Path -LiteralPath $exePath)) { throw 'Run install-runtime.ps1 first.' }
-$macroPath = Join-Path $kurtshapeRoot $(if ($Validation) {'tools\gui-validation.FCMacro'} else {'KurtShape.FCMacro'})
-$userConfigPath = Join-Path $runtimePath 'user-data\user.cfg'
-$systemConfigPath = Join-Path $runtimePath 'user-data\system.cfg'
-$launchArguments = @('-u', ('"'+$userConfigPath+'"'), '-s', ('"'+$systemConfigPath+'"'), '--log-file', ('"'+(Join-Path $runtimePath 'freecad-launch.log')+'"'))
-$launchArguments += ('"'+$macroPath+'"')
-$launchWindowStyle = if ($Validation) { 'Hidden' } else { 'Normal' }
 $launchProcess = Start-Process -FilePath $exePath -ArgumentList $launchArguments -WorkingDirectory $kurtshapeRoot -WindowStyle $launchWindowStyle -PassThru
 if ($Validation) {
     Register-KurtShapeValidationProcess -Process $launchProcess -Executable $exePath -Arguments $launchArguments

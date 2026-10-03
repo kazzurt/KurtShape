@@ -371,6 +371,8 @@ def hide_internal(doc):
         # A Body draws its current native Tip through that child's view provider.
         # Generated FeatureBase/Boolean tips are bookkeeping auxiliaries, but
         # must be visible when their logical output part is visible.
+        if not enabled(doc):
+            return
         for body in current_parts(doc) or []:
             visible = bool(getattr(body, "KurtShapePartVisible", True))
             body.ViewObject.Visibility = visible

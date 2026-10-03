@@ -37,6 +37,8 @@ Standalone modeling failures abort their transaction and retain accepted geometr
 
 ## Contract 2 additions — October 2 review follow-up
 
+October 3 green-copy update: launcher runtime and session bases can be selected independently from the source checkout. The detached tested copy uses the main profile when Kurt launches it; validation uses a separate `interface-validation` session. `PrintOnly` inspects the launch without starting a session. Operations, bridge authentication, revision and replay semantics remain contract 2.0; no profile format changes.
+
 October 3 foundation update: the controller and loopback session publish `contract:2` and `contract_revision:0` from shared constants. The bridge accepts `application/json` media-type parameters such as `charset=utf-8`; any Origin header remains forbidden. Authentication, loopback binding, request-size/queue limits and replay guards are unchanged. The CLI selects `KURTSHAPE_SESSION_DIR/assistant-session.json` when the session override is set, unless an explicit session file is supplied. Quantity-error messages identify the requested unit. This foundation keeps contract 2 semantics.
 
 | Operation | Arguments and behavior |

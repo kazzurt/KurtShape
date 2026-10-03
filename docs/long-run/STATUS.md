@@ -1,10 +1,10 @@
 # Long run status
 
 Program: C:\Users\Kurtz\Documents\KURT\CADkz\Claude\prompts\2026-10-03_codex_long-run-program.md
-Program SHA-256 when last read: BFD1820915CDEDE335C2FF421163F1A404E666211402E81DB8E936631D3C2995, 2026-10-03 14:09 America/Los_Angeles
-Updated: 2026-10-03 14:37 America/Los_Angeles
-State: IN PROGRESS Q00a since 2026-10-03 13:56 America/Los_Angeles
-Last green commit: 0454cbb (tag longrun/start)
+Program SHA-256 when last read: BFD1820915CDEDE335C2FF421163F1A404E666211402E81DB8E936631D3C2995, 2026-10-03 14:44 America/Los_Angeles
+Updated: 2026-10-03 14:44 America/Los_Angeles
+State: IN PROGRESS Q01 since 2026-10-03 14:44
+Last green commit: 259a61b (tag longrun/Q00a)
 Green copy: not created; Q01 follows Q00a
 Free disk: 60.1 GiB
 
@@ -12,8 +12,8 @@ Free disk: 60.1 GiB
 
 | Q | Increment | State | Commit | Tests native/bridge/shortcut | Note |
 |---|---|---|---|---|---|
-| Q00a | Foundation: fixes, isolation, one runner | IN PROGRESS; gates green | tag pending | 147/7/22 | 405 workflows; exactly 3 external skips without examples |
-| Q01 | Green copy | QUEUED | | | Needs Q00a |
+| Q00a | Foundation: fixes, isolation, one runner | DONE | 259a61b | 147/7/22 | 405 workflows; exactly 3 external skips without examples |
+| Q01 | Green copy | IN PROGRESS | | | Launcher isolation and safe sibling worktree |
 | Q00b | Foundation: CI, GUI runner, benchmarks, lint | QUEUED | | | Needs Q00a |
 | Q02 | Keyboard and command registry | QUEUED | | | Needs Q00a |
 | Q03 | Fast build status | QUEUED | | | Needs Q00b |
@@ -55,7 +55,7 @@ Free disk: 60.1 GiB
 
 ## Try this (newest first)
 
-### Q00a foundation (tag pending)
+### Q00a foundation (259a61b)
 
 1. Switch from a separate FreeCAD document tab back to the KurtShape project; the interaction recipe verified state returns after an unmanaged tab.
 2. Run run-checks.ps1 -Full; the recipe verified 147/7/22 plus 405 workflow checks with original source hashes unchanged.
@@ -122,3 +122,19 @@ Own recipe report: kurtshape-problem-20261003-204924-ac7dc9ee.json came from the
 - 2026-10-03 14:37: Final Full and missing-example gates passed on the final source; exact tree SHA256 dff506781293741634eff0f038b41acf13e1ffd2cc1140dc87e056ae18e4fc60 unchanged. Recorded explicit small evidence and living docs; preparing focused commit/tag, then Q01. Final native suite 94.629 s; this is elapsed validation, not a benchmark.
 
 - 2026-10-03 14:39: Final independent read-only review found0 remaining actionable issues;10 infrastructure findings and2 gate corrections addressed. Evidence regenerated after final M1 record; focused commit/tag next.
+
+- 2026-10-03 14:40: Finished Q00a at 259a61b, tagged longrun/Q00a; tree clean after focused commit. Starting the program re-read for Q01.
+
+- 2026-10-03 14:44: Q01 started after resume audit; main at longrun/Q00a, only STATUS changed, no new user reports or notes. Disk 60.1 GiB. Full program and brief invariants/facts re-read; SHA unchanged.
+
+- 2026-10-03 14:51: Q01 launcher probe attempt 1 stopped on the probe's PSObject property-count check (PowerShell member enumeration); PrintOnly process/directory traps were not triggered and Validation resolution passed. Correcting only the scratch probe count; NOTES empty.
+
+- 2026-10-03 14:54: Q01 launcher probes passed13 and injected updater guards passed6. Independent review found two infrastructure risks: git stderr contaminating metadata and linked session paths redirecting validation; both corrected before actual launch. Starting main interface and full regression gates; no user notes.
+
+- 2026-10-03 14:55: Q01 interface attempt 1 failed; owned PID26412 exited. Reading exact failing report before any retry; launcher/regression source unchanged. NOTES empty.
+
+- 2026-10-03 14:59: Q01 interface attempt1 failed unchanged visibility assertion after18checks. Independent audit confirmed U2 logical-part visibility applied to legacy files; guarded only that loop by studio.enabled, keeping all visibility assertions. Full147/7/22+405 and exact tree check passed before repair; final-source checks and interface attempt2 now start. Main interface is preliminary to the required green-source gate.
+
+- 2026-10-03 15:00: Repaired main interface passed41 checks, ownedPID23724 exited; no visibility assertion changed. Reparse mock probe attempt1 failed because mocked linked-path binding did not cross script scope; correcting scratch injection binding before retry, not production guards. NOTES empty.
+
+- 2026-10-03 15:03: Q01 final main gate passed147/7/22+405 and interface41; diffhash8ba4d5e...e9be0 unchanged. 27 script safety probes passed. Final independent source review0 remaining. Prepared focused intermediate code commit; actual green worktree gate will precede Q01tag. No new warning class; NOTES empty.

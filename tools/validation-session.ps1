@@ -1,25 +1,40 @@
 # Shared environment and process records for isolated validation scripts.
 function Initialize-KurtShapeValidationEnvironment {
-    param([string]$Root, [string]$Session, [switch]$WriteEvidence)
+    param([string]$Root, [string]$Session, [switch]$WriteEvidence, [string]$SessionBase)
     $Root = [IO.Path]::GetFullPath($Root)
     $Session = [IO.Path]::GetFullPath($Session)
     $runtimeRoot = Join-Path $Root 'runtime'
-    if ($Session.TrimEnd('\','/') -eq $runtimeRoot.TrimEnd('\','/')) {
+    if (-not $SessionBase) { $SessionBase = $runtimeRoot }
+    $SessionBase = [IO.Path]::GetFullPath($SessionBase).TrimEnd('\','/')
+    if ($Session.TrimEnd('\','/') -eq $SessionBase -or $Session.TrimEnd('\','/') -eq $runtimeRoot.TrimEnd('\','/')) {
         throw 'Validation must use a private session, never the live runtime folder.'
     }
-    if (-not $Session.StartsWith($runtimeRoot.TrimEnd('\','/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
-        throw 'Validation scratch must be under this checkout runtime folder.'
+    if (-not $Session.StartsWith($SessionBase + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Validation scratch must be under the selected session base.'
     }
-    $relative = $Session.Substring($Root.Length + 1)
-    $createdRoot = Join-Path $Root (($relative -split '[\\/]')[0..1] -join [IO.Path]::DirectorySeparatorChar)
+    $relative = $Session.Substring($SessionBase.Length + 1)
+    $createdRoot = Join-Path $SessionBase (($relative -split '[\\/]')[0])
     $wasPresent = Test-Path -LiteralPath $createdRoot
-    foreach ($folder in @('user-data','temporary','appdata','localappdata','evidence','test-tmp')) {
+    $privateFolders = @('user-data','temporary','appdata','localappdata','evidence','test-tmp')
+    foreach ($folder in $privateFolders) {
+        $target = Join-Path $Session $folder
+        try { $entry = Get-Item -LiteralPath $target -Force -ErrorAction Stop }
+        catch {
+            if ($_.CategoryInfo.Category -ne [Management.Automation.ErrorCategory]::ObjectNotFound) { throw }
+            $entry = $null
+        }
+        if ($entry -and ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+            throw ('Validation private folder cannot be a junction or symbolic link: ' + $target)
+        }
+    }
+    foreach ($folder in $privateFolders) {
         New-Item -ItemType Directory -Force -Path (Join-Path $Session $folder) | Out-Null
     }
     $records = Join-Path $runtimeRoot 'longrun'
     New-Item -ItemType Directory -Force -Path $records | Out-Null
     if (-not $wasPresent) {
-        Add-Content -LiteralPath (Join-Path $records 'created.txt') -Value $createdRoot.Substring($Root.Length + 1)
+        $label = if ($createdRoot.StartsWith($Root.TrimEnd('\','/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { $createdRoot.Substring($Root.Length + 1) } else { $createdRoot }
+        Add-Content -LiteralPath (Join-Path $records 'created.txt') -Value $label
     }
     $env:KURTSHAPE_ROOT = $Root
     $env:KURTSHAPE_SESSION_DIR = $Session

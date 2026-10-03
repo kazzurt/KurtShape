@@ -1,0 +1,34 @@
+# Q01: stable green copy
+
+Started October 3, 2026. Base: 259a61b, longrun/Q00a.
+
+## Scope and touch points
+
+Add RuntimeRoot, SessionRoot and side-effect-free PrintOnly to launch-kurtshape.ps1. Preserve its existing no-argument executable, macro, profile paths, environment and normal window behavior. Validation remains hidden and uses interface-validation below the chosen session base. tools/validation-session.ps1 currently limits validation to the source checkout's runtime; extend only the explicit session-root validation needed for this gate, without allowing a live runtime session. tools/gui-validation.FCMacro is the interface recipe; its baseline Confirm failure occurred after changing depth and before debounce completed. Probe readiness with bounded waits, retaining all assertions.
+
+Add tools/update-green-copy.ps1 resolving the main checkout and sibling from its own script location. Refuse dirty tracked green files, skip a running green FreeCAD, fail closed if process enumeration is unavailable. Add/checkout only a resolved commit; never remove, restore, clean or copy the green tree. Write the authorized sibling KurtShape-green.cmd with RuntimeRoot and SessionRoot both pointing at main/runtime. Audit source-relative runtime/session defaults. No profile format change or operation contract change (2.0).
+
+## Gates and sequence
+
+1. Prove Validation PrintOnly creates no directories/processes and changes no environment; then compare no-argument PrintOnly against pre-Q01 hard-coded paths, and inspect CMD PrintOnly. Parse PowerShell and probe skip/refusal safeguards without touching user processes.
+2. Run run-checks.ps1 and exact before/after local tree check. Review full diff, notes and living docs before any commit.
+3. A green worktree must contain the committed launcher to accept these new parameters. If needed, land a focused tested Q01 launcher commit, then create its detached sibling and run the actual hidden interface recipe there with main runtime and green private session. This commit is an identified intermediate Q01 commit, not a completed increment; tag only after all gates. Both tracked trees must remain clean.
+4. Inspect screenshot, record warnings and small evidence through record_evidence.py, update README/OPERATION_CONTRACT/M1 and this record. Commit final record, tag longrun/Q01, update green copy to the final commit. Preserve the old green copy on any skip/refusal.
+
+Keep the increment small. No benchmark/CI gate applies until Q00b. Budget: private interface process bounded at 15 minutes, scratch disk remains above 20 GiB. No live launch, CMD execution, runtime copy/link, dependency, download, push or profile write.
+
+## Spec adjustments
+
+The current launcher has WriteEvidence from Q00a in addition to Validation; preserve it. Current validation helper accepts only a source-relative runtime; green validation uses its own source runtime so this is already compatible, but a general SessionRoot override must be validated safely. Existing interface is baseline red; any recipe synchronization change retains exact behavioral assertions and is documented separately. Assembly runtime location now comes from App.getHomePath and is already green-copy compatible.
+
+The first interface run passed Confirm and 18 checks, then exposed a latent U2 regression: hide_internal synchronized logical-part visibility even when studio.enabled was false, overwriting a legacy Body/Tip's explicit native visibility. Guard only that logical-part loop by enabled(doc); keep internal hiding and the unchanged GUI assertion. This is a repair of U2's documented legacy behavior, not a new operation or profile format. The full native gate will run on the repaired source.
+
+Recipe assertion edits: three object-property references now use the captured created feature id instead of the obsolete hard-coded Pad id (the GUI creates Extrude). Numeric tolerances, geometry, revision, undo and visibility assertions are unchanged. Two request feature ids and one selection id likewise follow the captured name. A bounded 15-second readiness wait precedes the existing real Confirm click; no forced acceptance or preview flush replaces the click.
+
+## Implementation record: main-source gate
+
+Launcher defaults match pre-Q01 executable/macro/profile paths, quoted arguments and nine environment overrides. PrintOnly returns before filesystem, environment or process mutations. Validation clears inherited demo state, rejects protected folders and reparse components, and uses six isolated environment locations. Updater rejects unknown process inventory, unreadable FreeCAD commands, foreign/linked worktrees and staged/unstaged tracked edits; Git stderr is separate and command-only safe.directory overrides do not alter config. No production source-relative runtime/session path blocks the sibling.
+
+Main interface attempt 1 reached 18 checks and exposed the legacy visibility regression; after the enabled-studio guard, attempt 2 passed all 41 checks. Exact before/after tree SHA256 on the final main source: 8ba4d5e87eabe3df9e6ee4ae6a166c258678fb22a1a718936d26864989ee9be0. Full checks: 147 native, 7 bridge, 22 shortcuts, 6 workflows / 405 checks, 0 skips; source hashes unchanged. Raw reports and recipes remain in runtime/longrun and runtime/test-tmp; small evidence is under validation/2026-10-03-upgrade/green-copy and green-copy-launcher.
+
+Launcher probes passed 13, green guard probes 6, reparse injection probes 8. Each scratch probe initially had one binding/count mistake, logged before correction; production guards were not weakened. Independent review found three issues (Git output separation, linked validation paths, legacy visibility), fixed all; final source review: 0 remaining. Screenshot kurtshape-1200.png inspected. Caught notify Access violation and empty embedded-shape read warnings also occur in Q00a interaction/copy logs; no new warning class found. No clean-native-startup claim. Required sibling interface/CMD/clean-tree gates pending at this intermediate commit.

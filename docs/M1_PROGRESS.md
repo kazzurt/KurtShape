@@ -2,6 +2,10 @@
 
 Updated October 3, 2026, America/Los_Angeles. Implementation authorized in this chat; **M1 remains incomplete**. Current runnable slice: `Codex/kurtshape`. Prior plans remain in `cadkz-project-planning`; source examples and Claude reference area are preserved in place.
 
+## October 3, 2026 — Q01 green-copy preparation
+
+Q01 separates launcher runtime and profile bases from source code and adds side-effect-free launch inspection. A guarded detached sibling is being prepared for the tested build; its interface and clean-tree gates remain pending. The interface recipe now waits for preview readiness and uses the created feature's actual id, retaining geometry, history and revision assertions. No profile format or modeling contract changes. M1 remains incomplete and real parametric conversions remain 0/2.
+
 ## October 3 long-run foundation: runtime and test isolation
 
 The [Q00a record](long-run/Q00a-foundation-test-isolation.md) tracks the first foundation increment. Assembly resolves its modules from the running pinned FreeCAD installation. The managed-document reactivation guard, target-unit errors and JSON charset transport handling are corrected, with shared contract 2.0 constants. Modeling, save/export publication and profile formats keep their established behavior.

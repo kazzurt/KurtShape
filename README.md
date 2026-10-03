@@ -8,6 +8,10 @@ Claude's October 2 review has an [approved update plan](docs/2026-10-02-claude-r
 
 ## Launch
 
+During the long run, use **KurtShape-green.cmd** in the parent `Codex` folder after saving and closing the previous window. The detached `kurtshape-green` checkout holds the latest tested increment and shares the main checkout's runtime, profile and recovery files. The [long-run status](docs/long-run/STATUS.md) records its commit; an open green window or tracked edits prevent an update.
+
+The launcher accepts `-RuntimeRoot` (the folder containing `freecad-1.1.4`) and `-SessionRoot` (the profile base). `-Validation` uses `interface-validation` below that base in a hidden process. `-PrintOnly` prints the resolved paths, environment and arguments as JSON without creating folders, changing the environment or starting a process.
+
 Double-click **KurtShape.cmd** in this directory, or run:
 
 ```powershell

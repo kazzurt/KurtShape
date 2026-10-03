@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "checks": [
+    "Private probe base starts absent",
+    "Validation PrintOnly is hidden",
+    "Validation uses interface-validation below selected base",
+    "Validation evidence and all six isolation variables are private",
+    "Validation clears demo and evidence opt-in",
+    "No-argument executable matches previous launcher",
+    "No-argument macro and session match previous launcher",
+    "No-argument quoted arguments exactly match previous launcher",
+    "No-argument environment matches previous nine overrides",
+    "PrintOnly resolves absent engine and spaces without checking files",
+    "All live-profile and engine session bases rejected before effects",
+    "PrintOnly did not create its private session",
+    "All process environment variables unchanged",
+    "User FreeCAD does not block or get touched",
+    "Green FreeCAD with mixed case slash and spaces skips update",
+    "Unreadable FreeCAD command line refuses update",
+    "Unstaged tracked green modification refuses update",
+    "Staged tracked green modification refuses update",
+    "Empty tracked status permits update",
+    "Linked session component rejected: runtime\\longrun\\print-only-uncreated-profile",
+    "Linked session component rejected: runtime\\longrun\\print-only-uncreated-profile\\interface-validation",
+    "Linked private folder rejected before creation: user-data",
+    "Linked private folder rejected before creation: temporary",
+    "Linked private folder rejected before creation: appdata",
+    "Linked private folder rejected before creation: localappdata",
+    "Linked private folder rejected before creation: evidence",
+    "Linked private folder rejected before creation: test-tmp"
+  ],
+  "method": "PowerShell launcher and green-copy guards, with injected process/directory/reparse inputs",
+  "engine": {},
+  "base_commit": "259a61bc9e408143d8dc13d8dad2354480802a2b",
+  "worktree_diff_sha256": "8ba4d5e87eabe3df9e6ee4ae6a166c258678fb22a1a718936d26864989ee9be0",
+  "timings": {
+    "median": null,
+    "p95": null,
+    "worst": null,
+    "samples": []
+  },
+  "limits": "No real links or live processes created by probes; default launch inspected only with PrintOnly",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "input_sha256": "b5b1681274da6bec2178cf223006a1634d35b08db235b499589a96e2c83d484e"
+}
