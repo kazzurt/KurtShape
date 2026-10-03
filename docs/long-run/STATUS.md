@@ -138,3 +138,9 @@ Own recipe report: kurtshape-problem-20261003-204924-ac7dc9ee.json came from the
 - 2026-10-03 15:00: Repaired main interface passed41 checks, ownedPID23724 exited; no visibility assertion changed. Reparse mock probe attempt1 failed because mocked linked-path binding did not cross script scope; correcting scratch injection binding before retry, not production guards. NOTES empty.
 
 - 2026-10-03 15:03: Q01 final main gate passed147/7/22+405 and interface41; diffhash8ba4d5e...e9be0 unchanged. 27 script safety probes passed. Final independent source review0 remaining. Prepared focused intermediate code commit; actual green worktree gate will precede Q01tag. No new warning class; NOTES empty.
+
+- 2026-10-03 15:03: Q01 intermediate commit ad166e2 landed with main gates green. Green updater attempt1 refused before any worktree/CMD write: Get-Command returned two Git applications and .Source became an array. Fixing selection of the first application; this is an updater code defect, not a sandbox write refusal. NOTES empty.
+
+- 2026-10-03 15:06: Green updater attempt2 created detached ad166e2 and siblingCMD; CMD read/PrintOnly passed4checks. Green tree capture attempt1 rejected Windows ownership before GUI launch. Use command-scoped safe.directory for verified main/green paths in scratch Git wrapper, preserving the tracked tree checker unchanged. No config edits, no write refusal, no user notes.
+
+- 2026-10-03 15:07: Green interface attempt1 failed after2checks: fresh-profile QMdiArea had no active subwindow when first key was sent. OwnedPID26640 exited; main andgreen diff/status snapshots unchanged, green hash empty. Inspecting fresh-profile readiness before any retry. Free59.9GiB, NOTES empty.

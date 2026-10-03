@@ -36,8 +36,12 @@ def wait_for_confirm(timeout_ms=15000):
     require(panel.confirm.isEnabled())
 
 def viewport():
-    area=next(a for a in main.findChildren(QtWidgets.QMdiArea) if a.activeSubWindow())
-    return next(w for w in area.activeSubWindow().findChildren(QtWidgets.QWidget) if w.metaObject().className() == 'QOpenGLWidget' and w.parentWidget().metaObject().className() == 'Gui::View3DInventorViewer')
+    views=[w for w in main.findChildren(QtWidgets.QWidget)
+           if w.metaObject().className() == 'QOpenGLWidget'
+           and w.parentWidget().metaObject().className() == 'Gui::View3DInventorViewer'
+           and w.isVisible()]
+    assert len(views)==1, 'Expected one visible modeling viewport in the isolated window'
+    return views[0]
 
 def key(code, modifiers=QtCore.Qt.NoModifier):
     gl = viewport()

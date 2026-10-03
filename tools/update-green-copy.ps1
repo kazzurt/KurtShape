@@ -90,7 +90,7 @@ try {
     if ($mainRoot.Equals($greenRoot, [StringComparison]::OrdinalIgnoreCase)) {
         throw 'Run this updater from the main checkout, not kurtshape-green.'
     }
-    $gitExecutable = (Get-Command git -CommandType Application -ErrorAction Stop).Source
+    $gitExecutable = (Get-Command git -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
     $resolved = Invoke-KurtShapeGreenGit -Arguments @('rev-parse', '--verify', '--end-of-options', ($Commit + '^{commit}'))
     $metadata.resolved_commit = ($resolved.lines -join '').Trim()
     if ($metadata.resolved_commit -notmatch '^[0-9a-fA-F]{40,64}$') {

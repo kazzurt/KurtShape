@@ -4,6 +4,8 @@ Updated October 3, 2026, America/Los_Angeles. Implementation authorized in this 
 
 ## October 3, 2026 — Q01 green-copy preparation
 
+The detached copy is created at the tested intermediate build. Fresh-profile probing found a visible modeling view without a QMdiArea active subwindow; the recipe now identifies exactly one visible modeling viewport in its own window. The final sibling interface gate is pending. M1 remains incomplete and real parametric conversions remain 0/2.
+
 Q01 separates launcher runtime and profile bases from source code and adds side-effect-free launch inspection. A guarded detached sibling is being prepared for the tested build; its interface and clean-tree gates remain pending. The interface recipe now waits for preview readiness and uses the created feature's actual id, retaining geometry, history and revision assertions. No profile format or modeling contract changes. M1 remains incomplete and real parametric conversions remain 0/2.
 
 ## October 3 long-run foundation: runtime and test isolation
