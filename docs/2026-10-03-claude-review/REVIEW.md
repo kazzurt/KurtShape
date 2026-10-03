@@ -240,13 +240,16 @@ Each phase ends with a measurable gate. Phases 0 and 1 add no new tools; they ch
 - MCP server generated from the operation registry, so Claude and Codex use the same schemas.
 - **Foundation checkpoint.** After Phase 1, measure native recompute for typical edits on the reconstructed hub. If typical edits stay above about 1 s with the shell overhead gone, evaluate kernel/app alternatives with real numbers; until then FreeCAD remains the fastest route to Onshape-level breadth.
 
-## 6. Decisions needed from Kurt
+## 6. Decisions
 
-1. Accept export-time and on-demand validity checking instead of a check after every edit? (Recommended.)
-2. Assemblies: live links that update like Onshape, with optional pinning, or keep embedded snapshots as the default?
-3. Windows only, or should Linux/macOS work too? CI will run on Linux either way.
-4. Order of work: speed first (Phases 0–1) before new tools, as recommended, or interleave?
-5. For feature dialogs: build KurtShape-styled panels for the common tools, or embed FreeCAD's native task panels in the right-hand dock?
+Kurt decided on October 3, 2026:
+
+1. **Validation:** yes. Geometry validity is checked at export and on explicit request, not after every edit.
+2. **Assemblies:** live links that update like Onshape. Pinning to a snapshot may remain as an option.
+3. **Platform:** Windows only. CI runs on Windows with the pinned portable runtime; the Linux AppImage remains a convenient probe tool, not a product target.
+4. **Order of work:** both. Speed work and new Onshape-parity tools are interleaved rather than speed-only first.
+
+Still open: whether feature dialogs should be KurtShape-styled panels for the common tools or FreeCAD's task panels embedded in the right-hand dock. The Codex implementation prompt (`CODEX_PROMPT.md`) states the default it assumes.
 
 ## Appendix A. Test results on FreeCAD 1.1.4 / OCCT 7.8.1 (Linux AppImage)
 
