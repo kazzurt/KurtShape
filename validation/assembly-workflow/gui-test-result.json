@@ -44,9 +44,9 @@
     "Undo restores the native joint and its occurrence references",
     "Fixed toolbar action is discoverable and enabled",
     "Joint name accepts typing without dispatching assembly shortcuts",
-    "Native solver conflict is visible and rolls back accepted assembly",
+    "Native solver conflict is logged without opening Messages and rolls back accepted assembly",
     "Authenticated shared conflicting joint is rejected by the native solver",
-    "Newly rejected shared Assembly intent is shown in Messages without changing accepted geometry",
+    "Newly rejected shared Assembly intent is logged without opening Messages or changing accepted geometry",
     "Rejected shared joint preserves revision, occurrences, joints and undo history",
     "Identical shared failure replay returns its outcome without duplicating visible Messages",
     "Escape cancels a joint dialog without creating a joint",
@@ -88,8 +88,8 @@
           ]
         },
         "source": {
-          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
-          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-68284.FCStd",
+          "sha256": "c37b6b8c10c4d8828526ab1b410a59e7aed6f1af3768270a5da8ad834c612f54",
           "object": "SourceBody"
         },
         "embedded_source": "EmbeddedPart",
@@ -113,8 +113,8 @@
           ]
         },
         "source": {
-          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
-          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-68284.FCStd",
+          "sha256": "c37b6b8c10c4d8828526ab1b410a59e7aed6f1af3768270a5da8ad834c612f54",
           "object": "SourceBody"
         },
         "embedded_source": "EmbeddedPart",
@@ -138,8 +138,8 @@
           ]
         },
         "source": {
-          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
-          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-68284.FCStd",
+          "sha256": "c37b6b8c10c4d8828526ab1b410a59e7aed6f1af3768270a5da8ad834c612f54",
           "object": "SourceBody"
         },
         "embedded_source": "EmbeddedPart",
@@ -163,8 +163,8 @@
           ]
         },
         "source": {
-          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-40576.FCStd",
-          "sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4",
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\two-selectable-source-bodies-68284.FCStd",
+          "sha256": "c37b6b8c10c4d8828526ab1b410a59e7aed6f1af3768270a5da8ad834c612f54",
           "object": "SourceBody"
         },
         "embedded_source": "EmbeddedPart",
@@ -365,69 +365,69 @@
   "timings": {
     "intent": {
       "samples": 37,
-      "median_ms": 2.675,
-      "p95_ms": 6.478,
-      "worst_ms": 7.128
+      "median_ms": 1.161,
+      "p95_ms": 2.075,
+      "worst_ms": 2.193
     },
     "native_recompute": {
       "samples": 30,
-      "median_ms": 4.836,
-      "p95_ms": 30.824,
-      "worst_ms": 40.149
+      "median_ms": 2.096,
+      "p95_ms": 10.065,
+      "worst_ms": 13.522
     },
     "inspection": {
       "samples": 89,
-      "median_ms": 31.129,
-      "p95_ms": 56.125,
-      "worst_ms": 80.012
+      "median_ms": 13.814,
+      "p95_ms": 26.235,
+      "worst_ms": 37.021
     },
     "operation": {
       "samples": 93,
-      "median_ms": 50.931,
-      "p95_ms": 280.642,
-      "worst_ms": 1290.261
+      "median_ms": 21.57,
+      "p95_ms": 114.132,
+      "worst_ms": 418.366
     },
     "recovery_checkpoint": {
-      "samples": 32,
-      "median_ms": 2.292,
-      "p95_ms": 52.295,
-      "worst_ms": 676.183
+      "samples": 20,
+      "median_ms": 1.801,
+      "p95_ms": 28.067,
+      "worst_ms": 198.711
     },
     "queue_wait": {
       "samples": 2,
-      "median_ms": 54.725,
-      "p95_ms": 94.53,
-      "worst_ms": 94.53
+      "median_ms": 14.405,
+      "p95_ms": 28.15,
+      "worst_ms": 28.15
     },
     "input_to_feedback": {
       "samples": 15,
-      "median_ms": 339.546,
-      "p95_ms": 1098.924,
-      "worst_ms": 1098.924
+      "median_ms": 149.635,
+      "p95_ms": 719.703,
+      "worst_ms": 719.703
     },
     "input_to_feedback_model": {
       "samples": 12,
-      "median_ms": 350.378,
-      "p95_ms": 424.944,
-      "worst_ms": 424.944
+      "median_ms": 150.114,
+      "p95_ms": 209.24,
+      "worst_ms": 209.24
     },
     "input_to_feedback_ordinary": {
       "samples": 2,
-      "median_ms": 23.557,
-      "p95_ms": 24.525,
-      "worst_ms": 24.525
+      "median_ms": 7.658,
+      "p95_ms": 7.875,
+      "worst_ms": 7.875
     },
     "input_to_feedback_disk": {
       "samples": 1,
-      "median_ms": 1098.924,
-      "p95_ms": 1098.924,
-      "worst_ms": 1098.924
+      "median_ms": 719.703,
+      "p95_ms": 719.703,
+      "worst_ms": 719.703
     }
   },
   "fixtures": {
-    "native": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\gui-solved-assembly-40576.FCStd",
-    "relocated": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\relocated-assembly-deliverables\\gui-solved-assembly-40576.FCStd",
-    "export": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\relocated-assembly-deliverables\\gui-occurrences-40576.step"
+    "native": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\gui-solved-assembly-68284.FCStd",
+    "relocated": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\relocated-assembly-deliverables\\gui-solved-assembly-68284.FCStd",
+    "export": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\assembly-workflow\\assembly-gui-projects-working\\relocated-assembly-deliverables\\gui-occurrences-68284.step"
   },
-  "source_sha256": "081aa2583b7500851c2ea2202bc7d55dbe7aeba390325041fcb9aa1f72c765d4"
+  "source_sha256": "c37b6b8c10c4d8828526ab1b410a59e7aed6f1af3768270a5da8ad834c612f54"
 }

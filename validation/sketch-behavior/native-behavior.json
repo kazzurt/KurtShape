@@ -1,0 +1,481 @@
+{
+  "passed": true,
+  "checks": [
+    "Actual Line toolbar button is visible and enabled",
+    "Native continuous setting False remains unchanged after Line activation",
+    "Four toolbar Line clicks create three connected segments",
+    "Consecutive Line segment endpoints coincide 0",
+    "Consecutive Line segment endpoints coincide 1",
+    "Escape ends Line without leaving sketch edit or creating extra geometry",
+    "Managed lease remains active after continuous drawing",
+    "Finish accepts native line chain",
+    "Finished chain has no pending native transaction",
+    "One document Undo removes the entire accepted line edit",
+    "One Redo restores all connected lines",
+    "L activates connected Line and three clicks append two segments",
+    "Right-click ends Line without creating extra geometry",
+    "Cancel restores the sketch from before this edit",
+    "Cancel leaves no pending native transaction or discarded redo state",
+    "Actual floating Line length and angle controls are visible",
+    "Floating native parameter text is dark on light background",
+    "Floating native parameter 0: actual glyphs readable after hostile native local style/palette",
+    "Floating native parameter 0: native floating control size preserved",
+    "Floating native parameter 1: actual glyphs readable after hostile native local style/palette",
+    "Floating native parameter 1: native floating control size preserved",
+    "Single line retains repeated independent two-point drawing",
+    "Cancel removes both independent line additions",
+    "Native line preference remains False after all tool cycles",
+    "An absent native continuous preference is restored as absent",
+    "Native floating notification: actual glyphs readable after hostile native local style/palette",
+    "Native floating notification: native floating control size preserved",
+    "Native floating notification fits all message rows"
+  ],
+  "probe": [
+    {
+      "stage": "hover-plane-support",
+      "widgets": [
+        {
+          "class": "Gui::InputHintWidget",
+          "object": "hintLabel",
+          "text": "",
+          "size": [
+            6,
+            29
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#000000",
+          "stylesheet": "",
+          "parent": "QStatusBar",
+          "parent_object": "statusBar",
+          "ancestry": [
+            "Gui::InputHintWidget",
+            "QStatusBar",
+            "Gui::MainWindow"
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "plane-sketch",
+      "widgets": [
+        {
+          "class": "Gui::InputHintWidget",
+          "object": "hintLabel",
+          "text": "",
+          "size": [
+            6,
+            29
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#000000",
+          "stylesheet": "",
+          "parent": "QStatusBar",
+          "parent_object": "statusBar",
+          "ancestry": [
+            "Gui::InputHintWidget",
+            "QStatusBar",
+            "Gui::MainWindow"
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "hover-sketch-axis",
+      "widgets": [
+        {
+          "class": "Gui::InputHintWidget",
+          "object": "hintLabel",
+          "text": "",
+          "size": [
+            6,
+            29
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#000000",
+          "stylesheet": "",
+          "parent": "QStatusBar",
+          "parent_object": "statusBar",
+          "ancestry": [
+            "Gui::InputHintWidget",
+            "QStatusBar",
+            "Gui::MainWindow"
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "toolbar-line-chain",
+      "widgets": [
+        {
+          "class": "Gui::InputHintWidget",
+          "object": "hintLabel",
+          "text": "",
+          "size": [
+            0,
+            29
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#000000",
+          "stylesheet": "",
+          "parent": "QStatusBar",
+          "parent_object": "statusBar",
+          "ancestry": [
+            "Gui::InputHintWidget",
+            "QStatusBar",
+            "Gui::MainWindow"
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "floating-single-line",
+      "widgets": [
+        {
+          "class": "Gui::QuantitySpinBox",
+          "object": "",
+          "text": "26.70\u00b0",
+          "size": [
+            92,
+            35
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#ffffff",
+          "stylesheet": "\nQAbstractSpinBox, QLineEdit { color: #243447; background: #ffffff;\n    selection-background-color: #d8e9fa; selection-color: #153f68; }\nQAbstractSpinBox QLineEdit { background: transparent; }\n",
+          "parent": "QStackedWidget",
+          "parent_object": "",
+          "ancestry": [
+            "Gui::QuantitySpinBox",
+            "QStackedWidget",
+            "Gui::View3DInventor",
+            "QMdiSubWindow",
+            "QWidget",
+            "QMdiArea",
+            "Gui::MainWindow"
+          ]
+        },
+        {
+          "class": "QLineEdit",
+          "object": "qt_spinbox_lineedit",
+          "text": "26.70\u00b0",
+          "size": [
+            78,
+            25
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#000000",
+          "stylesheet": "\nQAbstractSpinBox, QLineEdit { color: #243447; background: #ffffff;\n    selection-background-color: #d8e9fa; selection-color: #153f68; }\nQAbstractSpinBox QLineEdit { background: transparent; }\n",
+          "parent": "Gui::QuantitySpinBox",
+          "parent_object": "",
+          "ancestry": [
+            "QLineEdit",
+            "Gui::QuantitySpinBox",
+            "QStackedWidget",
+            "Gui::View3DInventor",
+            "QMdiSubWindow",
+            "QWidget",
+            "QMdiArea",
+            "Gui::MainWindow"
+          ]
+        },
+        {
+          "class": "QLineEdit",
+          "object": "qt_spinbox_lineedit",
+          "text": "13.49 mm",
+          "size": [
+            78,
+            25
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#000000",
+          "stylesheet": "\nQAbstractSpinBox, QLineEdit { color: #243447; background: #ffffff;\n    selection-background-color: #d8e9fa; selection-color: #153f68; }\nQAbstractSpinBox QLineEdit { background: transparent; }\n",
+          "parent": "Gui::QuantitySpinBox",
+          "parent_object": "",
+          "ancestry": [
+            "QLineEdit",
+            "Gui::QuantitySpinBox",
+            "QStackedWidget",
+            "Gui::View3DInventor",
+            "QMdiSubWindow",
+            "QWidget",
+            "QMdiArea",
+            "Gui::MainWindow"
+          ]
+        },
+        {
+          "class": "Gui::NotificationLabel",
+          "object": "NotificationBox_label",
+          "text": "<style>p { margin: 0 0 0 0 } td { padding: 0 15px }</style>                             <p style='white-space:normal'>                                                                                              <table>                                                                                                                     <tr>                                                                                                                       <th><small>Type</small></th>                                                                                                <th><small>Notifier</small></th>                                                                                                <th><small>Message</small></th>                                                                                                </tr>                                                                                                   <tr>                                                                                                                            <td align='left'><img width=\"16\" height=\"16\" src=':/icons/edit_Cancel.svg'></td>                                                                 <td align='left'></td>                                                                                                        <td align='left'><p>Reading failed from embedded file: Sketch.InternalShape.bin (0 bytes, 2 bytes compressed) (2 times)</p></td>                                                                                                        </tr>                                                                                                   <tr>                                                                                                                            <td align='left'><img width=\"16\" height=\"16\" src=':/icons/edit_Cancel.svg'></td>                                                                 <td align='left'>Untitled part#Sketch SketchObject::onChanged </td>                                                                                                        <td align='left'><p>Unmanaged change of Constraint Property results in invalid constraint indices</p></td>                                                                                                        </tr></table></p>",
+          "size": [
+            800,
+            74
+          ],
+          "window": true,
+          "text_color": "#243447",
+          "base": "#ffffff",
+          "stylesheet": "color: #243447; background: #ffffff; border: 1px solid #bdc7d3;",
+          "parent": null,
+          "parent_object": null,
+          "ancestry": [
+            "Gui::NotificationLabel"
+          ]
+        },
+        {
+          "class": "Gui::InputHintWidget",
+          "object": "hintLabel",
+          "text": "<table style=\"line-height: 26px\" height=26><tr><td valign=bottom><img src=\"[icon]\" height=22 /> pick second point</td><td width=10></td><td valign=bottom><img src=\"[icon]\" height=22 /> switch mode</td></tr></table>",
+          "size": [
+            232,
+            29
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#000000",
+          "stylesheet": "",
+          "parent": "QStatusBar",
+          "parent_object": "statusBar",
+          "ancestry": [
+            "Gui::InputHintWidget",
+            "QStatusBar",
+            "Gui::MainWindow"
+          ]
+        },
+        {
+          "class": "Gui::QuantitySpinBox",
+          "object": "",
+          "text": "13.49 mm",
+          "size": [
+            92,
+            35
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#ffffff",
+          "stylesheet": "\nQAbstractSpinBox, QLineEdit { color: #243447; background: #ffffff;\n    selection-background-color: #d8e9fa; selection-color: #153f68; }\nQAbstractSpinBox QLineEdit { background: transparent; }\n",
+          "parent": "QStackedWidget",
+          "parent_object": "",
+          "ancestry": [
+            "Gui::QuantitySpinBox",
+            "QStackedWidget",
+            "Gui::View3DInventor",
+            "QMdiSubWindow",
+            "QWidget",
+            "QMdiArea",
+            "Gui::MainWindow"
+          ]
+        }
+      ]
+    },
+    {
+      "hostile_widget": "Floating native parameter 0",
+      "rendered_ink_pixels": 37,
+      "stylesheet_after_show": "\nQAbstractSpinBox, QLineEdit { color: #243447; background: #ffffff;\n    selection-background-color: #d8e9fa; selection-color: #153f68; }\nQAbstractSpinBox QLineEdit { background: transparent; }\n"
+    },
+    {
+      "hostile_widget": "Floating native parameter 1",
+      "rendered_ink_pixels": 39,
+      "stylesheet_after_show": "\nQAbstractSpinBox, QLineEdit { color: #243447; background: #ffffff;\n    selection-background-color: #d8e9fa; selection-color: #153f68; }\nQAbstractSpinBox QLineEdit { background: transparent; }\n"
+    },
+    {
+      "stage": "floating-single-line-hardened",
+      "widgets": [
+        {
+          "class": "Gui::QuantitySpinBox",
+          "object": "",
+          "text": "26.70\u00b0",
+          "size": [
+            92,
+            35
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#ffffff",
+          "stylesheet": "\nQAbstractSpinBox, QLineEdit { color: #243447; background: #ffffff;\n    selection-background-color: #d8e9fa; selection-color: #153f68; }\nQAbstractSpinBox QLineEdit { background: transparent; }\n",
+          "parent": "QStackedWidget",
+          "parent_object": "",
+          "ancestry": [
+            "Gui::QuantitySpinBox",
+            "QStackedWidget",
+            "Gui::View3DInventor",
+            "QMdiSubWindow",
+            "QWidget",
+            "QMdiArea",
+            "Gui::MainWindow"
+          ]
+        },
+        {
+          "class": "QLineEdit",
+          "object": "qt_spinbox_lineedit",
+          "text": "26.70\u00b0",
+          "size": [
+            78,
+            25
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#000000",
+          "stylesheet": "\nQAbstractSpinBox, QLineEdit { color: #243447; background: #ffffff;\n    selection-background-color: #d8e9fa; selection-color: #153f68; }\nQAbstractSpinBox QLineEdit { background: transparent; }\n",
+          "parent": "Gui::QuantitySpinBox",
+          "parent_object": "",
+          "ancestry": [
+            "QLineEdit",
+            "Gui::QuantitySpinBox",
+            "QStackedWidget",
+            "Gui::View3DInventor",
+            "QMdiSubWindow",
+            "QWidget",
+            "QMdiArea",
+            "Gui::MainWindow"
+          ]
+        },
+        {
+          "class": "QLineEdit",
+          "object": "qt_spinbox_lineedit",
+          "text": "13.49 mm",
+          "size": [
+            78,
+            25
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#000000",
+          "stylesheet": "\nQAbstractSpinBox, QLineEdit { color: #243447; background: #ffffff;\n    selection-background-color: #d8e9fa; selection-color: #153f68; }\nQAbstractSpinBox QLineEdit { background: transparent; }\n",
+          "parent": "Gui::QuantitySpinBox",
+          "parent_object": "",
+          "ancestry": [
+            "QLineEdit",
+            "Gui::QuantitySpinBox",
+            "QStackedWidget",
+            "Gui::View3DInventor",
+            "QMdiSubWindow",
+            "QWidget",
+            "QMdiArea",
+            "Gui::MainWindow"
+          ]
+        },
+        {
+          "class": "Gui::NotificationLabel",
+          "object": "NotificationBox_label",
+          "text": "<style>p { margin: 0 0 0 0 } td { padding: 0 15px }</style>                             <p style='white-space:normal'>                                                                                              <table>                                                                                                                     <tr>                                                                                                                       <th><small>Type</small></th>                                                                                                <th><small>Notifier</small></th>                                                                                                <th><small>Message</small></th>                                                                                                </tr>                                                                                                   <tr>                                                                                                                            <td align='left'><img width=\"16\" height=\"16\" src=':/icons/edit_Cancel.svg'></td>                                                                 <td align='left'></td>                                                                                                        <td align='left'><p>Reading failed from embedded file: Sketch.InternalShape.bin (0 bytes, 2 bytes compressed) (2 times)</p></td>                                                                                                        </tr>                                                                                                   <tr>                                                                                                                            <td align='left'><img width=\"16\" height=\"16\" src=':/icons/edit_Cancel.svg'></td>                                                                 <td align='left'>Untitled part#Sketch SketchObject::onChanged </td>                                                                                                        <td align='left'><p>Unmanaged change of Constraint Property results in invalid constraint indices</p></td>                                                                                                        </tr></table></p>",
+          "size": [
+            800,
+            74
+          ],
+          "window": true,
+          "text_color": "#243447",
+          "base": "#ffffff",
+          "stylesheet": "color: #243447; background: #ffffff; border: 1px solid #bdc7d3;",
+          "parent": null,
+          "parent_object": null,
+          "ancestry": [
+            "Gui::NotificationLabel"
+          ]
+        },
+        {
+          "class": "Gui::InputHintWidget",
+          "object": "hintLabel",
+          "text": "<table style=\"line-height: 26px\" height=26><tr><td valign=bottom><img src=\"[icon]\" height=22 /> pick second point</td><td width=10></td><td valign=bottom><img src=\"[icon]\" height=22 /> switch mode</td></tr></table>",
+          "size": [
+            232,
+            29
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#000000",
+          "stylesheet": "",
+          "parent": "QStatusBar",
+          "parent_object": "statusBar",
+          "ancestry": [
+            "Gui::InputHintWidget",
+            "QStatusBar",
+            "Gui::MainWindow"
+          ]
+        },
+        {
+          "class": "Gui::QuantitySpinBox",
+          "object": "",
+          "text": "13.49 mm",
+          "size": [
+            92,
+            35
+          ],
+          "window": false,
+          "text_color": "#243447",
+          "base": "#ffffff",
+          "stylesheet": "\nQAbstractSpinBox, QLineEdit { color: #243447; background: #ffffff;\n    selection-background-color: #d8e9fa; selection-color: #153f68; }\nQAbstractSpinBox QLineEdit { background: transparent; }\n",
+          "parent": "QStackedWidget",
+          "parent_object": "",
+          "ancestry": [
+            "Gui::QuantitySpinBox",
+            "QStackedWidget",
+            "Gui::View3DInventor",
+            "QMdiSubWindow",
+            "QWidget",
+            "QMdiArea",
+            "Gui::MainWindow"
+          ]
+        }
+      ]
+    },
+    {
+      "hostile_widget": "Native floating notification",
+      "rendered_ink_pixels": 5069,
+      "stylesheet_after_show": "color: #243447; background: #ffffff; border: 1px solid #bdc7d3;"
+    }
+  ],
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "runtime_profile": "runtime\\sketch-behavior-fresh-validation-20261002-210705",
+  "method": "Production Panel, actual Qt toolbar/key/mouse events and native Sketcher handlers in an independent hidden process; assistant transport disabled.",
+  "limits": "Small synthetic sketch; floating input and notification glyphs/styles are validated, but the exact original user popup is not claimed reproduced. Python networking disabled; native C++ networking is not intercepted.",
+  "visual_preferences_source": "runtime\\user-data\\user.cfg",
+  "stages": [
+    "production_panel_started"
+  ],
+  "initial_preferences": [
+    [
+      "Boolean",
+      "ExpandedMessagesWidget",
+      true
+    ],
+    [
+      "Boolean",
+      "ExpandedSolverAdvancedWidget",
+      false
+    ],
+    [
+      "Boolean",
+      "ExpandedConstraintsWidget",
+      true
+    ],
+    [
+      "Boolean",
+      "ExpandedElementsWidget",
+      true
+    ]
+  ],
+  "notification_layout": {
+    "widget": [
+      800,
+      220
+    ],
+    "contents_height": 218,
+    "document_height": 218.0,
+    "text": "\nType\nNotifier\nMessage\n\ufffc\n\nSketch validation warning: review the selected geometry and constraints. Keep your sketch open while correcting conflicting dimensions. Sketch validation warning: review the selected geometry and constraints. Keep your sketch open while correcting conflicting dimensions. Sketch validation warning: review the selected geometry and constraints. Keep your sketch open while correcting conflicting dimensions. Sketch validation warning: review the selected geometry and constraints. Keep your sketch open while correcting conflicting dimensions. Sketch validation warning: review the selected geometry and constraints. Keep your sketch open while correcting conflicting dimensions.\n\ufffc\n\nReading failed from embedded file: Sketch.InternalShape.bin (0 bytes, 2 bytes compressed) (4 times)\n\ufffc\nUntitled part#Sketch SketchObject::onChanged \nUnmanaged change of Constraint Property results in invalid constraint indices\n"
+  },
+  "check_count": 28
+}

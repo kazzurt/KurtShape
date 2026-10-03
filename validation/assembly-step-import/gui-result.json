@@ -1,0 +1,205 @@
+{
+  "passed": true,
+  "checks": [
+    "Typed Assembly creation activates its native workspace",
+    "Insert: actual Assembly toolbar button is usable",
+    "Actual Insert file dialog accepts FCStd, STEP and STP including uppercase",
+    "Insert picker displays all three individual STEP solids",
+    "STEP choices have stable per-solid IDs",
+    "STEP picker identifies the original source filename",
+    "Actual picker click selects the requested second STEP solid",
+    "Picker commits with the Insert button",
+    "Actual Insert creates a native linked occurrence",
+    "Insert keeps the current Assembly document active",
+    "STEP reader leaves no temporary native documents open",
+    "STEP Insert creates exactly one native undo command",
+    "Native occurrence references an embedded source in this assembly",
+    "Embedded source records original STEP hash and chosen solid",
+    "Selected STEP solid retains its native volume and bounds",
+    "First occurrence is grounded and geometry is current",
+    "Insertion preserves the native unsaved Modified flag",
+    "Read-only STEP candidate inspection preserves native intent and revision",
+    "Read-only STEP candidate inspection restores active document and closes source",
+    "Read-only STEP candidate inspection preserves viewport camera",
+    "Read-only STEP candidate inspection preserves selected face and picked coordinates",
+    "Insert picker displays all three individual STEP solids",
+    "STEP choices have stable per-solid IDs",
+    "STEP picker identifies the original source filename",
+    "Actual picker click selects the requested second STEP solid",
+    "Picker commits with the Insert button",
+    "Actual Insert creates a native linked occurrence",
+    "Repeating STEP Insert creates two independent occurrence identities",
+    "Repeated occurrences share one immutable embedded geometry snapshot",
+    "Each occurrence is counted once in measurements",
+    "Undo removes only the second occurrence",
+    "Redo restores the second occurrence and shared embedded source",
+    "Insert and inspection preserve original STEP bytes",
+    "All STEP source documents are closed after repeated Insert and undo",
+    "Every modal dialog completed without harness errors"
+  ],
+  "method": "Actual production Panel, native STEP parser, Insert file chooser, solid picker and Qt button events in an independent hidden GUI; isolated profile and no assistant server",
+  "limits": "Synthetic Qt mouse events, one original three-solid STEP fixture. Native C++ networking and physical offline operation are not intercepted.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "runtime_profile": "runtime\\assembly-step-gui-validation-20261002-210026",
+  "source": {
+    "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec pipe mount.step",
+    "sha256": "0d83f47ae66ddf23de94c7cadc56ac1634ee1c5583f5a6895af3d569fe1957f0",
+    "selected_solid": "Solid2",
+    "measurements": {
+      "valid": true,
+      "solid_count": 1,
+      "volume_mm3": 99606.43997877881,
+      "area_mm2": 39669.04197470406,
+      "bbox_mm": {
+        "min": [
+          -27.30500000000001,
+          -27.305000000000003,
+          -50.80000000000002
+        ],
+        "max": [
+          27.305000000000003,
+          53.38955666634334,
+          50.800000000000004
+        ],
+        "size": [
+          54.610000000000014,
+          80.69455666634335,
+          101.60000000000002
+        ]
+      },
+      "center_of_mass_mm": [
+        -1.2049724489270461,
+        12.914270607506296,
+        2.206383613494353e-07
+      ]
+    }
+  },
+  "insert_file_filters": [
+    "CAD parts (*.FCStd *.fcstd *.FCSTD *.step *.stp *.STEP *.STP)",
+    "FreeCAD project (*.FCStd *.fcstd *.FCSTD)",
+    "STEP (*.step *.stp *.STEP *.STP)"
+  ],
+  "candidate_inspection": {
+    "selection_before": [
+      [
+        "KurtShape",
+        "Instance",
+        [
+          "Face1"
+        ],
+        [
+          [
+            1.25,
+            2.5,
+            3.75
+          ]
+        ]
+      ]
+    ],
+    "selection_after": [
+      [
+        "KurtShape",
+        "Instance",
+        [
+          "Face1"
+        ],
+        [
+          [
+            1.25,
+            2.5,
+            3.75
+          ]
+        ]
+      ]
+    ],
+    "camera_preserved": true,
+    "selection_preserved": true
+  },
+  "embedded_sources": [
+    {
+      "id": "EmbeddedPart",
+      "sha256": "0d83f47ae66ddf23de94c7cadc56ac1634ee1c5583f5a6895af3d569fe1957f0",
+      "source_object": "Solid2"
+    }
+  ],
+  "occurrence_sources": {
+    "Instance": "EmbeddedPart",
+    "Instance2": "EmbeddedPart"
+  },
+  "assembly": {
+    "id": "DirectSTEPAssembly",
+    "name": "Direct STEP assembly",
+    "supported": true,
+    "solver_status": "solved",
+    "solver_code": 0,
+    "source_policy": "embedded solid snapshots; no external dependencies or automatic updates",
+    "instances": [
+      {
+        "id": "Instance",
+        "name": "Dodec pipe mount \u00b7 Solid 2",
+        "grounded": true,
+        "placement": {
+          "base": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "source": {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec pipe mount.step",
+          "sha256": "0d83f47ae66ddf23de94c7cadc56ac1634ee1c5583f5a6895af3d569fe1957f0",
+          "object": "Solid2"
+        },
+        "embedded_source": "EmbeddedPart",
+        "connected_to_ground": true
+      },
+      {
+        "id": "Instance2",
+        "name": "Dodec pipe mount \u00b7 Solid 001",
+        "grounded": false,
+        "placement": {
+          "base": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "source": {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec pipe mount.step",
+          "sha256": "0d83f47ae66ddf23de94c7cadc56ac1634ee1c5583f5a6895af3d569fe1957f0",
+          "object": "Solid2"
+        },
+        "embedded_source": "EmbeddedPart",
+        "connected_to_ground": false
+      }
+    ],
+    "joints": [],
+    "disconnected_count": 1
+  },
+  "native_messages": "21:00:33  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\5e5718b7461fab07110befb9253733a6.png\"): device not open\n21:00:33  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\75292e0a20854497660f8c4dfc4be4b9.png\"): device not open\n21:00:33  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\bb448bc572657bb8e67db5ccce4c147b.png\"): device not open\n21:00:33  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\9217d59def2f632f64cac703dd0866ef.png\"): device not open\n21:00:33  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\18454f9c4ef66d31f5c13beb658410c1.png\"): device not open\n21:00:33  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\00f6208f57d0c1e17f8fb96d05c09abc.png\"): device not open\n21:00:33  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\b422966d528006fef56eb186c6c55ccd.png\"): device not open\n",
+  "seconds": 6.9280386997852474
+}

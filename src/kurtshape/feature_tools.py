@@ -104,8 +104,8 @@ def _sketch(key, label, command, tip, category, icon=None):
 
 
 SKETCH_TOOLS = (
-    _sketch('sk_line', 'Line', 'Sketcher_CreateLine', 'Draw a native sketch line.', 'Geometry'),
-    _sketch('sk_polyline', 'Polyline', 'Sketcher_CreatePolyline', 'Draw a connected series of native sketch segments.', 'Geometry'),
+    _sketch('sk_line', 'Single line', 'Sketcher_CreateLine', 'Draw separate two-point segments; stays active until Escape.', 'Geometry'),
+    _sketch('sk_polyline', 'Line', 'Sketcher_CreatePolyline', 'Draw connected segments. Each click continues the line; Escape ends drawing.', 'Geometry'),
     _sketch('sk_point', 'Point', 'Sketcher_CreatePoint', 'Create a native sketch point.', 'Geometry'),
     _sketch('sk_circle', 'Circle', 'Sketcher_CreateCircle', 'Draw a circle by center and radius.', 'Geometry'),
     _sketch('sk_three_point_circle', 'Three-point circle', 'Sketcher_Create3PointCircle', 'Draw a circle through three points.', 'Geometry'),

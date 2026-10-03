@@ -36,13 +36,15 @@ The feature bar directly includes Sweep, Loft, Linear pattern, Circular pattern,
 
 The app owns a consistent light palette for fields, popups and native Tasks, including disabled controls. Save and close a previously running window before relaunching to load appearance changes.
 
+In a sketch, **Line / L** draws connected segments with successive clicks and stays active until Escape or right-click. **Geometry → Single line** draws separate two-point segments. Finish retains the edit as one Undo step; Cancel discards the current edit. Floating dimensions and notifications use readable application colors even when native controls supply their own style.
+
 ## Assembly workflow
 
-Choose **Assembly** in the workspace selector, then **Create Assembly**. **Insert / I** chooses a saved FCStd file and its intended Body/solid; repeat to create independent instances. For STEP parts, Open STEP and Save FCStd first. The first instance is grounded automatically; select another and **Ground** to change the reference.
+Choose **Assembly** in the workspace selector, then **Create Assembly**. **Insert / I** accepts FCStd and STEP/STP files directly. Choose the intended Body or solid; repeat to create independent instances. The first instance is grounded automatically; select another and **Ground** to change the reference.
 
 Ctrl-select a native face/edge/vertex on each of two instances, then choose **Fixed / M**, **Revolute**, or **Slider**. The dialog also allows explicit instance/reference choices; blank reference uses the part origin. Select a revolute/slider joint and **Move** to enter degrees/millimeters. Select a free instance and Move to place it. **Edit** changes joint references/type/name. History context menus rename/remove; dependent instance removal requires cascade. Undo/redo restores the whole command, including placements.
 
-**Ctrl+S** saves the assembly as FCStd; Open restores instances, grounding, joints and solved placements. Export STEP includes all occurrences once at global placement. Parts are embedded geometry snapshots: sources remain unchanged, assemblies relocate without them, and source edits do not automatically update inserted geometry. **Part Studio** returns to an independent modeling document; the assembly stays open in its tab. **J / H** toggles joint visibility. Native solver failures appear in Messages and rejected commands preserve the accepted model. [Policy, limitations and verification](docs/assembly-workflow/WORKFLOW.md).
+**Ctrl+S** saves the assembly as FCStd; Open restores instances, grounding, joints and solved placements. Export STEP includes all occurrences once at global placement. Parts are embedded geometry snapshots: sources remain unchanged, assemblies relocate without them, and source edits do not automatically update inserted geometry. **Part Studio** returns to an independent modeling document; the assembly stays open in its tab. **J / H** toggles joint visibility. Rejected commands preserve the accepted model and report the problem in the status bar. **Messages** at the bottom right opens retained details; it stays closed until opened explicitly. [Policy, limitations and verification](docs/assembly-workflow/WORKFLOW.md).
 
 ## Shortcut coverage
 

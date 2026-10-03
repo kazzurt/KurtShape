@@ -102,7 +102,7 @@ def validate():
         before_failure = panel.state["document_id"]
         broken = working / "broken.step"
         broken.write_text("Invalid STEP")
-        check("Broken STEP reports failure and preserves current project", panel.open_path(str(broken)) is None and panel.state["document_id"] == before_failure and panel.parts.topLevelItemCount() == 3 and panel.messages_dock.isVisible())
+        check("Broken STEP reports failure without opening Messages and preserves current project", panel.open_path(str(broken)) is None and panel.state["document_id"] == before_failure and panel.parts.topLevelItemCount() == 3 and not panel.messages_dock.isVisible() and bool(panel.messages.toPlainText()))
         check("Wait cursor is restored after failed import", app.overrideCursor() is None)
         panel.operation("create_sketch", id="InProgress")
         panel.select_feature("InProgress")

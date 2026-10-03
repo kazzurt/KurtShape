@@ -155,6 +155,7 @@ def native_theme_preferences():
 def apply_theme(main):
     """Apply before constructing the shell; future native dialogs inherit it."""
     from PySide import QtCore, QtGui
+    from shiboken6 import isValid
     app = QtGui.QApplication.instance()
     if app is None:
         raise RuntimeError("The light theme requires the native QApplication.")
@@ -167,6 +168,23 @@ def apply_theme(main):
         notification_palette.setColor(group, QtGui.QPalette.ToolTipBase, QtGui.QColor(COLORS["surface"]))
         notification_palette.setColor(group, QtGui.QPalette.ToolTipText, QtGui.QColor(COLORS["ink"]))
 
+    notification_style = "color: %(ink)s; background: %(surface)s; border: 1px solid %(border)s;" % COLORS
+    floating_input_style = """
+QAbstractSpinBox, QLineEdit { color: %(ink)s; background: %(surface)s;
+    selection-background-color: %(selection)s; selection-color: %(selection_ink)s; }
+QAbstractSpinBox QLineEdit { background: transparent; }
+""" % COLORS
+
+    def is_viewport_input(widget):
+        if not isinstance(widget, (QtGui.QAbstractSpinBox, QtGui.QLineEdit)):
+            return False
+        parent = widget.parentWidget()
+        while parent is not None:
+            if parent.metaObject().className() == "Gui::View3DInventor":
+                return True
+            parent = parent.parentWidget()
+        return False
+
     def set_widget_palette(widget):
         # FreeCAD draws parentless notifications using its separate tooltip
         # palette. Keep that panel consistent with its explicit QLabel colors.
@@ -174,16 +192,28 @@ def apply_theme(main):
                         or widget.metaObject().className() == "Gui::NotificationLabel")
         widget.setPalette(notification_palette if notification else palette)
 
+    def set_widget_style(widget):
+        notification = (widget.objectName() == "NotificationBox_label"
+                        or widget.metaObject().className() == "Gui::NotificationLabel")
+        # Native floating editors can install their own theme stylesheet,
+        # which takes precedence over the application palette and CSS. Own
+        # these two surfaces' colors locally, without changing native sizing.
+        local_style = notification_style if notification else floating_input_style if is_viewport_input(widget) else None
+        if local_style is not None and widget.styleSheet() != local_style:
+            widget.setStyleSheet(local_style)
+
     app.setPalette(palette)
     main.setStyleSheet("")  # Remove the separate generated FreeCAD/dark window stylesheet.
     app.setStyleSheet(STYLESHEET)
     main.setPalette(palette)
     for widget in main.findChildren(QtGui.QWidget):
         set_widget_palette(widget)
+        set_widget_style(widget)
     # A notification can already be visible before the app theme is applied;
     # parentless windows are absent from the main window's child traversal.
     for widget in app.topLevelWidgets():
         set_widget_palette(widget)
+        set_widget_style(widget)
     QtGui.QToolTip.setPalette(palette)
 
     old_filter = getattr(app, "_kurtshape_theme_filter", None)
@@ -191,11 +221,28 @@ def apply_theme(main):
         app.removeEventFilter(old_filter)
         old_filter.deleteLater()
 
+    pending_styles = set()
+
+    def defer_widget_style(widget):
+        key = id(widget)
+        if key in pending_styles:
+            return
+        pending_styles.add(key)
+        def apply_when_ready():
+            pending_styles.discard(key)
+            if isValid(widget):
+                set_widget_style(widget)
+        # A stylesheet can rebuild native child controls. Let their current
+        # constructor/Show/Polish handler finish before changing local CSS.
+        QtCore.QTimer.singleShot(0, apply_when_ready)
+
     class NativePaletteFilter(QtCore.QObject):
         def eventFilter(self, watched, event):
             if event.type() in (QtCore.QEvent.Polish, QtCore.QEvent.Show) and isinstance(watched, QtGui.QWidget):
                 # Native task widgets/popups may carry an explicit startup palette.
                 set_widget_palette(watched)
+                if isinstance(watched, (QtGui.QAbstractSpinBox, QtGui.QLineEdit)) or watched.objectName() == "NotificationBox_label" or watched.metaObject().className() == "Gui::NotificationLabel":
+                    defer_widget_style(watched)
                 if isinstance(watched, QtGui.QMenu):
                     # Qt may use full monitor height for scrolling menus. Keep
                     # every action above the Windows taskbar on this monitor.

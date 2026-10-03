@@ -291,7 +291,7 @@ def validate():
         before_failure = intent_signature(assembly_doc)
         joint_dialog("fixed", first, fixed, "Conflicting fixed joint")
         toolbar("Fixed")
-        check("Native solver conflict is visible and rolls back accepted assembly", intent_signature(assembly_doc) == before_failure and len(panel.assembly_state()["joints"]) == 3 and panel.messages_dock.isVisible() and "did not satisfy" in panel.messages.toPlainText().lower())
+        check("Native solver conflict is logged without opening Messages and rolls back accepted assembly", intent_signature(assembly_doc) == before_failure and len(panel.assembly_state()["joints"]) == 3 and not panel.messages_dock.isVisible() and "did not satisfy" in panel.messages.toPlainText().lower())
         panel.messages.clear()
         panel.messages_dock.hide()
         accepted_revision = panel.state["revision"]
@@ -302,7 +302,7 @@ def validate():
         shared_failure = loopback(shared_conflict)
         check("Authenticated shared conflicting joint is rejected by the native solver", not shared_failure["ok"] and shared_failure["error"]["code"] == "assembly_solver_failed")
         failure_message = shared_failure["error"]["message"]
-        check("Newly rejected shared Assembly intent is shown in Messages without changing accepted geometry", panel.messages_dock.isVisible() and panel.messages.toPlainText().count(failure_message) == 1 and panel.state["build_status"] == "valid" and intent_signature(assembly_doc) == before_failure)
+        check("Newly rejected shared Assembly intent is logged without opening Messages or changing accepted geometry", not panel.messages_dock.isVisible() and panel.messages.toPlainText().count(failure_message) == 1 and panel.state["build_status"] == "valid" and intent_signature(assembly_doc) == before_failure)
         check("Rejected shared joint preserves revision, occurrences, joints and undo history", panel.state["revision"] == accepted_revision and assembly_doc.getObject("RejectedSharedJoint") is None and len(panel.assembly_state()["instances"]) == 4 and len(panel.assembly_state()["joints"]) == 3 and (assembly_doc.UndoCount, assembly_doc.RedoCount) == history_before)
         shared_replay = loopback(shared_conflict)
         check("Identical shared failure replay returns its outcome without duplicating visible Messages", shared_replay["ok"] == shared_failure["ok"] and shared_replay["error"] == shared_failure["error"] and panel.messages.toPlainText().count(failure_message) == 1 and intent_signature(assembly_doc) == before_failure)

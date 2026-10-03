@@ -77,7 +77,7 @@ def validate():
         doc.recompute()
         panel.tick()
         check("Rejected Finish retains the whole conflicting draft and reopens the editor",not panel.finish_sketch() and panel.active_sketch().Name=="ConflictSketch" and doc.ConflictSketch.ConstraintCount==constraints_before+1 and doc.ConflictSketch.GeometryCount==1)
-        check("Native/controller errors remain visible in Messages",panel.messages_dock.isVisible() and bool(panel.messages.toPlainText()))
+        check("Sketch failures retain a red status and log without opening Messages",not panel.messages_dock.isVisible() and bool(panel.messages.toPlainText()) and "#a2322c" in panel.message.styleSheet())
         doc.ConflictSketch.delConstraint(doc.ConflictSketch.ConstraintCount-1)
         doc.recompute()
         panel.tick()

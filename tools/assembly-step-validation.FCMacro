@@ -1,0 +1,257 @@
+"""Production Assembly STEP insertion in an independent hidden native GUI.
+
+Use validate-assembly-step.ps1. The profile, application and native documents
+are disposable; this macro never runs in Kurt's open application.
+"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import socket
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime"), "Use an isolated runtime profile"
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+
+
+def deny_network(*args, **kwargs):
+    raise RuntimeError("Python networking disabled for Assembly STEP validation")
+
+
+socket.socket.connect = deny_network
+socket.socket.connect_ex = deny_network
+socket.socket.sendto = deny_network
+socket.create_connection = deny_network
+socket.getaddrinfo = deny_network
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+from kurtshape.core import intent_signature, measurements
+
+
+class NoSocketTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+application = QtWidgets.QApplication.instance()
+application.setAttribute(QtCore.Qt.AA_DontUseNativeDialogs, True)
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.show()
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden_popups = HiddenPopupFilter(application)
+application.installEventFilter(hidden_popups)
+output = root / "validation" / "assembly-step-import"
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "method": "Actual production Panel, native STEP parser, Insert file chooser, solid picker and Qt button events in an independent hidden GUI; isolated profile and no assistant server",
+          "limits": "Synthetic Qt mouse events, one original three-solid STEP fixture. Native C++ networking and physical offline operation are not intercepted.",
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}, "runtime_profile": str(session.relative_to(root))}
+panel = None
+cleaned = False
+started = time.perf_counter()
+
+
+def save_report():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label + ": " + (panel.message.text() if panel else "startup"))
+    report["checks"].append(label)
+    save_report()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    if panel:
+        panel.shutdown()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    QtCore.QTimer.singleShot(0, application.quit)
+
+
+def abort():
+    report["aborted"] = True
+    report["error"] = "Assembly STEP GUI validation exceeded 45 seconds"
+    for widget in application.topLevelWidgets():
+        if isinstance(widget, QtWidgets.QDialog) and widget.isVisible():
+            widget.reject()
+    save_report()
+    cleanup()
+
+
+def respond(predicate, callback, remaining=100):
+    def attempt():
+        try:
+            if cleaned:
+                return
+            dialog = next((widget for widget in application.topLevelWidgets() if widget.isVisible() and predicate(widget)), None)
+            if dialog:
+                callback(dialog)
+            elif remaining:
+                respond(predicate, callback, remaining - 1)
+            else:
+                raise AssertionError("Expected Insert dialog did not appear")
+        except Exception:
+            report["dialog_error"] = traceback.format_exc()
+            for widget in application.topLevelWidgets():
+                if isinstance(widget, QtWidgets.QDialog) and widget.isVisible():
+                    widget.reject()
+    QtCore.QTimer.singleShot(100, attempt)
+
+
+def click_toolbar(label):
+    action = next(item for item in panel.assembly_bar.actions() if item.text() == label)
+    button = panel.assembly_bar.widgetForAction(action)
+    check(label + ": actual Assembly toolbar button is usable", action.isEnabled() and button.isEnabled() and button.isVisible())
+    QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
+
+
+def selected_references():
+    return [(item.DocumentName, item.ObjectName, list(item.SubElementNames),
+             [list(point) for point in item.PickedPoints]) for item in Gui.Selection.getSelectionEx()]
+
+
+def select_part(path, source_id="Solid2", actual_file=False, screenshot=None):
+    def choose_part(dialog):
+        choices = dialog.findChild(QtWidgets.QListWidget, "KurtShapeAssemblyCandidates")
+        check("Insert picker displays all three individual STEP solids", choices.count() == 3)
+        check("STEP choices have stable per-solid IDs", [choices.item(i).data(QtCore.Qt.UserRole) for i in range(3)] == ["Solid1", "Solid2", "Solid3"])
+        check("STEP picker identifies the original source filename", any(path.name == label.text() for label in dialog.findChildren(QtWidgets.QLabel)))
+        item = next(choices.item(i) for i in range(3) if choices.item(i).data(QtCore.Qt.UserRole) == source_id)
+        index = choices.row(item)
+        position = choices.visualItemRect(item).center()
+        QtTest.QTest.mouseClick(choices.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, position)
+        check("Actual picker click selects the requested second STEP solid", choices.currentRow() == index and choices.currentItem().data(QtCore.Qt.UserRole) == source_id)
+        if screenshot:
+            dialog.grab().save(str(output / screenshot))
+        buttons = dialog.findChild(QtWidgets.QDialogButtonBox)
+        insert_button = buttons.button(QtWidgets.QDialogButtonBox.Ok)
+        check("Picker commits with the Insert button", insert_button.text() == "Insert" and insert_button.isEnabled())
+        QtTest.QTest.mouseClick(insert_button, QtCore.Qt.LeftButton)
+    respond(lambda widget: widget.objectName() == "KurtShapeAssemblyInsertDialog", choose_part)
+    if actual_file:
+        def choose_file(dialog):
+            filters = " ".join(dialog.nameFilters())
+            report["insert_file_filters"] = dialog.nameFilters()
+            check("Actual Insert file dialog accepts FCStd, STEP and STP including uppercase", all(suffix in filters for suffix in ("*.FCStd", "*.step", "*.stp", "*.STEP", "*.STP")))
+            dialog.grab().save(str(output / "insert-step-file-dialog.png"))
+            dialog.setDirectory(str(path.parent))
+            dialog.findChild(QtWidgets.QLineEdit, "fileNameEdit").setText(path.name)
+            QtCore.QTimer.singleShot(250, dialog.accept)
+        respond(lambda widget: isinstance(widget, QtWidgets.QFileDialog), choose_file)
+        click_toolbar("Insert")
+    else:
+        panel.insert_assembly_part(path=str(path))
+    check("Actual Insert creates a native linked occurrence", bool(panel.state.get("created_feature")))
+    return panel.state["created_feature"]
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.start()
+        panel.operation("create_assembly", id="DirectSTEPAssembly", name="Direct STEP assembly")
+        panel.tick()
+        QtTest.QTest.qWait(150)
+        check("Typed Assembly creation activates its native workspace", panel.workspace_mode == "assembly" and panel.assembly_bar.isVisible())
+        path = root.parents[1] / "Onshape examples" / "Dodec pipe mount.step"
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        baseline = measurements(Part.read(str(path)).Solids[1])
+        report["source"] = {"path": str(path), "sha256": digest, "selected_solid": "Solid2", "measurements": baseline}
+        doc = panel.document()
+        names = set(App.listDocuments())
+        initial_undo = doc.UndoCount
+        first = select_part(path, actual_file=True, screenshot="insert-step-solid-picker.png")
+        check("Insert keeps the current Assembly document active", App.activeDocument() is doc and Gui.activeDocument().Document is doc)
+        check("STEP reader leaves no temporary native documents open", set(App.listDocuments()) == names)
+        check("STEP Insert creates exactly one native undo command", doc.UndoCount == initial_undo + 1)
+        instance = doc.getObject(first)
+        embedded = instance.LinkedObject
+        check("Native occurrence references an embedded source in this assembly", instance.TypeId == "App::Link" and embedded.Document is doc and embedded.KurtShapeEmbeddedSource)
+        check("Embedded source records original STEP hash and chosen solid", embedded.SourceSHA256 == digest and embedded.SourceObject == "Solid2" and embedded.SourcePath == str(path))
+        actual = next(item["measurements"] for item in panel.state["bodies"] if item["id"] == first)
+        check("Selected STEP solid retains its native volume and bounds", abs(actual["volume_mm3"] - baseline["volume_mm3"]) <= baseline["volume_mm3"] * 1e-10 and
+              all(abs(left - right) < 1e-6 for bound in ("min", "max") for left, right in zip(actual["bbox_mm"][bound], baseline["bbox_mm"][bound])))
+        check("First occurrence is grounded and geometry is current", len(panel.assembly_state()["instances"]) == 1 and panel.assembly_state()["instances"][0]["grounded"] and panel.state["build_status"] == "valid")
+        check("Insertion preserves the native unsaved Modified flag", Gui.getDocument(doc.Name).Modified)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.getObject(first), "Face1", 1.25, 2.5, 3.75)
+        before_selection = selected_references()
+        before_camera = Gui.activeDocument().activeView().getCamera()
+        before_intent = intent_signature(doc)
+        before_revision = panel.state["revision"]
+        response = panel.core.dispatch({"op": "assembly_candidates", "path": str(path)})
+        after_selection = selected_references()
+        report["candidate_inspection"] = {"selection_before": before_selection, "selection_after": after_selection,
+                                          "camera_preserved": Gui.activeDocument().activeView().getCamera() == before_camera,
+                                          "selection_preserved": before_selection == after_selection}
+        check("Read-only STEP candidate inspection preserves native intent and revision", response["ok"] and intent_signature(doc) == before_intent and panel.core.inspect(doc)["revision"] == before_revision)
+        check("Read-only STEP candidate inspection restores active document and closes source", App.activeDocument() is doc and Gui.activeDocument().Document is doc and set(App.listDocuments()) == names)
+        check("Read-only STEP candidate inspection preserves viewport camera", report["candidate_inspection"]["camera_preserved"])
+        check("Read-only STEP candidate inspection preserves selected face and picked coordinates", report["candidate_inspection"]["selection_preserved"])
+        second = select_part(path)
+        check("Repeating STEP Insert creates two independent occurrence identities", first != second and len(panel.assembly_state()["instances"]) == 2)
+        # App::Link forwards source properties; count actual stored features,
+        # rather than occurrences which expose their source's marker as well.
+        embedded_sources = [obj for obj in doc.Objects if obj.TypeId == "Part::Feature" and getattr(obj, "KurtShapeEmbeddedSource", False)]
+        report["embedded_sources"] = [{"id": obj.Name, "sha256": obj.SourceSHA256, "source_object": obj.SourceObject} for obj in embedded_sources]
+        report["occurrence_sources"] = {identity: doc.getObject(identity).LinkedObject.Name for identity in (first, second)}
+        check("Repeated occurrences share one immutable embedded geometry snapshot", doc.getObject(second).LinkedObject.Name == doc.getObject(first).LinkedObject.Name and len(embedded_sources) == 1)
+        check("Each occurrence is counted once in measurements", panel.state["measurements"]["solid_count"] == 2 and abs(panel.state["measurements"]["volume_mm3"] - 2 * baseline["volume_mm3"]) < baseline["volume_mm3"] * 1e-9)
+        panel.history_move("undo")
+        check("Undo removes only the second occurrence", doc.getObject(second) is None and doc.getObject(first) is not None and len(panel.assembly_state()["instances"]) == 1)
+        panel.history_move("redo")
+        check("Redo restores the second occurrence and shared embedded source", doc.getObject(second) is not None and doc.getObject(second).LinkedObject.Name == doc.getObject(first).LinkedObject.Name and len(panel.assembly_state()["instances"]) == 2)
+        check("Insert and inspection preserve original STEP bytes", hashlib.sha256(path.read_bytes()).hexdigest() == digest)
+        check("All STEP source documents are closed after repeated Insert and undo", set(App.listDocuments()) == names)
+        check("Every modal dialog completed without harness errors", "dialog_error" not in report)
+        panel.isometric()
+        panel.fit()
+        QtTest.QTest.qWait(200)
+        main.grab().save(str(output / "direct-step-assembly.png"))
+        report.update(passed=True, assembly=panel.assembly_state(), native_messages=panel.messages.toPlainText())
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["native_messages"] = panel.messages.toPlainText() if panel else ""
+        main.grab().save(str(output / "failure.png"))
+    finally:
+        report["seconds"] = time.perf_counter() - started
+        save_report()
+        cleanup()
+
+
+QtCore.QTimer.singleShot(45000, abort)
+QtCore.QTimer.singleShot(500, validate)

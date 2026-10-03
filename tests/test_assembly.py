@@ -365,6 +365,138 @@ class AssemblyWorkflowTests(unittest.TestCase):
         self.assertEqual(len(Part.read(str(output)).Solids), 7)
         self.assertTrue(all(hashlib.sha256(path.read_bytes()).hexdigest() == digest for path, digest in digests.items()))
 
+    def test_original_steps_insert_directly_as_three_solid_choices(self):
+        self.call("create_assembly")
+        names = set(App.listDocuments())
+        expected_volume = 0
+        for source_index, filename in enumerate(("Dodec pipe mount.step", "Dodec Hub Conformal.step")):
+            path = ROOT.parents[1] / "Onshape examples" / filename
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            baseline = Part.read(str(path)).Solids
+            candidates = self.call("assembly_candidates", path=str(path))["candidates"]
+            self.assertEqual([item["id"] for item in candidates], ["Solid1", "Solid2", "Solid3"])
+            self.assertTrue(all(item["solid_count"] == 1 for item in candidates))
+            self.assertEqual(set(App.listDocuments()), names)
+            self.assertIs(App.ActiveDocument, self.doc)
+            for index, (candidate, solid) in enumerate(zip(candidates, baseline)):
+                identity = f"Direct{source_index}Solid{index}"
+                self.insert(identity, path=path, source_id=candidate["id"])
+                embedded = self.doc.getObject(identity).LinkedObject
+                self.assertEqual(embedded.SourcePath, str(path))
+                self.assertEqual(embedded.SourceSHA256, digest)
+                self.assertEqual(embedded.SourceObject, candidate["id"])
+                actual = next(item["measurements"] for item in self.state["bodies"] if item["id"] == identity)
+                wanted = measurements(solid)
+                expected_volume += wanted["volume_mm3"]
+                for metric in ("volume_mm3", "area_mm2"):
+                    self.assertAlmostEqual(actual[metric], wanted[metric], delta=abs(wanted[metric]) * 1e-10)
+                for bound in ("min", "max"):
+                    for left, right in zip(actual["bbox_mm"][bound], wanted["bbox_mm"][bound]):
+                        self.assertAlmostEqual(left, right, places=6)
+            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), digest)
+        self.assertEqual(self.state["measurements"]["solid_count"], 6)
+        self.assertAlmostEqual(self.state["measurements"]["volume_mm3"], expected_volume, delta=expected_volume * 1e-9)
+        exported = self.folder / "direct-step-occurrences.step"
+        self.call("export", path=str(exported))
+        self.assertEqual(len(Part.read(str(exported)).Solids), 6)
+
+    def test_step_choices_keep_nested_placements_and_ignore_reference_surfaces(self):
+        first = Part.makeBox(2, 3, 4)
+        second = Part.makeCylinder(1, 5)
+        second.Placement = App.Placement(App.Vector(17, 11, 9), App.Rotation(App.Vector(0, 1, 0), 30))
+        nested = Part.makeCompound([second])
+        nested.Placement = App.Placement(App.Vector(7, 4, 3), App.Rotation(App.Vector(0, 0, 1), 45))
+        mixed = Part.makeCompound([first, nested, Part.makePlane(2, 3, App.Vector(50, 0, 0))])
+        path = self.folder / "positioned-mixed.STP"
+        mixed.exportStep(str(path))
+        expected = Part.read(str(path)).Solids
+        before = self.snapshot()
+        names = set(App.listDocuments())
+        candidates = self.call("assembly_candidates", path=str(path))["candidates"]
+        self.assertEqual([item["id"] for item in candidates], ["Solid1", "Solid2"])
+        self.assertSnapshotEqual(before)
+        self.assertEqual(set(App.listDocuments()), names)
+        self.assertIs(App.ActiveDocument, self.doc)
+        self.call("create_assembly")
+        for index, (candidate, shape) in enumerate(zip(candidates, expected)):
+            identity = "Placed" + str(index)
+            self.insert(identity, path=path, source_id=candidate["id"])
+            actual = next(item["measurements"] for item in self.state["bodies"] if item["id"] == identity)
+            wanted = measurements(shape)
+            self.assertAlmostEqual(actual["volume_mm3"], wanted["volume_mm3"], places=7)
+            for bound in ("min", "max"):
+                for left, right in zip(actual["bbox_mm"][bound], wanted["bbox_mm"][bound]):
+                    self.assertAlmostEqual(left, right, places=6)
+
+    def test_direct_step_instances_replay_undo_and_portable_saved_snapshot(self):
+        path = self.folder / "portable-source.STEP"
+        Part.makeBox(4, 6, 8, App.Vector(3, 7, 11)).exportStep(str(path))
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.call("create_assembly")
+        before = self.doc.UndoCount
+        request = {**self.request("insert_assembly_part", path=str(path), source_id="Solid1", id="First"),
+                   "request_id": str(uuid.uuid4())}
+        accepted = self.core.dispatch(request)
+        self.assertTrue(accepted["ok"], accepted)
+        self.state = accepted["result"]
+        self.assertEqual(self.doc.UndoCount, before + 1)
+        self.assertEqual(self.core.dispatch(request), accepted)
+        self.assertEqual(len(self.state["assembly"]["instances"]), 1)
+        self.insert("Second", path=path, source_id="Solid1")
+        self.assertIs(self.doc.getObject("First").LinkedObject, self.doc.getObject("Second").LinkedObject)
+        self.call("undo")
+        self.assertIsNone(self.doc.getObject("Second"))
+        self.call("redo")
+        self.assertIsNotNone(self.doc.getObject("Second"))
+        snapshot = self.state["measurements"]
+        native = self.folder / "portable-direct-step-assembly.FCStd"
+        self.call("save", path=str(native))
+        App.closeDocument(self.doc.Name)
+        path.unlink()
+        self.call("open", path=str(native))
+        self.call("rebuild")
+        self.assertEqual(self.state["build_status"], "valid")
+        self.assertEqual(self.state["measurements"], snapshot)
+        for identity in ("First", "Second"):
+            self.assertEqual(self.doc.getObject(identity).LinkedObject.SourceSHA256, digest)
+            self.assertIs(self.doc.getObject(identity).LinkedObject.Document, self.doc)
+        exported = self.folder / "portable-direct-step-assembly.step"
+        self.call("export", path=str(exported))
+        self.assertEqual(len(Part.read(str(exported)).Solids), 2)
+
+    def test_direct_step_invalid_sources_and_read_race_leave_assembly_intact(self):
+        from kurtshape import assembly as native
+        self.fixture(count=2)
+        before = self.snapshot()
+        names = set(App.listDocuments())
+        broken = self.folder / "broken.step"
+        broken.write_text("This is not STEP geometry", encoding="utf-8")
+        surface = self.folder / "surface.stp"
+        Part.makePlane(2, 3).exportStep(str(surface))
+        for path, code in ((broken, "invalid_assembly_source"), (surface, "empty_assembly_source")):
+            self.reject("assembly_candidates", code=code, path=str(path))
+            self.reject("insert_assembly_part", code=code, path=str(path), source_id="Solid1")
+            self.assertSnapshotEqual(before)
+            self.assertEqual(set(App.listDocuments()), names)
+        valid = self.folder / "read-race.step"
+        Part.makeBox(2, 3, 4).exportStep(str(valid))
+        with patch.object(native.Part, "read", return_value=Part.Shape()):
+            self.reject("assembly_candidates", code="empty_assembly_source", path=str(valid))
+        original = valid.read_bytes()
+        def changed_file(raw):
+            valid.write_bytes(original + b"\nChanged during read")
+            return Part.makeBox(2, 3, 4)
+        for operation in ("assembly_candidates", "insert_assembly_part"):
+            valid.write_bytes(original)
+            with patch.object(native.Part, "read", side_effect=changed_file):
+                args = {"path": str(valid)}
+                if operation == "insert_assembly_part":
+                    args.update(source_id="Solid1", id="RejectedSTEP")
+                self.reject(operation, code="assembly_source_changed", **args)
+            self.assertSnapshotEqual(before)
+            self.assertEqual(set(App.listDocuments()), names)
+            self.assertIs(App.ActiveDocument, self.doc)
+
     def test_idle_inspection_does_not_resolve_sources_or_run_native_solver(self):
         from kurtshape import assembly as native
         from kurtshape import core as controller_module

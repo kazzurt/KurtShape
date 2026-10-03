@@ -1,0 +1,220 @@
+"""Production Messages checks in a hidden native process with its own profile.
+
+Launch with tools/validate-messages.ps1. Original documents and the user's
+running FreeCAD process are never accessed. The bridge is replaced with a
+queue stub; production Panel, report capture, Qt button events and core rejection
+paths are exercised. Native C++ networking is not intercepted by this helper.
+"""
+import json
+import os
+from pathlib import Path
+import queue
+import socket
+import sys
+import time
+import traceback
+
+root = Path(os.environ['KURTSHAPE_ROOT']).resolve()
+session = Path(os.environ['KURTSHAPE_SESSION_DIR']).resolve()
+assert session.is_relative_to(root / 'runtime'), 'Use a private validation profile'
+assert Path(os.environ['FREECAD_USER_HOME']).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / 'src'))
+
+
+def deny_network(*args, **kwargs):
+    raise RuntimeError('Python networking disabled for Messages validation')
+
+
+socket.socket.connect = deny_network
+socket.socket.connect_ex = deny_network
+socket.socket.sendto = deny_network
+socket.create_connection = deny_network
+socket.getaddrinfo = deny_network
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+
+
+class NoSocketTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+ui.Bridge = NoSocketTransport
+application = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+hidden_popups = HiddenPopupFilter(application)
+application.installEventFilter(hidden_popups)
+output = root / 'validation' / 'messages-behavior'
+output.mkdir(parents=True, exist_ok=True)
+result = {
+    'passed': False,
+    'checks': [],
+    'method': 'Production Panel, native Console/ReportOutput and actual Qt Messages button/close-button events in an independent hidden native process',
+    'runtime_profile': str(session.relative_to(root)),
+    'engine': App.Version(),
+    'limits': 'Small synthetic project; native warnings/errors are deliberately generated in this isolated profile. Native C++ networking is not intercepted.',
+}
+panel = None
+finished = False
+started = time.perf_counter()
+
+
+def check(label, condition):
+    assert condition, label
+    result['checks'].append(label)
+
+
+def wait(ms=100):
+    QtTest.QTest.qWait(ms)
+
+
+def click(widget):
+    QtTest.QTest.mouseClick(widget, QtCore.Qt.LeftButton)
+    wait()
+
+
+def finish():
+    global finished
+    if finished:
+        return
+    finished = True
+    result['elapsed_seconds'] = round(time.perf_counter() - started, 3)
+    try:
+        if panel is not None:
+            result['messages_text'] = panel.messages.toPlainText()
+            result['status_text'] = panel.message.text()
+            result['button_text'] = panel.messages_button.text()
+            result['unread'] = panel.unread_messages
+            main.grab().save(str(output / 'messages-window.png'))
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            doc = App.getDocument(name)
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+        result['cleanup_complete'] = True
+    except Exception:
+        result['passed'] = False
+        result['cleanup_error'] = traceback.format_exc()
+    finally:
+        (output / 'gui-result.json').write_text(json.dumps(result, indent=2), encoding='utf-8')
+        application.removeEventFilter(hidden_popups)
+        QtCore.QTimer.singleShot(0, application.quit)
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.start()
+        wait(500)
+        report_widget = next(w for w in main.findChildren(QtGui.QTextEdit) if w.metaObject().className() == 'Gui::DockWnd::ReportOutput')
+        report_dock = next(w for w in main.findChildren(QtGui.QDockWidget) if w.objectName() == 'Report view')
+        check('Messages starts hidden with a manually accessible button', panel.messages_dock.isHidden() and panel.messages_button.isVisible() and not panel.messages_button.isChecked())
+        startup_output = report_widget.toPlainText() + (session / 'freecad.log').read_text(encoding='utf-8', errors='replace')
+        check('App startup no longer produces the QStatusBar insertPermanentWidget warning', 'QStatusBar::insertPermanentWidget' not in startup_output)
+        prefs = App.ParamGet('User parameter:BaseApp/Preferences/OutputWindow')
+        for key in ('checkWarning', 'checkError', 'checkMessage', 'checkLogging'):
+            prefs.SetBool(key, True)
+        # Exercise the independent native preference that used to reopen its own
+        # report dock, even though the KurtShape Messages panel was hidden.
+        for key in ('checkShowReportViewOnError', 'checkShowReportViewOnWarning', 'checkShowReportViewOnNormalMessage', 'checkShowReportViewOnLogMessage'):
+            prefs.SetBool(key, True)
+        panel.notify('Messages test: modeling status remains visible')
+        status = panel.message.text()
+        status_style = panel.message.styleSheet()
+        sent = [
+            (App.Console.PrintMessage, 'messages normal: information only\n'),
+            (App.Console.PrintWarning, 'messages warning: diagnostic only\n'),
+            (App.Console.PrintError, 'messages native error: details retained\n'),
+            (App.Console.PrintLog, 'messages log: troubleshooting details\n'),
+        ]
+        for printer, text in sent:
+            before_unread = panel.unread_messages
+            printer(text)
+            wait()
+            check('Native ' + text.split(':', 1)[0] + ' is retained once without opening a dock or interrupting status',
+                  panel.messages.toPlainText().count(text.strip()) == 1 and panel.messages_dock.isHidden() and report_dock.isHidden()
+                  and panel.message.text() == status and panel.message.styleSheet() == status_style and panel.unread_messages > before_unread)
+        check('Unread log entries appear on the Messages button', '(' in panel.messages_button.text() and 'unread' in panel.messages_button.toolTip())
+        rejected = panel.operation('set_parameter', feature='NoSuchFeature', parameter='Length', value='1 mm')
+        wait()
+        error_text = panel.message.text()
+        check('A rejected controller operation shows red readable status and retains its error without opening Messages',
+              rejected is None and '#a2322c' in panel.message.styleSheet() and error_text in panel.messages.toPlainText()
+              and panel.messages_dock.isHidden() and not panel.messages_button.isChecked())
+        click(panel.messages_button)
+        check('Actual Messages button opens details and clears unread count', panel.messages_dock.isVisible() and panel.messages_button.isChecked() and panel.unread_messages == 0 and panel.messages_button.text() == 'Messages')
+        App.Console.PrintMessage('messages while open: read immediately\n')
+        wait()
+        check('New output while Messages is open does not create unread count', panel.unread_messages == 0 and 'messages while open: read immediately' in panel.messages.toPlainText())
+        close_button = panel.messages_dock.findChild(QtWidgets.QAbstractButton, 'qt_dockwidget_closebutton')
+        check('Messages exposes its normal dock close button', close_button is not None)
+        click(close_button)
+        check('Closing Messages synchronizes the access button', panel.messages_dock.isHidden() and not panel.messages_button.isChecked())
+        panel.notify('messages managed error after close', 'error')
+        check('Later explicit errors respect the closed Messages panel and create unread count', panel.messages_dock.isHidden() and panel.unread_messages > 0 and panel.messages.toPlainText().count('messages managed error after close') == 1)
+        # Native Clear and bounded ReportOutput trimming must not remove mirrored
+        # evidence or re-append old retained lines as if they were new messages.
+        retained = 'messages normal: information only'
+        report_widget.clear()
+        wait()
+        check('Clearing the native report preserves KurtShape diagnostic history', panel.messages.toPlainText().count(retained) == 1)
+        report_widget.document().setMaximumBlockCount(2)
+        for printer, text in [
+            (App.Console.PrintMessage, 'messages trim one: ☀ 😀 unicode\n'),
+            (App.Console.PrintWarning, 'messages trim two: retained once\n'),
+            (App.Console.PrintError, 'messages trim three: retained once\n'),
+        ]:
+            printer(text)
+            wait()
+            check('Native ' + text.split(':', 1)[0] + ' survives UTF-16 cursor extraction/front trimming once', panel.messages.toPlainText().count(text.strip()) == 1)
+        check('Native front trimming does not duplicate previously mirrored entries', panel.messages.toPlainText().count('messages trim one: ☀ 😀 unicode') == 1 and panel.messages.toPlainText().count('messages trim two: retained once') == 1)
+        App.Console.PrintMessage('messages fragmented: first half ')
+        wait()
+        App.Console.PrintMessage('second half 😀\n')
+        wait()
+        result['fragment_continuity_preserved'] = 'messages fragmented: first half second half 😀' in panel.messages.toPlainText()
+        check('Partial native messages preserve both their text and Unicode without opening a dock', 'messages fragmented: first half' in panel.messages.toPlainText() and 'second half 😀' in panel.messages.toPlainText() and panel.messages_dock.isHidden() and report_dock.isHidden())
+        check('Native warnings and errors do not overwrite the explicit application error status', panel.message.text() == 'messages managed error after close' and '#a2322c' in panel.message.styleSheet())
+        click(panel.messages_button)
+        check('Messages can be reopened after native Clear/trim with full retained details and unread reset', panel.messages_dock.isVisible() and panel.unread_messages == 0 and panel.messages.toPlainText().count(retained) == 1)
+        click(panel.messages_button)
+        check('Clicking Messages a second time closes it', panel.messages_dock.isHidden() and not panel.messages_button.isChecked())
+        result['passed'] = True
+    except Exception:
+        result['error'] = traceback.format_exc()
+    finally:
+        finish()
+
+
+def timeout():
+    if not finished:
+        result['error'] = 'Messages validation exceeded its 25-second bound'
+        finish()
+
+
+QtCore.QTimer.singleShot(100, validate)
+QtCore.QTimer.singleShot(25000, timeout)

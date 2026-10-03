@@ -163,12 +163,14 @@ def global_shape(obj):
 
 
 def _preflight_source(path):
-    """Reject scripted FCStd before the native loader can restore a proxy."""
+    """Validate a source and reject scripted FCStd before restoring a proxy."""
     if not isinstance(path, str):
-        raise _error("invalid_assembly_source", "Choose an existing absolute FCStd source file")
+        raise _error("invalid_assembly_source", "Choose an existing absolute FCStd, STEP or STP source file")
     source = Path(path)
-    if not source.is_absolute() or source.suffix.lower() != ".fcstd" or not source.is_file():
-        raise _error("invalid_assembly_source", "Choose an existing absolute FCStd source file")
+    if not source.is_absolute() or source.suffix.lower() not in {".fcstd", ".step", ".stp"} or not source.is_file():
+        raise _error("invalid_assembly_source", "Choose an existing absolute FCStd, STEP or STP source file")
+    if source.suffix.lower() in {".step", ".stp"}:
+        return source
     try:
         with zipfile.ZipFile(source) as archive:
             data = archive.read("Document.xml")
@@ -220,38 +222,131 @@ def _source_results(doc):
     return [obj for obj in bodies + standalone if not obj.Shape.isNull() and obj.Shape.Solids]
 
 
+def _step_solids(path):
+    """Read native neutral geometry and flatten occurrences into solid choices.
+
+    This matches Part Studio STEP import's compound traversal: child locations
+    are retained, and no scripts or document proxies are loaded from STEP.
+    Non-solid reference geometry is outside assembly part insertion.
+    """
+    try:
+        shape = Part.read(str(path))
+    except Exception as exc:
+        raise _error("invalid_assembly_source", "STEP could not be read; check the source file", reason=str(exc)) from exc
+    if shape.isNull():
+        raise _error("empty_assembly_source", "This STEP contains no solid parts")
+    if not shape.isValid():
+        raise _error("invalid_assembly_source", "STEP contains invalid geometry; repair it before insertion")
+    solids = []
+    def collect(item):
+        if item.ShapeType in {"Compound", "CompSolid"}:
+            for child in item.childShapes():
+                collect(child)
+        elif item.ShapeType == "Solid":
+            solids.append(item)
+    collect(shape)
+    if not solids:
+        raise _error("empty_assembly_source", "This STEP contains reference geometry but no solid parts")
+    return solids
+
+
+def _capture_source_gui():
+    if not App.GuiUp:
+        return None
+    import FreeCADGui as Gui
+    gui_doc = Gui.activeDocument()
+    selection = [(item.DocumentName, item.ObjectName, tuple(item.SubElementNames),
+                  tuple((point.x, point.y, point.z) for point in item.PickedPoints))
+                 for item in Gui.Selection.getSelectionEx()]
+    if gui_doc is None:
+        return (None, None, None, selection)
+    view = gui_doc.activeView()
+    return (gui_doc.Document.Name, view.getCamera() if view else None, gui_doc.Modified, selection)
+
+
+def _restore_source_gui(state):
+    """Restore native selection coordinates and the active view after loading."""
+    if state is None:
+        return
+    import FreeCADGui as Gui
+    document, camera, modified, selection = state
+    if document in App.listDocuments():
+        gui_doc = Gui.getDocument(document)
+        Gui.ActiveDocument = gui_doc
+        view = gui_doc.activeView()
+        if view and camera is not None and view.getCamera() != camera:
+            view.setCamera(camera)
+        gui_doc.Modified = modified
+    current = [(item.DocumentName, item.ObjectName, tuple(item.SubElementNames),
+                tuple((point.x, point.y, point.z) for point in item.PickedPoints))
+               for item in Gui.Selection.getSelectionEx()]
+    if current != selection:
+        Gui.Selection.clearSelection()
+        for doc_name, object_name, elements, points in selection:
+            obj = App.getDocument(doc_name).getObject(object_name) if doc_name in App.listDocuments() else None
+            if obj is None:
+                continue
+            if elements:
+                for index, element in enumerate(elements):
+                    if index < len(points):
+                        Gui.Selection.addSelection(obj, element, *points[index])
+                    else:
+                        Gui.Selection.addSelection(obj, element)
+            else:
+                Gui.Selection.addSelection(obj)
+
+
 @contextmanager
 def _source_document(path):
     source = _preflight_source(path)
     before = hashlib.sha256(source.read_bytes()).hexdigest()
     active = App.ActiveDocument.Name if App.ActiveDocument else None
+    gui_before = _capture_source_gui()
+    loaded = False
     doc = None
     try:
         with tempfile.TemporaryDirectory(prefix="kurtshape-assembly-source-") as temporary:
-            copy = Path(temporary) / "assembly-source.FCStd"
+            copy = Path(temporary) / ("assembly-source" + source.suffix)
             shutil.copyfile(source, copy)
             if hashlib.sha256(copy.read_bytes()).hexdigest() != before:
                 raise _error("assembly_source_changed", "The source changed while it was read")
-            doc = App.openDocument(str(copy), True)
+            if source.suffix.lower() in {".step", ".stp"}:
+                solids = _step_solids(copy)
+                doc = App.newDocument("KurtShapeAssemblySTEP", hidden=True, temp=True)
+                for index, shape in enumerate(solids, 1):
+                    part = doc.addObject("Part::Feature", "Solid" + str(index))
+                    part.Label = source.stem[:120] + " · Solid " + str(index)
+                    part.Shape = shape
+            else:
+                doc = App.openDocument(str(copy), True)
             if doc is None:
                 raise _error("invalid_assembly_source", "The native engine could not open the source")
             if any(("Proxy" in obj.PropertiesList or obj.TypeId.endswith("Python"))
                    and not (obj.Name == "KurtShapeProject" and obj.TypeId == "App::FeaturePython" and obj.Proxy is None)
                    or any(link.Document != doc for link in obj.OutList) for obj in doc.Objects):
                 raise _error("unsafe_assembly_source", "The source contains scripted objects or external document references")
-            # Native restore can touch ordinary Bodies or metadata. Recompute
-            # only this disposable copy to settle native restore behavior.
+            # Settle native restore and source feature behavior only in this
+            # disposable document. Never write or recompute the original.
             doc.recompute()
             if any(set(obj.State) & {"Invalid", "Error"} for obj in doc.Objects):
                 raise _error("invalid_assembly_source", "Save a valid recomputed source before inserting it")
+            if active and active in App.listDocuments():
+                App.setActiveDocument(active)
+            _restore_source_gui(gui_before)
+            loaded = True
             yield doc, source, before
             if hashlib.sha256(source.read_bytes()).hexdigest() != before:
                 raise _error("assembly_source_changed", "The source changed during insertion")
     finally:
+        # Insertion intentionally modifies the assembly inside the yield.
+        # Capture that current GUI state rather than restoring its earlier
+        # Modified flag or erasing any caller selection on source closure.
+        gui_after = _capture_source_gui() if loaded else gui_before
         if doc is not None and doc.Name in App.listDocuments():
             App.closeDocument(doc.Name)
         if active and active in App.listDocuments():
             App.setActiveDocument(active)
+        _restore_source_gui(gui_after)
 
 
 def candidates(path):
@@ -259,7 +354,7 @@ def candidates(path):
         values = [{"id": obj.Name, "name": obj.Label, "type": obj.TypeId,
                    "solid_count": len(obj.Shape.Solids)} for obj in _source_results(doc)]
         if not values:
-            raise _error("empty_assembly_source", "This saved source contains no final solid Body or Part result")
+            raise _error("empty_assembly_source", "This source contains no final solid Body or Part result")
         return values
 
 

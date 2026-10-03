@@ -7,7 +7,7 @@
     "Finish accepts native Pierce",
     "Perpendicular remains Shift+L",
     "Rejected Finish retains the whole conflicting draft and reopens the editor",
-    "Native/controller errors remain visible in Messages",
+    "Sketch failures retain a red status and log without opening Messages",
     "Repair followed by Finish succeeds without redrawing",
     "Explicit Cancel discards the current edit",
     "25 idle GUI ticks perform no intent hash or BRep validation"
@@ -16,39 +16,45 @@
   "timings": {
     "intent": {
       "samples": 31,
-      "median_ms": 0.514,
-      "p95_ms": 1.495,
-      "worst_ms": 1.979
+      "median_ms": 0.446,
+      "p95_ms": 1.09,
+      "worst_ms": 1.105
     },
     "native_recompute": {
       "samples": 24,
-      "median_ms": 1.192,
-      "p95_ms": 10.665,
-      "worst_ms": 21.19
+      "median_ms": 1.211,
+      "p95_ms": 9.884,
+      "worst_ms": 11.918
     },
     "inspection": {
       "samples": 40,
-      "median_ms": 0.504,
-      "p95_ms": 0.987,
-      "worst_ms": 2.288
+      "median_ms": 0.488,
+      "p95_ms": 1.174,
+      "worst_ms": 1.383
     },
     "operation": {
       "samples": 40,
-      "median_ms": 2.321,
-      "p95_ms": 59.563,
-      "worst_ms": 952.773
+      "median_ms": 1.826,
+      "p95_ms": 45.543,
+      "worst_ms": 430.323
     },
     "recovery_checkpoint": {
       "samples": 3,
-      "median_ms": 0.125,
-      "p95_ms": 231.069,
-      "worst_ms": 231.069
+      "median_ms": 0.301,
+      "p95_ms": 254.122,
+      "worst_ms": 254.122
     },
     "input_to_feedback": {
       "samples": 3,
-      "median_ms": 12.121,
-      "p95_ms": 19.974,
-      "worst_ms": 19.974
+      "median_ms": 16.091,
+      "p95_ms": 44.139,
+      "worst_ms": 44.139
+    },
+    "input_to_feedback_model": {
+      "samples": 3,
+      "median_ms": 16.091,
+      "p95_ms": 44.139,
+      "worst_ms": 44.139
     }
   },
   "engine": {

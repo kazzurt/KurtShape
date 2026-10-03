@@ -98,7 +98,7 @@
     {"id":"sketch.extend","key":"X","contexts":["sketch"],"label":"Extend geometry","status":"native","native_command":"Sketcher_Extend"},
     {"id":"sketch.fix","key":"Shift+J","contexts":["sketch"],"label":"Fix geometry","status":"native","native_command":"Sketcher_ConstrainBlock"},
     {"id":"sketch.horizontal","key":"H","contexts":["sketch"],"label":"Horizontal constraint","status":"native","native_command":"Sketcher_ConstrainHorizontal"},
-    {"id":"sketch.line","key":"L","contexts":["sketch"],"label":"Line","status":"native","native_command":"Sketcher_CreateLine"},
+    {"id":"sketch.line","key":"L","contexts":["sketch"],"label":"Line","status":"native","native_command":"Sketcher_CreatePolyline"},
     {"id":"sketch.line_arc_switch","key":"Shift+A","contexts":["sketch"],"label":"Switch line and tangent arc","status":"unsupported","note":"Onshape's in-progress line/tangent-arc switch is not implemented; native polyline arc controls are different."},
     {"id":"sketch.midpoint","key":"Shift+M","contexts":["sketch"],"label":"Midpoint constraint","status":"native","native_command":"Sketcher_ConstrainSymmetric","note":"Select a line and point; native Symmetric places the point midway between that line's endpoints."},
     {"id":"sketch.normal","key":"Shift+K","contexts":["sketch"],"label":"Normal constraint","status":"unsupported","note":"Onshape's sketch normal constraint is not implemented."},

@@ -1,0 +1,22 @@
+{
+  "passed": false,
+  "scope": "Actual native floating Line QuantitySpinBox with a deliberately hostile local stylesheet and palette. This reproduces the theme precedence defect, not necessarily the exact user popup.",
+  "failure": "Traceback (most recent call last):\n  File \"C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/tools/sketch-behavior-validation.FCMacro\", line 302, in run\n    hostile_style_gate(widget, 'Floating native parameter ' + str(index))\n  File \"C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/tools/sketch-behavior-validation.FCMacro\", line 154, in hostile_style_gate\n    check(label + ': actual glyphs readable after hostile native local style/palette', ink >= 10)\n  File \"C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/tools/sketch-behavior-validation.FCMacro\", line 69, in check\n    raise AssertionError(label)\nAssertionError: Floating native parameter 0: actual glyphs readable after hostile native local style/palette\n",
+  "hostile_widgets": [
+    {
+      "hostile_widget": "Floating native parameter 0",
+      "rendered_ink_pixels": 0,
+      "stylesheet_after_show": "color: #ffffff; background-color: #ffffff;"
+    }
+  ],
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ]
+}

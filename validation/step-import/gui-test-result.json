@@ -16,7 +16,7 @@
     "Recent STEP entry reimports through the typed operation",
     "Conformal hub imports all three solids through Open path",
     "Deferred viewport fit frames the hub after native view nodes exist",
-    "Broken STEP reports failure and preserves current project",
+    "Broken STEP reports failure without opening Messages and preserves current project",
     "Wait cursor is restored after failed import",
     "Import is blocked during native sketch editing",
     "Both original STEP hashes are unchanged"
@@ -26,7 +26,7 @@
     "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec pipe mount.step": "0d83f47ae66ddf23de94c7cadc56ac1634ee1c5583f5a6895af3d569fe1957f0",
     "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec Hub Conformal.step": "ed9949c937ccaa768d018038cebcbab6638c9af48223b684dd7ace235389a3fc"
   },
-  "native_messages": "19:54:02  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\5e5718b7461fab07110befb9253733a6.png\"): device not open\n19:54:02  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\75292e0a20854497660f8c4dfc4be4b9.png\"): device not open\n19:54:02  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\bb448bc572657bb8e67db5ccce4c147b.png\"): device not open\n19:54:02  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\9217d59def2f632f64cac703dd0866ef.png\"): device not open\n19:54:02  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\18454f9c4ef66d31f5c13beb658410c1.png\"): device not open\n19:54:02  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\00f6208f57d0c1e17f8fb96d05c09abc.png\"): device not open\n19:54:02  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\b422966d528006fef56eb186c6c55ccd.png\"): device not open\n19:54:02  QStatusBar::insertPermanentWidget: Index out of range (0), appending widget\nSTEP could not be read; check the source file\nFinish or cancel the active sketch before changing documents",
+  "native_messages": "20:57:32  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\5e5718b7461fab07110befb9253733a6.png\"): device not open\n20:57:32  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\75292e0a20854497660f8c4dfc4be4b9.png\"): device not open\n20:57:32  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\bb448bc572657bb8e67db5ccce4c147b.png\"): device not open\n20:57:32  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\9217d59def2f632f64cac703dd0866ef.png\"): device not open\n20:57:32  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\18454f9c4ef66d31f5c13beb658410c1.png\"): device not open\n20:57:32  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\00f6208f57d0c1e17f8fb96d05c09abc.png\"): device not open\n20:57:32  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\b422966d528006fef56eb186c6c55ccd.png\"): device not open\n20:57:33  Unhandled Base::Exception caught in GUIApplication::notify.\nThe error message is: Access violation\n\nSTEP could not be read; check the source file\nFinish or cancel the active sketch before changing documents",
   "engine": {
     "FreeCAD": [
       "1",
@@ -43,33 +43,33 @@
   "timings": {
     "intent": {
       "samples": 16,
-      "median_ms": 1.034,
-      "p95_ms": 66.426,
-      "worst_ms": 66.426
+      "median_ms": 0.684,
+      "p95_ms": 1.855,
+      "worst_ms": 1.855
     },
     "native_recompute": {
       "samples": 13,
-      "median_ms": 36.932,
-      "p95_ms": 322.973,
-      "worst_ms": 322.973
+      "median_ms": 12.06,
+      "p95_ms": 181.039,
+      "worst_ms": 181.039
     },
     "inspection": {
       "samples": 24,
-      "median_ms": 1.792,
-      "p95_ms": 2623.111,
-      "worst_ms": 2778.683
+      "median_ms": 1.425,
+      "p95_ms": 2034.064,
+      "worst_ms": 2039.68
     },
     "operation": {
       "samples": 24,
-      "median_ms": 4.453,
-      "p95_ms": 6786.144,
-      "worst_ms": 7357.774
+      "median_ms": 3.001,
+      "p95_ms": 4968.372,
+      "worst_ms": 6087.465
     },
     "recovery_checkpoint": {
-      "samples": 15,
-      "median_ms": 0.633,
-      "p95_ms": 502.174,
-      "worst_ms": 502.174
+      "samples": 12,
+      "median_ms": 0.435,
+      "p95_ms": 384.981,
+      "worst_ms": 384.981
     }
   }
 }

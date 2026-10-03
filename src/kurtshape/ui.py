@@ -17,6 +17,7 @@ from .feature_tools import available_catalog
 from .quantity_field import QuantityField
 from .extrusion_preview import DebouncedExtrusionPreview
 from .workspace_preferences import WorkspacePreferences
+from .sketch_tools import run_command as run_sketch_command
 from .bodies import bodies, owner, origin_plane, results as native_results
 
 def metadata_id(doc):
@@ -361,7 +362,7 @@ class Panel(QtGui.QDockWidget):
         self.assembly_bar.setIconSize(QtCore.QSize(24, 24))
         for label, callback, tip in [
             ("Create Assembly", self.create_assembly, "Create one assembly in this project"),
-            ("Insert", self.insert_assembly_part, "Insert a saved FCStd part · I"),
+            ("Insert", self.insert_assembly_part, "Insert a part from FCStd or STEP / STP · I"),
             ("Ground", self.ground_assembly_instance, "Select an instance and make it the assembly reference"),
             ("Fixed", lambda: self.assembly_joint("fixed"), "Select two instance references; fasten with a fixed joint · M"),
             ("Revolute", lambda: self.assembly_joint("revolute"), "Select two axes; permit rotation around their joint axis"),
@@ -381,7 +382,7 @@ class Panel(QtGui.QDockWidget):
         self.sketch_bar.setMovable(False)
         self.sketch_bar.setIconSize(QtCore.QSize(24, 24))
         self.sketch_bar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
-        for name, command, key in [("Line", "Sketcher_CreateLine", "L"), ("Rectangle", "Sketcher_CreateRectangle", "G"), ("Circle", "Sketcher_CreateCircle", "C"), ("Arc", "Sketcher_Create3PointArc", "A"), ("Spline", "Sketcher_CreateBSpline", ""), ("Point", "Sketcher_CreatePoint", "Shift+S"), ("Dimension", "Sketcher_Dimension", "D"), ("Trim", "Sketcher_Trimming", "M"), ("Construction", "Sketcher_ToggleConstruction", "Q")]:
+        for name, command, key in [("Line", "Sketcher_CreatePolyline", "L"), ("Rectangle", "Sketcher_CreateRectangle", "G"), ("Circle", "Sketcher_CreateCircle", "C"), ("Arc", "Sketcher_Create3PointArc", "A"), ("Spline", "Sketcher_CreateBSpline", ""), ("Point", "Sketcher_CreatePoint", "Shift+S"), ("Dimension", "Sketcher_Dimension", "D"), ("Trim", "Sketcher_Trimming", "M"), ("Construction", "Sketcher_ToggleConstruction", "Q")]:
             self.tool(self.sketch_bar, name, lambda c=command: self.native_command(c), name + (" · " + key if key else ""), ":/icons/" + command + ".svg", command=command)
         self.sketch_bar.addSeparator()
         for category, tools in self.catalog["sketch_groups"]:
@@ -400,7 +401,7 @@ class Panel(QtGui.QDockWidget):
         self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.sketch_bar)
         self.sketch_bar.hide()
         self.message = QtGui.QLabel("Ready · Middle drag: orbit · Ctrl+middle: pan · Shift+middle: zoom")
-        self.main.statusBar().insertPermanentWidget(0, self.message, 1)
+        self.main.statusBar().addPermanentWidget(self.message, 1)
 
     def notify(self, message, *args):
         self.feedback_complete()
@@ -408,8 +409,36 @@ class Panel(QtGui.QDockWidget):
         self.message.setText(str(message))
         self.message.setToolTip(str(message))
         if args and args[0] == "error" and hasattr(self, "messages"):
-            self.messages.appendPlainText(str(message))
-            self.messages_dock.show()
+            self.append_message(message)
+
+    def append_message(self, message, native=False):
+        text = str(message) if native else str(message).strip()
+        if not text:
+            return
+        if native:
+            cursor = self.messages.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.End)
+            existing = self.messages.toPlainText()
+            if not self.last_message_native and existing and not existing.endswith("\n"):
+                cursor.insertText("\n")
+            cursor.insertText(text)
+        else:
+            self.messages.appendPlainText(text)
+        self.last_message_native = native
+        if text.strip() and not self.messages_dock.isVisible():
+            self.unread_messages += 1
+        self.update_messages_button()
+
+    def update_messages_button(self, *args):
+        visible = self.messages_dock.isVisible()
+        if visible:
+            self.unread_messages = 0
+        self.messages_button.setChecked(visible)
+        self.messages_button.setText("Messages" + (" (" + str(self.unread_messages) + ")" if self.unread_messages else ""))
+        self.messages_button.setToolTip("Hide messages" if visible else "Show messages" + (" · " + str(self.unread_messages) + " unread" if self.unread_messages else ""))
+
+    def toggle_messages(self):
+        self.messages_dock.setVisible(not self.messages_dock.isVisible())
 
     def make_messages(self):
         self.messages_dock = QtGui.QDockWidget("Messages", self.main)
@@ -420,19 +449,30 @@ class Panel(QtGui.QDockWidget):
         self.messages_dock.setWidget(self.messages)
         self.main.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.messages_dock)
         self.messages_dock.hide()
+        self.unread_messages = 0
+        self.last_message_native = False
+        self.messages_button = QtGui.QToolButton(self.main.statusBar())
+        self.messages_button.setObjectName("KurtShapeMessagesButton")
+        self.messages_button.setCheckable(True)
+        self.messages_button.clicked.connect(self.toggle_messages)
+        self.main.statusBar().addPermanentWidget(self.messages_button)
+        self.messages_dock.visibilityChanged.connect(self.update_messages_button)
+        self.update_messages_button()
         self.report_connections = []
         for dock in self.main.findChildren(QtGui.QDockWidget):
             if dock.objectName() == "Report view" or dock.windowTitle() == "Report view":
                 for widget in dock.findChildren(QtGui.QTextEdit) + dock.findChildren(QtGui.QPlainTextEdit):
-                    previous = [widget.toPlainText()]
-                    def changed(w=widget, seen=previous):
-                        text = w.toPlainText()
-                        added = text[len(seen[0]):] if text.startswith(seen[0]) else text
-                        seen[0] = text
-                        if added.strip():
-                            self.notify(added.strip(), "error")
-                    widget.textChanged.connect(changed)
-                    self.report_connections.append((widget, changed))
+                    document = widget.document()
+                    def changed(position, removed, added, d=document):
+                        if added <= 0:
+                            return
+                        cursor = QtGui.QTextCursor(d)
+                        cursor.setPosition(position)
+                        cursor.setPosition(min(position + added, d.characterCount() - 1), QtGui.QTextCursor.KeepAnchor)
+                        text = cursor.selectedText().replace("\u2029", "\n").replace("\u2028", "\n")
+                        self.append_message(text, native=True)
+                    document.contentsChange.connect(changed)
+                    self.report_connections.append((document, changed))
 
     def context(self):
         return "sketch" if self.active_sketch() else self.workspace_mode
@@ -472,7 +512,7 @@ class Panel(QtGui.QDockWidget):
         self.refresh()
         self.sync_edit_ui()
         if mode == "assembly" and not self.assembly_state():
-            self.notify("Create Assembly, then insert parts from saved FCStd projects. Import STEP through Open and save it as FCStd first.")
+            self.notify("Create Assembly, then insert parts from FCStd or STEP / STP files.")
         return True
 
     def assembly_state(self):
@@ -535,8 +575,8 @@ class Panel(QtGui.QDockWidget):
             return None
         tokens = self.assembly_tokens()
         if not path:
-            path = QtGui.QFileDialog.getOpenFileName(self, "Insert saved part into assembly", self.core.settings.last_directory,
-                "FreeCAD project (*.FCStd *.fcstd *.FCSTD)")[0]
+            path = QtGui.QFileDialog.getOpenFileName(self, "Insert part into assembly", self.core.settings.last_directory,
+                "CAD parts (*.FCStd *.fcstd *.FCSTD *.step *.stp *.STEP *.STP);;FreeCAD project (*.FCStd *.fcstd *.FCSTD);;STEP (*.step *.stp *.STEP *.STP)")[0]
         if not path:
             return None
         response = self.core.dispatch({"op": "assembly_candidates", "path": str(path)})
@@ -545,14 +585,14 @@ class Panel(QtGui.QDockWidget):
             return None
         candidates = response["result"].get("candidates", [])
         if not candidates:
-            self.notify("This FCStd has no eligible Body or solid. Import STEP through Open, save FCStd, then insert it.", "error")
+            self.notify("This file has no solid part to insert. Choose an FCStd Body or a STEP file containing solids.", "error")
             return None
         if source_id is None:
             dialog = QtGui.QDialog(self.main)
             dialog.setObjectName("KurtShapeAssemblyInsertDialog")
             dialog.setWindowTitle("Insert part")
             layout = QtGui.QVBoxLayout(dialog)
-            help_text = QtGui.QLabel("Choose the Body or solid to embed. Repeat Insert for another independent instance. STEP parts: Open STEP, save FCStd, then choose that project here.")
+            help_text = QtGui.QLabel("Choose the part to insert. Its geometry is stored in this assembly. Repeat Insert for another independent instance.")
             help_text.setWordWrap(True)
             layout.addWidget(help_text)
             layout.addWidget(QtGui.QLabel(Path(path).name))
@@ -1468,7 +1508,7 @@ class Panel(QtGui.QDockWidget):
         finally:
             self.entering_sketch = False
         self.sync_edit_ui()
-        self.notify("Sketch editing · middle drag orbits · N returns normal · G rectangle · C circle")
+        self.notify("Sketch editing · L draws connected lines · Esc ends drawing · N normal view · G rectangle · C circle")
         return obj
 
     def finish_sketch(self, cancel=False):
@@ -1487,8 +1527,6 @@ class Panel(QtGui.QDockWidget):
             self.finishing_sketch = False
         self.sync_edit_ui()
         hide_native_panels()
-        if not result:
-            self.messages_dock.show()
         return result
 
     def sync_edit_ui(self):
@@ -1835,7 +1873,7 @@ class Panel(QtGui.QDockWidget):
                 obj = self.document().getObject(self.selected() or "")
                 if obj and not Gui.Selection.getSelection():
                     Gui.Selection.addSelection(obj)
-            Gui.runCommand(command)
+            run_sketch_command(command)
             self.sync_edit_ui()
             hide_native_panels()
             return True
@@ -1946,6 +1984,10 @@ class Panel(QtGui.QDockWidget):
         return callbacks
 
     def eventFilter(self, watched, event):
+        if event.type() == QtCore.QEvent.Show and isinstance(watched, QtGui.QDockWidget) and (watched.objectName() == "Report view" or watched.windowTitle() == "Report view"):
+            # Native OutputWindow preferences may request this dock on any
+            # report entry. Messages is the app's explicitly opened log view.
+            watched.hide()
         if event.type() in {QtCore.QEvent.KeyPress, QtCore.QEvent.MouseButtonPress}:
             self.feedback_started = time.perf_counter()
             self.feedback_kind = "ordinary"
@@ -1979,6 +2021,9 @@ class Panel(QtGui.QDockWidget):
         QtGui.QApplication.instance().removeEventFilter(self)
         self.router.uninstall()
         self.general_actions.close()
+        for document, changed in self.report_connections:
+            document.contentsChange.disconnect(changed)
+        self.report_connections.clear()
         Gui.Selection.removeObserver(self.observer)
         self.bridge.close()
         self.core.close()

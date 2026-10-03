@@ -584,7 +584,7 @@ class Controller:
                 return {"ok": True, "result": {"contract": 2, "session_id": self.ledger.session_id,
                     "operations": sorted(self.OPS), "preview_operations": ["set_parameter", "set_expression"],
                     "import_formats": [".step", ".stp"],
-                    "assembly": {"level": "single", "source_formats": [".fcstd"], "source_policy": "embedded_shape_snapshot",
+                    "assembly": {"level": "single", "source_formats": [".fcstd", ".step", ".stp"], "source_policy": "embedded_shape_snapshot",
                                  "joint_types": ["fixed", "revolute", "slider"], "solver": "native FreeCAD Assembly",
                                  "motion_units": {"revolute": "deg", "slider": "mm"}, "nested_assemblies": False},
                     "retry": {"scope": "session", "result_limit": self.ledger.limit, "session_request_limit": self.ledger.session_request_limit,

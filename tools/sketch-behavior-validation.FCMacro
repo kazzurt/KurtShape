@@ -1,0 +1,387 @@
+"""Actual Sketcher clicks in a disposable hidden FreeCAD process.
+
+Use validate-sketch-behavior.ps1; never invoke in the user's app.
+"""
+import json
+import os
+from pathlib import Path
+import queue
+import re
+import socket
+import sys
+import traceback
+import xml.etree.ElementTree as ET
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ['KURTSHAPE_ROOT']).resolve()
+session = Path(os.environ['KURTSHAPE_SESSION_DIR']).resolve()
+assert session.is_relative_to(root / 'runtime')
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / 'src'))
+from kurtshape import ui
+
+
+def deny_network(*args, **kwargs):
+    raise RuntimeError('Python networking disabled for sketch behavior validation')
+
+
+socket.socket.connect = deny_network
+socket.socket.connect_ex = deny_network
+socket.socket.sendto = deny_network
+socket.create_connection = deny_network
+socket.getaddrinfo = deny_network
+
+
+class NoSocketTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1400, 900)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = root / 'validation' / 'sketch-behavior'
+output.mkdir(parents=True, exist_ok=True)
+report = {'passed': False, 'checks': [], 'probe': [], 'engine': App.Version(),
+          'runtime_profile': str(session.relative_to(root)),
+          'method': 'Production Panel, actual Qt toolbar/key/mouse events and native Sketcher handlers in an independent hidden process; assistant transport disabled.',
+          'limits': 'Small synthetic sketch; floating input and notification glyphs/styles are validated, but the exact original user popup is not claimed reproduced. Python networking disabled; native C++ networking is not intercepted.'}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / 'native-behavior.json').write_text(json.dumps(report, indent=2, default=str), encoding='utf-8')
+
+
+def wait(ms=100):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, value):
+    if not value:
+        raise AssertionError(label)
+    report['checks'].append(label)
+    save()
+
+
+def click(local, button=QtCore.Qt.LeftButton, press=True):
+    doc = panel.document()
+    sketch = panel.active_sketch()
+    view = Gui.getDocument(doc.Name).activeView()
+    gl = next(w for w in main.findChildren(QtWidgets.QWidget)
+              if w.metaObject().className() == 'QOpenGLWidget'
+              and w.parentWidget().metaObject().className() == 'Gui::View3DInventorViewer'
+              and w.isVisible() and w.width() > 300 and w.height() > 300)
+    world = sketch.Placement.multVec(App.Vector(*local)) if sketch else App.Vector(*local)
+    pixel = view.getPointOnViewport(world)
+    ratio = gl.devicePixelRatioF()
+    point = QtCore.QPoint(round(pixel[0] / ratio), gl.height() - 1 - round(pixel[1] / ratio))
+    assert gl.rect().contains(point), (local, point, gl.size())
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point),
+                            QtCore.QPointF(gl.mapToGlobal(point)), QtCore.Qt.NoButton,
+                            QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+    app.sendEvent(gl, event)
+    wait(100)
+    if press:
+        QtTest.QTest.mouseClick(gl, button, QtCore.Qt.NoModifier, point)
+    wait(120)
+    return gl
+
+
+def line_button():
+    action = next(a for a in panel.sketch_bar.actions() if a.text() == 'Line')
+    button = panel.sketch_bar.widgetForAction(action)
+    check('Actual Line toolbar button is visible and enabled', button.isVisible() and button.isEnabled())
+    QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
+    wait(80)
+
+
+def stop_with_escape():
+    gl = click((20, -10, 0), press=False)
+    gl.setFocus()
+    QtTest.QTest.keyClick(gl, QtCore.Qt.Key_Escape)
+    wait(80)
+    return gl
+
+
+def widgets(stage):
+    def ancestry(widget):
+        classes = []
+        while widget:
+            classes.append(widget.metaObject().className())
+            widget = widget.parentWidget()
+        return classes
+    def relevant(widget):
+        cls = widget.metaObject().className()
+        return (cls in {'Gui::NotificationLabel', 'Gui::InputHintWidget'} or
+                (isinstance(widget, (QtWidgets.QAbstractSpinBox, QtWidgets.QLineEdit))
+                 and 'Gui::View3DInventor' in ancestry(widget)))
+
+    def readable_text(widget):
+        value = widget.text() if hasattr(widget, 'text') else ''
+        return re.sub(r'data:image/[^;]+;base64,[A-Za-z0-9+/=]+', '[icon]', value)
+
+    report['probe'].append({'stage': stage, 'widgets': [
+        {'class': w.metaObject().className(), 'object': w.objectName(),
+         'text': readable_text(w),
+         'size': [w.width(), w.height()], 'window': w.isWindow(),
+         'text_color': w.palette().color(QtGui.QPalette.WindowText).name(),
+         'base': w.palette().color(QtGui.QPalette.Base).name(),
+         'stylesheet': w.styleSheet(),
+         'parent': w.parentWidget().metaObject().className() if w.parentWidget() else None,
+         'parent_object': w.parentWidget().objectName() if w.parentWidget() else None,
+         'ancestry': ancestry(w)}
+        for w in app.allWidgets() if w.isVisible() and relevant(w)]})
+    main.grab().save(str(output / (stage + '.png')))
+    save()
+
+
+def hostile_style_gate(widget, label):
+    original_size = (widget.width(), widget.height())
+    widget.hide()
+    hostile = QtGui.QPalette(widget.palette())
+    for group in (QtGui.QPalette.Active, QtGui.QPalette.Inactive, QtGui.QPalette.Disabled):
+        for role in (QtGui.QPalette.Text, QtGui.QPalette.WindowText,
+                     QtGui.QPalette.Base, QtGui.QPalette.Window, QtGui.QPalette.ToolTipText,
+                     QtGui.QPalette.ToolTipBase):
+            hostile.setColor(group, role, QtGui.QColor('#ffffff'))
+    widget.setPalette(hostile)
+    widget.setStyleSheet('color: #ffffff; background-color: #ffffff;')
+    widget.show()
+    wait(80)
+    rendered = widget.grab().toImage()
+    ink = sum(rendered.pixelColor(x, y).name() == '#243447'
+              for y in range(rendered.height()) for x in range(rendered.width()))
+    report['probe'].append({'hostile_widget': label, 'rendered_ink_pixels': ink,
+                           'stylesheet_after_show': widget.styleSheet()})
+    check(label + ': actual glyphs readable after hostile native local style/palette', ink >= 10)
+    check(label + ': native floating control size preserved',
+          original_size == (widget.width(), widget.height()))
+
+
+def notification_gate():
+    preferences = App.ParamGet('User parameter:BaseApp/Preferences/NotificationArea')
+    for key, value in [('DeveloperWarningSubscriptionEnabled', True),
+                       ('PreventNonIntrusiveNotificationsWhenWindowNotActive', False),
+                       ('HideNonIntrusiveNotificationsWhenWindowDeactivated', False),
+                       ('NonIntrusiveNotificationsEnabled', True)]:
+        preferences.SetBool(key, value)
+    sentence = ('Sketch validation warning: review the selected geometry and constraints. '
+                'Keep your sketch open while correcting conflicting dimensions. ')
+    App.Console.PrintWarning(sentence * 5 + '\n')
+    wait(500)
+    label = next(w for w in app.allWidgets() if w.isVisible() and w.objectName() == 'NotificationBox_label')
+    hostile_style_gate(label, 'Native floating notification')
+    document = QtGui.QTextDocument()
+    document.setDefaultFont(label.font())
+    document.setDocumentMargin(label.margin())
+    document.setHtml(label.text())
+    document.setTextWidth(label.contentsRect().width())
+    report['notification_layout'] = {'widget': [label.width(), label.height()],
+        'contents_height': label.contentsRect().height(),
+        'document_height': document.size().height(), 'text': document.toPlainText()}
+    label.grab().save(str(output / 'floating-notification.png'))
+    check('Native floating notification fits all message rows', document.size().height() <= label.contentsRect().height() + 2)
+    label.hide()
+
+
+def run():
+    global panel
+    try:
+        # Read only visual preferences; no source projects, GUI state, tokens,
+        # recent files, or recovery settings are copied from the user's profile.
+        original = root / 'runtime' / 'user-data' / 'user.cfg'
+        visual = ET.parse(original).getroot()
+        base = visual.find(".//FCParamGroup[@Name='Preferences']")
+        def copy_group(source, destination):
+            params = App.ParamGet(destination)
+            for item in source:
+                if item.tag == 'FCParamGroup':
+                    copy_group(item, destination + '/' + item.attrib['Name'])
+                elif item.tag == 'FCUInt':
+                    params.SetUnsigned(item.attrib['Name'], int(item.attrib['Value']))
+                elif item.tag == 'FCBool':
+                    params.SetBool(item.attrib['Name'], item.attrib['Value'] == '1')
+                elif item.tag == 'FCInt':
+                    params.SetInt(item.attrib['Name'], int(item.attrib['Value']))
+                elif item.tag == 'FCText':
+                    params.SetString(item.attrib['Name'], item.text or '')
+        for selector, destination in [('View', 'View'), ('Mod/Sketcher', 'Mod/Sketcher')]:
+            group = base
+            for component in selector.split('/'):
+                group = group.find("FCParamGroup[@Name='" + component + "']")
+            copy_group(group, 'User parameter:BaseApp/Preferences/' + destination)
+        report['visual_preferences_source'] = str(original.relative_to(root))
+        panel = ui.start()
+        report['stages'] = ['production_panel_started']
+        save()
+        wait(150)
+        panel.start_sketch()
+        view = Gui.activeDocument().activeView()
+        view.viewAxonometric()
+        view.getCameraNode().height.setValue(80)
+        gl = click((10, 4, 0), press=False)
+        wait(900)
+        QtTest.QTest.mouseMove(gl, QtCore.QPoint(gl.width() // 2, gl.height() // 2), 10)
+        wait(900)
+        app.sendEvent(gl, QtGui.QHelpEvent(QtCore.QEvent.ToolTip,
+                      QtCore.QPoint(gl.width() // 2, gl.height() // 2),
+                      gl.mapToGlobal(QtCore.QPoint(gl.width() // 2, gl.height() // 2))))
+        wait(250)
+        widgets('hover-plane-support')
+        panel.cancel_placement()
+        panel.begin_sketch(plane='XY')
+        panel.normal()
+        wait(300)
+        Gui.activeDocument().activeView().getCameraOrientation()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(80)
+        widgets('plane-sketch')
+        click((10, 0, 0), press=False)
+        wait(900)
+        widgets('hover-sketch-axis')
+        prefs = App.ParamGet('User parameter:BaseApp/Preferences/Mod/Sketcher')
+        report['initial_preferences'] = prefs.GetContents()
+        prefs.SetBool('ContinuousCreationMode', False)
+        line_button()
+        check('Native continuous setting False remains unchanged after Line activation',
+              not prefs.GetBool('ContinuousCreationMode', True))
+        sketch = panel.active_sketch()
+        sketch_name = sketch.Name
+        points = [(2, 2, 0), (14, 7, 0), (-8, 12, 0), (-16, 4, 0)]
+        for point in points:
+            click(point)
+        check('Four toolbar Line clicks create three connected segments', sketch.GeometryCount == 3)
+        for i in range(2):
+            check('Consecutive Line segment endpoints coincide ' + str(i),
+                  (sketch.Geometry[i].EndPoint - sketch.Geometry[i + 1].StartPoint).Length < 1e-6)
+        stop_with_escape()
+        before = sketch.GeometryCount
+        click((10, -12, 0))
+        click((-5, -18, 0))
+        check('Escape ends Line without leaving sketch edit or creating extra geometry',
+              panel.active_sketch() is sketch and sketch.GeometryCount == before)
+        check('Managed lease remains active after continuous drawing',
+              panel.core.inspect(panel.document())['active_sketch_edit'] == sketch.Name)
+        widgets('toolbar-line-chain')
+        check('Finish accepts native line chain', bool(panel.finish_sketch()))
+        check('Finished chain has no pending native transaction', not panel.document().HasPendingTransaction)
+        panel.history_move('undo')
+        check('One document Undo removes the entire accepted line edit',
+              panel.document().getObject(sketch_name).GeometryCount == 0)
+        panel.history_move('redo')
+        check('One Redo restores all connected lines', panel.document().getObject(sketch_name).GeometryCount == 3)
+        panel.select_feature(sketch_name)
+        panel.edit_sketch()
+        panel.normal()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(80)
+        gl = click((20, -10, 0), press=False)
+        gl.setFocus()
+        QtTest.QTest.keyClick(gl, QtCore.Qt.Key_L)
+        wait(100)
+        sketch = panel.active_sketch()
+        for point in [(6, -5, 0), (15, -10, 0), (4, -17, 0)]:
+            click(point)
+        check('L activates connected Line and three clicks append two segments', sketch.GeometryCount == 5)
+        click((4, -17, 0), button=QtCore.Qt.RightButton)
+        before = sketch.GeometryCount
+        click((22, 14, 0))
+        click((23, 23, 0))
+        check('Right-click ends Line without creating extra geometry', sketch.GeometryCount == before)
+        check('Cancel restores the sketch from before this edit', bool(panel.finish_sketch(cancel=True))
+              and panel.document().getObject(sketch_name).GeometryCount == 3)
+        check('Cancel leaves no pending native transaction or discarded redo state',
+              not panel.document().HasPendingTransaction and panel.document().RedoCount == 0)
+        panel.select_feature(sketch_name)
+        panel.edit_sketch()
+        panel.normal()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(80)
+        panel.native_command('Sketcher_CreateLine')
+        click((-22, -20, 0))
+        click((-10, -14, 0), press=False)
+        widgets('floating-single-line')
+        floating = [w for w in app.allWidgets() if w.isVisible() and
+                    w.metaObject().className() == 'Gui::QuantitySpinBox']
+        check('Actual floating Line length and angle controls are visible', len(floating) >= 2)
+        check('Floating native parameter text is dark on light background', all(
+            w.palette().color(QtGui.QPalette.Text).name() == '#243447'
+            and w.palette().color(QtGui.QPalette.Base).name() == '#ffffff' for w in floating))
+        for index, widget in enumerate(floating):
+            hostile_style_gate(widget, 'Floating native parameter ' + str(index))
+        widgets('floating-single-line-hardened')
+        click((-10, -14, 0))
+        click((20, -15, 0))
+        click((25, -5, 0))
+        check('Single line retains repeated independent two-point drawing', panel.active_sketch().GeometryCount == 5)
+        stop_with_escape()
+        check('Cancel removes both independent line additions', bool(panel.finish_sketch(cancel=True))
+              and panel.document().getObject(sketch_name).GeometryCount == 3)
+        check('Native line preference remains False after all tool cycles', not prefs.GetBool('ContinuousCreationMode', True))
+        prefs.RemBool('ContinuousCreationMode')
+        panel.select_feature(sketch_name)
+        panel.edit_sketch()
+        panel.native_command('Sketcher_CreateLine')
+        check('An absent native continuous preference is restored as absent',
+              not any(key == 'ContinuousCreationMode' for _, key, _ in prefs.GetContents()))
+        stop_with_escape()
+        panel.finish_sketch(cancel=True)
+        notification_gate()
+        report['check_count'] = len(report['checks'])
+        report['passed'] = True
+    except Exception:
+        report['error'] = traceback.format_exc()
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    if panel:
+        panel.shutdown()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report['error'] = 'Sketch validation exceeded 45 second bound'
+    save()
+    cleanup()
+
+
+QtCore.QTimer.singleShot(45000, timeout)
+QtCore.QTimer.singleShot(1200, run)
