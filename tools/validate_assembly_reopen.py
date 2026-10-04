@@ -25,16 +25,25 @@ from kurtshape.core import Controller
 from kurtshape import assembly as assembly_adapter
 
 original_fingerprint = assembly_adapter._geometry_fingerprint
+fingerprint_fixtures = {}
 
 
 def record_fingerprint(source):
     native_brep = source.Shape.copy(True, False).exportBrepToString()
     digest = hashlib.sha256(native_brep.encode("utf-8")).hexdigest()
-    working = REPORT_DIR / "assembly-gui-projects-working"
+    working = REPORT_DIR / "assembly-fixtures"
     working.mkdir(parents=True, exist_ok=True)
-    path = working / ("snapshot-fingerprint-headless-" + digest + ".brep")
+    path = working / ("fp-native-" + digest + ".brep")
     if not path.exists():
         path.write_text(native_brep, encoding="utf-8")
+    readback = path.read_text(encoding="utf-8")
+    fingerprint_fixtures[digest] = {
+        "path": str(path.resolve()), "path_characters": len(str(path.resolve())),
+        "sha256": digest, "sha256_characters": len(digest),
+        "full_sha256_in_filename": path.name == "fp-native-" + digest + ".brep",
+        "serialization_readback_equal": readback == native_brep,
+        "serialization_readback_sha256": hashlib.sha256(readback.encode("utf-8")).hexdigest(),
+    }
     return original_fingerprint(source)
 
 
@@ -42,7 +51,8 @@ assembly_adapter._geometry_fingerprint = record_fingerprint
 
 
 def main():
-    report = {"passed": False, "method": "Fresh independent bundled native Python process; relocated GUI-produced FCStd; original source path is absent"}
+    report = {"passed": False, "method": "Fresh independent bundled native Python process; relocated GUI-produced FCStd; original source path is absent",
+              "fingerprint_fixtures": fingerprint_fixtures}
     core = None
     try:
         gui_report = json.loads((REPORT_DIR / "gui-test-result.json").read_text(encoding="utf-8"))

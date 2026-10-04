@@ -84,6 +84,8 @@ Contract 2 mutations require `request_id` and, for an existing document, its cur
 
 Checks use one suite runner, `tools/run_native_tests.py`, with fresh native, transport, shortcut and modeling-workflow processes. Sessions, profiles and temporary fixtures stay in isolated scratch. Source hashes/STEP geometry are checked when originals are available; `-Full` requires them. `-WriteEvidence` explicitly refreshes tracked reports, and `-Lint` requests an installed ruff. Ordinary checks leave tracked evidence unchanged.
 
+The [architecture overview](ARCHITECTURE.md) describes the current controller, observers, preview, recovery and assembly boundaries. Assembly validation retains complete SHA-256 identifiers in shorter diagnostic fixture names so private profiles can exercise the same save, relocated reopen and export checks within Windows path limits. The [Q24a record](docs/long-run/Q24a-bounded-validation-architecture.md) records the isolated long-profile verification.
+
 The validation launcher opens an independent invisible Qt window with a separate configuration/session, exercises the actual interface and viewport, then exits. Reports, screenshots and fixtures default to the printed session evidence folder; add `-WriteEvidence` to refresh historical validation reports. It preserves an already-open user window. Other targeted recipes are listed in [interface pass notes](docs/INTERFACE_PASS.md).
 
 The U2 command launches the isolated Part Studio check; wait for its printed process to exit, then read the printed report path. Its [recipe](validation/u2-part-model/README.md) explains fixtures and source-hash verification. Small upgrade evidence and the current queue live in [long-run status](docs/long-run/STATUS.md).

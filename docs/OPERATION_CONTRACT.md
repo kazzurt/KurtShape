@@ -37,6 +37,8 @@ Standalone modeling failures abort their transaction and retain accepted geometr
 
 ## Contract 2 additions — October 2 review follow-up
 
+October 3 Q24a validation hardening shortens diagnostic Assembly BREP fixture names while retaining their complete SHA-256 identifiers and the production geometry fingerprint algorithm. This affects isolated verification only; typed operations, revision/replay, save/export publication and profile formats remain contract 2.0. The contributor boundaries are described in [ARCHITECTURE.md](../ARCHITECTURE.md).
+
 Legacy single-Body rebuilds retain explicit feature visibility. Logical-part visibility synchronization applies only to studio-enabled documents.
 
 Hidden validation follows the active document view; a fresh single-view window is accepted before the MDI active-window flag is initialized. Typed document selection and revision rules are unchanged.

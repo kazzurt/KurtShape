@@ -2,6 +2,14 @@
 
 Updated October 3, 2026, America/Los_Angeles. Implementation authorized in this chat; **M1 remains incomplete**. Current runnable slice: `Codex/kurtshape`. Prior plans remain in `cadkz-project-planning`; source examples and Claude reference area are preserved in place.
 
+## October 3, 2026 — Q24a validation hardening
+
+The [Q24a record](long-run/Q24a-bounded-validation-architecture.md) tracks bounded Assembly diagnostic fixture names and a contributor [architecture overview](../ARCHITECTURE.md) of the code on main. Full SHA-256 identifiers and the production geometry fingerprint remain intact. The long-profile Assembly recipe passed all 58 original checks and four fresh-process relocated reopen checks; fingerprint paths measured 234/237 characters with complete serialization readback. Save/export publication, native geometry, revision and undo behavior are unchanged.
+
+Full regression passed 147/7/22 plus 405 workflow checks without skips or source changes. The seventeen-recipe GUI sweep completed with sixteen passes and the exact historical carrier failure retained; all 76 screenshots were inspected. Recovery's intentional abnormal exit required an independent ten-check draft/Cancel/source-byte proof. Existing camera clipping and native warnings remain recorded; native autosave restoration is unverified without an archive. CI and five-repeat benchmark infrastructure remain parked with Q00b, and no application speed improvement is claimed.
+
+M1 remains incomplete and real parametric conversions remain 0/2.
+
 ## October 3, 2026 — Q01 stable green copy
 
 The detached `kurtshape-green` checkout and sibling `KurtShape-green.cmd` now separate tested code from the active development tree while sharing the main runtime, profile and recovery files. PrintOnly inspects the launch without side effects; validation uses a hidden private session. Updates skip an open green app and refuse tracked edits. Legacy single-Body rebuilds retain explicit visibility. Fresh-profile and active-document viewport handling are corrected without weakening behavioral assertions.

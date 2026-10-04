@@ -1,0 +1,1021 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "interface",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "b4615c47f4cc23e7107235506b327d0e5b6ce5642763d35b071cb5afde449a3b",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 58056,
+      "checks": 41,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "ui-refinement",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "3ad585d65434c6e013c4c0814f5708d87ce5ae9dc29ab03826a7735101fd208d",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 67572,
+      "checks": 106,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "refinement-preview",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "34676fcfd4e76a52e51751a43bba2a53ee16cc29f2885dc34bc619f30806b10c",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 11564,
+      "checks": 20,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "sketch-behavior",
+      "gate_passed": true,
+      "passed": true,
+      "stages": 1,
+      "report_sha256": "c9f5c79609fe0daa0b65832ee98ccab10d833d5e0a9a3c991d5e8489141f6ea9",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 19424,
+      "checks": 28,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "review-copy",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "8acfcb55fe845062e5363a654404c9287fdd7563af07acd889dadc420718f47a",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 54660,
+      "checks": 25,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "review-lifecycle",
+      "gate_passed": true,
+      "passed": true,
+      "stages": 22,
+      "report_sha256": "333b92689ef2b92aefdeabc90dfe439f04f8f86e9459be57646da7dbe6ba1462",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 68304,
+      "checks": null,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "pid": 4084,
+      "gate_passed": true,
+      "stages": null,
+      "warning_classes": [
+        "intentional-recovery-abnormal-exit",
+        "startup-thumbnail-read"
+      ],
+      "checks": null,
+      "passed": true,
+      "consequences": {
+        "checks": [
+          "Verifier imports use six independent private environment roots",
+          "Fresh GUI report is bound to the owned crash PID and lifetime",
+          "Producer checkpoint UUID, private path, SHA-256 and native ZIP are verified",
+          "Original saved fixture is a fresh private native ZIP",
+          "Checkpoint reopens the same document with valid unsaved 1800 mm3 geometry",
+          "Recovered unfinished sketch contains the real one-circle draft",
+          "Recovered checkpoint has no saved native filename",
+          "Explicit Cancel restores the accepted empty sketch and preserves unsaved geometry",
+          "Original saved project independently reopens at 1200 mm3",
+          "Producer report, checkpoint pair and saved original bytes remain unchanged"
+        ],
+        "pid": 51084,
+        "producer_pid": 4084,
+        "started_utc": "2026-10-03T18:56:41.365817-07:00",
+        "completed_utc": "2026-10-03T18:56:41.979533-07:00",
+        "input_sha256": "4681214ad9be13b81f713154696fafb20bb583e6a9d124e84d8fddbeefc45ecd",
+        "native_autosave": {
+          "available": false,
+          "verified": false,
+          "status": "NotVerified",
+          "reason": "No native autosave archive was produced; enabled preferences alone do not prove recovery"
+        },
+        "native_autosave_reopened": false,
+        "producer_report_verified": true,
+        "checkpoint_pair_verified": true,
+        "reopened_checkpoint": true,
+        "recovered_draft": true,
+        "recovered_unsaved_native_semantics": true,
+        "explicit_cancel_restored_accepted_sketch": true,
+        "cancel_preserved_unsaved_geometry": true,
+        "cancel_kept_unsaved_native_semantics": true,
+        "original_file_unchanged": true,
+        "saved_project_reopened": true,
+        "producer_files_unchanged": true,
+        "recovered_unsaved_volume_mm3": 1799.9999999999998,
+        "saved_volume_mm3": 1199.9999999999998,
+        "recovered_draft_geometry": 1,
+        "accepted_sketch_geometry": 0,
+        "original_file_sha256": "b4f30c32a5564a099904c848a93a34e4659a030e5d7d8e5ac33848b39241a035"
+      },
+      "cases": null,
+      "known_baseline_failure": false,
+      "exit_code": -1073740791,
+      "report_sha256": "1fd24009cc250fa34c90f05549f955f0f44e0bb801ac93e0575bcce99c29126f",
+      "name": "review-recovery",
+      "native_error": null
+    },
+    {
+      "name": "review-interaction",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "d7efc76551ebbc7064914aebf1d5122cbf63f925e368bad46852fa317dcb3998",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 52420,
+      "checks": 11,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "review-startup",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "1c3e14a4d9e8e1d229e2558574f198bdfe845b1ca30d370dd01ac088119a5e6b",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 20976,
+      "checks": 3,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "review-baseline",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "1420cffdecb8bf170ed0298e69b72bbcf276232b0cc07493ed617e704e7717eb",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 31516,
+      "checks": 3,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "step-import",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "df5623f46b1dbd3c6fc7ac81f916ff58c3005bf3c77caf59a3835d3c60f6fa1b",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 27808,
+      "checks": 19,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "pid": 52480,
+      "gate_passed": true,
+      "stages": null,
+      "warning_classes": [
+        null
+      ],
+      "checks": 58,
+      "passed": true,
+      "consequences": [
+        {
+          "name": "assembly-gui",
+          "count": 58,
+          "passed": true,
+          "input_sha256": "6940a4114839d919659560be0f5b3047ba28380bd2bd37de193c6a3eb898623a",
+          "checks": [
+            "Disposable Part Studio is already known to the panel before shared creation",
+            "Authenticated shared creation automatically activates the Assembly toolbar and history",
+            "Assembly workspace is discoverable and shows its compact toolbar",
+            "Create Assembly toolbar action is discoverable and enabled",
+            "Create makes a native single-level assembly",
+            "Insert toolbar action is discoverable and enabled",
+            "Insert displays both selectable native Bodies",
+            "Insert dialog committed a native instance",
+            "Insert displays both selectable native Bodies",
+            "Insert dialog committed a native instance",
+            "Insert displays both selectable native Bodies",
+            "Insert dialog committed a native instance",
+            "Insert displays both selectable native Bodies",
+            "Insert dialog committed a native instance",
+            "Repeated insertion has four independent occurrence identities",
+            "Assembly history and Instances show all four selectable occurrences",
+            "Actual Y hides the selected assembly occurrence and keeps its embedded source hidden",
+            "Actual Shift+Y restores hidden occurrences without exposing embedded geometry",
+            "Ground toolbar action is discoverable and enabled",
+            "Ground applies to the selected occurrence",
+            "Fixed toolbar action is discoverable and enabled",
+            "Joint name accepts typing without dispatching assembly shortcuts",
+            "Fixed uses the selected native vertex references and solves",
+            "Revolute toolbar action is discoverable and enabled",
+            "Joint name accepts typing without dispatching assembly shortcuts",
+            "Slider toolbar action is discoverable and enabled",
+            "Joint name accepts typing without dispatching assembly shortcuts",
+            "All three native joint families are visible in history",
+            "Move toolbar action is discoverable and enabled",
+            "Actual Move changes permitted revolute rotation by 45 degrees",
+            "Joint movement adds exactly one native undo command",
+            "Undo restores the rotor placement",
+            "Redo restores the permitted rotation",
+            "Move toolbar action is discoverable and enabled",
+            "Actual Move exercises slider translation along native Z",
+            "Rename retains joint identity and updates its visible label",
+            "Edit toolbar action is discoverable and enabled",
+            "Joint name accepts typing without dispatching assembly shortcuts",
+            "Edit applies the staged native joint parameters",
+            "Remove deletes only the selected joint",
+            "Undo restores the native joint and its occurrence references",
+            "Fixed toolbar action is discoverable and enabled",
+            "Joint name accepts typing without dispatching assembly shortcuts",
+            "Native solver conflict is logged without opening Messages and rolls back accepted assembly",
+            "Authenticated shared conflicting joint is rejected by the native solver",
+            "Newly rejected shared Assembly intent is logged without opening Messages or changing accepted geometry",
+            "Rejected shared joint preserves revision, occurrences, joints and undo history",
+            "Identical shared failure replay returns its outcome without duplicating visible Messages",
+            "Escape cancels a joint dialog without creating a joint",
+            "Solve toolbar action is discoverable and enabled",
+            "Solved occurrences have native visible view providers",
+            "Ordinary Ctrl+S saves native FCStd from Assembly",
+            "Fresh relocated reopen keeps embedded instances and solved joints without the source path",
+            "Assembly STEP export includes each occurrence once",
+            "Original source FCStd bytes are preserved",
+            "Return to Part Studio restores modeling tools",
+            "Existing original modeling project is retained unchanged",
+            "Every scheduled dialog completed without harness error"
+          ],
+          "fingerprint_fixtures": [
+            {
+              "serialization_readback_sha256": "dce7f5733bc4ad8e15a2ff8b7799e53cd5e963ce6d131681688cf8025a320f5b",
+              "full_sha256_in_filename": true,
+              "sha256_characters": 64,
+              "path_characters": 234,
+              "sha256": "dce7f5733bc4ad8e15a2ff8b7799e53cd5e963ce6d131681688cf8025a320f5b",
+              "serialization_readback_equal": true
+            }
+          ],
+          "maximum_fingerprint_path_characters": 234.0,
+          "pid": 52480,
+          "exit_code": 0,
+          "fixture_path_lengths": {
+            "working": 157,
+            "source": 176,
+            "preserved_source": 193,
+            "native": 176,
+            "native_stage": 183,
+            "relocated": 186,
+            "export": 184,
+            "export_stage": 194,
+            "export_sidecar_stage": 196
+          }
+        },
+        {
+          "name": "assembly-native-reopen",
+          "count": 4,
+          "passed": true,
+          "input_sha256": "a02644ab47a79ec5b6568f2a5878c6218ebd757925cd5df726655e17210e1a6a",
+          "checks": [
+            "Native reopen restores valid solved assembly",
+            "Four embedded occurrences and three joints survive",
+            "All App::Link sources belong to the reopened document",
+            "Recorded original source path is absent"
+          ],
+          "fingerprint_fixtures": [
+            {
+              "serialization_readback_sha256": "951421ba9dedc1fd597cf94a451a114e9c38cb19ef0b3d5a8d1d0d516f2708ca",
+              "full_sha256_in_filename": true,
+              "sha256_characters": 64,
+              "path_characters": 237,
+              "sha256": "951421ba9dedc1fd597cf94a451a114e9c38cb19ef0b3d5a8d1d0d516f2708ca",
+              "serialization_readback_equal": true
+            }
+          ],
+          "maximum_fingerprint_path_characters": 237.0,
+          "pid": 25444,
+          "exit_code": 0,
+          "fixture_path_lengths": null
+        }
+      ],
+      "cases": null,
+      "known_baseline_failure": false,
+      "exit_code": 0,
+      "report_sha256": "6940a4114839d919659560be0f5b3047ba28380bd2bd37de193c6a3eb898623a",
+      "name": "assembly",
+      "native_error": null
+    },
+    {
+      "name": "extrusion-preview",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "173c8db1043d5b9724cdec1fb524365047cea39dd7c2c43f1b17cfb318464bda",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 7392,
+      "checks": 20,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "assembly-step",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "e16def2a9be263b9ea1de02017745289a9708df682fc826e53092d9f62f788d1",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 38520,
+      "checks": 35,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "carrier-spike",
+      "gate_passed": true,
+      "passed": false,
+      "stages": null,
+      "report_sha256": "0f51033e336115ca4159500ae28e4c1e8d6454816ec0b75ff693ce1b233fcb53",
+      "native_error": "Traceback (most recent call last):\n  File \"C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/tools/part-model-spike-gui-validation.FCMacro\", line 227, in validate\n    check(\"Shared history retains split composition and output features\", {left_boolean.Name, right_boolean.Name, left.Tip.Name, right.Tip.Name}.issubset(panel.items))\n  File \"C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/tools/part-model-spike-gui-validation.FCMacro\", line 96, in check\n    raise AssertionError(label + \": \" + (panel.message.text() if panel else \"startup\"))\nAssertionError: Shared history retains split composition and output features: Feature canceled\n",
+      "known_baseline_failure": true,
+      "pid": 22900,
+      "checks": 17,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "part-studio",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "7b6ee68221a280186ed08c8b896aa1c282a64c243b0aa683e3c04a1394f2e0f8",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 11716,
+      "checks": 99,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "messages",
+      "gate_passed": true,
+      "passed": true,
+      "stages": null,
+      "report_sha256": "f99f19336021151c86d63200895d45a4fddaf42b6dfb8cb5f85f6c007c1adcf1",
+      "native_error": null,
+      "known_baseline_failure": false,
+      "pid": 49864,
+      "checks": 34,
+      "exit_code": 0,
+      "cases": null,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "passed": true,
+      "screenshots": [
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\gui-38c083f4a26c409b9593643a93178c61\\evidence\\interface-pass\\face-sketch-in-3d.png",
+          "result": "Solid and face-sketch render correctly; early sketch capture clips geometry at the top edge.",
+          "inspected": true,
+          "sha256": "af7f5961f253a51bf929e4676ac52b8ba1e2d216a75bf2918c2ba996bcc6d38b",
+          "recipe": "interface"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\gui-38c083f4a26c409b9593643a93178c61\\evidence\\interface-pass\\kurtshape-1200.png",
+          "result": "Solid and face-sketch render correctly; early sketch capture clips geometry at the top edge.",
+          "inspected": true,
+          "sha256": "af2d6122ef421d8a0c098a8496846759616550bc8768cc8d8296cd623f582e05",
+          "recipe": "interface"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\gui-38c083f4a26c409b9593643a93178c61\\evidence\\interface-pass\\kurtshape-1600.png",
+          "result": "Solid and face-sketch render correctly; early sketch capture clips geometry at the top edge.",
+          "inspected": true,
+          "sha256": "9b2b5aa2af67e0275878b1c6af0efaf0c305f52d00c9fd47f731e2a4867b175b",
+          "recipe": "interface"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\gui-38c083f4a26c409b9593643a93178c61\\evidence\\interface-pass\\sketch-in-3d.png",
+          "result": "Solid and face-sketch render correctly; early sketch capture clips geometry at the top edge.",
+          "inspected": true,
+          "sha256": "94514ee542fda7176b19e2c6cbb7aa6ef7737b41b80b1dc243aea78ee8a9666c",
+          "recipe": "interface"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\gui-ca00915baa514636a68b67372db92a02\\evidence\\ui-refinement\\extrusion-preview-1200.png",
+          "result": "Extrusion/removal overlays, controls, Settings and notifications readable; large preview clips its upper tip.",
+          "inspected": true,
+          "sha256": "3e499103770b61f18e99e14ef8375ca20a77f48a25c43866fe8711287c21efa9",
+          "recipe": "ui-refinement"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\gui-ca00915baa514636a68b67372db92a02\\evidence\\ui-refinement\\extrusion-preview-1600.png",
+          "result": "Extrusion/removal overlays, controls, Settings and notifications readable; large preview clips its upper tip.",
+          "inspected": true,
+          "sha256": "b8bc148c5d266f8e7ea19adada5ac18ec1c9624c572aa51e2d4454ace40287a9",
+          "recipe": "ui-refinement"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\gui-ca00915baa514636a68b67372db92a02\\evidence\\ui-refinement\\final-workspace.png",
+          "result": "Extrusion/removal overlays, controls, Settings and notifications readable; large preview clips its upper tip.",
+          "inspected": true,
+          "sha256": "8c899062d31974b5210312196bb96d99ab9f8924c2254216b2a400263d582a71",
+          "recipe": "ui-refinement"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\gui-ca00915baa514636a68b67372db92a02\\evidence\\ui-refinement\\native-notification.png",
+          "result": "Extrusion/removal overlays, controls, Settings and notifications readable; large preview clips its upper tip.",
+          "inspected": true,
+          "sha256": "49c1bbc34fe3c36dc34fb546fc23d6db744a09e54f573685f32d034fcd974f74",
+          "recipe": "ui-refinement"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\gui-ca00915baa514636a68b67372db92a02\\evidence\\ui-refinement\\removal-after-cancel-detail.png",
+          "result": "Extrusion/removal overlays, controls, Settings and notifications readable; large preview clips its upper tip.",
+          "inspected": true,
+          "sha256": "013a2aa92d04a00dee2b71a7601b0d4343e418a129fa24d9d5279c636b1bd1b8",
+          "recipe": "ui-refinement"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\gui-ca00915baa514636a68b67372db92a02\\evidence\\ui-refinement\\removal-preview-1600.png",
+          "result": "Extrusion/removal overlays, controls, Settings and notifications readable; large preview clips its upper tip.",
+          "inspected": true,
+          "sha256": "8da8c21649ed5b6c84235256e5bfba452fa42feb666285998778f9d224d17407",
+          "recipe": "ui-refinement"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\gui-ca00915baa514636a68b67372db92a02\\evidence\\ui-refinement\\removal-preview-detail.png",
+          "result": "Extrusion/removal overlays, controls, Settings and notifications readable; large preview clips its upper tip.",
+          "inspected": true,
+          "sha256": "92c591c3dde14b83ab1f7437117dbef73af5be2f76e8b775fc5792a0ed87888f",
+          "recipe": "ui-refinement"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\gui-ca00915baa514636a68b67372db92a02\\evidence\\ui-refinement\\settings-navigation.png",
+          "result": "Extrusion/removal overlays, controls, Settings and notifications readable; large preview clips its upper tip.",
+          "inspected": true,
+          "sha256": "3eef7ee34eec276b0d987c1c3e8b151fd2992c378e945d773b7710b4924d69b8",
+          "recipe": "ui-refinement"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-behavior\\gui-3cf0f186f90e48a1855104f4acf618cb\\evidence\\sketch-behavior\\floating-notification.png",
+          "result": "Line-chain, floating input, axis/plane support and notification visible; narrow native DOF label clipped.",
+          "inspected": true,
+          "sha256": "914367b572bf94d8283c51b95d13d2d5681ec59f1ce5c79a8052ba881d2b89a5",
+          "recipe": "sketch-behavior"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-behavior\\gui-3cf0f186f90e48a1855104f4acf618cb\\evidence\\sketch-behavior\\floating-single-line-hardened.png",
+          "result": "Line-chain, floating input, axis/plane support and notification visible; narrow native DOF label clipped.",
+          "inspected": true,
+          "sha256": "5c70a333b8f95ebd133fdba7c5ae7181b64a00d085407728000dbc8b789a1a16",
+          "recipe": "sketch-behavior"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-behavior\\gui-3cf0f186f90e48a1855104f4acf618cb\\evidence\\sketch-behavior\\floating-single-line.png",
+          "result": "Line-chain, floating input, axis/plane support and notification visible; narrow native DOF label clipped.",
+          "inspected": true,
+          "sha256": "b35f3f135d4c603b4ef1c122c0b42224abb76dba86f47d82e556ec29ca783365",
+          "recipe": "sketch-behavior"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-behavior\\gui-3cf0f186f90e48a1855104f4acf618cb\\evidence\\sketch-behavior\\hover-plane-support.png",
+          "result": "Line-chain, floating input, axis/plane support and notification visible; narrow native DOF label clipped.",
+          "inspected": true,
+          "sha256": "961fc33c5ad4ce68892fa85c2468184f3fa6cbb45e5b445be0bbc0c4016ea0d0",
+          "recipe": "sketch-behavior"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-behavior\\gui-3cf0f186f90e48a1855104f4acf618cb\\evidence\\sketch-behavior\\hover-sketch-axis.png",
+          "result": "Line-chain, floating input, axis/plane support and notification visible; narrow native DOF label clipped.",
+          "inspected": true,
+          "sha256": "a27a854975ac7a7d162e0bcc26059f9e76168c66a517377f615cef11c5e089ab",
+          "recipe": "sketch-behavior"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-behavior\\gui-3cf0f186f90e48a1855104f4acf618cb\\evidence\\sketch-behavior\\plane-sketch.png",
+          "result": "Line-chain, floating input, axis/plane support and notification visible; narrow native DOF label clipped.",
+          "inspected": true,
+          "sha256": "5663bfe4ff473fd5fdaa62f98322a9079e180952bbf784a0428197dd5c649680",
+          "recipe": "sketch-behavior"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-behavior\\gui-3cf0f186f90e48a1855104f4acf618cb\\evidence\\sketch-behavior\\toolbar-line-chain.png",
+          "result": "Line-chain, floating input, axis/plane support and notification visible; narrow native DOF label clipped.",
+          "inspected": true,
+          "sha256": "8093ee838c2b1c39bae47339672e9b7d22f8ec7bdd2ce6b48ae411d1cba938d2",
+          "recipe": "sketch-behavior"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-interaction\\gui-5ca4084cf4264251b4f7e734b17b5a7b\\evidence\\review-followup\\review-gui.png",
+          "result": "Expected seeded ConflictSketch/red state and coherent controls.",
+          "inspected": true,
+          "sha256": "c7d0fcadf09f53cbd620a33cae20633006ff5ffaaa0dfbffed6112f940b22e98",
+          "recipe": "review-interaction"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\gui-5b02682dfbfb46c08147d34fcfe87166\\evidence\\step-import\\imported-hub-1600.png",
+          "result": "Real pipe and hub imports, project dialogs and rendered shapes inspected.",
+          "inspected": true,
+          "sha256": "f7cedb6b20e29ebd3a11a09a7df4f75ec9bb32c16cecfba73a8d0fdf273c57e4",
+          "recipe": "step-import"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\gui-5b02682dfbfb46c08147d34fcfe87166\\evidence\\step-import\\imported-pipe-1200.png",
+          "result": "Real pipe and hub imports, project dialogs and rendered shapes inspected.",
+          "inspected": true,
+          "sha256": "1e5b3d05f996aa0c3a92cace220682472b407b6804811a1510a92b65f461b9ac",
+          "recipe": "step-import"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\gui-5b02682dfbfb46c08147d34fcfe87166\\evidence\\step-import\\imported-pipe-1600.png",
+          "result": "Real pipe and hub imports, project dialogs and rendered shapes inspected.",
+          "inspected": true,
+          "sha256": "9fd04225d0e21cc97c0e7c433658f36b65749b016a70ae8f1ce85f8b6e89757a",
+          "recipe": "step-import"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\gui-5b02682dfbfb46c08147d34fcfe87166\\evidence\\step-import\\open-step-dialog.png",
+          "result": "Real pipe and hub imports, project dialogs and rendered shapes inspected.",
+          "inspected": true,
+          "sha256": "7c2d62d97ffddc3b8d79946de8e379d5d8a2dd6cf61bd4b0863ef6dada3dfef6",
+          "recipe": "step-import"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\gui-5b02682dfbfb46c08147d34fcfe87166\\evidence\\step-import\\save-imported-project-dialog.png",
+          "result": "Real pipe and hub imports, project dialogs and rendered shapes inspected.",
+          "inspected": true,
+          "sha256": "4e0b440007e4c7f76b9d79ca996b99b399a18bdee10ceec4420ca516735b2536",
+          "recipe": "step-import"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\assembly-body-choice-dialog.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "14d97fb3d8426b66a48b147e1f10d0ae356ffd05c834de0ad0761da52280ec78",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\assembly-insert-file-dialog.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "9171573d616a5e910a2b13593a7664c11cdf7733b0103e64bfad0ad8067c42f8",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\assembly-save-dialog.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "0d20a4983ec340e094e468ba3a2924fb404a6cfbc0fabbb9b28ce5061bd2c558",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\create-assembly-dialog.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "b42fe32e1a94b455a19a1badbcd97d9a6ae47f3a87e94049388d56e91c96786a",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\fixed-joint-dialog.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "4ce96ca1bdc502a65eed3f073ed992d24742b7afcce76470e7083667217d315a",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\native-assembly-1200.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "7aa015aa3a54e522b4f49fcb51c83696a69d264ddbdf93f89a19c4873e636ff9",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\native-assembly-1600.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "a16d73e01beaed02ab35014dd57dbd2abc19e3e18e0905af62e2e68e4d34f438",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\reopened-native-assembly.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "4f71d602147546968eded4e220f079a275b23d1c135c4cab76bc378c2ccb1b22",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\revolute-joint-dialog.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "5872e947e85b70d5dc4fe62e529b03cde862a2e653ee3c97da5f8e456bac63f7",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\revolute-move-dialog.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "0cc60bba8122e9a7383dd943a1fa28b7db116cb1018e4e0104828ee87fe73383",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\gui-2c01fb6394d145b7ab51f5421d22e97b\\evidence\\assembly-workflow\\slider-move-dialog.png",
+          "result": "All eleven dialogs, solved four instances/three joints, save/reopen and movement captures inspected by parent.",
+          "inspected": true,
+          "sha256": "2d8da2fce2584a177780621b747ab4f88bfc88aa05023a051c004880051a590d",
+          "recipe": "assembly"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\gui-0c794fdef6f54059872b49b9730ef878\\evidence\\assembly-step-import\\direct-step-assembly.png",
+          "result": "Insertion/picker/assembly captures readable; overlapping instances cannot visually prove distinct placement.",
+          "inspected": true,
+          "sha256": "3e604d858cb4d7a36c67946ca7495607506c742fa07d4fd8ca8a185e5ee3f259",
+          "recipe": "assembly-step"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\gui-0c794fdef6f54059872b49b9730ef878\\evidence\\assembly-step-import\\insert-step-file-dialog.png",
+          "result": "Insertion/picker/assembly captures readable; overlapping instances cannot visually prove distinct placement.",
+          "inspected": true,
+          "sha256": "9a95f81e7ebf75c30c0c04c79728a72a5559d206d8743496937f7b380a3734b5",
+          "recipe": "assembly-step"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\gui-0c794fdef6f54059872b49b9730ef878\\evidence\\assembly-step-import\\insert-step-solid-picker.png",
+          "result": "Insertion/picker/assembly captures readable; overlapping instances cannot visually prove distinct placement.",
+          "inspected": true,
+          "sha256": "762e7967055d69b20da19f178468850512dbbdc9fd5a3f0577b6d58b1fe6891f",
+          "recipe": "assembly-step"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\carrier-spike\\gui-4a0e3398e5f44c61a1c2a61ed590416f\\evidence\\u2-part-model-spike\\two-parts-extrude-preview.png",
+          "result": "Both pre-failure native carrier images inspected; exact historical 17-check failure retained.",
+          "inspected": true,
+          "sha256": "d3e9b6e16a96cd9481a547833f5cc8cf191dc494c2f8fc0f5cfe7e64ffa81849",
+          "recipe": "carrier-spike"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\carrier-spike\\gui-4a0e3398e5f44c61a1c2a61ed590416f\\evidence\\u2-part-model-spike\\two-parts-native-parameters.png",
+          "result": "Both pre-failure native carrier images inspected; exact historical 17-check failure retained.",
+          "inspected": true,
+          "sha256": "71b37fba8950c9ee1fcaac8b0eaa9d2dc4fc717d9f98f154a13283f8f2698d20",
+          "recipe": "carrier-spike"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\boolean_parts-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "29e8643a85786564d063f6f565fedd83e98dbb3fe112de8b3c99cfe89805770d",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\boolean_parts-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "2fc9e96895bde4fdafd4a0b1ca937021bc00cf3c5fa71bbe5b6831c52ea3384f",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\chamfer-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "0493096d5380f7a6d569e9dfaea870a04f6d57156f3a0c24be2090fbcbb30712",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\chamfer-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "3992d49f4cfa535ddf90d04072fb24daada69e8d0e985918c109bc8aa22842bb",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\circular_pattern_parts-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "0b2829639cf0b7e7fc9e74e5f72877e2ef424573eec25fe9b66038c0cbab86ab",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\circular_pattern_parts-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "472bfac402261ee903ce625badcfd5de78bec6baf93eec31ec8f677b6a0fd167",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\explicit-merge-scope-preview.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "41d056da0a1811fd94120ca0c91ece316024253a32eed87af2f9db4920e8037f",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\fillet-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "0ee5bd74de8ecdba44ae078fde133bec70690221c760b466af84cf2fa9770158",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\fillet-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "4dacc92d8ff69ce5c3ac02b0104f8bba4b8b6f89df8f69e82a5488b7f1ede98b",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\healthy-reference-health.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "4e8aa76bbabc7e624862d710749664d37ee850ae1cbac50a2847531fda761133",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\linear_pattern_parts-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "8be44477d665f20a2dd73bd6c9e3298aecbd866d07f587523fc3585c5579a98c",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\linear_pattern_parts-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "07122b227641268bd229cab1561dac0c6b2d88edb19a288c8101b3a6c8464458",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\loft-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "768bbf736ccd531d013116c56ddac53ab288c58d7c6cc1bf27a01cbeae977f50",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\loft-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "7b0485a9b474f51b5d278401c0d4e10a47ac3532fe127bb3e92d2b8cc2935ab2",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\mirror_parts-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "d7a1ff0b5f02330a204822e7626c725651c1e8a9357954b69a13814c15d6803a",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\mirror_parts-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "595f90444046cc8c2d4945a8c89ad1822a2dbfeb1a87c1398dbc281e690d39d5",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\missing-reference-health.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "8f5e91740f382191aec6173293651693f3ef66f4546e4933b51cb682779515fe",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\revolve-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "18c3fcdaeadc31aca8f2df2fe5c9ed0877a053c018be89c33b553a5b59f6c7e6",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\revolve-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "aa73b231a8260be1c32fa051ac15a0a0317c72801c037e7a2dfc9bb136261696",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\rollback-selected-with-held-feature.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "25457ade21df408bcaf66f8f1728fae774fe7147890690b4bab2551c0171e1e1",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\shell-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "7727ef8c4e24a9c86eeaf6277056f3bd0d80471f2e4c27fc1a148980ac2113c0",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\shell-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "4371b35176ba7e6ce1d83f89cda31c910c0668184ff70730c89ee335161abc82",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\split_part-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "b2807729a1d790af99fb58a1f22411500f65ac68f8c92cf9ed2c10fb6d54e211",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\split_part-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "a96bf1ed950cd6fcaa0da9ec1d98eb6820e43873bd3c5536946d7079a6ebbd9d",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\sweep-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "9edf2c287fa4e7c6ec8ad5664c1ea93b98d374dca6d01fc29721df1ec5ac1b8d",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\sweep-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "fdec4a6babef33b07321b52dfba3d60201ecd948c90409ac129b9d1a97affe55",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\sweep-selected-curve-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "853b08583f2a71a14b004b471d67bd45ee060a678c898fbed26fd38e1641ccf9",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\sweep-selected-curve-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "22c1f2ac4c2c480fab02217e961d44bce77dac5da7ac9ec66120e1c432c63f45",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\transform_part-dialog-controls.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "a64802ba48e56cf6bf37f182c595ee238894f758c90f17c1c87ea91cedd4bacb",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\transform_part-dialog.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "324675146217e8184219d7fe50c49002293144b3e227a0e5b45227694fe0b32f",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\u2-parts-final.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "c640b3bc47821f806717f2d6f1dafcfdaa6624bddfe615c2c892cee9bfbe538f",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\unified-through-all-remove-preview.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "9666694bcaaddb447f9acf94ab5128f6186ab1cd250b79f3e988f4d073305e60",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\gui-7f7319ea5f5d4fd68508a85a1cdd0bcc\\evidence\\u2-part-model\\up-to-face-preview.png",
+          "result": "All33 feature/control/scope/health/rollback/final images inspected; linear/mirror/transform previews have camera clipping.",
+          "inspected": true,
+          "sha256": "70c3afd6e518f466d737c20a0af30f6bf39b751618754aadd2c083116d8ef0e6",
+          "recipe": "part-studio"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\gui-969e921928f946029c8ef02720b2df9d\\evidence\\messages-behavior\\messages-copy-controls.png",
+          "result": "Open/copy controls and closed unread indicator inspected; actual report proves clipboard restoration.",
+          "inspected": true,
+          "sha256": "e63f54f4df953232694c82780db0da95cd31788a62ac548338440efe04704063",
+          "recipe": "messages"
+        },
+        {
+          "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\gui-969e921928f946029c8ef02720b2df9d\\evidence\\messages-behavior\\messages-window.png",
+          "result": "Open/copy controls and closed unread indicator inspected; actual report proves clipboard restoration.",
+          "inspected": true,
+          "sha256": "88e5e18af18c3ee96bb69e74d06135bc76e3da193d1e0b0b2c7aeb242a33c2dc",
+          "recipe": "messages"
+        }
+      ],
+      "count": 76,
+      "name": "Parent screenshot inspection",
+      "method": "Direct tools.view_image inspection by parent and delegated read-only reviewers of all76 actual screenshots; file inventories and recipe reports reconciled",
+      "input_sha256": "c5c3f89d684d327802405a858de1b2cbbb27d6327ed4f8add77808d53028362e",
+      "aggregate_sha256": "af062db0d2bf47ce41eb114f63c7278039da4b3c0cdb172d8d7442300582b9a6"
+    }
+  ],
+  "method": "Completed current-main seventeen-recipe GUI gate plus independent Assembly/recovery proofs and parent screenshot inspection; raw carrier passed=false retained",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "7a20a63d2642100da668184ea0d72b635c7c4640",
+  "worktree_diff_sha256": "74773fd70c1b9f754f018362fa78f137bd117131c59efe7c34e55fb4119a1082",
+  "timings": {
+    "samples": [],
+    "median": null,
+    "worst": null,
+    "p95": null
+  },
+  "limits": "Raw full-sweep passed=false is preserved because the carrier retains its named baseline failure after17 checks; gate_passed=true is the reviewed acceptance policy. Native autosave is NotVerified when no archive exists. Q24a changes validation fixture paths and documentation only; no application performance improvement, CI execution or benchmark result is claimed.",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "input_sha256": "c60465dbd2cd4150534475c180a7972b9af58c5f42a1f72e1bf04117ab5bfd80"
+}

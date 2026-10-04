@@ -34,18 +34,27 @@ main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
 main.show()
 panel = start()
 output = evidence_dir("assembly-workflow")
-working = output / "assembly-gui-projects-working"
+working = output / "assembly-fixtures"
 working.mkdir(parents=True, exist_ok=True)
-report = {"passed": False, "checks": [], "method": "Independent hidden FreeCAD GUI, isolated profile; actual KurtShape dialogs, keyboard visibility, native history, rendered viewport and authenticated local HTTP bridge requests"}
+report = {"passed": False, "checks": [], "method": "Independent hidden FreeCAD GUI, isolated profile; actual KurtShape dialogs, keyboard visibility, native history, rendered viewport and authenticated local HTTP bridge requests",
+          "fingerprint_fixtures": {}, "fixture_path_lengths": {"working": len(str(working.resolve()))}}
 original_fingerprint = assembly_adapter._geometry_fingerprint
 
 
 def record_fingerprint(source):
     native_brep = source.Shape.copy(True, False).exportBrepToString()
     digest = hashlib.sha256(native_brep.encode("utf-8")).hexdigest()
-    path = working / ("snapshot-fingerprint-gui-" + digest + ".brep")
+    path = working / ("fp-gui-" + digest + ".brep")
     if not path.exists():
         path.write_text(native_brep, encoding="utf-8")
+    readback = path.read_text(encoding="utf-8")
+    report["fingerprint_fixtures"][digest] = {
+        "path": str(path.resolve()), "path_characters": len(str(path.resolve())),
+        "sha256": digest, "sha256_characters": len(digest),
+        "full_sha256_in_filename": path.name == "fp-gui-" + digest + ".brep",
+        "serialization_readback_equal": readback == native_brep,
+        "serialization_readback_sha256": hashlib.sha256(readback.encode("utf-8")).hexdigest(),
+    }
     return original_fingerprint(source)
 
 
@@ -218,7 +227,9 @@ def validate():
             feature = body.newObject("PartDesign::Feature", identity + "Solid")
             feature.Shape = shape
         source.recompute()
-        source_path = working / f"two-selectable-source-bodies-{os.getpid()}.FCStd"
+        source_path = working / f"source-{os.getpid()}.FCStd"
+        report["fixture_path_lengths"].update(source=len(str(source_path.resolve())),
+                                             preserved_source=len(str(source_path.with_name("preserved-source-" + source_path.name).resolve())))
         source.saveAs(str(source_path))
         source_digest = hashlib.sha256(source_path.read_bytes()).hexdigest()
         App.closeDocument(source.Name)
@@ -321,7 +332,9 @@ def validate():
             QtTest.QTest.qWait(250)
             main.grab().save(str(output / f"native-assembly-{width}.png"))
         check("Solved occurrences have native visible view providers", all(assembly_doc.getObject(identity).ViewObject.Visibility for identity in (first, fixed, rotor, carriage)))
-        native = working / f"gui-solved-assembly-{os.getpid()}.FCStd"
+        native = working / f"solved-{os.getpid()}.FCStd"
+        report["fixture_path_lengths"].update(native=len(str(native.resolve())),
+                                             native_stage=len(str(native.with_name(native.stem + ".saving.FCStd").resolve())))
         (working / f"snapshot-before-save-{os.getpid()}.brep").write_text(embedded.Shape.copy(True, False).exportBrepToString(), encoding="utf-8")
         file_dialog(native, "assembly-save-dialog.png")
         main.activateWindow()
@@ -329,9 +342,10 @@ def validate():
         QtTest.QTest.keyClick(main, QtCore.Qt.Key_S, QtCore.Qt.ControlModifier)
         check("Ordinary Ctrl+S saves native FCStd from Assembly", native.is_file() and panel.state["native_file"] == str(native))
         accepted_id = panel.state["document_id"]
-        relocated_folder = working / "relocated-assembly-deliverables"
+        relocated_folder = working / "relocated"
         relocated_folder.mkdir(exist_ok=True)
         relocated = relocated_folder / native.name
+        report["fixture_path_lengths"]["relocated"] = len(str(relocated.resolve()))
         shutil.copy2(native, relocated)
         source_path.rename(source_path.with_name("preserved-source-" + source_path.name))
         App.closeDocument(assembly_doc.Name)
@@ -339,7 +353,10 @@ def validate():
         embedded = panel.document().getObject(first).LinkedObject
         (working / f"snapshot-after-reopen-{os.getpid()}.brep").write_text(embedded.Shape.copy(True, False).exportBrepToString(), encoding="utf-8")
         check("Fresh relocated reopen keeps embedded instances and solved joints without the source path", panel.state["document_id"] == accepted_id and panel.state["build_status"] == "valid" and len(panel.assembly_state()["instances"]) == 4 and len(panel.assembly_state()["joints"]) == 3)
-        exported = relocated_folder / f"gui-occurrences-{os.getpid()}.step"
+        exported = relocated_folder / f"links-{os.getpid()}.step"
+        report["fixture_path_lengths"].update(export=len(str(exported.resolve())),
+                                             export_stage=len(str(exported.with_name(exported.stem + ".exporting" + exported.suffix).resolve())),
+                                             export_sidecar_stage=len(str(exported.with_suffix(exported.suffix + ".json.saving").resolve())))
         panel.operation("export", path=str(exported))
         check("Assembly STEP export includes each occurrence once", len(Part.read(str(exported)).Solids) == 4)
         check("Original source FCStd bytes are preserved", hashlib.sha256(source_path.with_name("preserved-source-" + source_path.name).read_bytes()).hexdigest() == source_digest)

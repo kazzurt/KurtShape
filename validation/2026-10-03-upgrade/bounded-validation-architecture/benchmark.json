@@ -1,0 +1,26 @@
+{
+  "passed": false,
+  "checks": [],
+  "method": "NotRun: Q00b benchmark infrastructure is parked and absent from main",
+  "engine": {},
+  "base_commit": "7a20a63d2642100da668184ea0d72b635c7c4640",
+  "worktree_diff_sha256": "74773fd70c1b9f754f018362fa78f137bd117131c59efe7c34e55fb4119a1082",
+  "timings": {
+    "median": null,
+    "p95": null,
+    "worst": null,
+    "samples": []
+  },
+  "limits": "Q24a modifies only validation fixture paths and contributor documentation. Five-repeat plate/studio baselines and local CI are unavailable until Q00b is resumed and lands. No application performance improvement or CI execution is claimed.",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_processors": 32,
+    "platform": "Windows-10-10.0.26200-SP0"
+  },
+  "input_sha256": "aff16d6a57a0fb3544fc4d657265e0b938345d16e0e03a24ce85399418dbe7d9"
+}
