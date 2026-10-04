@@ -1,0 +1,728 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "interface",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 41,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "8a20631f27dab4f1e94abd300c8ff005b1a4e2f68130c40bc5768b81c525bb22",
+      "screenshot_count": 4,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "ui-refinement",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 106,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "28d80f291914992634ba092444d9d13a3380870413f4da3311ccbb8ee9c401d7",
+      "screenshot_count": 8,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "refinement-preview",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 20,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "66bff8c1808c66c50bbe30083bf0d82856497b3b3add904cc50c3187280165d2",
+      "screenshot_count": 0,
+      "warning_classes": [
+        "existing-swig-deprecation",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "sketch-behavior",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 28,
+      "stages": 1,
+      "cases": null,
+      "report_sha256": "ca7214aec25db30344dcb315a3383372cde45eb2f8927bf26d66607405440ecf",
+      "screenshot_count": 7,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "review-copy",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 25,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "e831b8e16390652ee1b4ea69f87a8b059702c5f9de3c504eedeacbedda67da0b",
+      "screenshot_count": 0,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "review-lifecycle",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": null,
+      "stages": 22,
+      "cases": null,
+      "report_sha256": "b13c3af1ad479aa0bd05b23f3f1fabdfeae6c96fbd865ff936b27078853de5aa",
+      "screenshot_count": 0,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "review-recovery",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": null,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "bcfec90dfdf80f4f6bdd5d1862f31fcb9b69f3632a5e8962f3b207d82b3a2daf",
+      "screenshot_count": 0,
+      "warning_classes": [
+        "intentional-recovery-abnormal-exit",
+        "startup-thumbnail-read"
+      ],
+      "independent_proof": {
+        "checks": 10,
+        "flags": {
+          "producer_report_verified": true,
+          "checkpoint_pair_verified": true,
+          "reopened_checkpoint": true,
+          "recovered_draft": true,
+          "recovered_unsaved_native_semantics": true,
+          "explicit_cancel_restored_accepted_sketch": true,
+          "cancel_preserved_unsaved_geometry": true,
+          "cancel_kept_unsaved_native_semantics": true,
+          "original_file_unchanged": true,
+          "saved_project_reopened": true,
+          "producer_files_unchanged": true
+        },
+        "draft": [
+          1,
+          0
+        ],
+        "volumes_mm3": [
+          1799.9999999999998,
+          1199.9999999999998
+        ],
+        "input_sha256": "694304071a2434b199cf629739b8632d6019f805dc14328820d215bec157683f",
+        "native_autosave_reopened": false
+      }
+    },
+    {
+      "name": "review-interaction",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 11,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "d77ca5e6a1d7803ec15a5b92773347feb91fcb6b5a555d4d11feb9706a3e5cae",
+      "screenshot_count": 1,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "review-startup",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 3,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "112fa82a727510f8f660af593d629815aea8e310cd5171b42136854b6564f20e",
+      "screenshot_count": 0,
+      "warning_classes": [
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "review-baseline",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 3,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "0ae7c1d78ac07e732bcdfe976b9af54ddb63d642cd8be2acdbe91c9d5c7b7605",
+      "screenshot_count": 0,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "step-import",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 19,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "0672a92f56b8a1e19e6d2d0b9c91496df11cfbbfd785925fb757c2307bcaeb27",
+      "screenshot_count": 5,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "assembly",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 58,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "728e0858133c84a3ff6579cc1d1e9aa5dbd422dd28ba64f5803cbf8397f4828e",
+      "screenshot_count": 11,
+      "warning_classes": [
+        "startup-thumbnail-read"
+      ],
+      "independent_proof": {
+        "checks": [
+          "Native reopen restores valid solved assembly",
+          "Four embedded occurrences and three joints survive",
+          "All App::Link sources belong to the reopened document",
+          "Recorded original source path is absent"
+        ],
+        "fingerprints": [
+          {
+            "sha256": "dce7f5733bc4ad8e15a2ff8b7799e53cd5e963ce6d131681688cf8025a320f5b",
+            "characters": 234,
+            "readback_equal": true
+          },
+          {
+            "sha256": "951421ba9dedc1fd597cf94a451a114e9c38cb19ef0b3d5a8d1d0d516f2708ca",
+            "characters": 244,
+            "readback_equal": true
+          }
+        ],
+        "producer_files_unchanged": true,
+        "input_sha256": "920fb2616443b742cba9ddfb7c9e3c63ffa2c2c8b13b827c331e154bf51810d9"
+      }
+    },
+    {
+      "name": "extrusion-preview",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 20,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "98f6b85e11e7a9bb9cd26c13957c89248018de41d233cc0742f12b99679e01f8",
+      "screenshot_count": 0,
+      "warning_classes": [
+        "existing-swig-deprecation",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "assembly-step",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 35,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "f9e9fecdcc0dd444dff816a7665168c73fc12f48bf0f311839437995819eb048",
+      "screenshot_count": 3,
+      "warning_classes": [
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "carrier-spike",
+      "passed": false,
+      "accepted": true,
+      "known_baseline_failure": true,
+      "checks": 17,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "eac0ecd46ae5404e79509236d713085359eb117ceadb5b138346c1a7618fb84c",
+      "screenshot_count": 2,
+      "warning_classes": [
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "part-studio",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 99,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "ede836ec9baf95b7bc7a04693044de82ab67695eeb5c4797ce3bb1c5d46e9151",
+      "screenshot_count": 33,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "messages",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 34,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "39dd3eda82f446e67180a8e3b96a1f7abd4317d349a1d665f94568f37f3b442f",
+      "screenshot_count": 2,
+      "warning_classes": [
+        "native-diagnostic-review-required",
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "bench-gui",
+      "passed": true,
+      "accepted": true,
+      "known_baseline_failure": false,
+      "checks": 9,
+      "stages": null,
+      "cases": null,
+      "report_sha256": "418bf08469a9571ea0ee733e63ee3508ac6d790828755178d4b34b9b05ed6093",
+      "screenshot_count": 1,
+      "warning_classes": [
+        "startup-thumbnail-read"
+      ]
+    },
+    {
+      "name": "Actual pixel review",
+      "passed": true,
+      "count": 77,
+      "input_sha256": "274a49b3e0fb6914849f304a4ddf586b236d643fcc7847f8a1e3364fd7ec419c",
+      "images": [
+        {
+          "image": "interface/interface-pass/face-sketch-in-3d.png",
+          "sha256": "516bfe8f3b8a3737515764ae31807adcdfb9a95a39f371ac15dfbdc6d1ab3d6c",
+          "inspected": true
+        },
+        {
+          "image": "interface/interface-pass/kurtshape-1200.png",
+          "sha256": "af2d6122ef421d8a0c098a8496846759616550bc8768cc8d8296cd623f582e05",
+          "inspected": true
+        },
+        {
+          "image": "interface/interface-pass/kurtshape-1600.png",
+          "sha256": "9b2b5aa2af67e0275878b1c6af0efaf0c305f52d00c9fd47f731e2a4867b175b",
+          "inspected": true
+        },
+        {
+          "image": "interface/interface-pass/sketch-in-3d.png",
+          "sha256": "e9098ca85e69893bae5755a922aa2b2b0700e282b3950ca08730f99556fa7d6c",
+          "inspected": true
+        },
+        {
+          "image": "ui-refinement/ui-refinement/extrusion-preview-1200.png",
+          "sha256": "b74ab3e3d15965cbb1e17bb158c9e3009691726942158c5da12bd7cb195d93b1",
+          "inspected": true
+        },
+        {
+          "image": "ui-refinement/ui-refinement/extrusion-preview-1600.png",
+          "sha256": "fe1f0929d043ffcf82bce2add574a5ccb223a869578f7c6221f7ee43a6771d93",
+          "inspected": true
+        },
+        {
+          "image": "ui-refinement/ui-refinement/final-workspace.png",
+          "sha256": "aaa01d3e1e8b447bcb7c11a2fd6ec155e257d351e4b24fe19844aaa0f99f3299",
+          "inspected": true
+        },
+        {
+          "image": "ui-refinement/ui-refinement/native-notification.png",
+          "sha256": "49c1bbc34fe3c36dc34fb546fc23d6db744a09e54f573685f32d034fcd974f74",
+          "inspected": true
+        },
+        {
+          "image": "ui-refinement/ui-refinement/removal-after-cancel-detail.png",
+          "sha256": "013a2aa92d04a00dee2b71a7601b0d4343e418a129fa24d9d5279c636b1bd1b8",
+          "inspected": true
+        },
+        {
+          "image": "ui-refinement/ui-refinement/removal-preview-1600.png",
+          "sha256": "bafa507aaf5cc2c3b9c79e05c0cb62477f45755d7f33c4ad9cdcbfae8a7b0bec",
+          "inspected": true
+        },
+        {
+          "image": "ui-refinement/ui-refinement/removal-preview-detail.png",
+          "sha256": "92c591c3dde14b83ab1f7437117dbef73af5be2f76e8b775fc5792a0ed87888f",
+          "inspected": true
+        },
+        {
+          "image": "ui-refinement/ui-refinement/settings-navigation.png",
+          "sha256": "3eef7ee34eec276b0d987c1c3e8b151fd2992c378e945d773b7710b4924d69b8",
+          "inspected": true
+        },
+        {
+          "image": "sketch-behavior/sketch-behavior/floating-notification.png",
+          "sha256": "914367b572bf94d8283c51b95d13d2d5681ec59f1ce5c79a8052ba881d2b89a5",
+          "inspected": true
+        },
+        {
+          "image": "sketch-behavior/sketch-behavior/floating-single-line-hardened.png",
+          "sha256": "ca0dacdda577923624042751992f523a769c2dff8b0316e0362c396a0eb7b643",
+          "inspected": true
+        },
+        {
+          "image": "sketch-behavior/sketch-behavior/floating-single-line.png",
+          "sha256": "b8d83156cf169e1d47331a92dbe0f0c511a7f1729cd71d5f2e6393b603dc4baf",
+          "inspected": true
+        },
+        {
+          "image": "sketch-behavior/sketch-behavior/hover-plane-support.png",
+          "sha256": "8015b2ef530c3aa5b6dcd6c69724ae9707272e889b9829f07aeaab206fe69335",
+          "inspected": true
+        },
+        {
+          "image": "sketch-behavior/sketch-behavior/hover-sketch-axis.png",
+          "sha256": "8888176a3a3096a1a041afed1da8e75d383edbb8eb7a1b8a048f90d78c40dec0",
+          "inspected": true
+        },
+        {
+          "image": "sketch-behavior/sketch-behavior/plane-sketch.png",
+          "sha256": "b467fc6fae88510beb9611aa52e264c6a545359d22c477d41cf4700d6d80c0c7",
+          "inspected": true
+        },
+        {
+          "image": "sketch-behavior/sketch-behavior/toolbar-line-chain.png",
+          "sha256": "5a44a7718d25c1342d25100ce3bc387b3ea61c0760d1438a50df33b81d280aa1",
+          "inspected": true
+        },
+        {
+          "image": "review-interaction/review-followup/review-gui.png",
+          "sha256": "38050ca2573c8e03b5f4de13ec7299a3be3f5061bcff1b1d1227c9c2eb0a533d",
+          "inspected": true
+        },
+        {
+          "image": "step-import/step-import/imported-hub-1600.png",
+          "sha256": "1995dd35ebe8c121cafdb2dfbb446ac1602a5c2e2812d353179b6c9ff82022c5",
+          "inspected": true
+        },
+        {
+          "image": "step-import/step-import/imported-pipe-1200.png",
+          "sha256": "1e5b3d05f996aa0c3a92cace220682472b407b6804811a1510a92b65f461b9ac",
+          "inspected": true
+        },
+        {
+          "image": "step-import/step-import/imported-pipe-1600.png",
+          "sha256": "9fd04225d0e21cc97c0e7c433658f36b65749b016a70ae8f1ce85f8b6e89757a",
+          "inspected": true
+        },
+        {
+          "image": "step-import/step-import/open-step-dialog.png",
+          "sha256": "7c2d62d97ffddc3b8d79946de8e379d5d8a2dd6cf61bd4b0863ef6dada3dfef6",
+          "inspected": true
+        },
+        {
+          "image": "step-import/step-import/save-imported-project-dialog.png",
+          "sha256": "4e0b440007e4c7f76b9d79ca996b99b399a18bdee10ceec4420ca516735b2536",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/assembly-body-choice-dialog.png",
+          "sha256": "8f0995551ab20fe8d232a82c3c3490c9583f907096b174aab446bd98f92d30aa",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/assembly-insert-file-dialog.png",
+          "sha256": "9171573d616a5e910a2b13593a7664c11cdf7733b0103e64bfad0ad8067c42f8",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/assembly-save-dialog.png",
+          "sha256": "c598e8506764bec6f0a399b18a0a27107f2ab3f2898d9dc089f0b7c3bc38b68f",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/create-assembly-dialog.png",
+          "sha256": "b42fe32e1a94b455a19a1badbcd97d9a6ae47f3a87e94049388d56e91c96786a",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/fixed-joint-dialog.png",
+          "sha256": "4ce96ca1bdc502a65eed3f073ed992d24742b7afcce76470e7083667217d315a",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/native-assembly-1200.png",
+          "sha256": "7aa015aa3a54e522b4f49fcb51c83696a69d264ddbdf93f89a19c4873e636ff9",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/native-assembly-1600.png",
+          "sha256": "a16d73e01beaed02ab35014dd57dbd2abc19e3e18e0905af62e2e68e4d34f438",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/reopened-native-assembly.png",
+          "sha256": "42339bcc3958b5da1f592e4397542d1082eff9d948a8ec25aea01faf1c9a8acc",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/revolute-joint-dialog.png",
+          "sha256": "5872e947e85b70d5dc4fe62e529b03cde862a2e653ee3c97da5f8e456bac63f7",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/revolute-move-dialog.png",
+          "sha256": "0cc60bba8122e9a7383dd943a1fa28b7db116cb1018e4e0104828ee87fe73383",
+          "inspected": true
+        },
+        {
+          "image": "assembly/assembly-workflow/slider-move-dialog.png",
+          "sha256": "2d8da2fce2584a177780621b747ab4f88bfc88aa05023a051c004880051a590d",
+          "inspected": true
+        },
+        {
+          "image": "assembly-step/assembly-step-import/direct-step-assembly.png",
+          "sha256": "3e604d858cb4d7a36c67946ca7495607506c742fa07d4fd8ca8a185e5ee3f259",
+          "inspected": true
+        },
+        {
+          "image": "assembly-step/assembly-step-import/insert-step-file-dialog.png",
+          "sha256": "9a95f81e7ebf75c30c0c04c79728a72a5559d206d8743496937f7b380a3734b5",
+          "inspected": true
+        },
+        {
+          "image": "assembly-step/assembly-step-import/insert-step-solid-picker.png",
+          "sha256": "762e7967055d69b20da19f178468850512dbbdc9fd5a3f0577b6d58b1fe6891f",
+          "inspected": true
+        },
+        {
+          "image": "carrier-spike/u2-part-model-spike/two-parts-extrude-preview.png",
+          "sha256": "705e3b96fb9e2569151666588cda3af4aa1a2e3d7b14e09bad5bcaa50eb9f9a2",
+          "inspected": true
+        },
+        {
+          "image": "carrier-spike/u2-part-model-spike/two-parts-native-parameters.png",
+          "sha256": "512555c8b6e39be8e9d17be5eef3aa24caa0c1d24c3c0dcbcd5070285989cd80",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/boolean_parts-dialog-controls.png",
+          "sha256": "29e8643a85786564d063f6f565fedd83e98dbb3fe112de8b3c99cfe89805770d",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/boolean_parts-dialog.png",
+          "sha256": "7bb7279768b99ea2498776b9c5bfca028b309cb8d8d4fb3349648face8eb3d30",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/chamfer-dialog-controls.png",
+          "sha256": "0493096d5380f7a6d569e9dfaea870a04f6d57156f3a0c24be2090fbcbb30712",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/chamfer-dialog.png",
+          "sha256": "7eaa532e535b49fcfcbfdf92814fcca79255a2ae2b7c1a6cda87b52b2caeb501",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/circular_pattern_parts-dialog-controls.png",
+          "sha256": "0b2829639cf0b7e7fc9e74e5f72877e2ef424573eec25fe9b66038c0cbab86ab",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/circular_pattern_parts-dialog.png",
+          "sha256": "80cbef4f9292f84c6bdcbc59bd046af4b4f54f1d277391dbaf5fa69e6262d224",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/explicit-merge-scope-preview.png",
+          "sha256": "b3d3c506783a399b0a4ad0209bb059efa5d6bb441c2c9028e8373cc994b46233",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/fillet-dialog-controls.png",
+          "sha256": "0ee5bd74de8ecdba44ae078fde133bec70690221c760b466af84cf2fa9770158",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/fillet-dialog.png",
+          "sha256": "d4a73eb951e9258f5b3dcef93cacab4b6e9e1b6a2f80fa67090409ca17d2211c",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/healthy-reference-health.png",
+          "sha256": "2b07d353581bc528a9f19b937427778a82e84504dd74d79115b049443e7175dd",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/linear_pattern_parts-dialog-controls.png",
+          "sha256": "8be44477d665f20a2dd73bd6c9e3298aecbd866d07f587523fc3585c5579a98c",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/linear_pattern_parts-dialog.png",
+          "sha256": "5076766b00878e2ca5ecee58a69fb8c62e0f8cbfd243962e5b955292e81e72d0",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/loft-dialog-controls.png",
+          "sha256": "768bbf736ccd531d013116c56ddac53ab288c58d7c6cc1bf27a01cbeae977f50",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/loft-dialog.png",
+          "sha256": "995bbb16b3bdccbcb6deb4f0272bb6544e33b579ec044bb47cda3444089633ec",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/mirror_parts-dialog-controls.png",
+          "sha256": "d7a1ff0b5f02330a204822e7626c725651c1e8a9357954b69a13814c15d6803a",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/mirror_parts-dialog.png",
+          "sha256": "def3c3010767fa8f10c73d99fb7f32f6250281573205e5a3d8e0bf4658e2be6c",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/missing-reference-health.png",
+          "sha256": "012f84f12dd3e46822d2480c8411a0a9a7dcf7d03199863cd015f7bf9cb76272",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/revolve-dialog-controls.png",
+          "sha256": "18c3fcdaeadc31aca8f2df2fe5c9ed0877a053c018be89c33b553a5b59f6c7e6",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/revolve-dialog.png",
+          "sha256": "ee07d5c8bb9a934e9ae963801f41e241ae5fd46828e49092f148a0a4a2da5bb5",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/rollback-selected-with-held-feature.png",
+          "sha256": "3be03dc2a5b804ada6bafb46c3bba92f3707e64a3ad1e38c7cdaa57cb81826d1",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/shell-dialog-controls.png",
+          "sha256": "7727ef8c4e24a9c86eeaf6277056f3bd0d80471f2e4c27fc1a148980ac2113c0",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/shell-dialog.png",
+          "sha256": "e10b7370c5290bdf0347a1131e89ead84dcf2e27f117de1b6a32d0cf6439dc89",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/split_part-dialog-controls.png",
+          "sha256": "b2807729a1d790af99fb58a1f22411500f65ac68f8c92cf9ed2c10fb6d54e211",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/split_part-dialog.png",
+          "sha256": "895d9a04e2a3f24fcb2d7ea56ade709b4c142f06cfa0deba0e794303f27917c2",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/sweep-dialog-controls.png",
+          "sha256": "9edf2c287fa4e7c6ec8ad5664c1ea93b98d374dca6d01fc29721df1ec5ac1b8d",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/sweep-dialog.png",
+          "sha256": "395faf805e5b52a82a6ca76bcc325af368ee9355f4261fc33f59110fd0dbbd17",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/sweep-selected-curve-dialog-controls.png",
+          "sha256": "853b08583f2a71a14b004b471d67bd45ee060a678c898fbed26fd38e1641ccf9",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/sweep-selected-curve-dialog.png",
+          "sha256": "f4cea9bfe096b0ef35a1ec20aca2573170d77051f5ba5f4b1345b8fe016d1099",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/transform_part-dialog-controls.png",
+          "sha256": "a64802ba48e56cf6bf37f182c595ee238894f758c90f17c1c87ea91cedd4bacb",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/transform_part-dialog.png",
+          "sha256": "13bce44262468fb2272f76c71af6ef613990ed8e90fa4700fd39a7273abaa4b5",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/u2-parts-final.png",
+          "sha256": "2afb9d6582e3094d77fd8bae38d58a00299de4e7f7c705a4f0dbbd15a5fb520a",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/unified-through-all-remove-preview.png",
+          "sha256": "3b7f266737365a4d77dc7d55febca9489fe4f81b851d3d69ca96f09d71e6e1d9",
+          "inspected": true
+        },
+        {
+          "image": "part-studio/u2-part-model/up-to-face-preview.png",
+          "sha256": "7900bdeaef055dec7aa2284f8ef6dad08b04823ca4297ecf3f836f839f12f29b",
+          "inspected": true
+        },
+        {
+          "image": "messages/messages-behavior/messages-copy-controls.png",
+          "sha256": "178e7f62dee70a0eb8779384c7232c54886be7c6d63ac7e4f89f6a3ace3cad21",
+          "inspected": true
+        },
+        {
+          "image": "messages/messages-behavior/messages-window.png",
+          "sha256": "88e5e18af18c3ee96bb69e74d06135bc76e3da193d1e0b0b2c7aeb242a33c2dc",
+          "inspected": true
+        },
+        {
+          "image": "bench-gui/perf/bench-gui-working/plate-viewport.png",
+          "sha256": "39ed6c9916d56f39fedf8a598fc641c495ad773af51c5be59f5230a7bc015b79",
+          "inspected": true
+        }
+      ]
+    }
+  ],
+  "method": "Fresh18-recipe GUI acceptance with exact carrier baseline exception and77 actual image inspections",
+  "engine": {},
+  "base_commit": "77af50ca9e6ec4a0f8717db3598dd2a6cfd2bb14",
+  "worktree_diff_sha256": "f6847bd5f3fb718263f4b6f64059fa891938edffef94c4aac8cb4361ea7d05cc",
+  "timings": {
+    "median": null,
+    "p95": null,
+    "worst": null,
+    "samples": []
+  },
+  "limits": "Raw GUI passed=false:17 recipes pass and exact historical carrier17 fails. Acceptance policy and visual review pass independently. Native autosave recovery stays unverified without an archive; existing warnings/clipping retained privately. No hosted rendering or hands-on comfort claim.",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "input_sha256": "5a6afb196658ef42848f292b357000d98e3d451e14984a431ac4371ac483e7fa"
+}

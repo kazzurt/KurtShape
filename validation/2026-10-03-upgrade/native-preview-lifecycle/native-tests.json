@@ -1,0 +1,734 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "Full isolated suites",
+      "passed": true,
+      "counts": {
+        "tests": 199,
+        "passed": 199,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "workflow_checks": 405
+    },
+    {
+      "name": "test_lru_eight_real_results_units_and_eviction_preserve_source",
+      "passed": true,
+      "input_sha256": "db7f1b047a2fae874428d3fc3ca9c72b9740238ce3a5b11b1365a7cacfaa4f44",
+      "allocation_sha256": "f43603c98e4f91b522a7290c8ad3129f24128fd71938cbc723d7f06070406e65",
+      "checks": {
+        "real_lru_eight": true,
+        "equivalent_units_hit": true,
+        "wrong_dimension_rejected": true,
+        "real_eviction_recomputed": true,
+        "detached_solids_survive_close": true,
+        "strict_source_and_original_bytes_preserved": true,
+        "cleanup_environment_restored": true,
+        "cleanup_fixture_removed": true,
+        "cleanup_owned_documents_closed": true,
+        "cleanup_fixture_receipt_unchanged": true
+      },
+      "traces": [
+        {
+          "label": "initial_empty_cache",
+          "evaluations": 0,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": null,
+          "cached_lengths": []
+        },
+        {
+          "label": "first_snapshot_generation",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            0.5
+          ]
+        },
+        {
+          "label": "fill_1",
+          "evaluations": 2,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            0.5,
+            1.0
+          ]
+        },
+        {
+          "label": "fill_2",
+          "evaluations": 3,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            0.5,
+            1.0,
+            2.0
+          ]
+        },
+        {
+          "label": "fill_3",
+          "evaluations": 4,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            0.5,
+            1.0,
+            2.0,
+            3.0
+          ]
+        },
+        {
+          "label": "fill_4",
+          "evaluations": 5,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            0.5,
+            1.0,
+            2.0,
+            3.0,
+            4.0
+          ]
+        },
+        {
+          "label": "fill_5",
+          "evaluations": 6,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            0.5,
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            5.0
+          ]
+        },
+        {
+          "label": "fill_6",
+          "evaluations": 7,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            0.5,
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            5.0,
+            6.0
+          ]
+        },
+        {
+          "label": "fill_7",
+          "evaluations": 8,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            0.5,
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            5.0,
+            6.0,
+            7.0
+          ]
+        },
+        {
+          "label": "fill_8",
+          "evaluations": 9,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            5.0,
+            6.0,
+            7.0,
+            8.0
+          ]
+        },
+        {
+          "label": "unit_5 mm",
+          "evaluations": 9,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            6.0,
+            7.0,
+            8.0,
+            5.0
+          ]
+        },
+        {
+          "label": "unit_0.5 cm",
+          "evaluations": 9,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            6.0,
+            7.0,
+            8.0,
+            5.0
+          ]
+        },
+        {
+          "label": "unit_5.0",
+          "evaluations": 9,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            6.0,
+            7.0,
+            8.0,
+            5.0
+          ]
+        },
+        {
+          "label": "wrong_dimension_rejected",
+          "evaluations": 9,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            6.0,
+            7.0,
+            8.0,
+            5.0
+          ]
+        },
+        {
+          "label": "least_recent_two_evicted",
+          "evaluations": 10,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            3.0,
+            4.0,
+            6.0,
+            7.0,
+            8.0,
+            5.0,
+            1.0,
+            9.0
+          ]
+        },
+        {
+          "label": "evicted_two_recomputed",
+          "evaluations": 11,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            4.0,
+            6.0,
+            7.0,
+            8.0,
+            5.0,
+            9.0,
+            1.0,
+            2.0
+          ]
+        },
+        {
+          "label": "detached_results_survive_close",
+          "evaluations": 11,
+          "closed": true,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": []
+        }
+      ]
+    },
+    {
+      "name": "test_partial_native_model_failure_discards_clone_and_allows_retry",
+      "passed": true,
+      "input_sha256": "0bdc28723df14ed4d2faefaad8f983af79a2d8d8bce89f916d793df9b88f0350",
+      "allocation_sha256": "5a48104e89427b7a1b94c977c4022c582b25d2aac51f50f8a43c38c207720f78",
+      "checks": {
+        "real_clone_pad_created_before_failure": true,
+        "failure_not_cached": true,
+        "owned_clone_and_transaction_released": true,
+        "native_retry_succeeds": true,
+        "strict_source_and_original_bytes_preserved": true,
+        "cleanup_environment_restored": true,
+        "cleanup_fixture_removed": true,
+        "cleanup_owned_documents_closed": true,
+        "cleanup_fixture_receipt_unchanged": true
+      },
+      "traces": [
+        {
+          "label": "before_model_failure",
+          "evaluations": 0,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 73,
+          "captured_generation": null,
+          "cached_lengths": []
+        },
+        {
+          "label": "partial_model_discarded",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 73,
+          "captured_generation": 73,
+          "cached_lengths": []
+        },
+        {
+          "label": "native_retry_succeeds",
+          "evaluations": 2,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 73,
+          "captured_generation": 73,
+          "cached_lengths": [
+            2.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "test_partial_native_open_failure_preserves_unrelated_document",
+      "passed": true,
+      "input_sha256": "b8293f050473ecd2a9f6c95b084fed216fbeea53ba23c199b920725a12ec6796",
+      "allocation_sha256": "6170c97e07889cda07976efcb555ae3a30079a6fcc2d63f9070fe3568bb87b92",
+      "checks": {
+        "real_native_open_precedes_failure": true,
+        "only_owned_clone_closed": true,
+        "unrelated_native_document_preserved": true,
+        "no_failed_native_model_evaluation": true,
+        "native_retry_succeeds": true,
+        "strict_source_and_original_bytes_preserved": true,
+        "cleanup_environment_restored": true,
+        "cleanup_fixture_removed": true,
+        "cleanup_owned_documents_closed": true,
+        "cleanup_fixture_receipt_unchanged": true
+      },
+      "traces": [
+        {
+          "label": "before_partial_open",
+          "evaluations": 0,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 73,
+          "captured_generation": null,
+          "cached_lengths": []
+        },
+        {
+          "label": "partial_open_discarded_only_owned_clone",
+          "evaluations": 0,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 73,
+          "captured_generation": 73,
+          "cached_lengths": []
+        },
+        {
+          "label": "open_retry_preserves_sentinel",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 73,
+          "captured_generation": 73,
+          "cached_lengths": [
+            2.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "test_native_dimension_and_placement_changes_reject_stale_preview",
+      "passed": true,
+      "input_sha256": "399061d4e87b303b62ff8ba0489c2672c02d64bfebefa5ecbbae019431ef177e",
+      "allocation_sha256": "44ee2854230866e73bd77e37729dbd1cce681dd07db2f9b8c9a2a0a12e3a8ec0",
+      "checks": {
+        "real_dimension_change_rejects_stale": true,
+        "real_body_placement_change_rejects_stale": true,
+        "stale_rejection_opens_no_clone": true,
+        "stale_rejection_preserves_cache_and_snapshot": true,
+        "fresh_tasks_use_changed_native_geometry": true,
+        "original_saved_bytes_preserved": true,
+        "cleanup_environment_restored": true,
+        "cleanup_fixture_removed": true,
+        "cleanup_owned_documents_closed": true,
+        "cleanup_fixture_receipt_unchanged": true
+      },
+      "traces": [
+        {
+          "label": "dimension_before_change",
+          "evaluations": 0,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 73,
+          "captured_generation": null,
+          "cached_lengths": []
+        },
+        {
+          "label": "dimension_initial_preview",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 73,
+          "captured_generation": 73,
+          "cached_lengths": [
+            2.0
+          ]
+        },
+        {
+          "label": "dimension_native_change_reconciled",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 85,
+          "captured_generation": 73,
+          "cached_lengths": [
+            2.0
+          ]
+        },
+        {
+          "label": "dimension_stale_task_rejected",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 85,
+          "captured_generation": 73,
+          "cached_lengths": [
+            2.0
+          ]
+        },
+        {
+          "label": "dimension_fresh_task_uses_changed_geometry",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 85,
+          "captured_generation": 85,
+          "cached_lengths": [
+            2.0
+          ]
+        },
+        {
+          "label": "placement_before_change",
+          "evaluations": 0,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 85,
+          "captured_generation": null,
+          "cached_lengths": []
+        },
+        {
+          "label": "placement_initial_preview",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 85,
+          "captured_generation": 85,
+          "cached_lengths": [
+            2.0
+          ]
+        },
+        {
+          "label": "placement_native_change_reconciled",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 90,
+          "captured_generation": 85,
+          "cached_lengths": [
+            2.0
+          ]
+        },
+        {
+          "label": "placement_stale_task_rejected",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 90,
+          "captured_generation": 85,
+          "cached_lengths": [
+            2.0
+          ]
+        },
+        {
+          "label": "placement_fresh_task_uses_changed_geometry",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 90,
+          "captured_generation": 90,
+          "cached_lengths": [
+            2.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "test_closed_source_name_reuse_cannot_reuse_cached_preview",
+      "passed": true,
+      "input_sha256": "7040e734d4df3a88bc2d4c04c421512c6ef552206ccd9013e650ce5f3acc7b13",
+      "allocation_sha256": "412ea7046da9bc2353e5eede6962b4b98fe55ee6fe38d9bb1eb907cdb2dbce47",
+      "checks": {
+        "exact_native_name_reused_by_distinct_document": true,
+        "old_task_rejected_before_clone": true,
+        "closed_task_rejected": true,
+        "old_snapshot_and_cache_disposed": true,
+        "replacement_geometry_and_state_preserved": true,
+        "original_saved_bytes_preserved": true,
+        "cleanup_environment_restored": true,
+        "cleanup_fixture_removed": true,
+        "cleanup_owned_documents_closed": true,
+        "cleanup_fixture_receipt_unchanged": true
+      },
+      "traces": [
+        {
+          "label": "original_source",
+          "evaluations": 0,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 73,
+          "captured_generation": null,
+          "cached_lengths": []
+        },
+        {
+          "label": "original_cached_preview",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 73,
+          "captured_generation": 73,
+          "cached_lengths": [
+            2.0
+          ]
+        },
+        {
+          "label": "distinct_replacement_with_same_native_name",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": false,
+          "observer_generation": null,
+          "captured_generation": 73,
+          "cached_lengths": [
+            2.0
+          ]
+        },
+        {
+          "label": "old_task_rejects_native_name_reuse",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": false,
+          "observer_generation": null,
+          "captured_generation": 73,
+          "cached_lengths": [
+            2.0
+          ]
+        },
+        {
+          "label": "closed_task_rejects_without_touching_replacement",
+          "evaluations": 1,
+          "closed": true,
+          "source_open": false,
+          "observer_generation": null,
+          "captured_generation": 73,
+          "cached_lengths": []
+        },
+        {
+          "label": "fresh_task_evaluates_replacement_geometry",
+          "evaluations": 1,
+          "closed": false,
+          "source_open": true,
+          "observer_generation": 40,
+          "captured_generation": 40,
+          "cached_lengths": [
+            3.0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fresh local CI after Full",
+      "passed": true,
+      "checks": [
+        {
+          "name": "runtime layout",
+          "passed": true
+        },
+        {
+          "name": "plate benchmark",
+          "passed": true
+        },
+        {
+          "name": "exact local tree comparison",
+          "passed": true
+        }
+      ],
+      "holes": 20,
+      "repeat": 3,
+      "metric_count": 39
+    },
+    {
+      "name": "Retained failed consolidated attempt1",
+      "passed": false,
+      "input_sha256": "115145b448ec8d46f262f6667d9112a70acd3c267d65d879358c08ca21054507",
+      "source_unchanged": true,
+      "native_full_passed": true,
+      "native_counts": {
+        "tests": 199,
+        "passed": 199,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      }
+    }
+  ],
+  "method": "Full native suites and five real disposable-preview lifecycle proofs",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "77af50ca9e6ec4a0f8717db3598dd2a6cfd2bb14",
+  "worktree_diff_sha256": "f6847bd5f3fb718263f4b6f64059fa891938edffef94c4aac8cb4361ea7d05cc",
+  "timings": {
+    "median": null,
+    "p95": null,
+    "worst": null,
+    "samples": []
+  },
+  "limits": "Contract2.0 unchanged; headless proof is not GUI Modified or latency acceptance. Parked Q03/Q09/Q24c remain parked; M1 incomplete; real parametric conversions0/2.",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "counts": {
+    "tests": 199,
+    "passed": 199,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "suites": [
+    {
+      "name": "native",
+      "passed": true,
+      "counts": {
+        "tests": 164,
+        "passed": 164,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 111.39851849991828,
+      "source_unchanged": true
+    },
+    {
+      "name": "bridge",
+      "passed": true,
+      "counts": {
+        "tests": 7,
+        "passed": 7,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 4.221792000113055,
+      "source_unchanged": true
+    },
+    {
+      "name": "shortcuts",
+      "passed": true,
+      "counts": {
+        "tests": 22,
+        "passed": 22,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 0.6441377999726683,
+      "source_unchanged": true
+    },
+    {
+      "name": "workflows",
+      "passed": true,
+      "counts": {
+        "tests": 6,
+        "passed": 6,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 4.395892600063235,
+      "source_unchanged": true
+    }
+  ],
+  "input_sha256": "8fe2ad75aa0050442530d66671002727383f5f5deb9a5a1d146320c990ca7060"
+}
