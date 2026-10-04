@@ -1,0 +1,1745 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "repeat": 5,
+      "geometry_checks": [
+        "Native fixture geometry and expected feature/part/query counts verified",
+        "edits metrics measured through the current native APIs",
+        "inspect metrics measured through the current native APIs",
+        "checkpoint metrics measured through the current native APIs",
+        "preview metrics measured through the current native APIs",
+        "open metrics measured through the current native APIs"
+      ],
+      "name": "plate five-repeat native baseline",
+      "budgets": {
+        "comparisons": [
+          {
+            "current_ms": 3519.8649000376463,
+            "samples": 5,
+            "regression_limit_ms": 5327.725039999932,
+            "above_comparison_limit": false,
+            "name": "tip_edit.total_ms",
+            "baseline_ms": 4435.604199999943,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 368.4163000434637,
+            "samples": 5,
+            "regression_limit_ms": 606.6844401136041,
+            "above_comparison_limit": false,
+            "name": "tip_edit.native_recompute_ms",
+            "baseline_ms": 501.40370009467006,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 3155.7704000733793,
+            "samples": 5,
+            "regression_limit_ms": 4702.484479751438,
+            "above_comparison_limit": false,
+            "name": "tip_edit.overhead_ms",
+            "baseline_ms": 3914.570399792865,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 21.085100015625358,
+            "samples": 5,
+            "regression_limit_ms": 38.56316005811095,
+            "above_comparison_limit": false,
+            "name": "tip_edit.intent_signature_ms",
+            "baseline_ms": 27.969300048425794,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1594.5579998660833,
+            "samples": 5,
+            "regression_limit_ms": 2212.8208402730525,
+            "above_comparison_limit": false,
+            "name": "tip_edit.inspection_ms",
+            "baseline_ms": 1839.8507002275437,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 0.0,
+            "samples": 5,
+            "regression_limit_ms": 5.0,
+            "above_comparison_limit": false,
+            "name": "tip_edit.selector_evaluation_ms",
+            "baseline_ms": 0.0,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 0.0073998235166072845,
+            "samples": 5,
+            "regression_limit_ms": 5.01775985583663,
+            "above_comparison_limit": false,
+            "name": "tip_edit.auto_scope_sync_ms",
+            "baseline_ms": 0.014799879863858223,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 369.84950001351535,
+            "samples": 5,
+            "regression_limit_ms": 610.012640170753,
+            "above_comparison_limit": false,
+            "name": "tip_edit.managed_rebuild_ms",
+            "baseline_ms": 504.17720014229417,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 9674.017100129277,
+            "samples": 5,
+            "regression_limit_ms": 13887.099199853837,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.total_ms",
+            "baseline_ms": 11568.415999878198,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 6513.104399899021,
+            "samples": 5,
+            "regression_limit_ms": 9492.425839994103,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.native_recompute_ms",
+            "baseline_ms": 7906.188199995086,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 3147.7173999883235,
+            "samples": 5,
+            "regression_limit_ms": 4696.494559682906,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.overhead_ms",
+            "baseline_ms": 3909.5787997357547,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 21.095999982208014,
+            "samples": 5,
+            "regression_limit_ms": 31.196959987282753,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.intent_signature_ms",
+            "baseline_ms": 21.830799989402294,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1576.8718000035733,
+            "samples": 5,
+            "regression_limit_ms": 2457.907880116254,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.inspection_ms",
+            "baseline_ms": 2044.0899000968784,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 0.0,
+            "samples": 5,
+            "regression_limit_ms": 5.0,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.selector_evaluation_ms",
+            "baseline_ms": 0.0,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 0.007200054824352264,
+            "samples": 5,
+            "regression_limit_ms": 5.011399947106838,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.auto_scope_sync_ms",
+            "baseline_ms": 0.009499955922365189,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 6514.441599836573,
+            "samples": 5,
+            "regression_limit_ms": 9494.405479840934,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.managed_rebuild_ms",
+            "baseline_ms": 7907.837899867445,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 3247.0130999572575,
+            "samples": 5,
+            "regression_limit_ms": 4166.361079849303,
+            "above_comparison_limit": false,
+            "name": "add_sketch.total_ms",
+            "baseline_ms": 3467.800899874419,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 162.3385997954756,
+            "samples": 5,
+            "regression_limit_ms": 204.94328003376722,
+            "above_comparison_limit": false,
+            "name": "add_sketch.native_recompute_ms",
+            "baseline_ms": 166.61940002813935,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 3084.674500161782,
+            "samples": 5,
+            "regression_limit_ms": 3969.569839928299,
+            "above_comparison_limit": false,
+            "name": "add_sketch.overhead_ms",
+            "baseline_ms": 3303.8081999402493,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 20.4950999468565,
+            "samples": 5,
+            "regression_limit_ms": 30.428600143641233,
+            "above_comparison_limit": false,
+            "name": "add_sketch.intent_signature_ms",
+            "baseline_ms": 21.190500119701028,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1536.2054000142962,
+            "samples": 5,
+            "regression_limit_ms": 2026.0196001455188,
+            "above_comparison_limit": false,
+            "name": "add_sketch.inspection_ms",
+            "baseline_ms": 1684.1830001212656,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 0.0,
+            "samples": 5,
+            "regression_limit_ms": 5.0,
+            "above_comparison_limit": false,
+            "name": "add_sketch.selector_evaluation_ms",
+            "baseline_ms": 0.0,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 0.013899989426136017,
+            "samples": 5,
+            "regression_limit_ms": 5.017880275845528,
+            "above_comparison_limit": false,
+            "name": "add_sketch.auto_scope_sync_ms",
+            "baseline_ms": 0.01490022987127304,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 165.27320025488734,
+            "samples": 5,
+            "regression_limit_ms": 208.584919963032,
+            "above_comparison_limit": false,
+            "name": "add_sketch.managed_rebuild_ms",
+            "baseline_ms": 169.65409996919334,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 7073.431099997833,
+            "samples": 5,
+            "regression_limit_ms": 9408.266599960625,
+            "above_comparison_limit": false,
+            "name": "add_pocket.total_ms",
+            "baseline_ms": 7836.055499967188,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1015.1738000568002,
+            "samples": 5,
+            "regression_limit_ms": 1478.543839994818,
+            "above_comparison_limit": false,
+            "name": "add_pocket.native_recompute_ms",
+            "baseline_ms": 1227.9531999956816,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 6073.932900093496,
+            "samples": 5,
+            "regression_limit_ms": 7998.947360198945,
+            "above_comparison_limit": false,
+            "name": "add_pocket.overhead_ms",
+            "baseline_ms": 6661.622800165787,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 20.831899950280786,
+            "samples": 5,
+            "regression_limit_ms": 32.41520004346967,
+            "above_comparison_limit": false,
+            "name": "add_pocket.intent_signature_ms",
+            "baseline_ms": 22.846000036224723,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1597.8522999212146,
+            "samples": 5,
+            "regression_limit_ms": 2064.7386800684035,
+            "above_comparison_limit": false,
+            "name": "add_pocket.inspection_ms",
+            "baseline_ms": 1716.448900057003,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 0.0,
+            "samples": 5,
+            "regression_limit_ms": 5.0,
+            "above_comparison_limit": false,
+            "name": "add_pocket.selector_evaluation_ms",
+            "baseline_ms": 0.0,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 0.019799917936325073,
+            "samples": 5,
+            "regression_limit_ms": 5.032520107924938,
+            "above_comparison_limit": false,
+            "name": "add_pocket.auto_scope_sync_ms",
+            "baseline_ms": 0.0271000899374485,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1019.7825997602195,
+            "samples": 5,
+            "regression_limit_ms": 1484.1671599261463,
+            "above_comparison_limit": false,
+            "name": "add_pocket.managed_rebuild_ms",
+            "baseline_ms": 1232.6392999384552,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 23.391300113871694,
+            "samples": 5,
+            "regression_limit_ms": 33.011000249534845,
+            "above_comparison_limit": false,
+            "name": "inspect_warm_ms",
+            "baseline_ms": 23.342500207945704,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 3135.515000205487,
+            "samples": 5,
+            "regression_limit_ms": 3695.7471200451255,
+            "above_comparison_limit": false,
+            "name": "inspect_after_change_ms",
+            "baseline_ms": 3075.6226000376046,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1567.47190002352,
+            "samples": 5,
+            "regression_limit_ms": 1909.0504400618374,
+            "above_comparison_limit": false,
+            "name": "checkpoint_ms",
+            "baseline_ms": 1586.7087000515312,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 10403.857000172138,
+            "samples": 5,
+            "regression_limit_ms": 13152.917959745973,
+            "above_comparison_limit": false,
+            "name": "preview_first_ms",
+            "baseline_ms": 10956.598299788311,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 8942.989100003615,
+            "samples": 5,
+            "regression_limit_ms": 10943.534360006452,
+            "above_comparison_limit": false,
+            "name": "preview_update_ms",
+            "baseline_ms": 9115.445300005376,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1770.23209980689,
+            "samples": 5,
+            "regression_limit_ms": 2105.1668001525104,
+            "above_comparison_limit": false,
+            "name": "native_open_ms",
+            "baseline_ms": 1750.139000127092,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 12468.021899927408,
+            "samples": 5,
+            "regression_limit_ms": 19430.293640140444,
+            "above_comparison_limit": false,
+            "name": "kurtshape_open_ms",
+            "baseline_ms": 16187.744700117037,
+            "baseline_samples": 5
+          }
+        ],
+        "baseline_report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\plate\\evidence\\perf\\bench-plate-five-repeat.json",
+        "baseline_sha256": "2a3ce46cbc9742e8ffe51606481fef5be7def3632ca2b1bbb66706154f39a57c",
+        "confirmed_regression": null,
+        "confirmation_status": "not run; separate independent five-repeat execution only",
+        "phase0": {
+          "evaluated": true,
+          "metrics": [
+            {
+              "target_open": true,
+              "name": "tip_edit.overhead_ms",
+              "best_ms": 3914.570399792865,
+              "acceptance_status": "no target-and-best suspect on this run",
+              "regression_limit_ms": 4702.484479751438,
+              "samples": 5,
+              "median_ms": 3155.7704000733793,
+              "confirmation_ms": null,
+              "confirmed_regression": null,
+              "suspected_regression": false,
+              "confirmation_samples": 0,
+              "target_ms": 150
+            },
+            {
+              "target_open": true,
+              "name": "inspect_after_change_ms",
+              "best_ms": 3075.6226000376046,
+              "acceptance_status": "no target-and-best suspect on this run",
+              "regression_limit_ms": 3695.7471200451255,
+              "samples": 5,
+              "median_ms": 3135.515000205487,
+              "confirmation_ms": null,
+              "confirmed_regression": null,
+              "suspected_regression": false,
+              "confirmation_samples": 0,
+              "target_ms": 20
+            }
+          ],
+          "reason": "A target AND comparable best1.2+5ms suspect cannot be accepted before independent five-repeat confirmation."
+        },
+        "phase1": {
+          "evaluated": true,
+          "metrics": [
+            {
+              "target_open": true,
+              "name": "tip_edit.overhead_ms",
+              "best_ms": 3914.570399792865,
+              "acceptance_status": "no target-and-best suspect on this run",
+              "regression_limit_ms": 4702.484479751438,
+              "samples": 5,
+              "median_ms": 3155.7704000733793,
+              "confirmation_ms": null,
+              "confirmed_regression": null,
+              "suspected_regression": false,
+              "confirmation_samples": 0,
+              "target_ms": 50
+            },
+            {
+              "target_open": true,
+              "name": "inspect_after_change_ms",
+              "best_ms": 3075.6226000376046,
+              "acceptance_status": "no target-and-best suspect on this run",
+              "regression_limit_ms": 3695.7471200451255,
+              "samples": 5,
+              "median_ms": 3135.515000205487,
+              "confirmation_ms": null,
+              "confirmed_regression": null,
+              "suspected_regression": false,
+              "confirmation_samples": 0,
+              "target_ms": 20
+            },
+            {
+              "target_open": true,
+              "name": "preview_first_ms",
+              "best_ms": 10956.598299788311,
+              "acceptance_status": "no target-and-best suspect on this run",
+              "regression_limit_ms": 13152.917959745973,
+              "samples": 5,
+              "median_ms": 10403.857000172138,
+              "confirmation_ms": null,
+              "confirmed_regression": null,
+              "suspected_regression": false,
+              "confirmation_samples": 0,
+              "target_ms": 50
+            },
+            {
+              "target_open": true,
+              "name": "checkpoint_ms",
+              "best_ms": 1586.7087000515312,
+              "acceptance_status": "no target-and-best suspect on this run",
+              "regression_limit_ms": 1909.0504400618374,
+              "samples": 5,
+              "median_ms": 1567.47190002352,
+              "confirmation_ms": null,
+              "confirmed_regression": null,
+              "suspected_regression": false,
+              "confirmation_samples": 0,
+              "target_ms": 16
+            }
+          ],
+          "reason": "A target AND comparable best1.2+5ms suspect cannot be accepted before independent five-repeat confirmation."
+        }
+      },
+      "required_metric_count": 39,
+      "fixture": {
+        "kind": "plate",
+        "holes": 60,
+        "grid": 8,
+        "pitch_mm": 66.66666666666667,
+        "hole_diameter_mm": 30.000000000000004,
+        "objects": 132,
+        "faces": 66,
+        "expected_volume_mm3": 3811061.9901184533
+      },
+      "passed": true,
+      "report_sha256": "9bc57886e3d0ea1a2ae2e49dd3e285faf917b7fa2ad116a5a1e5753ebce71c6d"
+    },
+    {
+      "repeat": 5,
+      "geometry_checks": [
+        "Native fixture geometry and expected feature/part/query counts verified",
+        "rebuild metrics measured through the current native APIs",
+        "edits metrics measured through the current native APIs",
+        "inspect metrics measured through the current native APIs",
+        "checkpoint metrics measured through the current native APIs",
+        "preview metrics measured through the current native APIs",
+        "open metrics measured through the current native APIs"
+      ],
+      "name": "studio five-repeat native baseline",
+      "budgets": {
+        "comparisons": [
+          {
+            "current_ms": 1119.4084999151528,
+            "samples": 5,
+            "regression_limit_ms": 1472.1434000134468,
+            "above_comparison_limit": false,
+            "name": "total_rebuild_ms",
+            "baseline_ms": 1222.6195000112057,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 150.04750224761665,
+            "samples": 5,
+            "regression_limit_ms": 209.00563841685653,
+            "above_comparison_limit": false,
+            "name": "native_recompute_ms",
+            "baseline_ms": 170.00469868071377,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 367.1717999968678,
+            "samples": 5,
+            "regression_limit_ms": 482.24215956404805,
+            "above_comparison_limit": false,
+            "name": "selector_evaluation_ms",
+            "baseline_ms": 397.7017996367067,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 20.315400091931224,
+            "samples": 5,
+            "regression_limit_ms": 31.593320071697235,
+            "above_comparison_limit": false,
+            "name": "auto_scope_sync_ms",
+            "baseline_ms": 22.161100059747696,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 564.7104000672698,
+            "samples": 5,
+            "regression_limit_ms": 759.1019600816071,
+            "above_comparison_limit": false,
+            "name": "managed_rebuild_ms",
+            "baseline_ms": 628.4183000680059,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 3838.2216000463814,
+            "samples": 5,
+            "regression_limit_ms": 5245.6612399965525,
+            "above_comparison_limit": false,
+            "name": "tip_edit.total_ms",
+            "baseline_ms": 4367.217699997127,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 98.35580014623702,
+            "samples": 5,
+            "regression_limit_ms": 145.11223707348108,
+            "above_comparison_limit": false,
+            "name": "tip_edit.native_recompute_ms",
+            "baseline_ms": 116.76019756123424,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 3739.8657999001443,
+            "samples": 5,
+            "regression_limit_ms": 5105.549002923071,
+            "above_comparison_limit": false,
+            "name": "tip_edit.overhead_ms",
+            "baseline_ms": 4250.457502435893,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 11.818199884146452,
+            "samples": 5,
+            "regression_limit_ms": 20.611879993230104,
+            "above_comparison_limit": false,
+            "name": "tip_edit.intent_signature_ms",
+            "baseline_ms": 13.00989999435842,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 762.2515000402927,
+            "samples": 5,
+            "regression_limit_ms": 973.387039937079,
+            "above_comparison_limit": false,
+            "name": "tip_edit.inspection_ms",
+            "baseline_ms": 806.9891999475658,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1294.1146991215646,
+            "samples": 5,
+            "regression_limit_ms": 1908.0026004649699,
+            "above_comparison_limit": false,
+            "name": "tip_edit.selector_evaluation_ms",
+            "baseline_ms": 1585.835500387475,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 473.2144000008702,
+            "samples": 5,
+            "regression_limit_ms": 568.5305600240827,
+            "above_comparison_limit": false,
+            "name": "tip_edit.auto_scope_sync_ms",
+            "baseline_ms": 469.6088000200689,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 2089.8120999336243,
+            "samples": 5,
+            "regression_limit_ms": 2714.961079992354,
+            "above_comparison_limit": false,
+            "name": "tip_edit.managed_rebuild_ms",
+            "baseline_ms": 2258.3008999936283,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 4241.28850013949,
+            "samples": 5,
+            "regression_limit_ms": 5965.822040215135,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.total_ms",
+            "baseline_ms": 4967.351700179279,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 200.23790397681296,
+            "samples": 5,
+            "regression_limit_ms": 308.5893203690648,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.native_recompute_ms",
+            "baseline_ms": 252.991100307554,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 4045.081400545314,
+            "samples": 5,
+            "regression_limit_ms": 5683.851080033928,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.overhead_ms",
+            "baseline_ms": 4732.3759000282735,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 16.344300005584955,
+            "samples": 5,
+            "regression_limit_ms": 24.530480075627565,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.intent_signature_ms",
+            "baseline_ms": 16.27540006302297,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1180.3488000296056,
+            "samples": 5,
+            "regression_limit_ms": 1624.6641199290752,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.inspection_ms",
+            "baseline_ms": 1349.720099940896,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 941.9163002166897,
+            "samples": 5,
+            "regression_limit_ms": 1390.4873600415885,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.selector_evaluation_ms",
+            "baseline_ms": 1154.5728000346571,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 42.27639990858734,
+            "samples": 5,
+            "regression_limit_ms": 81.26959988847375,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.auto_scope_sync_ms",
+            "baseline_ms": 63.55799990706146,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1304.5532000251114,
+            "samples": 5,
+            "regression_limit_ms": 1927.2692000679672,
+            "above_comparison_limit": false,
+            "name": "upstream_edit.managed_rebuild_ms",
+            "baseline_ms": 1601.8910000566393,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1655.516400001943,
+            "samples": 5,
+            "regression_limit_ms": 2082.847880218178,
+            "above_comparison_limit": false,
+            "name": "inspect_warm_ms",
+            "baseline_ms": 1731.539900181815,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 1834.3729998450726,
+            "samples": 5,
+            "regression_limit_ms": 2535.206240154803,
+            "above_comparison_limit": false,
+            "name": "inspect_after_change_ms",
+            "baseline_ms": 2108.5052001290023,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 769.3258998915553,
+            "samples": 5,
+            "regression_limit_ms": 1207.5385999120772,
+            "above_comparison_limit": false,
+            "name": "checkpoint_ms",
+            "baseline_ms": 1002.115499926731,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 3095.0160999782383,
+            "samples": 5,
+            "regression_limit_ms": 5173.566680047661,
+            "above_comparison_limit": false,
+            "name": "preview_first_ms",
+            "baseline_ms": 4307.138900039718,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 2981.1629001051188,
+            "samples": 5,
+            "regression_limit_ms": 4000.6911199726164,
+            "above_comparison_limit": false,
+            "name": "preview_update_ms",
+            "baseline_ms": 3329.7425999771804,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 153.90489995479584,
+            "samples": 5,
+            "regression_limit_ms": 205.41391998529434,
+            "above_comparison_limit": false,
+            "name": "native_open_ms",
+            "baseline_ms": 167.01159998774529,
+            "baseline_samples": 5
+          },
+          {
+            "current_ms": 3389.7005000617355,
+            "samples": 5,
+            "regression_limit_ms": 4484.919560067356,
+            "above_comparison_limit": false,
+            "name": "kurtshape_open_ms",
+            "baseline_ms": 3733.2663000561297,
+            "baseline_samples": 5
+          }
+        ],
+        "baseline_report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\bench\\q00b-resume-4e5a4704c17e408eb4f3f9a417cead11\\studio\\evidence\\perf\\bench-studio-five-repeat.json",
+        "baseline_sha256": "76387f4f311f10224a9a7bcec228786066de88798039f7099076ad529a96763c",
+        "confirmed_regression": null,
+        "confirmation_status": "not run; separate independent five-repeat execution only",
+        "targets": {
+          "reason": "Studio absolute targets are established after Q03; all28 medians compared with prior raw measurements.",
+          "evaluated": false
+        }
+      },
+      "required_metric_count": 28,
+      "fixture": {
+        "kind": "studio",
+        "base_features": 30,
+        "base_parts": 4,
+        "selector_consumers": 11,
+        "scoped_operations": [
+          "BenchAutoCut: remove/auto",
+          "BenchExplicitAdd: add/Part1"
+        ],
+        "studio_features": 34,
+        "logical_parts": 4,
+        "objects": 160
+      },
+      "passed": true,
+      "report_sha256": "687f620eaf6a8494e850968ba1caf029597742c9f54edbe31b09396600dbbd08"
+    }
+  ],
+  "method": "Comparable Q24b five-repeat plate60 and U2 studio measurements; serial isolated bundled native Python after parent CPU gates complete; real Controller operations and native geometry assertions",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "d2e1b3561e0b317554764713a9059dac2349a2cd",
+  "worktree_diff_sha256": "6fe0525249064c9d64f350998719d79b90787e5f507963fdd51386b1d4b42688",
+  "timings": {
+    "plate.tip_edit.total_ms": {
+      "median": 3519.8649000376463,
+      "p95": 3537.3541000299156,
+      "worst": 3537.3541000299156,
+      "samples": [
+        3537.3541000299156,
+        3519.8649000376463,
+        3499.896800145507,
+        3507.7994000166655,
+        3533.654199913144
+      ]
+    },
+    "plate.tip_edit.native_recompute_ms": {
+      "median": 368.4163000434637,
+      "p95": 374.1882999893278,
+      "worst": 374.1882999893278,
+      "samples": [
+        373.64750006236136,
+        364.094499964267,
+        374.1882999893278,
+        352.94120013713837,
+        368.4163000434637
+      ]
+    },
+    "plate.tip_edit.overhead_ms": {
+      "median": 3155.7704000733793,
+      "p95": 3165.2378998696804,
+      "worst": 3165.2378998696804,
+      "samples": [
+        3163.706599967554,
+        3155.7704000733793,
+        3125.708500156179,
+        3154.858199879527,
+        3165.2378998696804
+      ]
+    },
+    "plate.tip_edit.intent_signature_ms": {
+      "median": 21.085100015625358,
+      "p95": 38.62269991077483,
+      "worst": 38.62269991077483,
+      "samples": [
+        19.925599917769432,
+        21.085100015625358,
+        20.053000189363956,
+        38.62269991077483,
+        21.738999988883734
+      ]
+    },
+    "plate.tip_edit.inspection_ms": {
+      "median": 1594.5579998660833,
+      "p95": 1606.2223000917584,
+      "worst": 1606.2223000917584,
+      "samples": [
+        1596.2819999549538,
+        1594.5579998660833,
+        1561.1587001476437,
+        1606.2223000917584,
+        1581.9503001403064
+      ]
+    },
+    "plate.tip_edit.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "plate.tip_edit.auto_scope_sync_ms": {
+      "median": 0.0073998235166072845,
+      "p95": 0.014200108125805855,
+      "worst": 0.014200108125805855,
+      "samples": [
+        0.007799826562404633,
+        0.014200108125805855,
+        0.006300164386630058,
+        0.006800051778554916,
+        0.0073998235166072845
+      ]
+    },
+    "plate.tip_edit.managed_rebuild_ms": {
+      "median": 369.84950001351535,
+      "p95": 375.47339987941086,
+      "worst": 375.47339987941086,
+      "samples": [
+        375.1262999139726,
+        365.7017999794334,
+        375.47339987941086,
+        354.3676999397576,
+        369.84950001351535
+      ]
+    },
+    "plate.upstream_edit.total_ms": {
+      "median": 9674.017100129277,
+      "p95": 9733.319299994037,
+      "worst": 9733.319299994037,
+      "samples": [
+        9570.311899995431,
+        9733.319299994037,
+        9703.920900123194,
+        9674.017100129277,
+        9608.009200077504
+      ]
+    },
+    "plate.upstream_edit.native_recompute_ms": {
+      "median": 6513.104399899021,
+      "p95": 6585.601900005713,
+      "worst": 6585.601900005713,
+      "samples": [
+        6439.699899870902,
+        6585.601900005713,
+        6583.672099979594,
+        6513.104399899021,
+        6449.138400144875
+      ]
+    },
+    "plate.upstream_edit.overhead_ms": {
+      "median": 3147.7173999883235,
+      "p95": 3160.9127002302557,
+      "worst": 3160.9127002302557,
+      "samples": [
+        3130.612000124529,
+        3147.7173999883235,
+        3120.2488001435995,
+        3160.9127002302557,
+        3158.870799932629
+      ]
+    },
+    "plate.upstream_edit.intent_signature_ms": {
+      "median": 21.095999982208014,
+      "p95": 23.731399793177843,
+      "worst": 23.731399793177843,
+      "samples": [
+        19.92500014603138,
+        22.347799967974424,
+        20.718400133773685,
+        21.095999982208014,
+        23.731399793177843
+      ]
+    },
+    "plate.upstream_edit.inspection_ms": {
+      "median": 1576.8718000035733,
+      "p95": 1592.060700058937,
+      "worst": 1592.060700058937,
+      "samples": [
+        1589.6924000699073,
+        1592.060700058937,
+        1564.8617998231202,
+        1576.8718000035733,
+        1554.0271999780089
+      ]
+    },
+    "plate.upstream_edit.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "plate.upstream_edit.auto_scope_sync_ms": {
+      "median": 0.007200054824352264,
+      "p95": 0.008600065484642982,
+      "worst": 0.008600065484642982,
+      "samples": [
+        0.00600004568696022,
+        0.007600057870149612,
+        0.00700005330145359,
+        0.008600065484642982,
+        0.007200054824352264
+      ]
+    },
+    "plate.upstream_edit.managed_rebuild_ms": {
+      "median": 6514.441599836573,
+      "p95": 6587.04339992255,
+      "worst": 6587.04339992255,
+      "samples": [
+        6441.208200063556,
+        6587.04339992255,
+        6585.078500211239,
+        6514.441599836573,
+        6450.405200012028
+      ]
+    },
+    "plate.add_sketch.total_ms": {
+      "median": 3247.0130999572575,
+      "p95": 3303.8189001381397,
+      "worst": 3303.8189001381397,
+      "samples": [
+        3207.042400026694,
+        3247.0130999572575,
+        3208.7091000285,
+        3247.3663999699056,
+        3303.8189001381397
+      ]
+    },
+    "plate.add_sketch.native_recompute_ms": {
+      "median": 162.3385997954756,
+      "p95": 165.69830011576414,
+      "worst": 165.69830011576414,
+      "samples": [
+        163.09130005538464,
+        162.3385997954756,
+        156.4841999206692,
+        161.9996998924762,
+        165.69830011576414
+      ]
+    },
+    "plate.add_sketch.overhead_ms": {
+      "median": 3084.674500161782,
+      "p95": 3138.1206000223756,
+      "worst": 3138.1206000223756,
+      "samples": [
+        3043.9510999713093,
+        3084.674500161782,
+        3052.2249001078308,
+        3085.3667000774294,
+        3138.1206000223756
+      ]
+    },
+    "plate.add_sketch.intent_signature_ms": {
+      "median": 20.4950999468565,
+      "p95": 21.441200049594045,
+      "worst": 21.441200049594045,
+      "samples": [
+        20.187600050121546,
+        20.07079985924065,
+        21.441200049594045,
+        20.4950999468565,
+        21.173899993300438
+      ]
+    },
+    "plate.add_sketch.inspection_ms": {
+      "median": 1536.2054000142962,
+      "p95": 1581.7187000066042,
+      "worst": 1581.7187000066042,
+      "samples": [
+        1527.8249001130462,
+        1536.2054000142962,
+        1521.9458998180926,
+        1537.2500999365002,
+        1581.7187000066042
+      ]
+    },
+    "plate.add_sketch.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "plate.add_sketch.auto_scope_sync_ms": {
+      "median": 0.013899989426136017,
+      "p95": 0.021799933165311813,
+      "worst": 0.021799933165311813,
+      "samples": [
+        0.013100216165184975,
+        0.016399892047047615,
+        0.013899989426136017,
+        0.013499986380338669,
+        0.021799933165311813
+      ]
+    },
+    "plate.add_sketch.managed_rebuild_ms": {
+      "median": 165.27320025488734,
+      "p95": 168.64540008828044,
+      "worst": 168.64540008828044,
+      "samples": [
+        165.86079983972013,
+        165.27320025488734,
+        159.41959992051125,
+        164.77620019577444,
+        168.64540008828044
+      ]
+    },
+    "plate.add_pocket.total_ms": {
+      "median": 7073.431099997833,
+      "p95": 7400.180600117892,
+      "worst": 7400.180600117892,
+      "samples": [
+        7026.439800160006,
+        7073.431099997833,
+        7018.555299844593,
+        7400.180600117892,
+        7304.558899952099
+      ]
+    },
+    "plate.add_pocket.native_recompute_ms": {
+      "median": 1015.1738000568002,
+      "p95": 1062.3011998832226,
+      "worst": 1062.3011998832226,
+      "samples": [
+        1015.1738000568002,
+        999.4981999043375,
+        1014.5836002193391,
+        1042.4903999082744,
+        1062.3011998832226
+      ]
+    },
+    "plate.add_pocket.overhead_ms": {
+      "median": 6073.932900093496,
+      "p95": 6357.690200209618,
+      "worst": 6357.690200209618,
+      "samples": [
+        6011.266000103205,
+        6073.932900093496,
+        6003.971699625254,
+        6357.690200209618,
+        6242.257700068876
+      ]
+    },
+    "plate.add_pocket.intent_signature_ms": {
+      "median": 20.831899950280786,
+      "p95": 24.019500007852912,
+      "worst": 24.019500007852912,
+      "samples": [
+        20.354100037366152,
+        20.831899950280786,
+        20.65639989450574,
+        24.019500007852912,
+        21.728900028392673
+      ]
+    },
+    "plate.add_pocket.inspection_ms": {
+      "median": 1597.8522999212146,
+      "p95": 1748.4194999560714,
+      "worst": 1748.4194999560714,
+      "samples": [
+        1590.137300081551,
+        1597.8522999212146,
+        1580.5636001750827,
+        1748.4194999560714,
+        1643.158300081268
+      ]
+    },
+    "plate.add_pocket.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "plate.add_pocket.auto_scope_sync_ms": {
+      "median": 0.019799917936325073,
+      "p95": 0.032599782571196556,
+      "worst": 0.032599782571196556,
+      "samples": [
+        0.02330029383301735,
+        0.0195999164134264,
+        0.018799910321831703,
+        0.019799917936325073,
+        0.032599782571196556
+      ]
+    },
+    "plate.add_pocket.managed_rebuild_ms": {
+      "median": 1019.7825997602195,
+      "p95": 1067.2578997910023,
+      "worst": 1067.2578997910023,
+      "samples": [
+        1019.7825997602195,
+        1004.4059997890145,
+        1018.9724005758762,
+        1047.0900998916477,
+        1067.2578997910023
+      ]
+    },
+    "plate.inspect_warm_ms": {
+      "median": 23.391300113871694,
+      "p95": 23.77199986949563,
+      "worst": 23.77199986949563,
+      "samples": [
+        23.77199986949563,
+        23.006200091913342,
+        23.392200004309416,
+        22.04070007428527,
+        23.391300113871694
+      ]
+    },
+    "plate.inspect_after_change_ms": {
+      "median": 3135.515000205487,
+      "p95": 3159.78159988299,
+      "worst": 3159.78159988299,
+      "samples": [
+        3147.1497998572886,
+        3159.78159988299,
+        3135.515000205487,
+        3063.8200000394136,
+        3117.4516999162734
+      ]
+    },
+    "plate.checkpoint_ms": {
+      "median": 1567.47190002352,
+      "p95": 1606.803399976343,
+      "worst": 1606.803399976343,
+      "samples": [
+        1593.887200113386,
+        1564.8674999829382,
+        1554.050800157711,
+        1606.803399976343,
+        1567.47190002352
+      ]
+    },
+    "plate.preview_first_ms": {
+      "median": 10403.857000172138,
+      "p95": 10522.263800026849,
+      "worst": 10522.263800026849,
+      "samples": [
+        10361.629900056869,
+        10403.857000172138,
+        10503.298799972981,
+        10522.263800026849,
+        10313.219900010154
+      ]
+    },
+    "plate.preview_update_ms": {
+      "median": 8942.989100003615,
+      "p95": 8971.38120001182,
+      "worst": 8971.38120001182,
+      "samples": [
+        8916.526699904352,
+        8958.22130003944,
+        8942.989100003615,
+        8971.38120001182,
+        8837.289999937639
+      ]
+    },
+    "plate.native_open_ms": {
+      "median": 1770.23209980689,
+      "p95": 1795.6006999593228,
+      "worst": 1795.6006999593228,
+      "samples": [
+        1770.23209980689,
+        1763.1701999343932,
+        1795.6006999593228,
+        1782.8723001293838,
+        1762.1493998449296
+      ]
+    },
+    "plate.kurtshape_open_ms": {
+      "median": 12468.021899927408,
+      "p95": 12573.243699967861,
+      "worst": 12573.243699967861,
+      "samples": [
+        12573.243699967861,
+        12568.309099879116,
+        12432.501500006765,
+        12468.021899927408,
+        12401.708099991083
+      ]
+    },
+    "studio.total_rebuild_ms": {
+      "median": 1119.4084999151528,
+      "p95": 1184.5209000166506,
+      "worst": 1184.5209000166506,
+      "samples": [
+        1184.5209000166506,
+        1152.2529001813382,
+        1119.4084999151528,
+        1115.2572999708354,
+        1112.322699977085
+      ]
+    },
+    "studio.native_recompute_ms": {
+      "median": 150.04750224761665,
+      "p95": 156.03960095904768,
+      "worst": 156.03960095904768,
+      "samples": [
+        156.03960095904768,
+        155.25700012221932,
+        149.15189961902797,
+        150.04750224761665,
+        148.47620017826557
+      ]
+    },
+    "studio.selector_evaluation_ms": {
+      "median": 367.1717999968678,
+      "p95": 383.92860000021756,
+      "worst": 383.92860000021756,
+      "samples": [
+        383.92860000021756,
+        368.6731003690511,
+        367.1717999968678,
+        364.7005995735526,
+        355.5817997548729
+      ]
+    },
+    "studio.auto_scope_sync_ms": {
+      "median": 20.315400091931224,
+      "p95": 21.73670008778572,
+      "worst": 21.73670008778572,
+      "samples": [
+        21.73670008778572,
+        21.522799972444773,
+        20.315400091931224,
+        20.200399914756417,
+        20.107399905100465
+      ]
+    },
+    "studio.managed_rebuild_ms": {
+      "median": 564.7104000672698,
+      "p95": 588.89349992387,
+      "worst": 588.89349992387,
+      "samples": [
+        588.89349992387,
+        575.7001999299973,
+        564.7104000672698,
+        561.3677001092583,
+        550.4462998360395
+      ]
+    },
+    "studio.tip_edit.total_ms": {
+      "median": 3838.2216000463814,
+      "p95": 5460.336999967694,
+      "worst": 5460.336999967694,
+      "samples": [
+        2601.1206000111997,
+        2691.2549999542534,
+        3838.2216000463814,
+        4008.864500094205,
+        5460.336999967694
+      ]
+    },
+    "studio.tip_edit.native_recompute_ms": {
+      "median": 98.35580014623702,
+      "p95": 135.20760089159012,
+      "worst": 135.20760089159012,
+      "samples": [
+        55.381800048053265,
+        86.39480383135378,
+        98.35580014623702,
+        109.87879964523017,
+        135.20760089159012
+      ]
+    },
+    "studio.tip_edit.overhead_ms": {
+      "median": 3739.8657999001443,
+      "p95": 5325.129399076104,
+      "worst": 5325.129399076104,
+      "samples": [
+        2545.7387999631464,
+        2604.8601961228997,
+        3739.8657999001443,
+        3898.985700448975,
+        5325.129399076104
+      ]
+    },
+    "studio.tip_edit.intent_signature_ms": {
+      "median": 11.818199884146452,
+      "p95": 16.869499813765287,
+      "worst": 16.869499813765287,
+      "samples": [
+        11.533999815583229,
+        11.120599927380681,
+        12.545600067824125,
+        11.818199884146452,
+        16.869499813765287
+      ]
+    },
+    "studio.tip_edit.inspection_ms": {
+      "median": 762.2515000402927,
+      "p95": 1185.907700099051,
+      "worst": 1185.907700099051,
+      "samples": [
+        455.4299998562783,
+        453.39179993607104,
+        762.2515000402927,
+        787.0390999596566,
+        1185.907700099051
+      ]
+    },
+    "studio.tip_edit.selector_evaluation_ms": {
+      "median": 1294.1146991215646,
+      "p95": 1710.452099563554,
+      "worst": 1710.452099563554,
+      "samples": [
+        945.7459999248385,
+        1113.0404993891716,
+        1294.1146991215646,
+        1502.9003999661654,
+        1710.452099563554
+      ]
+    },
+    "studio.tip_edit.auto_scope_sync_ms": {
+      "median": 473.2144000008702,
+      "p95": 684.4025000464171,
+      "worst": 684.4025000464171,
+      "samples": [
+        473.2144000008702,
+        269.13240016438067,
+        566.6372999548912,
+        322.9480998124927,
+        684.4025000464171
+      ]
+    },
+    "studio.tip_edit.managed_rebuild_ms": {
+      "median": 2089.8120999336243,
+      "p95": 2712.3463000170887,
+      "worst": 2712.3463000170887,
+      "samples": [
+        1569.5762999821454,
+        1577.9639000538737,
+        2099.6948000974953,
+        2089.8120999336243,
+        2712.3463000170887
+      ]
+    },
+    "studio.upstream_edit.total_ms": {
+      "median": 4241.28850013949,
+      "p95": 4270.151700126007,
+      "worst": 4270.151700126007,
+      "samples": [
+        4241.28850013949,
+        4270.151700126007,
+        4267.9335998836905,
+        4211.914400104433,
+        4240.885199978948
+      ]
+    },
+    "studio.upstream_edit.native_recompute_ms": {
+      "median": 200.23790397681296,
+      "p95": 203.730700770393,
+      "worst": 203.730700770393,
+      "samples": [
+        196.20709959417582,
+        203.730700770393,
+        202.8333991765976,
+        195.4967021010816,
+        200.23790397681296
+      ]
+    },
+    "studio.upstream_edit.overhead_ms": {
+      "median": 4045.081400545314,
+      "p95": 4066.420999355614,
+      "worst": 4066.420999355614,
+      "samples": [
+        4045.081400545314,
+        4066.420999355614,
+        4065.100200707093,
+        4016.4176980033517,
+        4040.6472960021347
+      ]
+    },
+    "studio.upstream_edit.intent_signature_ms": {
+      "median": 16.344300005584955,
+      "p95": 16.614299966022372,
+      "worst": 16.614299966022372,
+      "samples": [
+        15.313899843022227,
+        16.47270005196333,
+        16.614299966022372,
+        15.348700108006597,
+        16.344300005584955
+      ]
+    },
+    "studio.upstream_edit.inspection_ms": {
+      "median": 1180.3488000296056,
+      "p95": 1192.122400039807,
+      "worst": 1192.122400039807,
+      "samples": [
+        1180.3488000296056,
+        1171.8661999329925,
+        1192.122400039807,
+        1165.575799997896,
+        1183.1014999188483
+      ]
+    },
+    "studio.upstream_edit.selector_evaluation_ms": {
+      "median": 941.9163002166897,
+      "p95": 955.0444001797587,
+      "worst": 955.0444001797587,
+      "samples": [
+        941.9163002166897,
+        944.8892006184906,
+        955.0444001797587,
+        917.2345993574709,
+        939.7352000232786
+      ]
+    },
+    "studio.upstream_edit.auto_scope_sync_ms": {
+      "median": 42.27639990858734,
+      "p95": 43.79929997958243,
+      "worst": 43.79929997958243,
+      "samples": [
+        42.157100047916174,
+        42.27639990858734,
+        43.79929997958243,
+        39.354100124910474,
+        42.56799980066717
+      ]
+    },
+    "studio.upstream_edit.managed_rebuild_ms": {
+      "median": 1304.5532000251114,
+      "p95": 1323.6388999503106,
+      "worst": 1323.6388999503106,
+      "samples": [
+        1301.9208998885006,
+        1309.6603001467884,
+        1323.6388999503106,
+        1279.8586001154035,
+        1304.5532000251114
+      ]
+    },
+    "studio.inspect_warm_ms": {
+      "median": 1655.516400001943,
+      "p95": 1661.0299998428673,
+      "worst": 1661.0299998428673,
+      "samples": [
+        1661.0299998428673,
+        1652.2710998542607,
+        1659.9597001913935,
+        1620.1659999787807,
+        1655.516400001943
+      ]
+    },
+    "studio.inspect_after_change_ms": {
+      "median": 1834.3729998450726,
+      "p95": 1845.7067001145333,
+      "worst": 1845.7067001145333,
+      "samples": [
+        1816.108100116253,
+        1837.280899984762,
+        1845.7067001145333,
+        1801.2466998770833,
+        1834.3729998450726
+      ]
+    },
+    "studio.checkpoint_ms": {
+      "median": 769.3258998915553,
+      "p95": 780.1685000304133,
+      "worst": 780.1685000304133,
+      "samples": [
+        731.2823999673128,
+        769.3258998915553,
+        780.1685000304133,
+        755.7122998405248,
+        776.4541001524776
+      ]
+    },
+    "studio.preview_first_ms": {
+      "median": 3095.0160999782383,
+      "p95": 3121.0627001710236,
+      "worst": 3121.0627001710236,
+      "samples": [
+        3073.407699819654,
+        3118.9010001253337,
+        3121.0627001710236,
+        3066.570800030604,
+        3095.0160999782383
+      ]
+    },
+    "studio.preview_update_ms": {
+      "median": 2981.1629001051188,
+      "p95": 2999.09030017443,
+      "worst": 2999.09030017443,
+      "samples": [
+        2999.09030017443,
+        2986.2142000347376,
+        2981.1629001051188,
+        2910.1054000202566,
+        2922.6353000849485
+      ]
+    },
+    "studio.native_open_ms": {
+      "median": 153.90489995479584,
+      "p95": 158.63820002414286,
+      "worst": 158.63820002414286,
+      "samples": [
+        153.90489995479584,
+        154.44800001569092,
+        158.63820002414286,
+        153.24810007587075,
+        149.7899000532925
+      ]
+    },
+    "studio.kurtshape_open_ms": {
+      "median": 3389.7005000617355,
+      "p95": 3418.220199877396,
+      "worst": 3418.220199877396,
+      "samples": [
+        3389.7005000617355,
+        3377.771800151095,
+        3399.8952999245375,
+        3418.220199877396,
+        3383.132499875501
+      ]
+    }
+  },
+  "limits": "Compared with immutable Q00b five-repeat baseline6BB9A4B2...D2538. Any target-and-best suspect requires an independent five-repeat confirmation before acceptance. Absolute phase0/phase1 target misses remain open. Studio thresholds are established after Q03. No speed improvement, hosted CI execution or user comfort claim. Other CPU gates finished by explicit parent invocation; unrelated system workload is not controlled.",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_processors": 32,
+    "platform": "Windows-10-10.0.26200-SP0"
+  },
+  "fixture": {
+    "studio_base_features": 30,
+    "studio_base_parts": 4,
+    "plate_holes": 60,
+    "kind": "paired-plate60-and-studio",
+    "studio_selector_consumers": 11
+  },
+  "repeat": 5,
+  "run_id": "f5a03d07e13d4c759d9c8d5998ae42a5",
+  "sections": {
+    "plate.edits": {
+      "status": "ok",
+      "metrics": [
+        "add_pocket.auto_scope_sync_ms",
+        "add_pocket.inspection_ms",
+        "add_pocket.intent_signature_ms",
+        "add_pocket.managed_rebuild_ms",
+        "add_pocket.native_recompute_ms",
+        "add_pocket.overhead_ms",
+        "add_pocket.selector_evaluation_ms",
+        "add_pocket.total_ms",
+        "add_sketch.auto_scope_sync_ms",
+        "add_sketch.inspection_ms",
+        "add_sketch.intent_signature_ms",
+        "add_sketch.managed_rebuild_ms",
+        "add_sketch.native_recompute_ms",
+        "add_sketch.overhead_ms",
+        "add_sketch.selector_evaluation_ms",
+        "add_sketch.total_ms",
+        "tip_edit.auto_scope_sync_ms",
+        "tip_edit.inspection_ms",
+        "tip_edit.intent_signature_ms",
+        "tip_edit.managed_rebuild_ms",
+        "tip_edit.native_recompute_ms",
+        "tip_edit.overhead_ms",
+        "tip_edit.selector_evaluation_ms",
+        "tip_edit.total_ms",
+        "upstream_edit.auto_scope_sync_ms",
+        "upstream_edit.inspection_ms",
+        "upstream_edit.intent_signature_ms",
+        "upstream_edit.managed_rebuild_ms",
+        "upstream_edit.native_recompute_ms",
+        "upstream_edit.overhead_ms",
+        "upstream_edit.selector_evaluation_ms",
+        "upstream_edit.total_ms"
+      ]
+    },
+    "plate.inspect": {
+      "status": "ok",
+      "metrics": [
+        "inspect_after_change_ms",
+        "inspect_warm_ms"
+      ]
+    },
+    "plate.checkpoint": {
+      "status": "ok",
+      "metrics": [
+        "checkpoint_ms"
+      ]
+    },
+    "plate.preview": {
+      "status": "ok",
+      "metrics": [
+        "preview_first_ms",
+        "preview_update_ms"
+      ]
+    },
+    "plate.open": {
+      "status": "ok",
+      "metrics": [
+        "kurtshape_open_ms",
+        "native_open_ms"
+      ]
+    },
+    "studio.rebuild": {
+      "status": "ok",
+      "metrics": [
+        "auto_scope_sync_ms",
+        "managed_rebuild_ms",
+        "native_recompute_ms",
+        "selector_evaluation_ms",
+        "total_rebuild_ms"
+      ]
+    },
+    "studio.edits": {
+      "status": "ok",
+      "metrics": [
+        "tip_edit.auto_scope_sync_ms",
+        "tip_edit.inspection_ms",
+        "tip_edit.intent_signature_ms",
+        "tip_edit.managed_rebuild_ms",
+        "tip_edit.native_recompute_ms",
+        "tip_edit.overhead_ms",
+        "tip_edit.selector_evaluation_ms",
+        "tip_edit.total_ms",
+        "upstream_edit.auto_scope_sync_ms",
+        "upstream_edit.inspection_ms",
+        "upstream_edit.intent_signature_ms",
+        "upstream_edit.managed_rebuild_ms",
+        "upstream_edit.native_recompute_ms",
+        "upstream_edit.overhead_ms",
+        "upstream_edit.selector_evaluation_ms",
+        "upstream_edit.total_ms"
+      ]
+    },
+    "studio.inspect": {
+      "status": "ok",
+      "metrics": [
+        "inspect_after_change_ms",
+        "inspect_warm_ms"
+      ]
+    },
+    "studio.checkpoint": {
+      "status": "ok",
+      "metrics": [
+        "checkpoint_ms"
+      ]
+    },
+    "studio.preview": {
+      "status": "ok",
+      "metrics": [
+        "preview_first_ms",
+        "preview_update_ms"
+      ]
+    },
+    "studio.open": {
+      "status": "ok",
+      "metrics": [
+        "kurtshape_open_ms",
+        "native_open_ms"
+      ]
+    }
+  },
+  "input_sha256": "bc45c66d785b90dbe2c92d971399e16daf0bc3d31c0e04463de70993b2ed668e"
+}

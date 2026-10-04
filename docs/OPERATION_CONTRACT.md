@@ -37,6 +37,8 @@ Standalone modeling failures abort their transaction and retain accepted geometr
 
 ## Contract 2 additions — October 2 review follow-up
 
+October 4 Q24b hardens validation fixtures and native observations without changing contract 2.0, operation fields, revision/replay, save/export publication or profile formats. Exact native `FileName` is retained as provenance; strict resolved path and same-file identity are checked separately. In a fresh private pinned profile, first native `saveAs` and default raw `openDocument` expose filename-stem live Labels; persisted `Document.xml` Labels and checkpoint names are verified independently. These observations add no application recovery or UI behavior. [Verification and limits](long-run/Q24b-native-validation-hardening.md).
+
 October 3 Q24a validation hardening shortens diagnostic Assembly BREP fixture names while retaining their complete SHA-256 identifiers and the production geometry fingerprint algorithm. This affects isolated verification only; typed operations, revision/replay, save/export publication and profile formats remain contract 2.0. The contributor boundaries are described in [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 October 3 Q00b validation infrastructure adds isolated runtime checks, blocking hidden GUI recipes and repeatable plate/studio benchmarks. Benchmark instrumentation is temporary and restored after each measurement; it does not add persisted model data or new operations. Transport, typed mutation, write-root, replay and revision semantics remain contract 2.0. Fresh CI checks tracked and ignored tree cleanliness; local checks preserve the existing checkout's exact status and diff bytes.

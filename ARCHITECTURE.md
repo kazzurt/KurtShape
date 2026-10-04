@@ -1,6 +1,6 @@
 # KurtShape architecture
 
-This describes the application inherited from main `7a20a63` (`longrun/Q01`), with wire contract **2.0**. Q24a bounds validation fixtures; Q00b adds CI and benchmark tooling and corrects the feature Copy fingerprint guard. Queue state and parked work are recorded in [STATUS.md](docs/long-run/STATUS.md); a parked implementation is not shipped behavior.
+The application baseline is main `d2e1b35` (`longrun/Q00b`), with wire contract **2.0**. Q24a bounds Assembly validation fixtures; Q00b adds CI and benchmark tooling and corrects the feature Copy fingerprint guard. Q24b hardens native fixture ownership and validation snapshots without changing application behavior. Queue state and parked work are recorded in [STATUS.md](docs/long-run/STATUS.md); a parked implementation is not shipped behavior.
 
 ## Native document ownership
 
@@ -59,6 +59,10 @@ There are no external live source links: later source edits require explicit rei
 Keep GUI application access to `App`, `Gui`, live documents, native shapes and OCCT on the GUI thread. FreeCAD bindings can hold the Python GIL during save, geometry and export calls; a Python worker thread does not make those calls responsive. Threads may perform pure file work such as hashing, ZIP checks and reading process output. Future heavy CAD workers must use separate bundled-native-Python processes with private document snapshots and serialized results, never shared native handles. Main currently performs STEP import, save, export, preview and recovery synchronously; it has no application CAD worker service.
 
 [settings.py](src/kurtshape/settings.py) selects the session profile and write roots; GUI-selected destinations can grant a parent directory, while bridge requests cannot create grants. Save/export stage files and verify or preserve recovery/provenance data before replacement. The native test runner uses fresh subprocesses with private session, FreeCAD user-home, TEMP/TMP, APPDATA and LOCALAPPDATA paths, owned PID records and private evidence. Contributors should use those validation launchers instead of a live profile.
+
+Native document test fixtures use exclusive short UUID directories under `runtime/test-tmp`, with exact suite/PID/allocation receipts and directory identities. Cleanup rechecks ancestry and identity, preserving suspect folders. `-KeepNativeTemp` retains suite profiles and receipts while ordinary per-test cleanup still removes disposable document fixtures. These guards are point-in-time checks.
+
+[native_validation_snapshot.py](tools/native_validation_snapshot.py) is a validation-only reader; it never runs in application inspection or idle paths. Only actual Origin-owned `App::Origin`, `App::Line`, `App::Plane` and `App::Point` separate volatile native hashes from content invariants. Complete serialized BRep, type/null state, placements and ownership remain checked, with only the existing narrow Checked-cache-bit mask for intrinsic datums. Modeled shape hashes/content, object order, Body Group/Tip, intent, revision and histories remain strict. Planted placement and equal-volume/equal-bbox model changes must still be detected. Headless proofs record GUI state as unavailable; they do not verify Modified, camera or user interaction.
 
 ## Future queue work
 

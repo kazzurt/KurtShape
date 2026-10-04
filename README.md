@@ -8,7 +8,7 @@ Claude's October 2 review has an [approved update plan](docs/2026-10-02-claude-r
 
 ## Launch
 
-During the long run, use **KurtShape-green.cmd** in the parent `Codex` folder after saving and closing the previous window. The detached `kurtshape-green` checkout holds the latest tested increment and shares the main checkout's runtime, profile and recovery files. The [long-run status](docs/long-run/STATUS.md) records its commit; an open green window or tracked edits prevent an update.
+During the long run, use **KurtShape-green.cmd** in the parent `Codex` folder after saving and closing the previous window. The detached `kurtshape-green` checkout holds a tested increment and shares the main checkout's runtime, profile and recovery files. The [long-run status](docs/long-run/STATUS.md) records its commit; an open green window or tracked edits prevent an update.
 
 The launcher accepts `-RuntimeRoot` (the folder containing `freecad-1.1.4`) and `-SessionRoot` (the profile base). `-Validation` uses `interface-validation` below that base in a hidden process. `-PrintOnly` prints the resolved paths, environment and arguments as JSON without creating folders, changing the environment or starting a process.
 
@@ -78,6 +78,7 @@ Contract 2 mutations require `request_id` and, for an existing document, its cur
 ```powershell
 .\run-checks.ps1
 .\run-checks.ps1 -Full
+.\run-checks.ps1 -Full -KeepNativeTemp
 .\tools\ci\run-local.ps1 -SkipNativeTests
 .\tools\run_gui_recipe.ps1 -Recipe interface
 .\launch-kurtshape.ps1 -Validation
@@ -85,6 +86,8 @@ Contract 2 mutations require `request_id` and, for an existing document, its cur
 ```
 
 Checks use one suite runner, `tools/run_native_tests.py`, with fresh native, transport, shortcut and modeling-workflow processes. Sessions, profiles and temporary fixtures stay in isolated scratch. Source hashes/STEP geometry are checked when originals are available; `-Full` requires them. `-WriteEvidence` explicitly refreshes tracked reports, and `-Lint` requests an installed ruff. Ordinary checks leave tracked evidence unchanged.
+
+Native document fixtures use exclusive short UUID folders directly under `runtime/test-tmp`; FreeCAD profiles, temporary paths and app data remain private to each suite. `-KeepNativeTemp` retains suite profiles and test/PID/allocation receipts; ordinary per-test cleanup still removes disposable document fixtures. Redirected or replaced folders are preserved and reported as cleanup failures. These ancestry and directory-identity checks are point-in-time guards. The [Q24b record](docs/long-run/Q24b-native-validation-hardening.md) documents 159 native tests, exact file provenance, saved XML labels, Origin-owned datum content and planted model/placement changes; headless proofs do not verify GUI state.
 
 The [architecture overview](ARCHITECTURE.md) describes the current controller, observers, preview, recovery and assembly boundaries. Assembly validation retains complete SHA-256 identifiers in shorter diagnostic fixture names so private profiles can exercise the same save, relocated reopen and export checks within Windows path limits. The [Q24a record](docs/long-run/Q24a-bounded-validation-architecture.md) records the isolated long-profile verification.
 

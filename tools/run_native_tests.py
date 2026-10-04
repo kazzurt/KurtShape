@@ -31,6 +31,8 @@ SUITES = {
         "test_reference_tools.ReferenceToolTests", "test_selectors.SelectorTests",
         "test_part_studio.PartStudioTests", "test_selector_consumers.SelectorConsumerTests",
         "test_runtime_layout.RuntimeLayoutTests",
+        "test_native_files.NativeFileBehaviorTests",
+        "test_native_validation_snapshot.NativeValidationSnapshotTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests",),
     "shortcuts": ("test_shortcuts.RouterTests", "test_shortcuts.QtRoutingTests"),
@@ -44,7 +46,11 @@ def source_snapshot():
     files = sorted((ROOT / "src" / "kurtshape").rglob("*.py"))
     files += sorted((ROOT / "tests").rglob("*.py"))
     files += [Path(__file__).resolve(), ROOT / "tools" / "validate_offline.py",
-              ROOT / "tools" / "kurtshape_evidence.py"]
+              ROOT / "tools" / "kurtshape_evidence.py",
+              ROOT / "tools" / "native_validation_snapshot.py",
+              ROOT / "tools" / "perf" / "bench_core.py",
+              ROOT / "tools" / "perf" / "report.py",
+              ROOT / "tools" / "perf" / "budgets.json"]
     return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in files}
 

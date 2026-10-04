@@ -1,0 +1,426 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "Full native suites",
+      "passed": true,
+      "input_sha256": "f323389ebda3fc2bdc6d5a374911446a8818e6b53c6c5143b5a08c69b2e5307b"
+    },
+    {
+      "name": "Accepted CPU frozen code tree",
+      "passed": true,
+      "input_sha256": "a15b56e7aed5f9654aa83e87f2f4c31ef1dd44288fd07dd7cfc8e9b723ae2a37"
+    },
+    {
+      "name": "Local CI",
+      "passed": true,
+      "input_sha256": "3bf5fbfdbf7a7b153119ca7eb83f3e8043ce82aeee91a792760ec6b6e5a0f1ae"
+    },
+    {
+      "name": "Actual CPU gate receipt",
+      "passed": true,
+      "input_sha256": "1d8d011c27b7ed6ca785bcc4b7572e6d1d6e8bee17dee9a476cd2ae726d8e1f4"
+    },
+    {
+      "name": "Paired five-repeat benchmark",
+      "passed": true,
+      "input_sha256": "bc45c66d785b90dbe2c92d971399e16daf0bc3d31c0e04463de70993b2ed668e"
+    },
+    {
+      "name": "Immutable Q00b baseline",
+      "passed": true,
+      "input_sha256": "6bb9a4b2fbdac086e21fba11c9947d98ab25883d32de1d1ccaa698bd045d2538"
+    },
+    {
+      "name": "plate actual benchmark",
+      "passed": true,
+      "input_sha256": "9bc57886e3d0ea1a2ae2e49dd3e285faf917b7fa2ad116a5a1e5753ebce71c6d"
+    },
+    {
+      "name": "studio actual benchmark",
+      "passed": true,
+      "input_sha256": "687f620eaf6a8494e850968ba1caf029597742c9f54edbe31b09396600dbbd08"
+    },
+    {
+      "name": "test_fcstd_end_record_comment_and_genuine_truncation.json",
+      "passed": true,
+      "input_sha256": "74f256d87f1a6e25c3f4a85091d8f9e318324397a03530b44c009b0843331bb7",
+      "checks": {
+        "native_xml_sha256": "6b0a78d2e5fa6ab9a374097e58978341647e5c148e9fbed123030f8fbf937b22",
+        "native_xml_ends_newline": true,
+        "native_xml_complete": true,
+        "native_zip_crc_verified": true,
+        "native_zip_members": [
+          {
+            "name": "Document.xml",
+            "bytes": 5522,
+            "sha256": "6b0a78d2e5fa6ab9a374097e58978341647e5c148e9fbed123030f8fbf937b22"
+          },
+          {
+            "name": "Solid.Shape.brp",
+            "bytes": 8863,
+            "sha256": "65e9053916d7d7f2ec802c90e5bd7401181febf77051df67b6c3fe7408c1a093"
+          }
+        ],
+        "eocd_offset": 2193,
+        "eocd_fixed_bytes": 22,
+        "declared_comment_bytes": 16,
+        "native_comment_hex": "4672656543414420446f63756d656e74",
+        "eocd_declared_end_matches_eof": true,
+        "comment_only_truncation_retains_readable_xml": true,
+        "comment_only_truncation_breaks_declared_end": true,
+        "incomplete_eocd_rejected": true,
+        "missing_document_xml_rejected": true,
+        "incomplete_xml_rejected": true,
+        "document_payload_crc_failure_rejected": true,
+        "original_file_unchanged": true
+      }
+    },
+    {
+      "name": "test_first_saveas_and_persisted_copy_label_are_distinct_from_default_raw_open_label.json",
+      "passed": true,
+      "input_sha256": "79070e6fa6e7def9d430c766c5566330382e3ffc792f109ff5c4b306b0838c2e",
+      "checks": {
+        "label_before_first_saveAs": "Custom native file label",
+        "label_after_first_saveAs": "first-save",
+        "first_saveAs_replaces_label": true,
+        "post_save_label": "Custom native file label",
+        "copy_saved_document_xml": {
+          "label": "Custom native file label",
+          "document_xml_sha256": "83d487ffbeb413ba25d7bd6ef04b6fd6334335ad41e129842823c6e3e0e40f79",
+          "document_xml_bytes": 5531
+        },
+        "saved_copy_label_verified": true,
+        "copy_reopened_label": "post-save-label",
+        "copy_reopened_filename_stem": "post-save-label",
+        "default_raw_open_label_is_filename_stem": true,
+        "saveCopy_native_state_unchanged": true,
+        "native_state_before_copy": {
+          "filename": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\test-tmp\\native-1ad0106e99114ed7bcf444367e73e341-lqe4q83j\\first-save.FCStd",
+          "label": "Custom native file label",
+          "undo_mode": 1,
+          "use_hasher": true,
+          "undo": [
+            "Edit owned native solid"
+          ],
+          "redo": [],
+          "pending": false,
+          "intent": "0b5546be401f0d46a102a89f70ab4533d030667b6a38b603de997dee2b6c2fd4",
+          "objects": [
+            {
+              "name": "Solid",
+              "type": "Part::Feature",
+              "state": [
+                "Up-to-date"
+              ],
+              "status": "Valid",
+              "shape_status": [],
+              "brep_sha256": "d24b9b2e1980993464d1e121f48453ae7d4a0ea4b0d9ca460a039d8d291044df"
+            }
+          ]
+        },
+        "native_state_after_copy": {
+          "filename": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\test-tmp\\native-1ad0106e99114ed7bcf444367e73e341-lqe4q83j\\first-save.FCStd",
+          "label": "Custom native file label",
+          "undo_mode": 1,
+          "use_hasher": true,
+          "undo": [
+            "Edit owned native solid"
+          ],
+          "redo": [],
+          "pending": false,
+          "intent": "0b5546be401f0d46a102a89f70ab4533d030667b6a38b603de997dee2b6c2fd4",
+          "objects": [
+            {
+              "name": "Solid",
+              "type": "Part::Feature",
+              "state": [
+                "Up-to-date"
+              ],
+              "status": "Valid",
+              "shape_status": [],
+              "brep_sha256": "d24b9b2e1980993464d1e121f48453ae7d4a0ea4b0d9ca460a039d8d291044df"
+            }
+          ]
+        },
+        "copy_geometry": {
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 27.0,
+          "brep_sha256": "d24b9b2e1980993464d1e121f48453ae7d4a0ea4b0d9ca460a039d8d291044df"
+        },
+        "original_geometry": {
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 7.999999999999998,
+          "brep_sha256": "534216d93c37f815f5e67132792fd91e8191becb632d4227d9085909f409566d"
+        },
+        "native_undo_geometry": {
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 7.999999999999998,
+          "brep_sha256": "534216d93c37f815f5e67132792fd91e8191becb632d4227d9085909f409566d"
+        },
+        "native_redo_geometry": {
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 27.0,
+          "brep_sha256": "d24b9b2e1980993464d1e121f48453ae7d4a0ea4b0d9ca460a039d8d291044df"
+        },
+        "original_file_unchanged": true
+      }
+    },
+    {
+      "name": "test_fixture_cleanup_rejects_redirected_or_replaced_directory.json",
+      "passed": true,
+      "input_sha256": "fc27495a287cdf532e6785290e10c86ea799aa8afb50083dafb43a4908f6fbfa",
+      "checks": {
+        "redirected_cleanup_rejected": true,
+        "ordinary_replacement_cleanup_rejected": true,
+        "suspect_fixture_finalizer_detached": true,
+        "suspect_fixture_not_deleted": true,
+        "same_identity_cleanup_control_passed": true,
+        "controlled_doubles_only": true
+      }
+    },
+    {
+      "name": "test_fixture_environment_and_dangling_redirect_guards.json",
+      "passed": true,
+      "input_sha256": "c867288a0b7e941bf4d037a0a29efe141a383f179d369c00ad9b1ec0d1951c3b",
+      "checks": {
+        "dangling_symbolic_link_rejected_before_resolution": true,
+        "existing_reparse_point_rejected_before_resolution": true,
+        "all_six_empty_environment_roots_rejected_before_allocation": true,
+        "live_runtime_environment_rejected_before_allocation": true,
+        "no_redirected_or_outside_write_or_delete": true
+      }
+    },
+    {
+      "name": "test_native_filename_preserves_exact_provenance_and_filesystem_identity.json",
+      "passed": true,
+      "input_sha256": "9229bf7f30d68f02a1df75d97bd83bfcbabd913d9de33e7dd21bd45302bf5000",
+      "checks": {
+        "captured_native_filename": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/runtime/test-tmp/native-a7af0e4ec6644908ba3ec56d4ad9fec1-ea7liuv7/native-provenance.FCStd",
+        "manifest_source_file": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/runtime/test-tmp/native-a7af0e4ec6644908ba3ec56d4ad9fec1-ea7liuv7/native-provenance.FCStd",
+        "exact_native_provenance_preserved": true,
+        "strict_resolved_path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\test-tmp\\native-a7af0e4ec6644908ba3ec56d4ad9fec1-ea7liuv7\\native-provenance.FCStd",
+        "filesystem_samefile": true,
+        "native_state_before_capture": {
+          "filename": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/runtime/test-tmp/native-a7af0e4ec6644908ba3ec56d4ad9fec1-ea7liuv7/native-provenance.FCStd",
+          "label": "native-provenance",
+          "undo_mode": 0,
+          "use_hasher": true,
+          "undo": [],
+          "redo": [],
+          "pending": false,
+          "intent": "fb4582a91791a561649852ca78c20269bd7b001147cf38eb3feaf3a7ed7e678b",
+          "objects": [
+            {
+              "name": "Solid",
+              "type": "Part::Feature",
+              "state": [
+                "Up-to-date"
+              ],
+              "status": "Valid",
+              "shape_status": [],
+              "brep_sha256": "534216d93c37f815f5e67132792fd91e8191becb632d4227d9085909f409566d"
+            }
+          ]
+        },
+        "native_state_after_capture": {
+          "filename": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/runtime/test-tmp/native-a7af0e4ec6644908ba3ec56d4ad9fec1-ea7liuv7/native-provenance.FCStd",
+          "label": "native-provenance",
+          "undo_mode": 0,
+          "use_hasher": true,
+          "undo": [],
+          "redo": [],
+          "pending": false,
+          "intent": "fb4582a91791a561649852ca78c20269bd7b001147cf38eb3feaf3a7ed7e678b",
+          "objects": [
+            {
+              "name": "Solid",
+              "type": "Part::Feature",
+              "state": [
+                "Up-to-date"
+              ],
+              "status": "Valid",
+              "shape_status": [],
+              "brep_sha256": "534216d93c37f815f5e67132792fd91e8191becb632d4227d9085909f409566d"
+            }
+          ]
+        },
+        "capture_native_state_unchanged": true,
+        "snapshot_saved_document_xml": {
+          "label": "native-provenance",
+          "document_xml_sha256": "3ca858d5de47be34a87728d943e8b5744829ba06b9c4d222babc93e758e8a61d",
+          "document_xml_bytes": 5547
+        },
+        "saved_snapshot_label_matches_capture_name": true,
+        "snapshot_reopened_label": "c6dfc37d-78b1-4ec0-aef5-276ede9bca31",
+        "snapshot_reopened_filename_stem": "c6dfc37d-78b1-4ec0-aef5-276ede9bca31",
+        "default_raw_open_label_is_filename_stem": true,
+        "checkpoint_record": {
+          "schema": 1,
+          "document_id": "c6dfc37d-78b1-4ec0-aef5-276ede9bca31",
+          "revision": "d7d4f0f9-85e2-42cb-8972-174fa2568f7a",
+          "name": "native-provenance",
+          "source_file": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/runtime/test-tmp/native-a7af0e4ec6644908ba3ec56d4ad9fec1-ea7liuv7/native-provenance.FCStd",
+          "saved_at": 1791099192.7984152,
+          "sha256": "113677c055bc71f9d910a3150d1e382f5cd6e658d6bc8369f226e441627d4192",
+          "snapshot": "c6dfc37d-78b1-4ec0-aef5-276ede9bca31.FCStd",
+          "sketch": null,
+          "accepted_sketch": null,
+          "draft_sketch": null
+        },
+        "captured_geometry": {
+          "valid": true,
+          "solid_count": 1,
+          "volume_mm3": 7.999999999999998,
+          "brep_sha256": "534216d93c37f815f5e67132792fd91e8191becb632d4227d9085909f409566d"
+        },
+        "original_file_unchanged": true
+      }
+    },
+    {
+      "name": "test_native_frame_and_equal_measurement_model_mutations_are_detected_and_undo_restores.json",
+      "passed": true,
+      "input_sha256": "ff306ec92afccbe773a4b04d875c28e8e831a0e2083a444c2f3c15c32a6b3866",
+      "checks": {
+        "native_translation_and_rotation_detected": true,
+        "native_frame_undo_restored": true,
+        "equal_bbox_and_volume": true,
+        "model_content_change_detected": true,
+        "native_model_undo_restored": true
+      }
+    },
+    {
+      "name": "test_native_link_false_replaces_body_source_frame_in_rotated_world_geometry.json",
+      "passed": true,
+      "input_sha256": "07cebe5703a66defd551dacf86eba372d50a6d975c7b6ce14dd357c7c510b0e6",
+      "checks": {
+        "native_false_replaces_body_source_placement": true,
+        "translated_rotated_world_corners_match": true,
+        "native_history_unchanged": true
+      }
+    },
+    {
+      "name": "test_original_studio_fixture_including_every_origin_point_survives_two_warm_inspections.json",
+      "passed": true,
+      "input_sha256": "331809988d9a64007a5af212d094e3c6cfeaa30ed8c9739d717b65dd1fdb5b3b",
+      "checks": {
+        "original_30_4_11_fixture": true,
+        "every_origin_point_covered": true,
+        "all_intrinsic_content_verified": true,
+        "strict_warm_inspect_equality": true
+      }
+    },
+    {
+      "name": "test_owned_intrinsic_point_content_and_model_hashes_survive_reads_and_warm_inspection.json",
+      "passed": true,
+      "input_sha256": "8ca41be6b51b532e1f394c22c787d2256e995c161ebed6a1b271dd28c6a16cce",
+      "checks": {
+        "all_four_owned_intrinsic_types": true,
+        "point_content_verified": true,
+        "model_hashes_retained": true,
+        "strict_read_and_inspect_equality": true,
+        "checked_cache_only_mask": true,
+        "unregistered_foreign_rejected_without_writes": true
+      }
+    }
+  ],
+  "method": "Full isolated native suites, local CI and explicit native file/datum/placement consequences",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "d2e1b3561e0b317554764713a9059dac2349a2cd",
+  "worktree_diff_sha256": "6fe0525249064c9d64f350998719d79b90787e5f507963fdd51386b1d4b42688",
+  "timings": {
+    "median": null,
+    "p95": null,
+    "worst": null,
+    "samples": []
+  },
+  "limits": "Validation-only hardening; application contract2.0 unchanged. Headless GUI state is unavailable. No parked implementation or hosted CI is accepted. M1 remains incomplete and real parametric conversions remain0/2.",
+  "ci": {
+    "status": "not_run",
+    "reason": "push not authorized",
+    "run_url": null
+  },
+  "counts": {
+    "tests": 194,
+    "passed": 194,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "suites": [
+    {
+      "name": "native",
+      "passed": true,
+      "counts": {
+        "tests": 159,
+        "passed": 159,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 105.93617739994079,
+      "source_unchanged": true
+    },
+    {
+      "name": "bridge",
+      "passed": true,
+      "counts": {
+        "tests": 7,
+        "passed": 7,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 4.25661880010739,
+      "source_unchanged": true
+    },
+    {
+      "name": "shortcuts",
+      "passed": true,
+      "counts": {
+        "tests": 22,
+        "passed": 22,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 0.6224206001497805,
+      "source_unchanged": true
+    },
+    {
+      "name": "workflows",
+      "passed": true,
+      "counts": {
+        "tests": 6,
+        "passed": 6,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 4.35041999979876,
+      "source_unchanged": true
+    }
+  ],
+  "input_sha256": "807d5ccc95d849d469649d09e7be05bbbec6a679b79c87210ada46ce127bd0e0"
+}

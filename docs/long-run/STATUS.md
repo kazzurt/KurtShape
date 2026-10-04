@@ -1,12 +1,12 @@
 # Long run status
 
 Program: C:\Users\Kurtz\Documents\KURT\CADkz\Claude\prompts\2026-10-03_codex_long-run-program.md
-Program SHA-256 when last read: BFD1820915CDEDE335C2FF421163F1A404E666211402E81DB8E936631D3C2995, 2026-10-03 20:55 America/Los_Angeles
-Updated: 2026-10-03 20:57 America/Los_Angeles
-State: IN PROGRESS Q00b resumed 2026-10-03 19:18; original start 2026-10-03 15:26
-Last green commit: 660acc5 (tag longrun/Q24a)
-Green copy: at longrun/Q24a (660acc5)
-Free disk: 52.6 GiB
+Program SHA-256 when last read: BFD1820915CDEDE335C2FF421163F1A404E666211402E81DB8E936631D3C2995, 2026-10-04 01:02 America/Los_Angeles
+Updated: 2026-10-04 01:14 America/Los_Angeles
+State: IN PROGRESS Q24b since 2026-10-03 23:47 America/Los_Angeles
+Last green commit: d2e1b35 (tag longrun/Q00b)
+Green copy: still at longrun/Q24a (660acc5); updater refused because process inventory access was denied
+Free disk: 49.88 GiB
 
 ## Queue
 
@@ -14,16 +14,16 @@ Free disk: 52.6 GiB
 |---|---|---|---|---|---|
 | Q00a | Foundation: fixes, isolation, one runner | DONE | 259a61b | 147/7/22 | 405 workflows; exactly 3 external skips without examples |
 | Q01 | Green copy | DONE | 7a20a63 | 147/7/22 | Green interface41;31 script probes;405 workflow checks |
-| Q00b | Foundation: CI, GUI runner, benchmarks, lint | IN PROGRESS (tag pending) | Own untagged8a8d4a4 | 150/7/22 +405 | Full18:17 pass+exact carrier;77 images;67 five-repeat metrics passed; final evidence packaging |
+| Q00b | Foundation: CI, GUI runner, benchmarks, lint | DONE | d2e1b35 | 150/7/22 +405 | Full18:17 pass+exact carrier;77 images;67 five-repeat metrics; green update refused safely |
 | Q02a | Keyboard registry, keymap, chords and palette | PARKED | d8cdb1b WIP | 147/7/59 +405 | Three GUI failures; hidden combo popup blocker, no Q02a tag |
 | Q02b | Native shortcut audit and behavior bindings | BLOCKED | | | Needs parked Q02a; completes Q02 |
-| Q03 | Fast build status | BLOCKED | | | Needs Q00b |
-| Q04 | Operation registry | BLOCKED | | | Needs Q03 |
+| Q03 | Fast build status | PARKED | 6156f3d WIP | Baseline150/7/22+405 | Three before-profile failures; volatile App::Point origin hash blocker; no production edits |
+| Q04 | Operation registry | BLOCKED | | | Needs parked Q03 |
 | Q05 | Sketch operations | BLOCKED | | | Needs Q04 |
 | Q06 | Agent read access | BLOCKED | | | Needs Q03/Q04 |
 | Q07 | Preview engine | BLOCKED | | | Needs Q03 |
 | Q08 | Feature framework, first six features | BLOCKED | | | Needs Q02/Q04/Q07 |
-| Q09 | Idle recovery | BLOCKED | | | Needs Q00b |
+| Q09 | Idle recovery | PARKED | d3b9d49 WIP | Native173/174;7/22+405 | Three Full failures; final raw native filename separator expectation; no source safety failure or Q09tag |
 | Q10 | Remaining schema features | BLOCKED | | | Needs Q08 |
 | Q11 | Incremental intent and summaries | BLOCKED | | | Needs Q03 |
 | Q12 | Feature list | BLOCKED | | | Needs Q08/Q11 |
@@ -39,7 +39,8 @@ Free disk: 52.6 GiB
 | Q22 | Sketcher behaviors | BLOCKED | | | Needs Q05/Q13 |
 | Q23 | Feature repair and control | BLOCKED | | | Needs Q12 |
 | Q24a | Hardening: bounded validation fixtures and current architecture | DONE | 660acc5 | 147/7/22 +405 | Assembly58/native4; full17:16 pass,1 exact baseline;76 images inspected; green updated |
-| Q24b | Hardening: hidden controls, display and final stale-doc sweep | QUEUED | | | Remaining Q24; final handoff after eligible work |
+| Q24b | Hardening: native fixture, file identity and datum observations | IN PROGRESS | |159/7/22 +405| Native/CI/9proofs and67×5bench passed; final record/tag pending |
+| Q24c | Hardening: hidden controls, display and final stale-doc sweep | QUEUED | | | Remaining Q24; final handoff after eligible work |
 
 ## Questions for Kurt (answer in NOTES.md or in the chat)
 
@@ -58,7 +59,15 @@ Free disk: 52.6 GiB
 
 ## Try this (newest first)
 
-### Q00b CI and benchmark foundation (tag pending)
+### Q24b native verification (tag pending)
+
+1. Run run-checks.ps1 -Full -KeepNativeTemp and inspect the retained native fixture/test/PID receipts; all159 native methods passed with actual ownership, source hashes and ordinary fixture cleanup verified.
+2. In a disposable native document, save a2mm cube, assign a custom Label, edit to3mm and saveCopy; the file test verified custom saved XML, filename-stem raw reopen, undo8/redo27mm3 and unchanged original8mm3 bytes.
+3. Snapshot the studio fixture with30 base features/four parts/11 consumers/two scoped operations and inspect twice; its test verified96 owned datums/12Points/63 modeled Shape objects with exact content, history, Tip and revision unchanged.
+4. Translate and rotate a Body, then undo; the frame test detected the exact changed placement and directly verified its restoration, retaining native Touched semantics.
+5. Move an offset hole while retaining equal box bounds and volume, then undo; the content test detected the changed complete BRep and restored the original model hash/content.
+
+### Q00b CI and benchmark foundation (d2e1b35)
 
 1. Copy an Extrude or Remove into its Body, change the original and copy dimensions independently, then undo; the unchanged Copy25 recipe and new Pad/Pocket native tests verified actual editable dependencies and one-step copies.
 2. Save, relocate and reopen an Assembly without its original source; Assembly58 and fresh native4 verified four embedded occurrences, three joints and complete geometry fingerprints.
@@ -96,18 +105,18 @@ Free disk: 52.6 GiB
 
 | Metric | Fixture | Baseline | Best | Latest | Target | Open? |
 |---|---|---|---|---|---|---|
-| Tip edit overhead ms | Plate60 | 3914.570 | 3914.570 | 3914.570 | 150 phase0 /50 phase1; Q03/Q11 | Yes |
-| Changed inspect ms | Plate60 | 3075.623 | 3075.623 | 3075.623 | 20; Q03 | Yes |
-| Warm inspect ms | Plate60 | 23.343 | 23.343 | 23.343 | Q03 measured follow-up | Yes |
-| First preview ms | Plate60 | 10956.598 | 10956.598 | 10956.598 | 50; Q07 | Yes |
-| Preview update ms | Plate60 | 9115.445 | 9115.445 | 9115.445 | Q07 measured follow-up | Yes |
-| Checkpoint ms | Plate60 | 1586.709 | 1586.709 | 1586.709 | 16; Q09 | Yes |
-| Native / managed open ms | Plate60 | 1750.139 /16187.745 | 1750.139 /16187.745 | 1750.139 /16187.745 | Q03 open without rebuild | Yes |
-| Full rebuild ms | Studio | 1222.620 | 1222.620 | 1222.620 | 1.5× post-Q03 median, pending | Yes |
-| Rebuild selector /auto-scope ms | Studio | 397.702 /22.161 | 397.702 /22.161 | 397.702 /22.161 | Exact bounded Q03 evaluation | Yes |
-| Rebuild kernel recompute ms | Studio | 170.005 | 170.005 | 170.005 | Comparison baseline | No |
-| Changed /warm inspect ms | Studio | 2108.505 /1731.540 | 2108.505 /1731.540 | 2108.505 /1731.540 | Q03 | Yes |
-| Tip edit overhead ms | Studio | 4250.458 | 4250.458 | 4250.458 | Q03/Q11 | Yes |
+| Tip edit overhead ms | Plate60 | 3914.570 | 3155.770 | 3155.770 | 150 phase0 /50 phase1; Q03/Q11 | Yes |
+| Changed inspect ms | Plate60 | 3075.623 | 3075.623 | 3135.515 | 20; Q03 | Yes |
+| Warm inspect ms | Plate60 | 23.343 | 23.343 | 23.391 | Q03 measured follow-up | Yes |
+| First preview ms | Plate60 | 10956.598 | 10403.857 | 10403.857 | 50; Q07 | Yes |
+| Preview update ms | Plate60 | 9115.445 | 8942.989 | 8942.989 | Q07 measured follow-up | Yes |
+| Checkpoint ms | Plate60 | 1586.709 | 1567.472 | 1567.472 | 16; Q09 | Yes |
+| Native / managed open ms | Plate60 | 1750.139 /16187.745 | 1750.139 /12468.022 | 1770.232 /12468.022 | Q03 open without rebuild | Yes |
+| Full rebuild ms | Studio | 1222.620 | 1119.408 | 1119.408 | 1.5× post-Q03 median, pending | Yes |
+| Rebuild selector /auto-scope ms | Studio | 397.702 /22.161 | 367.172 /20.315 | 367.172 /20.315 | Exact bounded Q03 evaluation | Yes |
+| Rebuild kernel recompute ms | Studio | 170.005 | 150.048 | 150.048 | Comparison baseline | No |
+| Changed /warm inspect ms | Studio | 2108.505 /1731.540 | 1834.373 /1655.516 | 1834.373 /1655.516 | Q03 | Yes |
+| Tip edit overhead ms | Studio | 4250.458 | 3739.866 | 3739.866 | Q03/Q11 | Yes |
 
 ## Red at baseline
 
@@ -121,8 +130,10 @@ Free disk: 52.6 GiB
 | Q | Branch | Cause | What would unblock it |
 |---|---|---|---|
 | Initial decision-dependent items | None | Questions above | Kurt's answer |
-| Q00b | longrun/parked-Q00b-ci-benchmarks | FullGUI failed3times: crash-status proof, STEPpath, Assembly264charBREP helper. Native/localCI/probes passed;34images inspected | Blocker landed as longrun/Q24a (660acc5); resuming by cherry-pick, original branch retained |
+| Q00b historical WIP | longrun/parked-Q00b-ci-benchmarks | Original three failed gates retained; unparked after Q24a blocker | Completed at longrun/Q00b (d2e1b35); original branch retained |
 | Q02a | longrun/parked-Q02a-keyboard-registry | Three keyboard GUI failures; owned processes exited normally. Latest reached16 checks, expected combo popup absent/unverified | Land proven bounded hidden Qt control interaction with diagnostic popup/view/click/selection state and unchanged exact assertions |
+| Q03 | longrun/parked-Q03-status-profile | Three diagnostic profile gates failed; final11 App::Point origin hashes volatile, all other recorded model/history/datum fields unchanged; Point content was unproved then; no production edit | Land bounded intrinsic-datum snapshot proof including App::Point and native placement observation seam; retain all attempts |
+| Q09 | longrun/parked-Q09-idle-recovery | Three production Full failures; latest173/174 fails exact filename string separators after all recovery consequences pass; no localCI/GUI/bench run | Land compact fixture/native SaveAs Label/FileName/path-identity proof, then retain exact captured native provenance assertions |
 
 ## Notes handled
 
@@ -312,3 +323,96 @@ Own recipe report: kurtshape-problem-20261003-204924-ac7dc9ee.json came from the
 - 2026-10-03 20:57: Actual evidence publication attempt1 passed, owned53080 exit0/no timeout, three reports bound to final diff25b9e683 and53 immutable inputs unchanged. Final independent docs/preflight review0. A separate read-only root provenance inspection command failed before reading diff because PowerShell array concatenation split safe.directory incorrectly; fixing only inspection argument construction before retry, no publication/native rerun or file changes. NOTES empty.
 
 - 2026-10-03 20:58: Read-only provenance inspection retry passed final diff25b9e683059056e4589e9456804c30a174ea100914d492b8ea72c5a69ad2399e; all three public reports passed and53 input hashes remain exact. Full source/test/script and final living-doc reviews0remaining; all required gates complete, no assertion weakened. Preparing own untaggedWIP amend, longrun/Q00b and guarded green update; original parked branch retained.
+
+- 2026-10-03 20:59: Finished Q00b at d2e1b3561e0b317554764713a9059dac2349a2cd, tagged longrun/Q00b after final public report review0findings and exact provenance checks. Own untaggedWIP amended as required; parked original preserved. Guarded green updater refused before any write because Win32 process inventory Access denied; green still Q24a, no workaround or live-session action. Main clean before bookkeeping; Q03 first eligible and Q09 also unblocked. Full program reread follows immediately.
+
+- 2026-10-03 21:03: Q03 started after full unchanged program/brief Increment1/decision1/budgets/AppendixB reads. Main d2e1b35 exactly longrun/Q00b, only STATUS modified, no notes or new user reports, 52.6GiB free. Q02a stays parked; Q03 is first eligible. Plan precedes production edits; current per-document geometry cache, repeated validity checks, touch-all open and U2 exact selector/scope costs identified. Green remains Q24a after safe inventory refusal.
+
+- 2026-10-03 21:11: Q03 plan written before production edits. Complete current core/U2/GUI audits identified measurement policy, once-only hasher migration and idle scope evaluations; disjoint ownership set. Before-change studio cProfile helper full preflight review0 after scratch registration fix, source still d2e1b35. Starting one owned hidden300s diagnostic, eight phases/eight consequences; native mechanics probe preparation remains read-only. No production edits until both probes exit and source/tree checks pass.
+
+- 2026-10-03 21:12: Q03 studio profile attempt1 failed before importing FreeCAD or executing fixture: ownedPID 64440 exited2; Python path argument had an unintended leading space from PowerShell array/concatenation precedence. Receipt/log preserved, source_unchanged=true. NOTES empty. Correct only private argument construction and use uniquely named attempt2 receipt/profile before retry; no production edit or baseline acceptance claim. Native mechanics probe has not launched.
+
+- 2026-10-03 21:14: Q03 before-studio profile attempt2 failed after fixture setup/two warm inspections: ownedPID 24492 exit1/source unchanged, asserted all-object shape snapshots differed. Preserved both wrappers/Python/raw report/phases; exact differences under read-only diagnosis before any retry. NOTES empty; no production edits. One third profile attempt remains, only after a proved scratch correction; native mechanics probe still unlaunched.
+
+- 2026-10-03 21:14: Exact profileattempt2 comparison proves 82 differences, all named Origin/axis/plane helper hashCode only; every model hash, native state/Tip, revision/intent/UndoCount/RedoCount unchanged. Matches documented F5 volatile datum shapes on Windows; not an application mutation. Authorize third and final scratch profile correction retaining raw datum hashes as observations and comparing exact serialized datum BREP content/type alongside strict model hashes; immutable attempt1/2 preserved. No production assertion change; NOTES read after failure.
+
+- 2026-10-03 21:23: Resume audit complete: full unchanged program, STATUS/NOTES, Q03 spec and native facts re-read; main d2e1b35 and all changes explained, no new user reports, 52.1GiB free. Final third studio profiler fully reviewed with exact datum BRep/null comparisons and all strict model invariants; starting owned hidden diagnostic with preserved attempt1/2. Native observation probe awaits independent final review. No production edit until both probes and exact tree checks pass.
+
+- 2026-10-03 21:24: Q03 before-studio profile attempt3 failed at the strict warm-inspection snapshot equality even with exact datum BRep serialization; ownedPID 51676 exited1, no timeout, source unchanged. Third failed gate requires parking Q03; no fourth retry or native mechanics launch. All three receipts/scripts/raw observations preserved; NOTES empty. Read-only exact difference diagnosis will identify the blocker before WIP park, then Q09 is the next eligible row.
+
+- 2026-10-03 21:26: Parked Q03 WIP6156f3dea3c61928b7daa8e4122e81ebcad80e4c on longrun/parked-Q03-status-profile after third failed diagnostic gate; returned main d2e1b35, only STATUS changed. Exact pre-probe diff/tree unchanged; all owned processes exited. No fourth retry, source edit or unused native-probe launch. Q09 is next eligible; full program reread follows.
+
+- 2026-10-03 21:29: Q09 started after complete unchanged program and brief Increment5 read. Main exactly longrun/Q00b, only STATUS modified, NOTES empty and report listings unchanged, 52GiB free. Q02a/Q03 stay parked; Q09 is first eligible. Auditing schema2 safety, native Transient/prefs behavior, idle scheduler and copied-profile AutoSave patch before plan/probe/source edits. No clean-main rerun after park.
+
+- 2026-10-03 21:41: Q09 plan written before source changes. Native helper full root review retained13 exact mechanical consequences; prelaunch finite-depth Pocket correction and three wrapper safety/source guards fixed before any gate. Final helper A299D33F/wrapper94FAE557, independent review pending. Audit records unmanaged recovery dirty generation, valid ghost handling, commit serialization and verified previous preservation; no production edits or processes launched.
+
+- 2026-10-03 21:41: Final independent Q09 native probe/helper review0remaining; frozen hashes match,13 mechanical checks and exact cleanup flags agree. Starting native Transient/light-checkpoint gate attempt1, owned hidden300s wrapper with six private roots and immutable receipt/log. Source stays unchanged until exit and exact pre-probe tree comparison.
+
+- 2026-10-03 21:42: Q09 native light-checkpoint probe attempt1 failed: ownedPID 34280 exited1 before full mechanical completion, no timeout/source change. Immutable receipt/log/report preserved; NOTES empty. Root reading exact native error before any scratch correction/retry; production source remains frozen and no implementation GO.
+
+- 2026-10-03 21:44: Native probe attempt2 authorized after logged attempt1/NOTES read; root and independent tight delta reviews0findings, helperBF737F51/wrapper07F923CE match. Only empty native preference collection handling and raw observations changed; all13 mechanical assertions unchanged. Starting new owned hidden300s profile/receipt, original attempt preserved and production frozen.
+
+- 2026-10-03 21:45: Q09 native light-checkpoint probe attempt2 failed: ownedPID 42900 exited1, no timeout/source change; immutable receipt/log/report preserved. NOTES empty. Reading exact new failure before any retry; one third attempt remains only after a proved scratch correction. Production source still unchanged.
+
+- 2026-10-03 21:48: Final native probe attempt3 authorized after logged attempt2/NOTES read: prior12 consequences passed; only actual saved owner/source fixture prerequisite corrected underF17. Root and independent delta reviews0findings, helper46B94657/wrapper751E2C5C match. All13 assertions and prior artifacts retained; starting owned hidden300s finalattempt. Third failure would park Q09; production remains frozen.
+
+- 2026-10-03 21:49: Final Q09 native mechanics attempt3 passed13checks, ownedPID8100 exit0/no timeout, strict preferences/models/history/source/fourfixtures unchanged and exact before-probe tree e3b0c442 passed.17.573ms tiny-fixture snapshot is diagnostic only. Firsttwo failures retained; corrected fixture script is not an identical flaky rerun. Disjoint production implementation GO now; no checks while source changes.
+- 2026-10-03 21:59: Resume audit read complete unchanged program, STATUS/NOTES, brief invariants/facts/Increment5 and Q09 plan. Main d2e1b35/longrunQ00b and Q09 records explained; no new user reports or notes,52GiB free. Native mechanics passed13; disjoint production implementation now running, root integrates independent fresh recovery proof and comparable benchmark breakdowns. No gates until source freeze.
+
+- 2026-10-03 22:33: Resume audit read complete unchanged program, STATUS/NOTES, brief invariants/facts/Increment5 and Q09 plan; main/tag and all Q09 changes explained, report listings unchanged,49.7GiB free. Pre-gate independent reviews identified dangling recovery links, GUI Modified restoration and stale worker acknowledgment order; bounded corrections authorized with existing-method assertions. All owned native processes/shell gates closed; no production gates yet. GUI producer finalization and full freeze follow.
+
+- 2026-10-03 22:53: Q09 complete source frozen after root and independent preflight reviews; final three store fixes plus recipe cleanup and one-attempt scheduler guard repaired, no existing assertion weakened. Expected174/7/22 and405 workflow checks, copied-profile86, recovery producer19/fresh native17. Nine PowerShell paths AST0. Explicit staging and exact tree capture precede Full/native plus localCI attempt1; timed GUI starts only after CPU gates exit. NOTES empty, all earlier mechanics failures retained.
+
+- 2026-10-03 22:57: Q09 Full/nativeCI attempt1 failed: native163/174 (ten saveCopy Failed to open file errors and one cheap-verifier fixture assertion), bridge7/shortcut22/workflow405 passed, zero skips/all source unchanged; shell22806 exited1 and all native children exited. Receipt/raw failures preserved. No localCI/profile/GUI/bench gate ran. NOTES empty; exact failure diagnosis precedes any correction/retry. Production gate count1, two retries remain; recovery safety must be restored without weakening assertions.
+
+- 2026-10-03 23:08: Resume audit read full unchanged program, STATUS/NOTES, brief invariants/facts/Increment5 and Q09 plan; main exactly longrun/Q00b, all staged Q09 paths explained, no new reports/notes. Full gate attempt1 remains failed and preserved; no source edits or second gate launch. Separate save-path diagnostic prepared for causal short/long native comparison and exact model/history/prefs/original-byte checks; original13 mechanics probe will not be repeated.
+
+- 2026-10-03 23:09: Q09 separate causal native save-path diagnostic starts after root and independent full preflight0findings; helper57BF442E/wrapperF27C2447 frozen, four strict short-path/model/history/prefs/original-byte consequences. Exact failed-gate tree9498013e unchanged. Hidden owned300s process, fullUUID six-root profile, immutable receipt, no source edit or Full retry.
+
+- 2026-10-03 23:10: Causal native save-path diagnostic passed4, owned21028 exit0/no timeout/source9498013e unchanged. Identical schema2 basename195chars saves/verifies,231chars fails OSError; oldschema1 basename218chars saves on same long parent. Model/history/intent/Revision/preferences/original bytes unchanged for allthree. Authorize only short owned native test fixtures plus actual incomplete ZIP EOCD fixture correction, no recovery filename/verifier assertion weakening. First Full failed gate remains counted1; retry2 after delta review/freeze/stage/new receipt; no live session action.
+
+- 2026-10-03 23:17: Retry2 preflight source frozen: compact native fixture helper7E01B3D4 and malformedEOCD fixtureE6D44D51 reviewed root/independently0material; all original assertions/counts retained. KeepNativeTemp forwards existing runner flag to retain suite receipts; GUI wrapper now requires exact19producer+17native checks, finaldelta review0. NOTES empty. Explicit stage/newtree2/immutablewrapperFF76A2ED before Full2; first failed gate logged before this retry, no identical rerun or source edits during gates.
+
+- 2026-10-03 23:20: Q09 Full/nativeCI attempt2 failed native173/174 with one unmanaged recoveredLabel mismatch foreign-original versus Foreign recovery label; all save paths/cheap-verifier fixtures and other safety tests passed, zero errors/skips, bridge7/shortcut22/workflow405 passed/allsourceunchanged. Shell36499 exited1; all children exited, no localCI/GUI/bench launched. Failed receipt/raw/suite fixture receipts retained. NOTES empty, precise native saveAs/Label fixture-vs-capture diagnosis before any correction or retry. Fullgate counter2; third is final attempt under program.
+
+- 2026-10-03 23:27: Separate native foreign SaveAs/Label diagnostic starts after root/two independent full preflight0findings; helperFF5F80FC/wrapper4BE5B79F frozen, six exact label/full-recovery/27unsaved/read-only/original8/source consequences at190char stage. Hidden owned300s private fullUUID profile, immutable receipt, before-label tree captured. No production/test source correction or Full3 launch; no new preference/timing claim.
+
+- 2026-10-03 23:28: Native foreign-label diagnostic passed6, owned25664 exit0/no timeout/source and exacttree8ff5df1c unchanged. Actual native firstsaveAs changes custom Label to foreign-original; explicitly assigning the same desired Label afterward produces fullschema2 record and recovered Foreign recovery label/unsaved unmanaged27/read-only rejection, original8bytes unchanged. Authorize minimal testfixture assignment ordering plus exact first/second manifest-name assertions; no runtime Label behavior or recovered-label assertion change. Both Full failures preserved; finalFull3 onlyafter review/freeze.
+
+- 2026-10-03 23:30: Final Full/nativeCI attempt3 starts after logged twofailed gates/NOTESread and corrected nativefixture causalproof. Root/independent testdelta review0findings, frozen17450A19 andwrapperA9FAE178 strict174/7/22+405/zero skips/source/tree/KeepNativeTemp retained. Exact staged source/tree3 capturedbeforelaunch, no editsduringgates. Third failed consolidated gate would parkQ09; earlier failures/causal receipts retained. GUI/bench remain pending until allCPUgatesexit.
+
+- 2026-10-03 23:34: Third/final Q09 Full/nativeCI gate failed173/174 at final explicitattach recovered_from string: FreeCAD native FileName uses forward slashes while pathlib source string uses backslashes for the same absolute fixture. Label/27unsaved/read-only/originalSHA and all earlier consequences passed; zero errors/skips, bridge7/shortcut22/workflow405 passed, source unchanged. Shell41888 exited1/all children exited; no localCI/profile/GUI/bench launch. NOTES empty. Three failed consolidated gates require PARKQ09; no fourth gate/fix/diagnostic. Preserve all source/private helpers/receipts and return last tagged main before next eligibleQ24b.
+
+- 2026-10-03 23:37: Parked Q09 WIPd3b9d495da31f3bb637b84eebf3a8a8b2182dfcb on longrun/parked-Q09-idle-recovery; all31 source/test/doc paths preserved, returned main exactly longrun/Q00b d2e1b35 with only STATUS modified. No sourcefix/fourthretry/publicreport/tag/greenupdate. Known lasttaggedmain already passed150/7/22+405 and sourceexactrestored; park rule forbids redundant clean-main rerun. Stop7 is not established: no same environment inability across increments, all suites executed, and no red clean-main evidence. Q24b independent validation blockers are nexteligible; full program/spec reread follows immediately.
+
+- 2026-10-03 23:47: Q24b started after complete unchanged program/STATUS/NOTES/brief invariants-facts/Increment18 reads and git/report audit; main exactly d2e1b35 longrun/Q00b, only STATUS changed, 49.7GiB free. Q02a/Q03/Q09 remain parked; next eligible bounded native validation hardening is split from remaining Q24c hidden controls/display/final docs. Read-only disjoint audits precede plan/code; no Q09 fourth retry or live-profile action.
+
+- 2026-10-03 23:50: Q24b plan written before implementation; disjoint validation-only source work authorized. Exact filename/source identity, real EOCD/XML fixture structure, origin-owned App::Point content and native Body-link placement tests are new assertions. Root adds explicit suite registration and helper source hashing. Independent fixture audit identified original-directory identity and immediate write-ancestry guards; both must be addressed before freeze. No native process or parked retry.
+
+- 2026-10-04 00:08: Q24b validation source frozen after root and independent complete reviews0remaining; two fixture ownership/write guards and one helper foreign-metadata creation seam repaired before any native run. All150 existing native assertions preserved; five file/guard and four datum/studio/placement methods derive159/7/22+6workflow405. PS AST0; first isolated source-only compile/inventory preflight starts, then explicit stage/tree capture and Full/localCI. Publisher preparation remains private and unlaunched.
+
+- 2026-10-04 00:10: Source-only preflight passed owned8296 with159/7/22 static methods/no unassigned classes/source unchanged. Explicit seven paths staged; exact tree54cac4570c7d3e73c3f92a44daf3fb4d324f4a3e868c7b31ebc1f4b851c86ca0 captured. Q24b Full/localCI attempt1 running in shell8329/PowerShell44764 on frozen sources; no edits to tracked sources or benchmarks until all owned CPU gates exit. NOTES empty.
+
+- 2026-10-04 00:12: Q24b Full/localCI attempt1 failed: aggregate192/194 with2native failures,0errors/skips; all suites executed and shell8329 exited1. No localCI or paired benchmark launched. Receipt/raw proof reports retained on frozen source; failed consolidated gate counter1. NOTES read after failure; exact native diagnostics precede any correction/retry, no parked gate rerun.
+
+- 2026-10-04 00:22: Resume audit read full unchanged program/STATUS/NOTES, brief invariants/facts/Increment18 and Q24b plan; main exactly d2e1b35, seven staged validation paths explained, reports unchanged and49.9GiB free. Full attempt1 counter1 preserved, all owned gates closed and exact tree54cac457 unchanged. Four fresh snapshot proofs passed all96 studio datums/12Points/63 strict model shapes; a separate bounded Label/XML probe is being prepared before any new-test correction or Full retry.
+
+- 2026-10-04 00:25: Separate native Label/XML diagnostic starts after root/full independent preflight0findings; PyB4E2A31B/wrapperBB08C54C frozen,8 strict live-state/file/geometry/source consequences and all3 archiveLabels measured independently. Exact failed tree54cac457 remains unchanged. Hidden owned300s fullUUID six-root profile/immutable receipt, no tracked source edit or Full retry; counter1 retained.
+
+- 2026-10-04 00:26: Separate Label/XML probe passed8, owned3132 exit0/no timeout/source and tree54cac457 unchanged. Actual originalXML stem, copy/snapshotXML customLabel and current schema1 record exactcustom/rawnativeFileName are distinct from default rawcopy/snapshot filename-stemLabels; unsaved27/original8/sourceSHA/prefs/history preserved. Authorize only two NEW unlanded file-test expectation corrections plus strict savedXMLLabel assertions/method rename, record exact changes in Q24b plan; all150 old native assertions/application behavior remain untouched. Fullcounter1 retained; retry2 onlyafter reviewed freeze/stage/newtree.
+
+- 2026-10-04 00:31: Second Full/localCI gate starts after firstfailure logged/NOTESread and separate8-check causalproof. Root/two independent minimalnewtestdelta reviews0; test95AAE901/wrapperABCE1DE8 frozen, sourcepreflight owned50404 passed159/7/22 inventory/source unchanged. Explicit test+plan restaged and immutable tree2 captured61546d6ee7adf14d92fc876c1b88d753a773aced56baed00e481cdf0fd6bc2de; strict159/7/22+405/zero skips/KeepNativeTemp/source/tree guards retained. No source edits or benchmarks until all CPUgates exit.
+
+- 2026-10-04 00:35: Corrected Full/localCI attempt2 completedexit0:159/7/22+405, zero failures/errors/skips/allsource unchanged; local20-hole3-repeat allfive sections passed and exacttree61546d6e unchanged. Shell4531/PS68884 andownednative67232/othergates allclosed; immutableCPUreceipt1D8D011C binds reports andPIDledgers. All9newproofs present on actualnativePID67232. Final independent complete staged7file review0remaining; serial paired67metric/335sample five-repeat benchmark starts now on frozenD89633AC, comparable immutableQ00bbaseline6BB9A4B2. No performanceacceptance before actualresults/requiredindependentconfirmation.
+
+- 2026-10-04 00:40: Independent actualCPU/proof audit0discrepancies: all194cases/native159+405 passed,53currentrunner sourcehashes exact, actualPID67232 binds all9newproofs/allocations; all9disposablefixtures cleaned and146nativeallocationreceipts retained. Studio96owned datums/12Points/63modeledobjects (120strictShapeproperties/78nonnull), two completewarm snapshots equal; planted frame/content and actualLinkFalse8corners/24mm3 detected. LocalCI owned44496 andlayout19108 bothpassed/closed. Serialbenchmark shell52051 ownsplate42288 inq24b-f5a03d07e13d4c759d9c8d5998ae42a5; resultsstillpending and trackedsource remainsfrozen.
+
+- 2026-10-04 00:56: Paired five-repeat benchmark completed shell52051 exit0: all67metrics/335samples, sixowned42288/66452/63316/26488/22332/31996 exits0/source unchanged, no targetANDbest1.2+5 suspect or requiredconfirmation. AggregateBC45C66D immutable; all39plate+28studio medians compared with Q00b6BB9A4B2, six phase target misses remainopen. Final exacttree61546d6e passed before livingdoc edits. README/contract/M1/architecture and accepted Q24b record now updated with actual limits; explicit small publication/finalreview/tag follow.
+
+- 2026-10-04 01:05: Resume audit completed full unchanged program/STATUS/NOTES/invariants/facts/Q24b record and git/report/disk checks. All passed native/CI/benchmark processes remain closed; no repeated gates. Final independent benchmark audit0discrepancies. Two final documentation findings corrected: scope historical Q03 observations to captured fields and describe green as a tested checkout while stillQ24a. Final public evidence uses ten explicit code/living-doc paths, excluding mutable long-run bookkeeping consistently with the tree gate; root reviews actual publication before commit/tag.
+
+- 2026-10-04 01:09: Explicit public evidence packaging attempt1 failed before public writes: owned publisher exited1 at proof-source binding ('Native proof source differs from the actual Full gate'). Immutable private profile/receipt/log retained; native/CI/benchmark gates stay passed and no tracked source changed. NOTES read after failure. Read exact mismatched proof source inventory before any scratch correction or retry; publication counter1, no acceptance/commit/tag yet.
+
+- 2026-10-04 01:12: Packaging failure diagnosis is exact: all five native-file proofs additionally hash run-checks.ps1, absent from the Python runner53 inventory; all five equal current420BBBC1. CPU-bound tree receiptA15B56E7 retains the original six-path diff61546d6e, independently reproduced unchanged now. Authorize a separately named private publisher2 that hash-binds the actual tree receipt and recomputes that exact six-path diff, permitting only the extra PS script after exact current-byte proof; all other sources remain strict. Original publisher/wrapper/failed22448 receipt33E4F47C untouched. No test/benchmark rerun or public write; retry only after final delta review.
+
+- 2026-10-04 01:14: Corrected explicit publisher2 passed owned33624 exit0/no timeout; original failed publisher22448 and its scripts remain intact. Public native200E2E85 and benchmark5222DBCE bind final ten-path diff6FE05252 and actual194/194 cases/405 workflow checks/67metrics/335samples. Wrapper5E776836 and inputreceiptF3FC7714 retain26 immutable inputs; all26 inputs/ten current sources and exact public provenance independently rechecked unchanged. Root and tight-delta reviews0; actual public-report final review precedes focused commit/tag. NOTES empty, no native/benchmark rerun.

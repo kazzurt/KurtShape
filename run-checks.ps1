@@ -1,4 +1,4 @@
-param([switch]$Full, [switch]$WriteEvidence, [switch]$Lint)
+param([switch]$Full, [switch]$WriteEvidence, [switch]$Lint, [switch]$KeepNativeTemp)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'tools\validation-session.ps1')
 Push-Location $PSScriptRoot
@@ -23,6 +23,7 @@ try {
     New-Item -ItemType Directory -Force -Path $reportFolder | Out-Null
     $nativeArgs = @('-B','tools\run_native_tests.py','--require-native','--report',(Join-Path $reportFolder 'native.json'),'--junit',(Join-Path $reportFolder 'junit.xml'))
     if ($Full) { $nativeArgs += '--require-external' }
+    if ($KeepNativeTemp) { $nativeArgs += '--keep-temp' }
     Invoke-KurtShapeValidationPython -Executable $pythonPath -Arguments $nativeArgs -Name 'all-test-suites' -TimeoutSeconds 7500
     Write-Output ('Report: ' + (Join-Path $reportFolder 'native.json'))
     if ($Lint) {

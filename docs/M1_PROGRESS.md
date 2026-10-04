@@ -1,6 +1,12 @@
 # KurtShape project continuity
 
-Updated October 3, 2026, America/Los_Angeles. Implementation authorized in this chat; **M1 remains incomplete**. Current runnable slice: `Codex/kurtshape`. Prior plans remain in `cadkz-project-planning`; source examples and Claude reference area are preserved in place.
+Updated October 4, 2026, America/Los_Angeles. Implementation authorized in this chat; **M1 remains incomplete**. Current runnable slice: `Codex/kurtshape`. Prior plans remain in `cadkz-project-planning`; source examples and Claude reference area are preserved in place.
+
+## October 4, 2026 — Q24b native validation hardening
+
+The [Q24b record](long-run/Q24b-native-validation-hardening.md) adds nine native file, datum, placement and fixture-guard methods while retaining all 150 existing native regressions. Exclusive short fixtures retain suite/PID/identity receipts and preserve suspect cleanup targets. Saved XML/checkpoint labels and exact native filename provenance are checked separately from raw native reopen labels. The studio fixture with 30 base features, four parts, 11 consumers and two scoped operations includes 96 Origin-owned datums, all 12 Points and 63 modeled Shape objects; two warm inspections retain complete strict content, frames, object order, Tip, revision and history. Planted frame changes and equal-volume/equal-bbox model changes are detected and restored through native undo. Contract remains 2.0; no application implementation is imported from parked work.
+
+Full validation passed 159 native, 7 bridge and 22 shortcut tests plus 405 workflow checks, without skips or source changes. Local CI passed its 20-hole benchmark with three repeats. Both established fixtures passed 67 metrics with 335 raw samples from five repeats and no metric requiring regression confirmation under the target-and-baseline rule. Plate medians are 3155.770 ms edit overhead, 3135.515 ms changed inspection, 10403.857 ms first preview and 1567.472 ms checkpoint. Studio rebuild is 1119.408 ms, including 367.172 ms selector evaluation, 20.315 ms auto-scope synchronization and 150.048 ms native recompute. Absolute speed targets remain open; these comparison measurements establish no application speed improvement. Headless GUI state is unavailable, and no new product UI or comfort acceptance is claimed. Hosted CI still awaits Kurt's push. M1 remains incomplete and real parametric conversions remain 0/2.
 
 ## October 3, 2026 — Q00b CI and performance foundation
 
