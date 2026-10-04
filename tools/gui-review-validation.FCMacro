@@ -23,6 +23,7 @@ main.resize(1440, 920)
 main.show()
 from kurtshape.ui import start
 from kurtshape import core as module
+from kurtshape import geometry
 panel = start()
 output = evidence_dir("review-followup")
 output.mkdir(parents=True, exist_ok=True)
@@ -90,10 +91,11 @@ def validate():
         call("add_circle",sketch="ConflictSketch",x=6,y=0,diameter=2)
         check("Explicit Cancel discards the current edit",bool(panel.finish_sketch(cancel=True)) and doc.ConflictSketch.GeometryCount==1)
         panel.tick()
-        with patch.object(module,"intent_signature",wraps=module.intent_signature) as intent, patch.object(module,"measurements",wraps=module.measurements) as validity:
+        computed_before = dict(panel.core.geometry.stats["computed"])
+        with patch.object(module,"intent_signature",wraps=module.intent_signature) as intent, patch.object(geometry,"check_shape",wraps=geometry.check_shape) as validity:
             for _ in range(25):
                 panel.tick()
-            check("25 idle GUI ticks perform no intent hash or BRep validation",intent.call_count==0 and validity.call_count==0)
+            check("25 idle GUI ticks perform no intent hash or BRep validation",intent.call_count==0 and validity.call_count==0 and dict(panel.core.geometry.stats["computed"]) == computed_before)
         managed = App.activeDocument()
         managed_id = panel.state["document_id"]
         App.newDocument("NativeOnly")

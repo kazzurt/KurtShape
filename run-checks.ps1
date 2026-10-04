@@ -2,6 +2,8 @@ param([switch]$Full, [switch]$WriteEvidence, [switch]$Lint, [switch]$KeepNativeT
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'tools\validation-session.ps1')
 Push-Location $PSScriptRoot
+$perfPresent = Test-Path Env:KURTSHAPE_PERF
+$perfValue = $env:KURTSHAPE_PERF
 try {
     $checksSession = Join-Path $PSScriptRoot ('runtime\test-tmp\checks-' + [DateTime]::Now.ToString('yyyyMMdd-HHmmss') + '-' + $PID)
     Initialize-KurtShapeValidationEnvironment -Root $PSScriptRoot -Session $checksSession -WriteEvidence:$WriteEvidence
@@ -22,7 +24,7 @@ try {
     $reportFolder = Get-KurtShapeEvidenceDirectory 'checks'
     New-Item -ItemType Directory -Force -Path $reportFolder | Out-Null
     $nativeArgs = @('-B','tools\run_native_tests.py','--require-native','--report',(Join-Path $reportFolder 'native.json'),'--junit',(Join-Path $reportFolder 'junit.xml'))
-    if ($Full) { $nativeArgs += '--require-external' }
+    if ($Full) { $env:KURTSHAPE_PERF = '1'; $nativeArgs += '--require-external' }
     if ($KeepNativeTemp) { $nativeArgs += '--keep-temp' }
     Invoke-KurtShapeValidationPython -Executable $pythonPath -Arguments $nativeArgs -Name 'all-test-suites' -TimeoutSeconds 7500
     Write-Output ('Report: ' + (Join-Path $reportFolder 'native.json'))
@@ -33,4 +35,8 @@ try {
             if ($LASTEXITCODE -ne 0) { throw 'Lint checks failed.' }
         } else { Write-Warning 'ruff is not on PATH; lint was not run.' }
     }
-} finally { Pop-Location }
+} finally {
+    if ($perfPresent) { $env:KURTSHAPE_PERF = $perfValue }
+    else { Remove-Item Env:KURTSHAPE_PERF -ErrorAction SilentlyContinue }
+    Pop-Location
+}

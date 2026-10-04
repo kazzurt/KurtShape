@@ -15,6 +15,7 @@ folder. Originals and the user's open app are not touched.
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import os
 from pathlib import Path
@@ -23,6 +24,8 @@ import sys
 import time
 import traceback
 import uuid
+import xml.etree.ElementTree as ET
+import zipfile
 
 from kurtshape_evidence import evidence_dir, register_runtime_folder
 
@@ -65,7 +68,7 @@ REPORT = {"passed": False, "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC
           "recipe": "tools/validate_modeling_workflows.py", "runtime_artifacts": str(RUN),
           "api_sources": ["Mod/PartDesign/PartDesignTests/" + item for item in
                           ("TestLinearPattern.py", "TestPolarPattern.py", "TestPipe.py", "TestLoft.py")],
-          "persistence_note": "FreeCAD 1.1.4 restores deprecated AttacherEngine display text from Engine 3D to Engine Plane for Attacher::AttachEnginePlane and uses the filename as document display label. Comparison checks authoritative AttacherType and every other object intent field exactly; only that known engine display alias is normalized, and the filename display label is checked separately.",
+          "persistence_note": "FreeCAD 1.1.4 restores deprecated AttacherEngine display text from Engine 3D to Engine Plane for Attacher::AttachEnginePlane and uses the filename as document display label. The five ordinary workflows compare every other object intent field exactly. The angled-plane case retains all original/raw-native/managed values, checks authored inputs exactly, and compares only the measured read-only hidden Pad.Placement output against an independent raw native open; blank Body/Plane map-version displays must agree with their authoritative stored native maps. No quaternion rounding or intent-field deletion is used.",
           "cases": []}
 
 
@@ -78,6 +81,110 @@ def persisted_intent(doc):
     return state
 
 
+def stored_output_snapshot(doc):
+    """Read cold model bytes first, then exact native outputs; never recompute."""
+    from native_validation_snapshot import INTRINSIC_TYPES, SHAPE_PROPERTIES, _origin_members
+    objects = list(doc.Objects)
+    intrinsic = _origin_members(objects)
+    modeled = [obj for obj in objects if obj.Name != "KurtShapeProject" and not
+               (obj.TypeId in INTRINSIC_TYPES and obj.Name in intrinsic)]
+    cold, handles = {}, {}
+    for obj in modeled:
+        for prop in SHAPE_PROPERTIES:
+            if prop in obj.PropertiesList:
+                shape = getattr(obj, prop)
+                cold[obj.Name + "." + prop] = None if shape.isNull() else shape.exportBrepToString()
+                handles[obj.Name + "." + prop] = shape
+    # Hash only after every cold byte string is retained; compare each same
+    # handle before/after our own reads, never hashes between documents.
+    hashes_before = {name: shape.hashCode() for name, shape in handles.items()}
+    flags, frames, global_frames, shape_frames, maps, markers = {}, {}, {}, {}, {}, {}
+    for obj in modeled:
+        flags[obj.Name] = {"type_id": obj.TypeId, "state": list(obj.State), "status": obj.getStatusString()}
+        for prop in obj.PropertiesList:
+            if obj.getTypeIdOfProperty(prop) == "App::PropertyPlacement":
+                value = getattr(obj, prop)
+                frames[obj.Name + "." + prop] = {"type_id": obj.getTypeIdOfProperty(prop),
+                    "status": list(obj.getPropertyStatus(prop)), "editor_mode": obj.getEditorMode(prop),
+                    "base": [value.Base.x, value.Base.y, value.Base.z], "rotation": list(value.Rotation.Q)}
+        if "Placement" in obj.PropertiesList and obj.TypeId != "App::Link" and hasattr(obj, "getGlobalPlacement"):
+            value = obj.getGlobalPlacement()
+            global_frames[obj.Name] = {"base": [value.Base.x, value.Base.y, value.Base.z], "rotation": list(value.Rotation.Q)}
+        for prop in SHAPE_PROPERTIES:
+            if prop not in obj.PropertiesList:
+                continue
+            shape = getattr(obj, prop)
+            value = shape.Placement
+            shape_frames[obj.Name + "." + prop] = {"base": [value.Base.x, value.Base.y, value.Base.z], "rotation": list(value.Rotation.Q)}
+            mapping = dict(shape.ElementMap)
+            maps[obj.Name + "." + prop] = {"null": bool(shape.isNull()), "version": shape.ElementMapVersion,
+                "native_version": obj.getElementMapVersion(prop), "size": shape.ElementMapSize,
+                "map": mapping, "reverse_map": dict(shape.ElementReverseMap),
+                "mapped_identity": {mapped: {"legacy": legacy,
+                    "same": bool(shape.getElement(mapped).isSame(shape.getElement(legacy)))}
+                    for mapped, legacy in mapping.items()}}
+        if "_ElementMapVersion" in obj.PropertiesList:
+            markers[obj.Name] = {"type_id": obj.TypeId, "value": obj._ElementMapVersion,
+                "property_type": obj.getTypeIdOfProperty("_ElementMapVersion"),
+                "status": list(obj.getPropertyStatus("_ElementMapVersion"))}
+    profile = doc.Pad.Profile
+    profile = profile[0] if isinstance(profile, (tuple, list)) else profile
+    intent = persisted_intent(doc)
+    cold_after = {}
+    for obj in modeled:
+        for prop in SHAPE_PROPERTIES:
+            if prop in obj.PropertiesList:
+                shape = getattr(obj, prop)
+                cold_after[obj.Name + "." + prop] = None if shape.isNull() else shape.exportBrepToString()
+    flags_after = {obj.Name: {"type_id": obj.TypeId, "state": list(obj.State), "status": obj.getStatusString()} for obj in modeled}
+    hashes_after = {name: shape.hashCode() for name, shape in handles.items()}
+    return {"cold_modeled_brep": cold, "native_flags": flags, "placements": frames,
+        "global_placements": global_frames, "shape_placements": shape_frames, "maps": maps, "markers": markers,
+        "pad_profile": {"name": profile.Name, "type_id": profile.TypeId, "same_document": profile.Document == doc},
+        "history": {"undo_mode": doc.UndoMode, "undo_count": doc.UndoCount, "redo_count": doc.RedoCount,
+                    "undo_names": list(doc.UndoNames), "redo_names": list(doc.RedoNames), "pending": bool(doc.HasPendingTransaction)},
+        "intent": intent, "own_read_preservation": {"cold_brep_after": cold_after, "native_flags_after": flags_after,
+            "same_handle_hashes_before": hashes_before, "same_handle_hashes_after": hashes_after,
+            "passed": cold == cold_after and flags == flags_after and hashes_before == hashes_after}}
+
+
+def stored_output_ledger(original, raw, managed, saved_versions):
+    """Account for every key, retaining all three values without editing them."""
+    states = [snapshot["intent"] for snapshot in (original, raw, managed)]
+    identifiers = [[item["id"] for item in state] for state in states]
+    inventory = identifiers[0] == identifiers[1] == identifiers[2] and len(set(identifiers[0])) == len(identifiers[0])
+    ledger = []
+    if not inventory:
+        return {"inventory_exact": False, "entries": ledger, "passed": False}
+    for before, native, adopted in zip(*states):
+        if before.keys() != native.keys() or before.keys() != adopted.keys() or before["properties"].keys() != native["properties"].keys() or before["properties"].keys() != adopted["properties"].keys():
+            inventory = False
+            continue
+        for key in before:
+            fields = before["properties"] if key == "properties" else {key: before[key]}
+            for prop, value in fields.items():
+                native_value = native["properties"][prop] if key == "properties" else native[prop]
+                managed_value = adopted["properties"][prop] if key == "properties" else adopted[prop]
+                kind = "exact_authored_or_native_field"
+                matches = value == native_value == managed_value
+                if key == "properties" and (before["id"], before["type"], prop) == ("Pad", "PartDesign::Pad", "Placement"):
+                    kind = "measured_native_readonly_output_frame"
+                    matches = native_value == managed_value
+                elif key == "properties" and prop == "_ElementMapVersion" and native_value != managed_value:
+                    kind = "measured_native_derived_map_marker"
+                    name = before["id"]
+                    maps = [snapshot["maps"].get(name + ".Shape", {}) for snapshot in (original, raw, managed)]
+                    markers = [snapshot["markers"].get(name, {}) for snapshot in (original, raw, managed)]
+                    matches = (before["type"] in {"PartDesign::Body", "PartDesign::Plane"} and native_value == "" and
+                               isinstance(value, str) and bool(value) and value == managed_value == saved_versions.get(name) and
+                               all(not mapping.get("null", True) and mapping.get("version") == value and mapping.get("native_version") == value for mapping in maps) and
+                               all(marker.get("type_id") == before["type"] for marker in markers) and
+                               markers[0].get("property_type") == markers[1].get("property_type") == markers[2].get("property_type"))
+                ledger.append({"object": before["id"], "path": key + ("." + prop if key == "properties" else ""), "kind": kind,
+                               "original": value, "raw_native": native_value, "managed": managed_value, "matches": bool(matches)})
+    return {"inventory_exact": inventory, "entries": ledger, "passed": inventory and bool(ledger) and all(row["matches"] for row in ledger)}
+
+
 class Workflow:
     def __init__(self, name):
         self.name = name
@@ -85,6 +192,7 @@ class Workflow:
         self.core = Controller()
         self.state = None
         self.checks = []
+        self.persistence_report = None
         self.call("new", name="Modeling workflow: " + name)
         self.body_id = bodies(self.doc)[0].Name
 
@@ -164,16 +272,113 @@ class Workflow:
         self.check(feature + ": native dependency links", set(expected).issubset(actual))
         self.check(feature + ": owned by expected part", owner(self.doc, self.doc.getObject(feature)) == self.body)
 
-    def reopen(self, volume, verify):
+    def reopen(self, volume, verify, stored_output=False):
+        if stored_output and self.name != "angled-plane":
+            raise AssertionError("Stored output oracle is restricted to the actual angled-plane fixture")
         path = RUN / "fixtures" / (self.name + ".FCStd")
+        original = stored_output_snapshot(self.doc) if stored_output else None
         self.call("save", path=str(path))
         before_intent = persisted_intent(self.doc)
+        if stored_output:
+            return self.reopen_stored_output(path, original, before_intent, volume, verify)
         identifier = self.state["document_id"]
         App.closeDocument(self.doc.Name)
         self.call("open", path=str(path))
         self.check("reopen: same managed project identity", self.state["document_id"] == identifier)
         self.check("reopen: filename display label", self.doc.Label == path.stem)
         self.check("reopen: native intent preserved except documented display alias", persisted_intent(self.doc) == before_intent)
+        self.call("rebuild")
+        self.accepted("reopen and fresh rebuild", volume)
+        verify()
+        self.check("reopen: saved editable native file", path.is_file())
+        return str(path.relative_to(ROOT))
+
+    def reopen_stored_output(self, path, original, before_intent, volume, verify):
+        proof = self.persistence_report = {"schema_version": 1, "passed": False,
+            "method": "Exact authored inputs plus independently measured raw-native readonly Pad output frame",
+            "limits": "Only angled-plane Pad.Placement is compared raw-native to managed; numeric native status values are opaque. No intent-field deletion, rounding, assignment, recompute or generic readonly exemption.",
+            "original_before_save": original, "after_save_intent": before_intent, "source": str(path)}
+        self.check("reopen: exact full native intent survives save", original["intent"] == before_intent)
+        if path.parent.resolve() != (RUN / "fixtures").resolve():
+            raise AssertionError("Stored native oracle source must belong to this workflow fixture root")
+        source_sha = hashlib.sha256(path.read_bytes()).hexdigest()
+        proof["source_sha256"] = source_sha
+        with zipfile.ZipFile(path) as archive:
+            if archive.testzip() is not None or archive.namelist().count("Document.xml") != 1:
+                raise AssertionError("Stored native oracle requires a complete native archive")
+            document = ET.fromstring(archive.read("Document.xml"))
+            saved_versions = {}
+            for obj in document.findall("./ObjectData/Object"):
+                shape = obj.find("./Properties/Property[@name='Shape']/Part")
+                if shape is not None:
+                    saved_versions[obj.get("name")] = shape.get("ElementMap")
+            proof["saved_shape_versions"] = saved_versions
+        identifier = self.state["document_id"]
+        App.closeDocument(self.doc.Name)
+        raw_doc = None
+        raw_owned = False
+        owned_before = set(App.listDocuments())
+        events = proof["native_recomputes"] = []
+
+        class OpenObserver:
+            def slotRecomputedObject(self, obj):
+                events.append({"kind": "object", "document": obj.Document.Name, "object": obj.Name})
+
+            def slotRecomputedDocument(self, doc):
+                events.append({"kind": "document", "document": doc.Name})
+
+        observer = OpenObserver()
+        App.addDocumentObserver(observer)
+        try:
+            try:
+                raw_doc = App.openDocument(str(path))
+                if raw_doc.Name in owned_before:
+                    raise AssertionError("Raw native oracle must own a new document")
+                raw_owned = True
+                proof["raw_owned_document_name"] = raw_doc.Name
+                raw = proof["raw_native_open"] = stored_output_snapshot(raw_doc)
+            finally:
+                if raw_owned:
+                    App.closeDocument(proof["raw_owned_document_name"])
+            proof["raw_owned_document_closed"] = set(App.listDocuments()) == owned_before
+            self.check("reopen: raw native oracle document was closed", proof["raw_owned_document_closed"])
+            self.call("open", path=str(path))
+            managed = proof["managed_open"] = stored_output_snapshot(self.doc)
+            self.check("reopen: same managed project identity", self.state["document_id"] == identifier)
+            self.check("reopen: filename display label", self.doc.Label == path.stem)
+            frames = [snapshot["placements"].get("Pad.Placement", {}) for snapshot in (original, raw, managed)]
+            metadata = [{key: row.get(key) for key in ("type_id", "status", "editor_mode")} for row in frames]
+            profile = {"name": "Profile", "type_id": "Sketcher::SketchObject", "same_document": True}
+            self.check("reopen: Pad output-frame metadata remains exact read-only and hidden",
+                metadata[0] == metadata[1] == metadata[2] and metadata[0]["type_id"] == "App::PropertyPlacement" and
+                all("ReadOnly" in row["status"] and "Hidden" in row["status"] and "ReadOnly" in row["editor_mode"] and "Hidden" in row["editor_mode"] for row in metadata) and
+                all(snapshot["pad_profile"] == profile for snapshot in (original, raw, managed)))
+            proof["key_accounted_comparison"] = stored_output_ledger(original, raw, managed, saved_versions)
+            self.check("reopen: native authored intent exact and Pad output frame matches raw native open", proof["key_accounted_comparison"]["passed"])
+            self.check("reopen: raw-to-managed cold modeled BRep and native flags are exact",
+                raw["cold_modeled_brep"] == managed["cold_modeled_brep"] and raw["native_flags"] == managed["native_flags"])
+            history_ledger = []
+            history_keys = original["history"].keys() == raw["history"].keys() == managed["history"].keys()
+            for key, value in original["history"].items():
+                native_value, adopted_value = raw["history"].get(key), managed["history"].get(key)
+                policy = "native_undo_registration" if key == "undo_mode" else "exact_raw_to_managed_history"
+                matches = value == 1 and native_value == 0 and adopted_value == 1 if key == "undo_mode" else native_value == adopted_value
+                history_ledger.append({"key": key, "original": value, "raw_native": native_value, "managed": adopted_value,
+                                       "policy": policy, "matches": bool(matches)})
+            proof["history_comparison"] = history_ledger
+            self.check("reopen: raw-to-managed native frames and complete history policy are exact",
+                raw["placements"] == managed["placements"] and raw["global_placements"] == managed["global_placements"] and
+                raw["shape_placements"] == managed["shape_placements"] and history_keys and all(row["matches"] for row in history_ledger))
+            self.check("reopen: stored native maps and mapped element identities are exact", original["maps"] == raw["maps"] == managed["maps"] and
+                all(element["same"] for snapshot in (original, raw, managed) for mapping in snapshot["maps"].values() for element in mapping["mapped_identity"].values()))
+            marker_rows = [row for row in proof["key_accounted_comparison"]["entries"] if row["kind"] == "measured_native_derived_map_marker"]
+            self.check("reopen: stored native map-marker versions remain authoritative", all(row["matches"] for row in marker_rows))
+            self.check("reopen: oracle reads preserve cold BRep flags and same-handle hashes", all(snapshot["own_read_preservation"]["passed"] for snapshot in (original, raw, managed)))
+            self.check("reopen: raw and managed opens perform no native recompute", not events)
+            self.check("reopen: saved native source bytes remain unchanged", hashlib.sha256(path.read_bytes()).hexdigest() == source_sha)
+            proof["passed"] = True
+        finally:
+            App.removeDocumentObserver(observer)
         self.call("rebuild")
         self.accepted("reopen and fresh rebuild", volume)
         verify()
@@ -353,7 +558,7 @@ def angled_plane(w):
         orientation(60)
         height(10)
     verify()
-    return w.reopen(24, verify)
+    return w.reopen(24, verify, stored_output=True)
 
 
 def sweep(w):
@@ -447,6 +652,8 @@ def main():
         finally:
             if workflow:
                 case["checks"] = workflow.checks
+                if workflow.persistence_report is not None:
+                    case["persistence_report"] = workflow.persistence_report
                 workflow.close()
         print(name + ": " + ("PASS" if case["passed"] else "FAIL"), flush=True)
     REPORT["passed"] = all(case["passed"] for case in REPORT["cases"])

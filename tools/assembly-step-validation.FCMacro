@@ -204,7 +204,8 @@ def validate():
         embedded = instance.LinkedObject
         check("Native occurrence references an embedded source in this assembly", instance.TypeId == "App::Link" and embedded.Document is doc and embedded.KurtShapeEmbeddedSource)
         check("Embedded source records original STEP hash and chosen solid", embedded.SourceSHA256 == digest and embedded.SourceObject == "Solid2" and embedded.SourcePath == str(path))
-        actual = next(item["measurements"] for item in panel.state["bodies"] if item["id"] == first)
+        measured_state = panel.core.inspect(doc, measure=True)
+        actual = next(item["measurements"] for item in measured_state["bodies"] if item["id"] == first)
         check("Selected STEP solid retains its native volume and bounds", abs(actual["volume_mm3"] - baseline["volume_mm3"]) <= baseline["volume_mm3"] * 1e-10 and
               all(abs(left - right) < 1e-6 for bound in ("min", "max") for left, right in zip(actual["bbox_mm"][bound], baseline["bbox_mm"][bound])))
         check("First occurrence is grounded and geometry is current", len(panel.assembly_state()["instances"]) == 1 and panel.assembly_state()["instances"][0]["grounded"] and panel.state["build_status"] == "valid")
@@ -215,12 +216,12 @@ def validate():
         before_camera = Gui.activeDocument().activeView().getCamera()
         before_intent = intent_signature(doc)
         before_revision = panel.state["revision"]
-        response = panel.core.dispatch({"op": "assembly_candidates", "path": str(path)})
+        response = panel.core.dispatch({"op": "assembly_candidates", "path": str(path), "measure": panel.MEASURE})
         after_selection = selected_references()
         report["candidate_inspection"] = {"selection_before": before_selection, "selection_after": after_selection,
                                           "camera_preserved": Gui.activeDocument().activeView().getCamera() == before_camera,
                                           "selection_preserved": before_selection == after_selection}
-        check("Read-only STEP candidate inspection preserves native intent and revision", response["ok"] and intent_signature(doc) == before_intent and panel.core.inspect(doc)["revision"] == before_revision)
+        check("Read-only STEP candidate inspection preserves native intent and revision", response["ok"] and intent_signature(doc) == before_intent and panel.core.inspect(doc, measure=panel.MEASURE)["revision"] == before_revision)
         check("Read-only STEP candidate inspection restores active document and closes source", App.activeDocument() is doc and Gui.activeDocument().Document is doc and set(App.listDocuments()) == names)
         check("Read-only STEP candidate inspection preserves viewport camera", report["candidate_inspection"]["camera_preserved"])
         check("Read-only STEP candidate inspection preserves selected face and picked coordinates", report["candidate_inspection"]["selection_preserved"])
@@ -232,7 +233,8 @@ def validate():
         report["embedded_sources"] = [{"id": obj.Name, "sha256": obj.SourceSHA256, "source_object": obj.SourceObject} for obj in embedded_sources]
         report["occurrence_sources"] = {identity: doc.getObject(identity).LinkedObject.Name for identity in (first, second)}
         check("Repeated occurrences share one immutable embedded geometry snapshot", doc.getObject(second).LinkedObject.Name == doc.getObject(first).LinkedObject.Name and len(embedded_sources) == 1)
-        check("Each occurrence is counted once in measurements", panel.state["measurements"]["solid_count"] == 2 and abs(panel.state["measurements"]["volume_mm3"] - 2 * baseline["volume_mm3"]) < baseline["volume_mm3"] * 1e-9)
+        measured_state = panel.core.inspect(doc, measure=True)
+        check("Each occurrence is counted once in measurements", measured_state["measurements"]["solid_count"] == 2 and abs(measured_state["measurements"]["volume_mm3"] - 2 * baseline["volume_mm3"]) < baseline["volume_mm3"] * 1e-9)
         panel.history_move("undo")
         check("Undo removes only the second occurrence", doc.getObject(second) is None and doc.getObject(first) is not None and len(panel.assembly_state()["instances"]) == 1)
         panel.history_move("redo")

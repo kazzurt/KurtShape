@@ -15,7 +15,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT / "tools" / "perf"))
 sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "src"))
-from bench_core import Benchmark, base_report, prepare_environment, resolve_output, run_sections, summary, timed
+from bench_core import Benchmark, MEASUREMENT_POLICY, base_report, prepare_environment, resolve_output, run_sections, summary, timed
 from kurtshape_evidence import evidence_dir
 
 OUTPUT = None
@@ -153,7 +153,8 @@ try:
     HOLES = int(os.environ.get("BENCH_HOLES", "20"))
     REPEAT = int(os.environ.get("BENCH_REPEAT", "3"))
     REPORT = base_report("plate", HOLES, "Hidden FreeCAD GUI; Qt events synthesized inside this process; native fixture through Panel.operation")
-    REPORT.update(gui_process_pid=os.getpid(), repeat=REPEAT)
+    REPORT.update(gui_process_pid=os.getpid(), repeat=REPEAT, measurement_level=False,
+                  measurement_policy=MEASUREMENT_POLICY)
     session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
     SCRATCH = prepare_environment(session / "benchmark-working")
     import FreeCAD as App

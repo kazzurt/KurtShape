@@ -16,6 +16,8 @@ sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
 import Part
 from kurtshape import core as module
+from kurtshape import geometry
+from copy import deepcopy
 from kurtshape.core import Controller, intent_signature, number
 from kurtshape.request_ledger import RequestLedger
 from kurtshape.general_actions import GeneralActions
@@ -63,21 +65,25 @@ class ReviewFollowupTests(unittest.TestCase):
 
     def test_idle_inspection_uses_cached_intent_and_brep_then_native_edit_invalidates(self):
         self.plate()
-        with patch.object(module, "intent_signature", wraps=module.intent_signature) as intent, patch.object(module, "measurements", wraps=module.measurements) as brep:
+        computed = deepcopy(self.core.geometry.stats["computed"])
+        with patch.object(module, "intent_signature", wraps=module.intent_signature) as intent, patch.object(geometry, "check_shape", wraps=geometry.check_shape) as brep:
             for _ in range(25):
                 self.core.inspect(self.doc)
             self.assertEqual(intent.call_count, 0)
             self.assertEqual(brep.call_count, 0)
+            self.assertEqual(self.core.geometry.stats["computed"], computed)
             revision = self.state["revision"]
             self.doc.Pad.Length = 9
             pending = self.core.inspect(self.doc)
             self.assertNotEqual(pending["revision"], revision)
             self.assertEqual(pending["build_status"], "needs_rebuild")
             self.assertIsNone(pending["measurements"])
+            self.assertEqual(self.core.geometry.stats["computed"], computed)
             self.doc.recompute()
             current = self.core.inspect(self.doc)
             self.assertAlmostEqual(current["measurements"]["volume_mm3"], 1800)
-            self.assertGreater(brep.call_count, 0)
+            self.assertEqual(brep.call_count, 0)
+            self.assertEqual(self.core.geometry.stats["computed"].get("volume", 0), computed.get("volume", 0) + 1)
 
     def test_quantities_formulas_wrong_units_cycles_and_clear(self):
         self.plate()

@@ -29,7 +29,7 @@ LIFECYCLE_METHODS = frozenset({
 LIFECYCLE_SOURCES = (
     "tests/test_extrusion_preview.py", "tests/support.py", "tools/run_native_tests.py",
     "tools/native_validation_snapshot.py", "src/kurtshape/extrusion_preview.py",
-    "src/kurtshape/core.py", "src/kurtshape/document_state.py", "src/kurtshape/bodies.py",
+    "src/kurtshape/core.py", "src/kurtshape/document_state.py", "src/kurtshape/geometry.py", "src/kurtshape/bodies.py",
     "src/kurtshape/studio.py", "src/kurtshape/settings.py", "src/kurtshape/recovery.py",
 )
 
@@ -78,7 +78,7 @@ class ExtrusionPreviewTests(unittest.TestCase):
         return (intent_signature(self.doc), self.core.identifier(self.doc), self.core._meta(self.doc).Revision,
                 self.doc.UndoCount, self.doc.RedoCount, self.doc.HasPendingTransaction, self.doc.FileName,
                 tuple(App.listDocuments()), tuple(self.core.documents), tuple(self.core.observer.states),
-                tuple(self.core.evaluations), App.activeDocument().Name,
+                tuple(sorted(self.core.geometry.documents())), App.activeDocument().Name,
                 json.dumps(self.core._meta(self.doc).SourceMapping))
 
     def plate(self):
@@ -321,7 +321,7 @@ class ExtrusionPreviewTests(unittest.TestCase):
                      "controller_signatures": dict(self.core.signatures),
                      "sketch_edit_documents": sorted(self.core.sketch_edits),
                      "observer_documents": sorted(self.core.observer.states),
-                     "evaluation_documents": sorted(self.core.evaluations),
+                     "geometry_documents": sorted(self.core.geometry.documents()),
                      "unmanaged_documents": sorted(self.core.unmanaged),
                      "active_document": active.Name if active is not None else None,
                      "busy": self.core.busy,

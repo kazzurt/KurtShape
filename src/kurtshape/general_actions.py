@@ -67,7 +67,8 @@ class GeneralActions:
         return doc
 
     def _inspect(self, doc):
-        result = self.panel.core.dispatch({"op": "inspect", "document_id": metadata(doc).DocumentId})
+        result = self.panel.core.dispatch({"op": "inspect", "document_id": metadata(doc).DocumentId,
+                                           "measure": self.panel.MEASURE})
         if not result["ok"]:
             raise ValueError(result["error"]["message"])
         return result["result"]

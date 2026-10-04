@@ -8,6 +8,7 @@ import sys
 import unittest
 import support
 from unittest.mock import patch
+from copy import deepcopy
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -496,13 +497,15 @@ class AssemblyWorkflowTests(unittest.TestCase):
     def test_idle_inspection_does_not_resolve_sources_or_run_native_solver(self):
         from kurtshape import assembly as native
         from kurtshape import core as controller_module
+        from kurtshape import geometry
         self.fixture(count=2)
         self.joint("revolute", "Fastened")
         accepted = self.state["revision"]
+        computed = deepcopy(self.core.geometry.stats["computed"])
         with patch.object(native, "solve", side_effect=AssertionError("Idle inspection must not solve")), \
              patch.object(native, "_source_document", side_effect=AssertionError("Idle inspection must not reread source files")), \
              patch.object(native, "_geometry_fingerprint", side_effect=AssertionError("Idle inspection must not serialize embedded BReps")), \
-             patch.object(controller_module, "measurements", wraps=controller_module.measurements) as brep, \
+             patch.object(geometry, "check_shape", wraps=geometry.check_shape) as brep, \
              patch.object(controller_module, "intent_signature", wraps=controller_module.intent_signature) as intent:
             for _ in range(25):
                 state = self.core.inspect(self.doc)
@@ -510,6 +513,7 @@ class AssemblyWorkflowTests(unittest.TestCase):
                 self.assertEqual(state["build_status"], "valid")
             self.assertEqual(brep.call_count, 0)
             self.assertEqual(intent.call_count, 0)
+            self.assertEqual(self.core.geometry.stats["computed"], computed)
         changed = self.placement("Fastened").copy()
         changed.Base = App.Vector(3, 0, 0)
         self.doc.getObject("Fastened").Placement = changed

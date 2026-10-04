@@ -10,6 +10,7 @@ from PySide import QtCore, QtGui
 from .core import Controller, ROOT, METADATA
 from .bridge import Bridge
 from . import navigation
+from . import geometry
 from .shortcuts import ShortcutRouter
 from .general_actions import GeneralActions
 from .viewport_actions import callbacks as viewport_callbacks
@@ -56,6 +57,8 @@ class SelectionObserver:
                 QtCore.QTimer.singleShot(0, lambda: p.choose_support(document, object_name, subelement))
 
 class Panel(QtGui.QDockWidget):
+    MEASURE = False
+
     def __init__(self, controller):
         super().__init__("Feature history")
         self.setObjectName("KurtShapeHistory")
@@ -395,8 +398,8 @@ class Panel(QtGui.QDockWidget):
         self.model_actions.append(more.menuAction())
         self.tool_menus["More"] = more
         self.model_bar.addSeparator()
-        for name, callback, tip, icon in [("Rebuild", lambda: self.operation("rebuild"), "Rebuild the model", "Std_Refresh"), ("Fit", self.fit, "Fit · F", "Std_ViewFitAll"), ("Normal", self.normal, "Normal · N", "Std_ViewTop"), ("3D", self.isometric, "Isometric · Shift+7", "Std_ViewIsometric"), ("Show planes", self.toggle_planes, "Show / hide planes · P", "PartDesign_Plane")]:
-            self.tool(self.model_bar, name, callback, tip, icon, modeling=name == "Rebuild", command=icon)
+        for name, callback, tip, icon in [("Rebuild", lambda: self.operation("rebuild"), "Rebuild the model", "Std_Refresh"), ("Check geometry", self.check_geometry, "Check solid geometry and list issues in Messages", "Part_CheckGeometry"), ("Fit", self.fit, "Fit · F", "Std_ViewFitAll"), ("Normal", self.normal, "Normal · N", "Std_ViewTop"), ("3D", self.isometric, "Isometric · Shift+7", "Std_ViewIsometric"), ("Show planes", self.toggle_planes, "Show / hide planes · P", "PartDesign_Plane")]:
+            self.tool(self.model_bar, name, callback, tip, icon, modeling=name in {"Rebuild", "Check geometry"}, command=icon)
         self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.model_bar)
         self.assembly_actions = []
         self.assembly_bar = QtGui.QToolBar("Assembly", self.main)
@@ -621,7 +624,7 @@ class Panel(QtGui.QDockWidget):
         if not self.state.get("managed", True):
             self.notify("Adopt a copy before editing this reference file.", "error")
             return False
-        response = self.core.dispatch({"op": "inspect", "document_id": self.core.identifier(self.document())})
+        response = self.core.dispatch({"op": "inspect", "document_id": self.core.identifier(self.document()), "measure": self.MEASURE})
         if not response["ok"]:
             self.notify(response["error"]["message"], "error")
             return False
@@ -649,7 +652,7 @@ class Panel(QtGui.QDockWidget):
             if not self.document() or self.core.identifier(self.document()) != tokens["_document_id"]:
                 self.notify("The source project is no longer active. Create Assembly again in the intended project.", "error")
                 return None
-            current = self.core.inspect(self.document())
+            current = self.core.inspect(self.document(), measure=self.MEASURE)
             if current["document_id"] != tokens["_document_id"] or current["revision"] != tokens["_expected_revision"]:
                 self.notify("The project changed while naming the assembly. Create Assembly again with the current project.", "error")
                 return None
@@ -672,7 +675,7 @@ class Panel(QtGui.QDockWidget):
                 "CAD parts (*.FCStd *.fcstd *.FCSTD *.step *.stp *.STEP *.STP);;FreeCAD project (*.FCStd *.fcstd *.FCSTD);;STEP (*.step *.stp *.STEP *.STP)")[0]
         if not path:
             return None
-        response = self.core.dispatch({"op": "assembly_candidates", "path": str(path)})
+        response = self.core.dispatch({"op": "assembly_candidates", "path": str(path), "measure": self.MEASURE})
         if not response["ok"]:
             self.notify(response["error"]["message"], "error")
             return None
@@ -975,7 +978,7 @@ class Panel(QtGui.QDockWidget):
                     self.finish_sketch()
                 return
             previous = (self.state or {}).get("revision")
-            result = self.core.dispatch({"op": "inspect", "document_id": self.core.identifier(doc)})
+            result = self.core.dispatch({"op": "inspect", "document_id": self.core.identifier(doc), "measure": self.MEASURE})
             if result["ok"]:
                 self.state = result["result"]
                 if previous != self.state["revision"] and self.feedback_started is not None:
@@ -1014,7 +1017,7 @@ class Panel(QtGui.QDockWidget):
             self.notify("Finish or cancel the current feature before another operation.")
             return None
         resume_preview = self.task in {"pad", "pocket"} and op in {"save", "export"}
-        if op != "inspect":
+        if op not in {"inspect", "check_geometry"}:
             if self.task in {"pad", "pocket"} and op != self.task and not resume_preview:
                 self.cancel_task()
             else:
@@ -1026,7 +1029,7 @@ class Panel(QtGui.QDockWidget):
             if not doc or not self.state:
                 self.notify("Create or open a project first.", "error")
                 return None
-            response = self.core.dispatch({"op": "inspect", "document_id": self.core.identifier(doc)})
+            response = self.core.dispatch({"op": "inspect", "document_id": self.core.identifier(doc), "measure": self.MEASURE})
             if not response["ok"]:
                 self.notify(response["error"]["message"], "error")
                 return None
@@ -1040,10 +1043,10 @@ class Panel(QtGui.QDockWidget):
                 body = owner(doc, target) or self.active_body()
                 if body:
                     args["body"] = body.Name
-        response = self.core.dispatch({"op": op, **args})
+        response = self.core.dispatch({"op": op, **args, "measure": self.MEASURE})
         if not response["ok"]:
             if self.document() and self.state:
-                self.state = self.core.inspect(self.document())
+                self.state = self.core.inspect(self.document(), measure=self.MEASURE)
             if self.active_sketch() and self.core.identifier(self.document()) not in self.core.sketch_edits:
                 Gui.activeDocument().resetEdit()
                 self.sync_edit_ui()
@@ -1066,6 +1069,8 @@ class Panel(QtGui.QDockWidget):
         navigation.apply_navigation()
         action_name = {"pad": "Extrude", "pocket": "Remove material", "create_body": "New part"}.get(op, op.replace("_", " ").capitalize())
         self.notify(action_name + " complete")
+        if op in {"open", "recover"} and self.state.get("rebuild_reason"):
+            self.notify("Rebuild required · " + self.rebuild_reason_text(self.state))
         if op == "import_step":
             count = self.state["measurements"]["solid_count"] if self.state["measurements"] else 0
             self.notify(f"STEP imported · {count} solids · geometry only. Save as FCStd to keep your project.")
@@ -1078,6 +1083,50 @@ class Panel(QtGui.QDockWidget):
         if resume_preview:
             self.begin_preview()
         return self.state
+
+    @staticmethod
+    def rebuild_reason_text(state):
+        return {"engine_changed": "geometry engine changed",
+                "saved_by_other_build": "saved by another application build",
+                "engine_unrecorded": "geometry engine not recorded",
+                "missing_shapes": "stored geometry is missing"}.get(state.get("rebuild_reason"), "pending model changes")
+
+    def status_detail(self):
+        status = self.state["build_status"]
+        if status == "failed":
+            return "Invalid geometry — see Messages" if self.state.get("geometry_check") == "invalid" else "Build failed"
+        if status == "needs_rebuild":
+            return "Rebuild required · " + self.rebuild_reason_text(self.state)
+        measured = self.state.get("measurements")
+        if not measured:
+            return "Sketches only · mm"
+        detail = str(measured["solid_count"]) + " solid(s)"
+        if measured.get("volume_mm3") is not None:
+            detail += f" · {measured['volume_mm3']:,.2f} mm³"
+        if self.state.get("geometry_check") == "valid":
+            detail += " · checked"
+        return detail
+
+    def check_geometry(self):
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+        try:
+            state = self.operation("check_geometry")
+        finally:
+            QtGui.QApplication.restoreOverrideCursor()
+        if not state:
+            return None
+        report = state.get("geometry_check_report") or {}
+        names = {body["id"]: body.get("name", body["id"]) for body in state.get("bodies", [])}
+        for body in report.get("bodies", []):
+            name = names.get(body["id"], body["id"])
+            self.append_message(name + (": geometry valid" if body["valid"] else ": invalid geometry"))
+            for issue in body.get("issues", []):
+                self.append_message(name + ": " + str(issue))
+        if report.get("status") == "invalid":
+            self.notify("Invalid geometry — see Messages", "error")
+        else:
+            self.notify("Geometry checked · see Messages")
+        return state
 
     def refresh(self):
         if not self.state:
@@ -1198,10 +1247,10 @@ class Panel(QtGui.QDockWidget):
                 self.parts.addTopLevelItem(item)
         self.parts.blockSignals(False)
         self.parts_title.setText(f"Parts ({count})")
-        geometry = self.state["measurements"]
-        detail = "Rebuild required · retained geometry" if self.state["build_status"] in {"failed", "needs_rebuild"} else (f"{geometry['solid_count']} solid · {geometry['volume_mm3']:,.2f} mm³" if geometry else "Sketches only · mm")
+        measured = self.state["measurements"]
+        detail = self.status_detail()
         if self.state.get("import_source"):
-            detail = "Imported STEP · " + (detail if geometry or self.state["build_status"] in {"failed", "needs_rebuild"} else "Reference geometry only · mm")
+            detail = "Imported STEP · " + (detail if measured or self.state["build_status"] in {"failed", "needs_rebuild"} else "Reference geometry only · mm")
         self.status.setText(detail)
         if not self.state.get("managed", True):
             self.status.setText("Reference file · inspect or adopt a copy · " + detail)
@@ -1253,7 +1302,7 @@ class Panel(QtGui.QDockWidget):
         if not assembly:
             detail = "Create Assembly to begin. Insert saved FCStd parts, ground a reference, then connect native joints."
         elif self.state["build_status"] in {"failed", "needs_rebuild"}:
-            detail = "Assembly unresolved · see Messages and solve before export"
+            detail = self.status_detail()
         else:
             detail = "Assembly · " + str(len(assembly.get("instances", []))) + " instances · " + str(len(assembly.get("joints", []))) + " joints · " + str(assembly.get("solver_status", "solved"))
             if assembly.get("disconnected_count"):
@@ -1476,13 +1525,13 @@ class Panel(QtGui.QDockWidget):
                 query = ({"kind": "created_by", "feature": feature.Name, "entity_type": entity.lower()}
                          if feature.TypeId == "Sketcher::SketchObject" else
                          {"kind": "owned_by", "part": part["id"], "entity_type": entity.lower()})
-                geometry = getattr(shape, "Surface", None) if entity == "Face" else getattr(shape, "Curve", None)
-                kind = type(geometry).__name__.lower()
+                shape_geometry = getattr(shape, "Surface", None) if entity == "Face" else getattr(shape, "Curve", None)
+                kind = type(shape_geometry).__name__.lower()
                 kind = {"planesurface": "plane", "cylindricalsurface": "cylinder", "linesegment": "line"}.get(kind, kind)
                 if kind in {"plane", "cylinder", "line", "circle", "sphere", "cone"}:
                     query = {"kind": "geometry", "geometry": kind, "query": query}
                 world = feature.getGlobalPlacement() * feature.Placement.inverse()
-                reference = {"kind": "closest", "point": list(world.multVec(shape.CenterOfMass)), "query": query}
+                reference = {"kind": "closest", "point": list(world.multVec(App.Vector(*geometry.scalar(shape, "center_of_mass")))), "query": query}
         except Exception:
             pass
         return reference
@@ -1511,7 +1560,7 @@ class Panel(QtGui.QDockWidget):
             return None
         self.cancel_task()
         doc = self.document()
-        self.state = self.core.inspect(doc)
+        self.state = self.core.inspect(doc, measure=self.MEASURE)
         tokens = {"_expected_revision": self.state["revision"], "_document_id": self.state["document_id"]}
         parts = self.studio_parts()
         selected_parts = [part] if part else self.studio_selection()
@@ -2237,7 +2286,7 @@ class Panel(QtGui.QDockWidget):
         if self.task not in {"pad", "pocket"} or not self.task_profile:
             self.preview_status(None)
             return
-        self.state = self.core.inspect(self.document())
+        self.state = self.core.inspect(self.document(), measure=self.MEASURE)
         self.extrusion_preview.begin(self.document(), self.state["revision"])
         self.schedule_preview()
 
@@ -2546,17 +2595,30 @@ class Panel(QtGui.QDockWidget):
         if not shapes:
             shapes = [s.Object.Shape for s in selections if hasattr(s.Object, "Shape")]
         if len(shapes) >= 2:
-            self.notify(f"Minimum distance: {shapes[0].distToShape(shapes[1])[0]:.4f} mm")
+            self.notify(f"Minimum distance: {geometry.distance(shapes[0], shapes[1]):.4f} mm")
         elif shapes:
             shape = shapes[0]
             if shape.ShapeType == "Edge":
-                self.notify(f"Edge length: {shape.Length:.4f} mm")
+                self.notify(f"Edge length: {geometry.scalar(shape, 'length'):.4f} mm")
             elif shape.ShapeType == "Face":
-                self.notify(f"Face area: {shape.Area:.4f} mm²")
+                self.notify(f"Face area: {geometry.scalar(shape, 'area'):.4f} mm²")
             else:
-                self.notify(f"Volume: {shape.Volume:.4f} mm³ · area: {shape.Area:.4f} mm²")
+                self.notify(f"Volume: {geometry.scalar(shape, 'volume'):.4f} mm³ · area: {geometry.scalar(shape, 'area'):.4f} mm²")
         else:
-            self.notify("Select an edge, face, part, or two shapes to measure.")
+            doc, body = self.document(), self.active_body()
+            if not doc or not body:
+                self.notify("Select an edge, face, part, or two shapes to measure.")
+                return
+            body_name, body_label = body.Name, body.Label
+            state = self.core.inspect(doc, measure="full")
+            entry = next((entry for entry in state["bodies"] if entry["id"] == body_name), None)
+            measured = (entry or {}).get("measurements") or (entry or {}).get("retained_geometry_measurements")
+            if not measured or measured.get("volume_mm3") is None or measured.get("center_of_mass_mm") is None:
+                self.notify("The active part has no solid to measure.")
+                return
+            center = measured["center_of_mass_mm"]
+            self.notify(f"{body_label} · volume: {measured['volume_mm3']:.4f} mm³ · area: {measured['area_mm2']:.4f} mm²"
+                        + " · centre of mass: " + ", ".join(f"{value:.4f}" for value in center) + " mm")
 
     def view_step(self, axis, degrees=15, pan=False):
         if not Gui.activeDocument():

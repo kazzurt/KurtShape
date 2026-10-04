@@ -145,9 +145,16 @@ class NativeConversionTests(unittest.TestCase):
 
     def assert_volume(self, state, expected):
         self.assertEqual(state["build_status"], "valid")
-        self.assertTrue(state["measurements"]["valid"])
+        self.assertIn(state["geometry_check"], {"not_checked", "valid"})
         self.assertEqual(state["measurements"]["solid_count"], 1)
         self.assertAlmostEqual(state["measurements"]["volume_mm3"], expected, places=6)
+        checked = self.controller.dispatch({"op": "check_geometry", "document_id": state["document_id"]})
+        self.assertTrue(checked["ok"], checked)
+        self.assertEqual(checked["result"]["geometry_check_report"]["status"], "valid")
+        self.assertEqual(checked["result"]["revision"], state["revision"])
+        self.assertTrue(checked["result"]["measurements"]["valid"])
+        self.assertEqual(checked["result"]["measurements"]["solid_count"], 1)
+        self.assertAlmostEqual(checked["result"]["measurements"]["volume_mm3"], expected, places=6)
 
     def test_native_baseline_critical_dimensions_and_shape_difference(self):
         result, state, doc = self.converted()

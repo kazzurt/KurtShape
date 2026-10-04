@@ -1,0 +1,285 @@
+"""Q03 production status/check/Measure checks in one owned hidden GUI."""
+import copy
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import re
+import sys
+import time
+import traceback
+from unittest.mock import patch
+import xml.etree.ElementTree as ET
+import zipfile
+
+sys.dont_write_bytecode = True
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime" / "ci-gui" / "q03-status")
+for name in ("FREECAD_USER_HOME", "TEMP", "TMP", "APPDATA", "LOCALAPPDATA", "KURTSHAPE_EVIDENCE_DIR"):
+    assert Path(os.environ[name]).resolve().is_relative_to(session), name
+assert os.environ.get("KURTSHAPE_WRITE_EVIDENCE") != "1"
+sys.path.insert(0, str(root / "tools"))
+sys.path.insert(0, str(root / "src"))
+from kurtshape_evidence import evidence_dir
+from native_validation_snapshot import snapshot_document
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import geometry, ui
+
+
+class NoSocketTransport:
+    def __init__(self, *_):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+application = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+output = evidence_dir("q03-status")
+out = output / "gui-result.json"
+assert not out.exists()
+names_before = set(App.listDocuments())
+started_utc = datetime.now(timezone.utc).isoformat()
+started = time.perf_counter()
+panel = None
+report = {"schema_version": 1, "passed": False, "producer_pid": os.getpid(),
+          "started_utc": started_utc, "session": str(session), "checks": [],
+          "screenshots": [], "method": "Production Panel; actual Qt toolbar click and Measure key in a fresh hidden six-root GUI",
+          "limits": "Small typed box and private engine-stamp archive; no physical input or live-user profile. Camera clipping planes are observational."}
+
+
+def sources():
+    paths = [path for folder in ("src", "tests", "tools") for path in (root / folder).rglob("*")
+             if path.is_file() and path.suffix in {".py", ".ps1", ".FCMacro", ".json"}]
+    paths += [root / name for name in ("launch-kurtshape.ps1", "run-checks.ps1", "install-runtime.ps1")]
+    return {str(path.relative_to(root)).replace("\\", "/"): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(paths)}
+
+
+source_before = sources()
+
+
+def check(label, condition):
+    assert condition, label + ": " + (panel.message.text() if panel else "startup")
+    report["checks"].append(label)
+
+
+def call(op, **args):
+    result = panel.operation(op, **args)
+    assert result, panel.message.text()
+    return result
+
+
+def snapshot(doc):
+    value = snapshot_document(doc, panel.core)
+    camera = value["strict"]["gui"].get("camera")
+    value["observations"]["gui_camera_raw"] = camera
+    if camera:
+        value["strict"]["gui"]["camera"] = re.sub(r"^\s*(?:nearDistance|farDistance)\s+.*$", "", camera, flags=re.MULTILINE)
+    return value
+
+
+def toolbar(text):
+    action = next(action for action in panel.model_bar.actions() if action.text() == text)
+    button = panel.model_bar.widgetForAction(action)
+    assert action.isEnabled() and button.isEnabled() and button.isVisible(), text
+    QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
+    QtTest.QTest.qWait(100)
+
+
+def measure_key():
+    widgets = [widget for widget in main.findChildren(QtWidgets.QWidget)
+               if widget.isVisible() and widget.metaObject().className() == "QOpenGLWidget"
+               and widget.parentWidget().metaObject().className() == "Gui::View3DInventorViewer"]
+    assert len(widgets) == 1, "One visible owned modeling viewport"
+    widgets[0].setFocus()
+    QtTest.QTest.keyClick(widgets[0], QtCore.Qt.Key_BracketLeft)
+    QtTest.QTest.qWait(100)
+
+
+def screenshot(name):
+    path = output / name
+    pixmap = main.grab()
+    assert not pixmap.isNull() and pixmap.save(str(path)), "Screenshot write failed"
+    report["screenshots"].append(str(path))
+
+
+def mismatch_copy(source, target):
+    with zipfile.ZipFile(source) as archive:
+        entries = [(info, archive.read(info.filename)) for info in archive.infolist()]
+    document = next(data for info, data in entries if info.filename == "Document.xml")
+    xml = ET.fromstring(document)
+    stamps = xml.findall(".//ObjectData/Object[@name='KurtShapeProject']/Properties/Property[@name='EngineOCCT']/String")
+    assert len(stamps) == 1, "One persisted engine stamp"
+    stamps[0].set("value", "q03-validation-other-engine")
+    rewritten = ET.tostring(xml, encoding="utf-8", xml_declaration=True)
+    with zipfile.ZipFile(target, "x") as archive:
+        for info, data in entries:
+            archive.writestr(info, rewritten if info.filename == "Document.xml" else data)
+
+
+def validate():
+    global panel
+    try:
+        with patch.object(geometry, "check_shape", wraps=geometry.check_shape) as checks:
+            panel = ui.start()
+            call("sketch_rectangle", id="Profile", width=20, height=10)
+            call("pad", id="Pad", profile="Profile", length=6)
+            call("set_parameter", feature="Pad", parameter="Length", value=7)
+            panel.history_move("undo")
+            panel.history_move("redo")
+            call("set_parameter", feature="Pad", parameter="Length", value=6)
+            panel.tick()
+            panel.general_actions._inspect(panel.document())
+            check("GUI modeling and general inspection run no BRepCheck", checks.call_count == 0)
+            measured = panel.state["measurements"]
+            check("GUI state keeps scalar measurements absent", panel.MEASURE is False and measured["solid_count"] == 1
+                  and all(measured[field] is None for field in ("volume_mm3", "area_mm2", "bbox_mm", "center_of_mass_mm", "valid")))
+            check("Lightweight status displays solid count without volume", panel.status.text() == "1 solid(s)")
+            before_computed = copy.deepcopy(panel.core.geometry.stats["computed"])
+            for _ in range(25):
+                panel.tick()
+            check("Idle ticks preserve measurement and check work counters", checks.call_count == 0 and panel.core.geometry.stats["computed"] == before_computed)
+            doc = panel.document()
+            panel.isometric()
+            panel.fit()
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(doc.Pad, "Face1")
+            QtTest.QTest.qWait(200)
+            before = snapshot(doc)
+            cursor_seen = []
+            dispatch = panel.core.dispatch
+            def observed_dispatch(request):
+                if request["op"] == "check_geometry":
+                    cursor = application.overrideCursor()
+                    cursor_seen.append(cursor is not None and cursor.shape() == QtCore.Qt.WaitCursor)
+                return dispatch(request)
+            with patch.object(panel.core, "dispatch", side_effect=observed_dispatch):
+                toolbar("Check geometry")
+            result = panel.state["geometry_check_report"]
+            check("Actual Check geometry button reports one checked valid Body", checks.call_count == 1 and result["status"] == "valid"
+                  and len(result["bodies"]) == 1 and result["bodies"][0]["id"] == "Body"
+                  and result["bodies"][0]["valid"] is True and result["bodies"][0]["issues"] == []
+                  and result["bodies"][0]["check_ms"] >= 0)
+            check("Geometry check restores the wait cursor", cursor_seen == [True] and application.overrideCursor() is None)
+            after = snapshot(doc)
+            report["check_snapshots"] = {"before": before, "after": after}
+            check("Explicit check preserves exact model history selection camera and Modified", before["strict"] == after["strict"])
+            check("Checked status and per-Body Messages are visible in the model UI", panel.status.text() == "1 solid(s) · checked" and "geometry valid" in panel.messages.toPlainText())
+            before_computed = copy.deepcopy(panel.core.geometry.stats["computed"])
+            toolbar("Check geometry")
+            check("Repeated toolbar check reuses the cached source verdict", checks.call_count == 1
+                  and panel.core.geometry.stats["computed"] == before_computed and snapshot(doc)["strict"] == before["strict"])
+            Gui.Selection.clearSelection()
+            QtTest.QTest.qWait(100)
+            before_measure = snapshot(doc)
+            lightweight = copy.deepcopy(panel.state)
+            measure_key()
+            check("Measure key reports active-part full mass properties", "volume: 1200.0000 mm³" in panel.message.text()
+                  and "area: 760.0000 mm²" in panel.message.text() and "10.0000, 5.0000, 3.0000 mm" in panel.message.text())
+            check("Explicit Measure preserves lightweight state and native invariants", panel.state == lightweight
+                  and snapshot(doc)["strict"] == before_measure["strict"] and checks.call_count == 1)
+            screenshot("checked-measured.png")
+        fixture = output / "a.FCStd"
+        mismatch = output / "b.FCStd"
+        call("save", path=str(fixture))
+        original_sha = hashlib.sha256(fixture.read_bytes()).hexdigest()
+        App.closeDocument(doc.Name)
+        panel.tick()
+        samples_before = len(panel.core.timings.samples.get("native_recompute", ()))
+        call("open", path=str(fixture))
+        check("Same-engine saved shapes reopen without native recompute or Modified", panel.state["build_status"] == "valid"
+              and len(panel.core.timings.samples.get("native_recompute", ())) == samples_before and Gui.activeDocument().Modified is False)
+        mismatch_copy(fixture, mismatch)
+        mismatch_sha = hashlib.sha256(mismatch.read_bytes()).hexdigest()
+        App.closeDocument(panel.document().Name)
+        panel.tick()
+        notices = []
+        notify = panel.notify
+        def observed_notify(message, *args):
+            notices.append(str(message))
+            return notify(message, *args)
+        samples_before = len(panel.core.timings.samples.get("native_recompute", ()))
+        with patch.object(panel, "notify", side_effect=observed_notify):
+            assert panel.open_path(str(mismatch)), panel.message.text()
+            # A newly opened GL view receives its providers on the event loop.
+            QtTest.QTest.qWait(250)
+            panel.fit()
+            QtTest.QTest.qWait(100)
+            for _ in range(25):
+                panel.tick()
+            panel.refresh()
+        check("Other-engine open retains shapes and explains required rebuild", panel.state["build_status"] == "needs_rebuild"
+              and panel.state["rebuild_reason"] == "engine_changed" and panel.state["measurements"] is None
+              and panel.state["retained_geometry_measurements"]["solid_count"] == 1
+              and panel.status.text() == "Rebuild required · geometry engine changed"
+              and panel.document().Body.ViewObject.Visibility and panel.document().Body.Tip.ViewObject.Visibility
+              and len(panel.document().Body.Shape.Solids) == 1 and abs(panel.document().Body.Shape.Volume - 1200) < 1e-7)
+        check("Rebuild reason is notified once with no implicit recompute or Modified", sum(text.startswith("Rebuild required · ") for text in notices) == 1
+              and len(panel.core.timings.samples.get("native_recompute", ())) == samples_before and Gui.activeDocument().Modified is False)
+        screenshot("rebuild-required.png")
+        toolbar("Rebuild")
+        check("Actual Rebuild clears the engine reason and retains box geometry", panel.state["build_status"] == "valid"
+              and panel.state["rebuild_reason"] is None and abs(panel.document().Body.Shape.Volume - 1200) < 1e-7)
+        panel.history_move("undo")
+        check("Undo restores the required rebuild reason", panel.state["build_status"] == "needs_rebuild" and panel.state["rebuild_reason"] == "engine_changed")
+        check("Open check Measure rebuild and undo preserve both source archives", hashlib.sha256(fixture.read_bytes()).hexdigest() == original_sha
+              and hashlib.sha256(mismatch.read_bytes()).hexdigest() == mismatch_sha)
+        report.update(passed=True, source_files={str(fixture): original_sha, str(mismatch): mismatch_sha},
+                      geometry_stats=copy.deepcopy(panel.core.geometry.stats), timings=panel.core.timings.report(),
+                      engine={"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION})
+    except Exception:
+        report["error"] = traceback.format_exc()
+        try:
+            screenshot("failure.png")
+        except Exception:
+            report["screenshot_error"] = traceback.format_exc()
+    finally:
+        cleanup_errors = []
+        try:
+            if panel:
+                try:
+                    report["native_messages"] = panel.messages.toPlainText()
+                    panel.shutdown()
+                except Exception:
+                    cleanup_errors.append(traceback.format_exc())
+            for name in set(App.listDocuments()) - names_before:
+                try:
+                    doc = App.getDocument(name)
+                    gui = Gui.getDocument(name)
+                    if gui and gui.getInEdit():
+                        gui.resetEdit()
+                    doc.abortTransaction()
+                    doc.setClosable(True)
+                    App.closeDocument(name)
+                except Exception:
+                    cleanup_errors.append(traceback.format_exc())
+            report["owned_documents_closed"] = not (set(App.listDocuments()) - names_before)
+            source_after = sources()
+            report.update(source_before=source_before, source_after=source_after, source_unchanged=source_before == source_after,
+                          check_count=len(report["checks"]), completed_utc=datetime.now(timezone.utc).isoformat(), seconds=time.perf_counter() - started)
+            if cleanup_errors or not report["owned_documents_closed"] or not report["source_unchanged"]:
+                report["passed"] = False
+            if cleanup_errors:
+                report["cleanup_errors"] = cleanup_errors
+            with out.open("x", encoding="utf-8") as stream:
+                json.dump(report, stream, indent=2, default=str)
+        finally:
+            QtCore.QTimer.singleShot(0, application.quit)
+
+
+QtCore.QTimer.singleShot(500, validate)

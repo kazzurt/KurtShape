@@ -34,7 +34,7 @@ adapter = None
 
 def call(op, **args):
     global state
-    request = dict(op=op, **args)
+    request = dict(op=op, **args, measure=False)
     if op != "new":
         request.update(document_id=state["document_id"], expected_revision=state["revision"])
     result = core.dispatch(request)
@@ -57,7 +57,7 @@ def snapshot(doc):
             tuple((o.Name, o.ViewObject.Visibility) for o in doc.Objects if o.ViewObject),
             tuple((s.DocumentName, s.ObjectName, tuple(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()),
             camera_pose, App.activeDocument().Name, tuple(core.documents),
-            tuple(App.listDocuments()), tuple(core.observer.states), tuple(core.evaluations))
+            tuple(App.listDocuments()), tuple(core.observer.states), tuple(sorted(core.geometry.documents())))
 
 
 def validate():

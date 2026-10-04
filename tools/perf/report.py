@@ -22,11 +22,27 @@ def metric_value(report, name):
 def evaluate_budgets(report, phase="phase0", best=None, confirmation=None):
     policy = json.loads(BUDGET_PATH.read_text(encoding="utf-8"))
     fixture = report.get("fixture", {})
-    if fixture.get("kind") != "plate" or fixture.get("holes", 0) < policy["minimum_plate_holes"]:
+    if fixture.get("kind") == "studio":
+        studio_policy = policy.get("studio", {})
+        target = studio_policy.get("total_rebuild_ms")
+        if (isinstance(target, bool) or not isinstance(target, (int, float)) or
+                not math.isfinite(target) or target <= 0 or
+                studio_policy.get("measurement_level") != report.get("measurement_level", True)):
+            return {"evaluated": False, "failed": False,
+                    "reason": "Studio budget needs a recorded Q03 median for this measurement level", "metrics": []}
+        targets = {"total_rebuild_ms": target}
+        if best is None:
+            best = studio_policy.get("baseline")
+        if best is None:
+            return {"evaluated": False, "failed": False,
+                    "reason": "Studio budget needs a comparable five-sample Q03 baseline", "metrics": []}
+    elif fixture.get("kind") == "plate" and fixture.get("holes", 0) >= policy["minimum_plate_holes"]:
+        targets = policy[phase]
+    else:
         return {"evaluated": False, "failed": False,
-                "reason": "Plate budgets require at least 60 holes; studio budget is established after Q03", "metrics": []}
+                "reason": "Plate budgets require at least 60 holes", "metrics": []}
     metrics = []
-    for name, target in policy[phase].items():
+    for name, target in targets.items():
         current, count = metric_value(report, name)
         baseline, best_count = metric_value(best or {}, name)
         repeated, confirmation_count = metric_value(confirmation or {}, name)
@@ -50,8 +66,10 @@ def evaluate_budgets(report, phase="phase0", best=None, confirmation=None):
             continue
         other_fixture = other.get("fixture", {})
         if (other_fixture.get("kind"), other_fixture.get("holes")) != (fixture.get("kind"), fixture.get("holes")):
-            reasons.append(label + " fixture does not match the current plate")
-        if any(metric_value(other, name)[0] is None or metric_value(other, name)[1] < 5 for name in policy[phase]):
+            reasons.append(label + " fixture does not match the current report")
+        if other.get("measurement_level", True) != report.get("measurement_level", True):
+            reasons.append(label + " measurement level does not match the current report")
+        if any(metric_value(other, name)[0] is None or metric_value(other, name)[1] < 5 for name in targets):
             reasons.append(label + " needs finite required metrics with at least five samples")
     if confirmation is not None and report.get("run_id") and confirmation.get("run_id") == report["run_id"]:
         reasons.append("Confirmation must come from an independent second run")

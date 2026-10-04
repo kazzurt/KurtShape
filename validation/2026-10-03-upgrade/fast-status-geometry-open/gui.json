@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "checks": [
+    {"name":"interface","passed":true,"checks":41},
+    {"name":"ui-refinement","passed":true,"checks":106},
+    {"name":"extrusion-preview","passed":true,"checks":20},
+    {"name":"refinement-preview","passed":true,"checks":20},
+    {"name":"sketch-behavior","passed":true,"checks":28},
+    {"name":"review-interaction","passed":true,"checks":11},
+    {"name":"review-lifecycle","passed":true,"stages":22},
+    {"name":"review-copy","passed":true,"checks":25},
+    {"name":"review-recovery","passed":true,"proof_checks":10,"native_autosave_verified":false,"exit":"intentional abnormal termination followed by independent native proof"},
+    {"name":"review-startup","passed":true,"markers":3},
+    {"name":"review-baseline","passed":true,"markers":3},
+    {"name":"messages","passed":true,"checks":34},
+    {"name":"assembly","passed":true,"checks":58},
+    {"name":"step-import","passed":true,"checks":19},
+    {"name":"assembly-step","passed":true,"checks":35},
+    {"name":"carrier-spike","passed":false,"checks":17,"known_baseline_failure":true,"error":"Traceback (most recent call last):\n  File \"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\part-model-spike-gui-validation.FCMacro\", line 227, in validate\n    check(\"Shared history retains split composition and output features\", {left_boolean.Name, right_boolean.Name, left.Tip.Name, right.Tip.Name}.issubset(panel.items))\n  File \"C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\part-model-spike-gui-validation.FCMacro\", line 96, in check\n    raise AssertionError(label + \": \" + (panel.message.text() if panel else \"startup\"))\nAssertionError: Shared history retains split composition and output features: Feature canceled\n"},
+    {"name":"part-studio","passed":true,"checks":99},
+    {"name":"bench-gui","passed":true,"checks":9},
+    {"name":"q03-status","passed":true,"checks":17}
+  ],
+  "method": "Direct standing full 18-recipe sweep plus Q03 status recipe; JSON read after owned process exit",
+  "engine": {},
+  "base_commit": "c311f6075fe6cda41d53a94043a68b8e3228fe94",
+  "worktree_diff_sha256": "eedec0c325f4b1cd766804a949b5d16aa24719c083071e00bb478bd6bc2191be",
+  "timings": {"median":null,"p95":null,"worst":null,"samples":[]},
+  "limits": "17 standing passes; exact carrier baseline after 17 checks retained. Q03 17 checks pass. Changed status and failed carrier screenshots inspected. Prior warning classes remain: thumbnail read, SWIG deprecation, native scope diagnostics and intentional recovery termination. Scope text differs by order/truncation. Hidden checks do not establish hands-on comfort; native autosave archive unavailable.",
+  "ci": {"status":"not_run","reason":"push not authorized","run_url":null},
+  "input_sha256": "c70cf67045f95ddebde6a1c9d06a245a61fe8a48a25d96ebf60eff76bbaec792"
+}

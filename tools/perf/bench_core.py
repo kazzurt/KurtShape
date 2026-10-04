@@ -28,6 +28,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from report import evaluate_budgets
 
 DEFAULT_SECTIONS = ("edits", "inspect", "checkpoint", "preview", "open")
+MEASUREMENT_POLICY = "Contract3: false counts only; true volume/area/bbox; full adds solid mass center. No automatic BRepCheck. Older true baselines include the former full/check work."
 
 
 def isolated_session():
@@ -113,7 +114,7 @@ def base_report(fixture, holes, method):
 
 
 class Benchmark:
-    def __init__(self, scratch, fixture="plate", holes=20, repeat=3, panel=None):
+    def __init__(self, scratch, fixture="plate", holes=20, repeat=3, panel=None, measure=None):
         import FreeCAD as App
         import Part
         import Sketcher
@@ -124,6 +125,8 @@ class Benchmark:
         self.scratch, self.fixture, self.holes, self.repeat = Path(scratch), fixture, holes, repeat
         self.panel = panel
         self.core = panel.core if panel else Controller()
+        self.measure = panel.MEASURE if measure is None and panel else (True if measure is None else measure)
+        self.core.default_measure = self.measure
         self.state = panel.state if panel else None
         self.growth = []
 
@@ -167,7 +170,7 @@ class Benchmark:
                     raise RuntimeError("GUI operation failed: " + self.panel.message.text())
                 self.state = result
             else:
-                request = {"op": op, **arguments}
+                request = {"op": op, "measure": self.measure, **arguments}
                 if op not in self.core.CREATE_OPS:
                     request.update(document_id=self.state["document_id"], expected_revision=self.state["revision"])
                 response = self.core.dispatch(request)
@@ -241,7 +244,10 @@ class Benchmark:
         assert len(base_features) == 30 and len(base_parts) == 4 and len(consumers) == 11
         assert all(body.Shape.isValid() and len(body.Shape.Solids) == 1 for body in base_parts)
         self.core.attach(doc)
-        self.state = self.core.inspect(doc)
+        # This fixture was just computed by this engine; attachment alone is
+        # deliberately insufficient to certify an arbitrary stored document.
+        self.core._mark_rebuilt(doc)
+        self.state = self.core.inspect(doc, self.measure)
         if self.panel:
             App.setActiveDocument(doc.Name)
             self.panel.state = self.state
@@ -297,7 +303,7 @@ class Benchmark:
         return metrics
 
     def inspect(self):
-        request = lambda: self.core.dispatch({"op": "inspect", "document_id": self.state["document_id"]})
+        request = lambda: self.core.dispatch({"op": "inspect", "document_id": self.state["document_id"], "measure": self.measure})
 
         def warm():
             response = request()
@@ -358,6 +364,22 @@ class Benchmark:
                    ("native_recompute_ms", "selector_evaluation_ms", "auto_scope_sync_ms", "managed_rebuild_ms")}}
 
     def open(self):
+        from kurtshape.bodies import results
+
+        def retained_geometry(doc):
+            return {obj.Name: (len(obj.Shape.Solids), float(obj.Shape.Volume))
+                    for obj in results(doc) if not obj.Shape.isNull()}
+
+        expected = retained_geometry(self.doc)
+        assert expected, "Completed benchmark fixture has no retained geometry"
+
+        def verify_geometry(doc):
+            actual = retained_geometry(doc)
+            assert actual.keys() == expected.keys(), (actual, expected)
+            for name, (count, volume) in expected.items():
+                assert actual[name][0] == count, (name, actual[name], expected[name])
+                assert abs(actual[name][1] - volume) < max(1e-6, abs(volume) * 1e-8), (name, actual[name], expected[name])
+
         path = self.scratch / (self.fixture + "-benchmark.FCStd")
         self.call("save", path=str(path))
         self.App.closeDocument(self.doc.Name)
@@ -369,12 +391,17 @@ class Benchmark:
                 began = time.perf_counter()
                 opened = self.App.openDocument(str(path), True)
                 native.append((time.perf_counter() - began) * 1000)
+                verify_geometry(opened)
             finally:
                 if opened is not None:
                     self.App.closeDocument(opened.Name)
         managed = []
         for _ in range(self.repeat):
             measured = self.call("open", path=str(path))
+            if measured["native_recompute_ms"] != 0:
+                raise RuntimeError("Stored benchmark open performed a native recompute")
+            assert self.state["build_status"] == "valid" and self.state["rebuild_reason"] is None, self.state
+            verify_geometry(self.doc)
             managed.append(measured["total_ms"])
             self.App.closeDocument(self.doc.Name)
         return {"native_open_ms": native, "kurtshape_open_ms": managed}
@@ -405,6 +432,7 @@ def main():
     parser.add_argument("--fixture", choices=("plate", "studio"), default="plate")
     parser.add_argument("--holes", type=int, default=20)
     parser.add_argument("--repeat", type=int, default=3)
+    parser.add_argument("--measure", choices=("false", "true", "full"), default="true")
     parser.add_argument("--out")
     parser.add_argument("--scratch")
     parser.add_argument("--sections", default=",".join(DEFAULT_SECTIONS))
@@ -428,6 +456,8 @@ def main():
         parser.error(str(exc))
     report = base_report(args.fixture, args.holes, "Bundled native Python; real revision-checked Controller.dispatch and isolated FCStd fixtures")
     report["repeat"] = args.repeat
+    report["measurement_level"] = {"false": False, "true": True, "full": "full"}[args.measure]
+    report["measurement_policy"] = MEASUREMENT_POLICY
     report["add_operation_sampling"] = "Repeated sketch/pocket additions on the completed fixture; two undos and geometry verification outside measured operations"
     benchmark = None
     began = time.perf_counter()
@@ -440,7 +470,7 @@ def main():
         socket.socket.connect = deny_network
         socket.create_connection = deny_network
         socket.getaddrinfo = deny_network
-        benchmark = Benchmark(scratch, args.fixture, args.holes, args.repeat)
+        benchmark = Benchmark(scratch, args.fixture, args.holes, args.repeat, measure=report["measurement_level"])
         report["engine"] = {"FreeCAD": benchmark.App.Version(), "OCCT": benchmark.Part.OCC_VERSION}
         report["fixture"] = benchmark.build()
         report["checks"].append("Native fixture geometry and expected feature/part/query counts verified")

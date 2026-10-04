@@ -88,7 +88,7 @@ def handle(core, doc, req):
             selectors.bind(feature, field + "_" + str(index), selector_value(spec),
                            native_property="Base", mode="linksub_index", index=index)
     core._recompute(doc)
-    if feature.Shape.isNull() or not feature.Shape.isValid() or len(feature.Shape.Solids) != 1:
+    if feature.Shape.isNull() or len(feature.Shape.Solids) != 1 or {"Invalid", "Error"} & set(feature.State):
         raise OperationError("build_failed", "Native feature could not create one valid solid", feature=feature.Name)
     body.Tip = feature
     return feature.Name

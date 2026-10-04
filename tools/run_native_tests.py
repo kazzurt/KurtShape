@@ -33,6 +33,8 @@ SUITES = {
         "test_runtime_layout.RuntimeLayoutTests",
         "test_native_files.NativeFileBehaviorTests",
         "test_native_validation_snapshot.NativeValidationSnapshotTests",
+        "test_build_status.BuildStatusTests", "test_build_status.StatusPerformanceTests",
+        "test_geometry_queries.GeometryQueryTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests",),
     "shortcuts": ("test_shortcuts.RouterTests", "test_shortcuts.QtRoutingTests"),
@@ -432,7 +434,7 @@ def main():
             rejected = []
             for skip in suite.get("skips", []):
                 reason = skip["reason"]
-                if args.require_external and reason.startswith(EXTERNAL_SKIP_PREFIX) or (
+                if args.require_external and reason.startswith((EXTERNAL_SKIP_PREFIX, PERF_SKIP_PREFIX)) or (
                     args.require_native and not reason.startswith((EXTERNAL_SKIP_PREFIX, PERF_SKIP_PREFIX))
                 ):
                     rejected.append(skip)

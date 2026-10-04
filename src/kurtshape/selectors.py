@@ -16,6 +16,7 @@ import xml.etree.ElementTree as ET
 import FreeCAD as App
 import Part
 from .bodies import owner, results as native_results
+from . import geometry
 
 
 TOLERANCE = 1e-7
@@ -32,6 +33,26 @@ _SCHEMA = {
 _evaluation_milliseconds = 0.0
 _refresh_milliseconds = 0.0
 _rebuild_metrics = {}
+_native_pending = set()
+
+
+def _shape_frame(shape):
+    placement = shape.Placement
+    return tuple(placement.Base) + tuple(placement.Rotation.Q)
+
+
+def _memo(doc, kind, objects, parameters, compute):
+    cache = geometry.provider(doc)
+    return cache.memo(kind, objects, parameters, compute) if cache is not None else compute()
+
+
+def _row_scalar(row, field):
+    shape, obj = row["_shape"], row["_object"]
+    key = (row["entity_type"], row["subelement"], field, _shape_frame(shape))
+    def compute():
+        value = geometry.scalar(shape, field)
+        return tuple(value) if field == "center_of_mass" else value
+    return _memo(obj.Document, "selector_scalar", (obj,), key, compute)
 
 
 def _error(code, message, **details):
@@ -361,9 +382,9 @@ def _profile_plane(shape):
         raise _error("unsupported_selector", "Cap queries require a planar native profile") from exc
     if not faces or any(not isinstance(face.Surface, Part.Plane) for face in faces):
         raise _error("unsupported_selector", "Cap queries require a planar native profile")
-    point, normal = faces[0].CenterOfMass, faces[0].normalAt(0, 0)
+    point, normal = App.Vector(*geometry.scalar(faces[0], "center_of_mass")), faces[0].normalAt(0, 0)
     if any(abs(abs(face.normalAt(0, 0).dot(normal)) - 1) > TOLERANCE
-           or abs(normal.dot(face.CenterOfMass - point)) > TOLERANCE for face in faces):
+           or abs(normal.dot(App.Vector(*geometry.scalar(face, "center_of_mass")) - point)) > TOLERANCE for face in faces):
         raise _error("unsupported_selector", "Native profile faces must share a plane")
     return point, normal
 
@@ -417,7 +438,8 @@ def _cap_rows(context, rows, feature, cap):
         end_rotation = App.Rotation(axis, first_angle + angle)
         start_shape.transformShape(App.Placement(origin - first_rotation.multVec(origin), first_rotation).toMatrix())
         end_shape.transformShape(App.Placement(origin - end_rotation.multVec(origin), end_rotation).toMatrix())
-        return _on_cap_shapes(rows, start_shape, end_shape, cap)
+        return _on_cap_shapes(context, rows, start_shape, end_shape, cap, (obj, profile),
+                              ("revolve", angle, first_angle, tuple(origin), tuple(axis)))
     if obj.TypeId in {"Part::Sweep", "PartDesign::AdditivePipe"}:
         spine = obj.Spine[0]
         paths = obj.Spine[1]
@@ -477,7 +499,7 @@ def _lies_on_plane(row, point, normal):
     if row["entity_type"] == "face":
         return (isinstance(shape.Surface, Part.Plane)
                 and abs(abs(shape.normalAt(0, 0).dot(normal)) - 1) < TOLERANCE
-                and abs(normal.dot(shape.CenterOfMass - point)) < TOLERANCE)
+                and abs(normal.dot(App.Vector(*_row_scalar(row, "center_of_mass")) - point)) < TOLERANCE)
     if row["entity_type"] == "edge":
         curve = shape.Curve
         if isinstance(curve, (Part.Circle, Part.Ellipse)):
@@ -491,16 +513,22 @@ def _lies_on_plane(row, point, normal):
     return bool(vertices) and all(abs(normal.dot(vertex.Point - point)) < TOLERANCE for vertex in vertices)
 
 
-def _on_cap_shapes(rows, start, end, cap):
-    def touches(row, shape):
+def _on_cap_shapes(context, rows, start, end, cap, sources=(), parameters=()):
+    def touches(row, shape, endpoint):
         entity = row["_shape"]
+        if not geometry.bboxes_overlap(geometry.bounding_box(entity), geometry.bounding_box(shape), tolerance=TOLERANCE):
+            return False
+        key = (parameters, endpoint, row["entity_type"], row["subelement"], _shape_frame(entity), _shape_frame(shape))
+        objects = (row["_object"], *sources)
         if row["entity_type"] == "vertex":
-            return entity.distToShape(shape)[0] < TOLERANCE
-        common = entity.common(shape)
-        return common.Area > TOLERANCE if row["entity_type"] == "face" else common.Length > TOLERANCE
+            return _memo(context.doc, "selector_cap_distance", objects, key,
+                         lambda: geometry.distance(entity, shape)) < TOLERANCE
+        field = "area" if row["entity_type"] == "face" else "length"
+        return _memo(context.doc, "selector_cap_overlap", objects, key,
+                     lambda: geometry.scalar(entity.common(shape), field)) > TOLERANCE
     answer = []
     for row in rows:
-        on_start, on_end = touches(row, start), touches(row, end)
+        on_start, on_end = touches(row, start, "start"), touches(row, end, "end")
         if cap == "start" and on_start or cap == "end" and on_end or cap == "side" and not on_start and not on_end:
             answer.append(row)
     return answer
@@ -594,10 +622,10 @@ def _evaluate(context, selector, depth=0):
         excluded = {_identity(row) for row in _evaluate(context, selector.get("subtract"), depth + 1)}
         return [row for row in rows if _identity(row) not in excluded]
     if kind == "geometry":
-        geometry = selector.get("geometry")
-        if geometry not in {"plane", "cylinder", "cone", "sphere", "torus", "line", "circle", "ellipse", "spline", "point"}:
+        geometric_filter = selector.get("geometry")
+        if geometric_filter not in {"plane", "cylinder", "cone", "sphere", "torus", "line", "circle", "ellipse", "spline", "point"}:
             raise _error("invalid_selector", "Unknown geometry filter")
-        return [row for row in rows if _geometry(row) == geometry]
+        return [row for row in rows if _geometry(row) == geometric_filter]
     if kind == "parallel":
         direction = _vector(selector.get("direction"), "direction")
         if direction.Length < TOLERANCE:
@@ -619,11 +647,23 @@ def _evaluate(context, selector, depth=0):
                 answer.append(row)
         return answer
     if kind == "closest":
-        point = Part.Vertex(_vector(selector.get("point"), "point"))
-        distances = [(row["_shape"].distToShape(point)[0], row) for row in rows]
+        coordinates = _vector(selector.get("point"), "point")
+        point = Part.Vertex(coordinates)
+        point_box = geometry.bounding_box(point)
+        candidates = sorted(enumerate(rows), key=lambda item:
+                            (geometry.bbox_distance(geometry.bounding_box(item[1]["_shape"]), point_box), item[0]))
+        distances, minimum = [], math.inf
+        for index, row in candidates:
+            entity = row["_shape"]
+            if geometry.bbox_distance(geometry.bounding_box(entity), point_box) > minimum + TOLERANCE:
+                continue
+            key = (row["entity_type"], row["subelement"], _shape_frame(entity), tuple(coordinates))
+            value = _memo(context.doc, "selector_closest_distance", (row["_object"],), key,
+                          lambda: geometry.distance(entity, point))
+            distances.append((value, row))
+            minimum = min(minimum, value)
         if not distances:
             return []
-        minimum = min(value for value, row in distances)
         return [row for value, row in distances if abs(value - minimum) < TOLERANCE]
     if kind == "adjacent":
         adjacency = selector.get("adjacency", "edge")
@@ -662,13 +702,13 @@ def _evaluate(context, selector, depth=0):
 
 def _summary(row):
     shape = row["_shape"]
-    result = {"geometry": _geometry(row), "center_mm": list(shape.CenterOfMass)}
+    result = {"geometry": _geometry(row), "center_mm": list(_row_scalar(row, "center_of_mass"))}
     if row["entity_type"] == "face":
-        result["area_mm2"] = shape.Area
+        result["area_mm2"] = _row_scalar(row, "area")
         if result["geometry"] == "plane":
             result["normal"] = list(shape.normalAt(0, 0))
     elif row["entity_type"] == "edge":
-        result["length_mm"] = shape.Length
+        result["length_mm"] = _row_scalar(row, "length")
     return result
 
 
@@ -780,7 +820,7 @@ def _native_references(feature, info):
         index = info.get("index", 0)
         links = [(value[0], [value[1][index]])] if value[0] is not None and 0 <= index < len(value[1]) else []
     elif mode in {"linksub", "linksublist"}:
-        links = [value] if isinstance(value, tuple) and len(value) == 2 and hasattr(value[0], "Name") else list(value)
+        links = [value] if isinstance(value, tuple) and len(value) == 2 and (value[0] is None or hasattr(value[0], "Name")) else list(value)
     else:
         raise _error("invalid_selector_metadata", "Unknown native reference binding mode")
     return [{"feature": obj.Name, "subelement": name} for obj, names in links if obj is not None for name in names]
@@ -926,6 +966,7 @@ def rebuild_metrics(doc):
 def clear_cache(doc):
     """Release derived diagnostic state when the native document closes."""
     _rebuild_metrics.pop(doc.Name, None)
+    _native_pending.discard(doc.Name)
 
 
 def reference_errors(doc):
@@ -937,28 +978,30 @@ def reference_errors(doc):
             if health.get("status") != "healthy":
                 errors.append({"feature": obj.Name, "input": name, "reference_health": health["status"],
                                "message": "Reference " + name + " is " + health["status"] + (": " + health["error"] if health.get("error") else "")})
+        for name, info in _json(obj, "QueryInputs").items():
+            try:
+                divergent = _native_references(obj, info) != info.get("resolved")
+            except (AttributeError, TypeError, ValueError, KeyError):
+                divergent = True
+            if divergent and not any(
+                    entry["feature"] == obj.Name and entry["input"] == name for entry in errors):
+                errors.append({"feature": obj.Name, "input": name, "reference_health": "missing",
+                               "code": "pending_selector_resolution",
+                               "message": "Selector native input changed; run a managed rebuild to update its native input"})
     return errors
 
 
-_native_refreshing = False
-
-
 def native_recomputed(obj):
-    """Observer boundary: refresh consumers without nesting native recomputation."""
-    global _native_refreshing
-    if _native_refreshing:
-        return
-    _native_refreshing = True
+    """Observer notification only; reconciliation belongs to Controller.sync."""
+    _native_pending.add(obj.Document.Name)
+
+
+def reconcile_native(doc):
+    """Diagnose an already completed native recompute without rebinding inputs."""
     try:
-        if "QueryInputs" in obj.PropertiesList and _active(obj):
-            # This consumer has already run. Diagnose an edited native cache;
-            # rebinding now would require another kernel pass. Managed Rebuild
-            # restores the authored selector inside its own transaction.
-            _refresh_feature(obj, allow_reference_writes=False)
-        for consumer in obj.Document.Objects:
-            if consumer == obj or "QueryInputs" not in consumer.PropertiesList or not _active(consumer):
-                continue
-            if obj in consumer.OutListRecursive:
-                _refresh_feature(consumer, allow_reference_writes=_in_transaction(obj.Document))
+        for obj in doc.Objects:
+            if "QueryInputs" in obj.PropertiesList and _active(obj):
+                _refresh_feature(obj, allow_reference_writes=False)
+        return reference_errors(doc)
     finally:
-        _native_refreshing = False
+        _native_pending.discard(doc.Name)

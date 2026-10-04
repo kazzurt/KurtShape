@@ -25,6 +25,7 @@ from . import selectors as native_selectors
 from . import reference_tools
 from .contract import CONTRACT_VERSION, CONTRACT_REVISION
 from .native_content import native_content_fingerprints
+from . import geometry
 
 ROOT = Path(__file__).resolve().parents[2]
 WRITE_ROOT = ROOT.parent.resolve()
@@ -85,6 +86,17 @@ def metadata(doc):
         setattr(meta, name, value)
         meta.setEditorMode(name, 1)
     return meta
+
+
+def engine_stamp():
+    return ".".join(App.Version()[:3]), Part.OCC_VERSION
+
+
+def ensure_engine_properties(meta):
+    for name in ("EngineFreeCAD", "EngineOCCT", "RebuildReason"):
+        if name not in meta.PropertiesList:
+            meta.addProperty("App::PropertyString", name, "KurtShape")
+            meta.setEditorMode(name, 1)
 
 
 def native_parameters(obj):
@@ -177,18 +189,11 @@ def intent_signature(doc):
 
 
 def measurements(shape):
-    box = shape.BoundBox
-    volume = sum(s.Volume for s in shape.Solids)
-    center = [sum(s.Volume * getattr(s.CenterOfMass,axis) for s in shape.Solids) / volume for axis in ("x","y","z")] if volume else None
-    return {"valid": bool(shape.isValid()), "solid_count": len(shape.Solids),
-            "volume_mm3": shape.Volume, "area_mm2": shape.Area,
-            "bbox_mm": {"min": [box.XMin, box.YMin, box.ZMin], "max": [box.XMax, box.YMax, box.ZMax],
-                        "size": [box.XLength, box.YLength, box.ZLength]},
-            "center_of_mass_mm": center}
+    return geometry.measurements(shape)
 
 
 class Controller:
-    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector"}
+    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
                     "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}
     MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line",
@@ -197,7 +202,7 @@ class Controller:
     CREATE_OPS = {"new", "open", "recover", "import_step"}
     OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
     ARGS = {
-        "new": {"name"}, "open": {"path"}, "import_step": {"path"}, "recover": {"path"}, "adopt": {"path"}, "create_body": {"id", "name"}, "inspect": set(), "list_documents": set(),
+        "new": {"name"}, "open": {"path"}, "import_step": {"path"}, "recover": {"path"}, "adopt": {"path"}, "create_body": {"id", "name"}, "inspect": set(), "list_documents": set(), "check_geometry": {"body"},
         "create_sketch": {"id", "plane", "support", "source_feature_id", "source_feature_name"},
         "sketch_rectangle": {"id","width","height","x","y","plane","support","source_feature_id","source_feature_name"},
         "sketch_circle": {"id","x","y","diameter","plane","support","center_on","source_feature_id","source_feature_name"},
@@ -243,8 +248,11 @@ class Controller:
         self.sketch_edits = {}
         self.busy = False
         self.settings = Settings(ROOT)
-        self.evaluations = {}
+        self.geometry = geometry.GeometryCache(shape_of=native_assembly.global_shape,
+                                               dependencies_of=self._shape_dependencies)
+        self.default_measure = True
         self.observer = DocumentState(self)
+        self.geometry.observer = self.observer
         self.ledger = RequestLedger()
         self.unmanaged = {}
         self.timings = Timings()
@@ -260,6 +268,7 @@ class Controller:
         return self.timings.measure("intent", intent_signature, doc)
 
     def _recompute(self, doc):
+        self.geometry.bind(doc)
         began = time.perf_counter()
         totals = {"native_recompute_ms": 0.0, "selector_evaluation_ms": 0.0}
         def native_pass():
@@ -278,6 +287,10 @@ class Controller:
         else:
             raise OperationError("unstable_merge_scope", "Auto merge scopes did not stabilize during rebuild")
         studio.hide_internal(doc)
+        studio.refresh_validation(doc)
+        state = self.observer.state(doc)
+        state["native_recomputed"] = False
+        state["recomputed_objects"].clear()
         for label, key in (("native_recompute", "native_recompute_ms"),
                            ("selector_evaluation", "selector_evaluation_ms")):
             self.timings.record(label, totals[key])
@@ -317,27 +330,60 @@ class Controller:
             raise OperationError("ambiguous_body" if eligible else "missing_body", "Choose an explicit body ID")
         return eligible[0]
 
-    def _geometry(self, doc, objects=None):
+    def _shape_dependencies(self, obj):
+        dependencies = []
+        candidates = [obj]
+        linked = getattr(obj, "LinkedObject", None)
+        if linked is not None:
+            linked = linked[0] if isinstance(linked, tuple) else linked
+            candidates.append(linked)
+            dependencies.append(linked)
+        seen = {(obj.Document.Name, obj.Name)}
+        while candidates:
+            candidate = candidates.pop()
+            if candidate.TypeId == "PartDesign::Body" and candidate.Tip is not None:
+                dependencies.append(candidate.Tip)
+            for parent in candidate.InList:
+                key = (parent.Document.Name, parent.Name)
+                if key not in seen and (parent.TypeId in {"App::Part", "PartDesign::Body"}
+                                        or getattr(parent, "KurtShapeAssembly", "") == "1"):
+                    seen.add(key)
+                    dependencies.append(parent)
+                    candidates.append(parent)
+        return dependencies
+
+    def _measure_level(self, measure):
+        if measure is None:
+            measure = self.default_measure
+        if type(measure) is bool or type(measure) is str and measure == "full":
+            return measure
+        raise OperationError("invalid_argument", 'measure must be false, true or "full"')
+
+    def _volume(self, obj):
+        return self.geometry.facts(obj, ("volume",))["volume"]
+
+    def _geometry(self, doc, objects=None, measure=None):
         objects = native_results(doc) if objects is None else objects
         solid_objects = [obj for obj in objects if not obj.Shape.isNull() and obj.Shape.Solids]
         if not solid_objects:
             return None
-        generation = self.observer.state(doc)["generation"]
-        key = "aggregate:" + ",".join(obj.Name for obj in objects)
-        cache = self.evaluations.setdefault(doc.Name, {})
-        if key not in cache or cache[key][0] != generation:
-            shapes = [native_assembly.global_shape(obj) for obj in solid_objects]
-            metrics = measurements(Part.makeCompound(shapes))
-            if native_assembly.assemblies(doc):
-                # OCCT compound mass integration on the supplied curved STEP
-                # parts depends on the aggregate coordinate range. Occurrences
-                # remain independent solids; sum their accepted mass properties.
-                metrics["volume_mm3"] = sum(self._evaluated_shape(doc, obj)["volume_mm3"] for obj in solid_objects)
-            cache[key] = (generation, metrics)
-        return dict(cache[key][1])
+        fields = geometry.LEVELS[self._measure_level(measure)]
+        result = geometry.aggregate([self.geometry.facts(obj, fields) for obj in solid_objects],
+                                    [self.geometry.check(obj) for obj in solid_objects])
+        if len(solid_objects) > 1 and not native_assembly.assemblies(doc):
+            # Preserve native compound integration for Part Studio aggregates;
+            # OCCT's curved-solid integration depends on the combined range.
+            # Independent Assembly occurrences retain their accepted sums.
+            for field, metric in (("volume", "volume_mm3"), ("area", "area_mm2")):
+                if field in fields:
+                    result[metric] = self.geometry.memo("aggregate_" + field, solid_objects, (),
+                        lambda field=field: geometry.scalar(Part.makeCompound(
+                            [native_assembly.global_shape(obj).copy() for obj in solid_objects]), field))
+        return result
 
     def close(self):
         self.observer.close()
+        self.geometry.close()
 
     def needs_refresh(self, doc):
         return self.observer.state(doc)["refresh"]
@@ -345,26 +391,13 @@ class Controller:
     def record_edit_boundary(self, doc):
         self.observer.state(doc)["snapshot_pending"] = True
 
-    def _evaluated_shape(self, doc, body):
-        generation = self.observer.state(doc)["generation"]
-        cache = self.evaluations.setdefault(doc.Name, {})
-        cached = cache.get(body.Name)
-        if cached is None or cached[0] != generation:
-            cached = (generation, measurements(native_assembly.global_shape(body)))
-            cache[body.Name] = cached
-        return dict(cached[1])
+    def _evaluated_shape(self, doc, body, measure=None):
+        return geometry.measurement_dict(self.geometry.facts(body, geometry.LEVELS[self._measure_level(measure)]),
+                                         self.geometry.check(body))
 
     def attach(self, doc, managed=True):
         if managed:
             self.unmanaged.pop(doc.Name, None)
-            # Keep complete native lineage available to the verified selector
-            # decoder. This affects naming caches, not authored geometry.
-            if doc.UseHasher:
-                doc.UseHasher = False
-                # FreeCAD marks existing imported/native shapes touched when
-                # the naming cache mode changes. Complete that cache migration
-                # before reporting the freshly attached document's build state.
-                doc.recompute()
         if not managed:
             from types import SimpleNamespace
             self.unmanaged[doc.Name] = SimpleNamespace(DocumentId=str(uuid.uuid4()), Revision=str(uuid.uuid4()),
@@ -378,9 +411,20 @@ class Controller:
             # its persisted UUID. A closed document's snapshots/history must
             # never be applied to a reopened copy with the same project ID.
             self.sketch_edits.pop(meta.DocumentId, None)
+        if managed and not doc.UseHasher:
+            self._restore_native_map_versions(doc)
         # A copied/opened file receives a fresh session revision, preventing old-client ABA.
         meta.Revision = str(uuid.uuid4())
         self.documents[meta.DocumentId] = doc
+        self.geometry.bind(doc)
+        if managed and doc.UseHasher:
+            doc.UseHasher = False
+            for obj in doc.Objects:
+                if obj.TypeId.startswith(("Sketcher::", "PartDesign::")) or studio.enabled(doc) and obj.TypeId.startswith(("Part::", "App::Link")):
+                    obj.touch()
+            self._recompute(doc)
+            self._mark_rebuilt(doc)
+            self.observer.state(doc)["hasher_migrated"] = True
         if meta.LastFailure:
             try:
                 self.last_failures[meta.DocumentId]=json.loads(meta.LastFailure)
@@ -398,7 +442,8 @@ class Controller:
         doc = self.documents.get(identifier)
         if doc is None or not self._is_open(doc):
             raise OperationError("unknown_document", "Document is not open in this session")
-        self.sync(doc)
+        if request.get("op") != "inspect":
+            self.sync(doc)
         return doc
 
     @staticmethod
@@ -419,9 +464,14 @@ class Controller:
             if doc is None or not self._is_open(doc):
                 self.sketch_edits.pop(identifier, None)
 
-    def sync(self, doc):
+    def sync(self, doc, included=None):
         meta = self._meta(doc)
         state = self.observer.state(doc)
+        if state["native_recomputed"]:
+            self.timings.measure("native_reference_reconciliation", native_selectors.reconcile_native, doc)
+            self.timings.measure("native_scope_validation", studio.refresh_validation, doc)
+            state["native_recomputed"] = False
+            state["recomputed_objects"].clear()
         if state["intent_dirty"]:
             signature = self._signature(doc)
             source_changed = state.pop("assembly_source_changed", False)
@@ -432,7 +482,7 @@ class Controller:
         if state["snapshot_pending"]:
             self._record_sketch_edit(doc)
             state["snapshot_pending"] = False
-        self._build_status(doc)
+        return self._build_status(doc, included)
 
     def _sketch_edit_signature(self, doc, name):
         item = native_intent(doc, [doc.getObject(name)])[0]
@@ -547,11 +597,90 @@ class Controller:
             while doc.RedoNames and doc.RedoNames[0] == SKETCH_CANCEL_BOUNDARY:
                 doc.redo()
 
-    def _build_status(self, doc):
+    @staticmethod
+    def _modified(doc):
+        if getattr(App, "GuiUp", False):
+            import FreeCADGui as Gui
+            gui_doc = Gui.getDocument(doc.Name)
+            if gui_doc is not None:
+                return gui_doc.Modified
+        return None
+
+    @staticmethod
+    def _restore_modified(doc, value):
+        if value is not None:
+            import FreeCADGui as Gui
+            Gui.getDocument(doc.Name).Modified = value
+
+    def _restore_native_map_versions(self, doc):
+        """Restore hidden Body and datum-plane markers from their stored maps."""
+        modified = self._modified(doc)
+        try:
+            for obj in doc.Objects:
+                if (obj.TypeId in ("PartDesign::Body", "PartDesign::Plane") and "_ElementMapVersion" in obj.PropertiesList
+                        and not obj._ElementMapVersion and not obj.Shape.isNull()):
+                    version = obj.getElementMapVersion("Shape")
+                    if version:
+                        obj._ElementMapVersion = version
+        finally:
+            self._restore_modified(doc, modified)
+
+    @staticmethod
+    def _expects_shape(obj):
+        flags = set(obj.State)
+        if flags & {"Touched", "Invalid", "Error"}:
+            return False
+        if obj.TypeId == "PartDesign::Body":
+            return obj.Tip is not None and not set(obj.Tip.State) & {"Touched", "Invalid", "Error"}
+        if obj.TypeId == "Sketcher::SketchObject":
+            return any(not obj.getConstruction(index) for index in range(obj.GeometryCount))
+        return obj.TypeId.startswith("PartDesign::") and not getattr(obj, "Suppressed", False)
+
+    def _rebuild_reason_on_open(self, doc, adopt=False, saved_program_version=None):
+        meta = self._meta(doc)
+        modified = self._modified(doc)
+        try:
+            ensure_engine_properties(meta)
+            stamp = engine_stamp()
+            stored = meta.EngineFreeCAD, meta.EngineOCCT
+            version = App.Version()
+            recorded_version = doc.getProgramVersion() if saved_program_version is None else saved_program_version
+            same_build = recorded_version == f"{version[0]}.{version[1]}R{version[3]}"
+            if adopt and same_build and not any(self._expects_shape(obj) and obj.Shape.isNull()
+                                                for obj in doc.Objects if hasattr(obj, "Shape") and studio.is_active(obj)):
+                self._mark_rebuilt(doc)
+                return
+            reason = ("engine_changed" if any(stored) and stored != stamp else
+                      "saved_by_other_build" if not same_build else
+                      "engine_unrecorded" if not all(stored) else meta.RebuildReason)
+            if meta.RebuildReason != reason:
+                meta.RebuildReason = reason
+        finally:
+            self._restore_modified(doc, modified)
+
+    def _mark_rebuilt(self, doc):
+        meta = self._meta(doc)
+        ensure_engine_properties(meta)
+        meta.EngineFreeCAD, meta.EngineOCCT = engine_stamp()
+        meta.RebuildReason = ""
+
+    def _check_status(self, objects):
+        targets = [obj for obj in objects if not obj.Shape.isNull() and obj.Shape.Solids]
+        if not targets:
+            return "not_applicable"
+        checks = [self.geometry.check(obj) for obj in targets]
+        return "invalid" if any(check is not None and not check["valid"] for check in checks) else (
+            "not_checked" if any(check is None for check in checks) else "valid")
+
+    def _build_status(self, doc, included=None):
         errors = native_assembly.validation_errors(doc, self.observer.state(doc)["generation"])
         errors.extend(studio.validation_errors(doc))
         errors.extend(native_selectors.reference_errors(doc))
         pending = []
+        missing = []
+        if any(error.get("code") == "auto_merge_scope_pending" for error in errors):
+            pending.append("auto_merge_scope")
+            errors = [error for error in errors if error.get("code") != "auto_merge_scope_pending"]
         for obj in doc.Objects:
             if obj.Name == METADATA or not studio.is_active(obj):
                 continue
@@ -560,22 +689,33 @@ class Controller:
                 pending.append(obj.Name)
             if "Invalid" in flags or "Error" in flags:
                 errors.append({"feature": obj.Name, "message": obj.getStatusString()})
-        solids = [obj for obj in native_results(doc) if not obj.Shape.isNull() and obj.Shape.Solids]
+            if hasattr(obj, "Shape") and self._expects_shape(obj) and obj.Shape.isNull():
+                missing.append(obj.Name)
+        included = native_results(doc) if included is None else included
+        solids = [obj for obj in included if not obj.Shape.isNull() and obj.Shape.Solids]
         solid = bool(solids)
         for obj in solids:
-            if not self._evaluated_shape(doc, obj)["valid"]:
-                errors.append({"feature": obj.Name, "message": "Invalid solid"})
-        status = "failed" if errors else ("needs_rebuild" if pending else ("valid" if solid else "sketch_only"))
+            check = self.geometry.check(obj)
+            if check is not None and not check["valid"]:
+                errors.append({"feature": obj.Name, "message": "Invalid solid", "issues": check["issues"]})
         meta = self._meta(doc)
+        reason = getattr(meta, "RebuildReason", "") or ("missing_shapes" if missing else None)
+        self.observer.state(doc)["rebuild_reason"] = reason
+        status = "failed" if errors else ("needs_rebuild" if pending or reason else ("valid" if solid else "sketch_only"))
         if meta.BuildStatus != status:
-            meta.BuildStatus = status
+            modified = self._modified(doc)
+            try:
+                meta.BuildStatus = status
+            finally:
+                self._restore_modified(doc, modified)
         return errors
 
-    def inspect(self, doc):
-        return self.timings.measure("inspection", self._inspect, doc)
+    def inspect(self, doc, measure=None):
+        return self.timings.measure("inspection", self._inspect, doc, self._measure_level(measure))
 
-    def _inspect(self, doc):
-        self.sync(doc)
+    def _inspect(self, doc, measure):
+        included = native_results(doc)
+        errors = self.sync(doc, included)
         meta = self._meta(doc)
         features = []
         for obj in doc.Objects:
@@ -616,16 +756,17 @@ class Controller:
             features.sort(key=lambda feature: positions.get(feature["id"], len(positions)))
             for feature in features:
                 feature["rolled_back"] = feature["id"] in positions and positions[feature["id"]] >= studio_state["rollback_index"]
-        available_geometry = self._geometry(doc)
-        geometry = available_geometry if meta.BuildStatus=="valid" else None
+        available_geometry = self._geometry(doc, included, measure)
+        measured_geometry = available_geometry if meta.BuildStatus=="valid" else None
         evaluated_results = []
-        for obj in native_results(doc):
+        for obj in included:
             flags = set(obj.State) | {flag for member in getattr(obj, "Group", []) if studio.is_active(member) for flag in member.State}
-            metrics = self._evaluated_shape(doc, obj) if not obj.Shape.isNull() and obj.Shape.Solids else None
-            status = "failed" if flags & {"Invalid", "Error"} or metrics and not metrics["valid"] else ("needs_rebuild" if "Touched" in flags else ("valid" if metrics else "sketch_only"))
+            metrics = self._evaluated_shape(doc, obj, measure) if not obj.Shape.isNull() and obj.Shape.Solids else None
+            status = "failed" if flags & {"Invalid", "Error"} or metrics and metrics["valid"] is False else ("needs_rebuild" if "Touched" in flags or getattr(meta, "RebuildReason", "") else ("valid" if metrics else "sketch_only"))
             if native_assembly.assemblies(doc) and meta.BuildStatus in {"failed", "needs_rebuild"}:
                 status = meta.BuildStatus
             evaluated_results.append({"id": obj.Name, "name": obj.Label, "type": obj.TypeId, "build_status": status,
+                                      "geometry_check": self._check_status([obj]),
                                       "measurements": metrics if status == "valid" else None,
                                       "retained_geometry_measurements": metrics if status in {"failed", "needs_rebuild"} else None})
         unsupported = [obj.Name for obj in doc.Objects if obj.Name != METADATA and
@@ -633,8 +774,9 @@ class Controller:
                         (obj.TypeId.endswith("Python") or "Proxy" in obj.PropertiesList) and not native_assembly.safe_object(obj))]
         return {"document_id": meta.DocumentId, "revision": meta.Revision, "name": doc.Label,
                 "native_file": doc.FileName or None, "units": "mm", "build_status": meta.BuildStatus,
-                "build_errors": self._build_status(doc), "features": features,
-                "measurements": geometry, "retained_geometry_measurements": available_geometry if meta.BuildStatus in {"failed","needs_rebuild"} else None,
+                "build_errors": errors, "features": features,
+                "rebuild_reason": self.observer.state(doc).get("rebuild_reason"), "geometry_check": self._check_status(included),
+                "measurements": measured_geometry, "retained_geometry_measurements": available_geometry if meta.BuildStatus in {"failed","needs_rebuild"} else None,
                 "last_failed_attempt": self.last_failures.get(meta.DocumentId),
                 "active_sketch_edit": self.sketch_edits.get(meta.DocumentId, {}).get("feature"),
                 "managed": self.is_managed(doc), "unsupported_objects": unsupported, "bodies": evaluated_results,
@@ -672,11 +814,18 @@ class Controller:
             if not isinstance(request, dict) or request.get("op") not in self.OPS:
                 raise OperationError("unsupported_operation", "Unknown operation")
             op = request["op"]
-            unknown = set(request) - self.ARGS[op] - {"op", "document_id", "expected_revision", "request_id"}
+            unknown = set(request) - self.ARGS[op] - {"op", "document_id", "expected_revision", "request_id", "measure"}
             if unknown:
                 raise OperationError("unknown_argument", "Unsupported request fields", fields=sorted(unknown))
+            if "measure" in request and request["measure"] is None:
+                raise OperationError("invalid_argument", 'measure must be false, true or "full"')
+            measure = self._measure_level(request.get("measure"))
             if op == "capabilities":
                 return {"ok": True, "result": {"contract": CONTRACT_VERSION, "contract_revision": CONTRACT_REVISION, "session_id": self.ledger.session_id,
+                    "measurement": {"levels": [False, True, "full"], "default": self.default_measure,
+                                    "fields": {"false": ["solid_count"], "true": ["solid_count", "volume_mm3", "area_mm2", "bbox_mm"],
+                                               "full": ["solid_count", "volume_mm3", "area_mm2", "bbox_mm", "center_of_mass_mm"]}},
+                    "geometry_check": {"operation": "check_geometry", "export": "required", "interactive": "native feature state only"},
                     "operations": sorted(self.OPS), "preview_operations": sorted(self.MODEL_OPS - {"rebuild"}),
                     "import_formats": [".step", ".stp"],
                     "assembly": {"level": "single", "source_formats": [".fcstd", ".step", ".stp"], "source_policy": "embedded_shape_snapshot",
@@ -691,7 +840,7 @@ class Controller:
                 return {"ok": True, "result": {"timings": self.timings.report(), "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
                     "recovery_directory": str(self.recovery.directory), "checkpoint_interval_seconds": self.recovery.interval_seconds}}
             if op == "list_documents":
-                return {"ok": True, "result": {"documents": [self.inspect(d) for d in self.documents.values() if self._is_open(d)]}}
+                return {"ok": True, "result": {"documents": [self.inspect(d, measure) for d in self.documents.values() if self._is_open(d)]}}
             if op == "assembly_candidates":
                 if self.busy:
                     raise OperationError("busy", "Finish the active operation before inspecting an assembly source")
@@ -714,6 +863,7 @@ class Controller:
                 doc.Label = str(request.get("name", "New part"))[:120]
                 doc.addObject("PartDesign::Body", "Body")
                 self._recompute(doc)
+                self._mark_rebuilt(doc)
                 self.signatures[self._meta(doc).DocumentId] = self._signature(doc)
             elif op == "import_step":
                 self.busy = owns_busy = True
@@ -735,10 +885,14 @@ class Controller:
                     doc=None
                     raise
                 if self.is_managed(doc):
-                    for obj in doc.Objects:
-                        if obj.TypeId.startswith(("Sketcher::", "PartDesign::")) or studio.enabled(doc) and obj.TypeId.startswith(("Part::", "App::Link")):
-                            obj.touch()
-                    self._recompute(doc)
+                    if op == "recover":
+                        for obj in doc.Objects:
+                            if obj.TypeId.startswith(("Sketcher::", "PartDesign::")) or studio.enabled(doc) and obj.TypeId.startswith(("Part::", "App::Link")):
+                                obj.touch()
+                        self._recompute(doc)
+                    elif not self.observer.state(doc).get("hasher_migrated"):
+                        self._rebuild_reason_on_open(doc)
+                        studio.refresh_validation(doc)
                     if native_assembly.inspect(doc):
                         try:
                             native_assembly.solve(doc)
@@ -767,6 +921,7 @@ class Controller:
                         self._new_revision(doc)
             else:
                 doc = self._doc(request)
+                check_report = None
                 if op == "resolve_selector":
                     return {"ok": True, "result": {"matches": native_selectors.resolve(doc, request.get("selector"))}}
                 if op == "preview":
@@ -800,6 +955,23 @@ class Controller:
                     owns_busy = True
                 if op == "adopt":
                     doc = self._adopt(doc, request["path"])
+                elif op == "check_geometry":
+                    began = time.perf_counter()
+                    targets = native_results(doc)
+                    if "body" in request:
+                        target = next((obj for obj in targets if obj.Name == request["body"] or getattr(obj, "KurtShapePartId", None) == request["body"]), None)
+                        if target is None:
+                            raise OperationError("missing_body", "body must identify a current solid result")
+                        targets = [target]
+                    targets = [obj for obj in targets if not obj.Shape.isNull() and obj.Shape.Solids]
+                    if not targets:
+                        raise OperationError("no_solid", "No solid result is available to check")
+                    checks = [(obj, self.geometry.check(obj, compute=True)) for obj in targets]
+                    self._build_status(doc)
+                    check_report = {"status": "valid" if all(check["valid"] for _, check in checks) else "invalid",
+                                    "revision": self._meta(doc).Revision, "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+                                    "bodies": [{"id": obj.Name, "valid": check["valid"], "issues": check["issues"], "check_ms": check["ms"]}
+                                               for obj, check in checks], "ms": (time.perf_counter() - began) * 1000}
                 elif op == "begin_sketch_edit":
                     sketch = self._profile(doc, request["feature"])
                     self._body(doc, request, sketch)
@@ -874,6 +1046,8 @@ class Controller:
                     created_feature = self._model_operation(doc, request)
                     studio.reconcile(doc)
                     self._recompute(doc)
+                    if op == "rebuild":
+                        self._mark_rebuilt(doc)
                     errors = self._build_status(doc)
                     if errors and not editing:
                         raise OperationError("build_failed", "Native feature rebuild failed", features=errors)
@@ -913,7 +1087,9 @@ class Controller:
                     self._save(doc, request["path"])
                 elif op == "export":
                     self._export(doc, request["path"], request.get("body"))
-            result = self.inspect(doc)
+            result = self.inspect(doc, measure)
+            if op == "check_geometry":
+                result["geometry_check_report"] = check_report
             if created_feature:
                 result["created_feature"] = created_feature
             if op in {"save", "open"} and getattr(App, "GuiUp", False):
@@ -1038,7 +1214,7 @@ class Controller:
                 errors = self._build_status(clone)
                 status = self._meta(clone).BuildStatus
                 evaluated = {"build_status": status, "build_errors": errors,
-                             "measurements": self._geometry(clone) if status == "valid" else None}
+                             "measurements": self._geometry(clone, measure=request.get("measure")) if status == "valid" else None}
                 clone.commitTransaction()
                 if preview_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == preview_transaction_id:
                     App.closeActiveTransaction()
@@ -1055,7 +1231,7 @@ class Controller:
                     if preview_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == preview_transaction_id:
                         App.closeActiveTransaction(True)
                     App.closeDocument(name)
-                    self.evaluations.pop(name, None)
+                    self.geometry.drop_document(name)
                     self.observer.states.pop(name, None)
                 if active and self._is_open(active):
                     App.setActiveDocument(active.Name)
@@ -1073,6 +1249,7 @@ class Controller:
             raise OperationError("unsupported_adoption", "Resolve script-owned objects or external document links before adoption", objects=unsupported)
         import tempfile
         clone = None
+        saved_program_version = source.getProgramVersion()
         try:
             with tempfile.TemporaryDirectory(prefix="kurtshape-native-adoption-") as temporary:
                 source.saveCopy(str(Path(temporary) / "adoption-source.FCStd"))
@@ -1080,6 +1257,7 @@ class Controller:
                 clone.openTransaction("KurtShape: adopt native copy")
                 meta = metadata(clone)
                 meta.DocumentId = str(uuid.uuid4())
+                self._rebuild_reason_on_open(clone, adopt=True, saved_program_version=saved_program_version)
                 self._recompute(clone)
                 clone.commitTransaction()
                 self.attach(clone)
@@ -1160,6 +1338,7 @@ class Controller:
             meta.setEditorMode("ImportSource", 1)
             self._recompute(imported)
             self.attach(imported)
+            self._mark_rebuilt(imported)
             if self._build_status(imported):
                 raise OperationError("invalid_step_geometry", "Imported STEP could not form valid native geometry")
             return imported
@@ -1420,7 +1599,7 @@ class Controller:
             profile=self._profile(doc,req["profile"])
             if profile.Shape.isNull() or not profile.Shape.Wires:
                 raise OperationError("open_profile", "Sketch must contain a closed profile")
-            prior_volume=body.Shape.Volume if not body.Shape.isNull() else 0
+            prior_volume=self._volume(body) if op == "pocket" and not body.Shape.isNull() else 0
             if op=="pocket" and prior_volume<=0:
                 raise OperationError("missing_body", "Pocket requires an existing solid")
             feature=body.newObject("PartDesign::Pad" if op=="pad" else "PartDesign::Pocket",self._id(doc,req,"Pad" if op=="pad" else "Pocket"))
@@ -1452,8 +1631,8 @@ class Controller:
             self._recompute(doc)
             if op=="pocket":
                 def cut_valid():
-                    return (not body.Shape.isNull() and self._evaluated_shape(doc, body)["valid"] and len(body.Shape.Solids)==1
-                            and body.Shape.Volume < prior_volume - 1e-7
+                    return (not body.Shape.isNull() and len(body.Shape.Solids)==1
+                            and self._volume(body) < prior_volume - 1e-7
                             and not set(feature.State) & {"Error", "Invalid"})
                 # Native Pocket goes against the sketch normal by default.
                 # At a bottom/origin plane that direction may contain no
@@ -1607,24 +1786,31 @@ class Controller:
             raise OperationError("invalid_argument", "Assembly export includes every occurrence; omit body")
         included = [self._body(doc, {"body": body_id})] if body_id is not None else native_results(doc)
         included = [obj for obj in included if not obj.Shape.isNull() and obj.Shape.Solids]
-        shape = Part.makeCompound([native_assembly.global_shape(obj) for obj in included])
+        verdicts = {obj.Name: self.geometry.check(obj, compute=True) for obj in included}
+        if any(not check["valid"] for check in verdicts.values()):
+            self._build_status(doc)
+            raise OperationError("invalid_geometry", "Geometry check failed; nothing was exported",
+                                 features=[{"feature": name, "issues": check["issues"]}
+                                           for name, check in verdicts.items() if not check["valid"]])
+        # Native writers may change shared TShape serialization flags. Export
+        # detached world shapes so source geometry and cached verdicts stay exact.
+        shape = Part.makeCompound([native_assembly.global_shape(obj).copy() for obj in included])
         if path.suffix.lower()==".stl":
             import MeshPart
             mesh=MeshPart.meshFromShape(Shape=shape,LinearDeflection=0.05,AngularDeflection=0.1,Relative=False)
             mesh.write(str(stage))
-        elif assembly_state:
-            # Write each occurrence's transformed shape exactly once. The native
-            # source storage and Assembly aggregate must never join this list.
-            shape.exportStep(str(stage))
         else:
-            Part.export(included,str(stage))
+            # Write each current transformed result exactly once. Internal source
+            # storage and the Assembly aggregate must never join this list.
+            shape.exportStep(str(stage))
         provenance={"document_id":self._meta(doc).DocumentId,"revision":self._meta(doc).Revision,"units":"mm",
                     "source_mapping":json.loads(self._meta(doc).SourceMapping),
                     "import_source":json.loads(getattr(self._meta(doc), "ImportSource", "{}")) or None,
                     "assembly": assembly_state,
                     "engine":{"FreeCAD":App.Version(),"OCCT":Part.OCC_VERSION},
                     "sha256":hashlib.sha256(stage.read_bytes()).hexdigest(),
-                    "native_file":doc.FileName or None,"format":path.suffix.lower(),"included_body_ids":[obj.Name for obj in included],"shape":self._geometry(doc, included),
+                    "native_file":doc.FileName or None,"format":path.suffix.lower(),"included_body_ids":[obj.Name for obj in included],"shape":self._geometry(doc, included, "full"),
+                    "geometry_check": {"status": "valid", "bodies": [{"id": name, "check_ms": check["ms"]} for name, check in verdicts.items()]},
                     "included_part_ids":[getattr(obj,"KurtShapePartId",obj.Name) for obj in included],
                     "settings":{"linear_deflection_mm":0.05,"angular_deflection_rad":0.1} if path.suffix.lower()==".stl" else {"writer":"FreeCAD Part/OCCT"}}
         sidecar=path.with_suffix(path.suffix+".json")

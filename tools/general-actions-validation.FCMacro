@@ -29,6 +29,8 @@ report = {"passed": False, "checks": [], "freecad_version": App.Version(),
 
 
 class TestPanel(QtCore.QObject):
+    MEASURE = False
+
     def __init__(self):
         super().__init__()
         self.core = Controller()
@@ -61,7 +63,7 @@ class TestPanel(QtCore.QObject):
     def tick(self):
         doc = App.activeDocument()
         if doc:
-            self.state = self.core.inspect(doc)
+            self.state = self.core.inspect(doc, measure=self.MEASURE)
 
 
 panel = TestPanel()
@@ -76,9 +78,9 @@ if original_mime:
 
 def call(op, **args):
     if op not in {"new", "open"}:
-        current = panel.core.inspect(App.activeDocument())
+        current = panel.core.inspect(App.activeDocument(), measure=panel.MEASURE)
         args.update(document_id=current["document_id"], expected_revision=current["revision"])
-    result = panel.core.dispatch({"op": op, **args})
+    result = panel.core.dispatch({"op": op, **args, "measure": panel.MEASURE})
     assert result["ok"], result
     panel.state = result["result"]
     return panel.state
@@ -142,6 +144,7 @@ def validate():
         App.closeDocument(doc.Name)
         call("open", path=str(evidence_dir("") / "general-actions-native-copy.FCStd"))
         doc = App.activeDocument()
+        call("rebuild")
         check("Pasted features reopen and freshly rebuild from native dependencies", metadata(doc).DocumentId == original_id and doc.getObject(saved_clone_name).Profile[0] == doc.Profile and panel.state["build_status"] == "valid")
         select(doc.Profile)
         actions.copy()

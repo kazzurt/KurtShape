@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "checks": [
+    {"name":"native","passed":true,"counts":{"tests":187,"passed":187,"skipped":0,"failures":0,"errors":0,"expected_failures":0},"source_unchanged":true,"rejected_skips":[]},
+    {"name":"bridge","passed":true,"counts":{"tests":7,"passed":7,"skipped":0,"failures":0,"errors":0,"expected_failures":0},"source_unchanged":true,"rejected_skips":[]},
+    {"name":"shortcuts","passed":true,"counts":{"tests":22,"passed":22,"skipped":0,"failures":0,"errors":0,"expected_failures":0},"source_unchanged":true,"rejected_skips":[]},
+    {"name":"workflows","passed":true,"counts":{"tests":6,"passed":6,"skipped":0,"failures":0,"errors":0,"expected_failures":0},"source_unchanged":true,"rejected_skips":[]}
+  ],
+  "method": "Fresh isolated Python subprocess per suite",
+  "engine": {"FreeCAD":["1","1","4","20260928 (Git shallow)","Unknown","2026/09/28 13:46:34","(HEAD detached at 4fd3bf320)","4fd3bf320d9566a27e60069fc8387448aaa3a094"],"OCCT":"7.8.1"},
+  "base_commit": "c311f6075fe6cda41d53a94043a68b8e3228fe94",
+  "worktree_diff_sha256": "eedec0c325f4b1cd766804a949b5d16aa24719c083071e00bb478bd6bc2191be",
+  "timings": {"median":null,"p95":null,"worst":null,"samples":[]},
+  "limits": "Headless native and Qt regressions; no GUI acceptance or native C++ networking interception",
+  "ci": {"status":"not_run","reason":"push not authorized","run_url":null},
+  "counts": {"tests":222,"passed":222,"skipped":0,"failures":0,"errors":0,"expected_failures":0},
+  "suites": [
+    {"name":"native","passed":true,"counts":{"tests":187,"passed":187,"skipped":0,"failures":0,"errors":0,"expected_failures":0},"seconds":202.57701979996637,"source_unchanged":true},
+    {"name":"bridge","passed":true,"counts":{"tests":7,"passed":7,"skipped":0,"failures":0,"errors":0,"expected_failures":0},"seconds":4.302768500056118,"source_unchanged":true},
+    {"name":"shortcuts","passed":true,"counts":{"tests":22,"passed":22,"skipped":0,"failures":0,"errors":0,"expected_failures":0},"seconds":0.6605376999359578,"source_unchanged":true},
+    {"name":"workflows","passed":true,"counts":{"tests":6,"passed":6,"skipped":0,"failures":0,"errors":0,"expected_failures":0},"seconds":2.8363964001182467,"source_unchanged":true}
+  ],
+  "input_sha256": "9455ddf145375f60c8de0363913db26708b6478fdae78b343a2c0233b976afb7"
+}

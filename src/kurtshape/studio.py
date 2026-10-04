@@ -10,6 +10,7 @@ import math
 
 import FreeCAD as App
 import Part
+from . import geometry
 
 OPS = {"revolve", "sweep", "loft", "boolean_parts", "split_part",
        "transform_part", "delete_part", "linear_pattern_parts", "circular_pattern_parts",
@@ -37,6 +38,32 @@ _AUTO_SCOPE_CACHE = {}
 def native_recomputed(doc):
     """Cheap invalidation only; no kernel evaluation on observer/idle paths."""
     _AUTO_SCOPE_CACHE.pop(doc.Name, None)
+
+
+def _native_failed(obj):
+    # A failed native feature can retain its previously accepted nonnull Shape.
+    return bool({"Invalid", "Error"} & set(obj.State))
+
+
+def _shape_frame(shape):
+    placement = shape.Placement
+    return tuple(placement.Base) + tuple(placement.Rotation.Q)
+
+
+def _pair_matches(doc, left, right, operation, first=None, second=None, dependencies=(), parameters=()):
+    """Exact scope membership, with conservative boxes and scalar pair facts."""
+    first = left.Shape if first is None else first
+    second = right.Shape if second is None else second
+    if not geometry.bboxes_overlap(geometry.bounding_box(first), geometry.bounding_box(second), tolerance=1e-7):
+        return False
+    cache = geometry.provider(doc)
+    objects = (left, right, *dependencies)
+    key = (parameters, _shape_frame(first), _shape_frame(second))
+    def scalar(kind, compute):
+        return cache.memo(kind, objects, key, compute) if cache is not None else compute()
+    if scalar("studio_common_volume", lambda: geometry.common_volume(first, second)) > 1e-8:
+        return True
+    return operation == "add" and scalar("studio_distance", lambda: geometry.distance(first, second)) <= 1e-7
 
 
 def _error(code, message, **details):
@@ -271,7 +298,8 @@ def _output(doc, source, name, key=None, label=None):
 def _validate(doc, objects):
     doc.recompute()
     for obj in objects:
-        if obj.Shape.isNull() or not obj.Shape.isValid() or len(obj.Shape.Solids) != 1:
+        tip = obj.Tip if obj.TypeId == "PartDesign::Body" else None
+        if obj.Shape.isNull() or len(obj.Shape.Solids) != 1 or _native_failed(obj) or tip and _native_failed(tip):
             raise _error("build_failed", "Each part result must be one valid solid", feature=obj.Name,
                          status=obj.getStatusString())
 
@@ -380,7 +408,38 @@ def hide_internal(doc):
                 body.Tip.ViewObject.Visibility = visible
 
 
+def _auto_scope_operations(doc):
+    for index, obj in enumerate(order(doc)[:_cutoff(doc)]):
+        request_text = getattr(obj, "KurtShapeStudioOperation", "")
+        if not request_text:
+            continue
+        request = json.loads(request_text)
+        operation = request.get("operation", "remove" if request["op"] == "pocket" else "new")
+        if operation != "new" and request.get("merge_scope", "auto") == "auto" and "KurtShapeMergePartIds" in obj.PropertiesList:
+            yield index, obj, operation
+
+
+def refresh_validation(doc):
+    """Populate exact auto-scope diagnostics at an explicit rebuild boundary."""
+    scope_errors = []
+    if enabled(doc):
+        for index, obj, operation in _auto_scope_operations(doc):
+            tools = ([obj.KurtShapeTool] if "KurtShapeTool" in obj.PropertiesList else
+                     [doc.getObject(name) for name in getattr(obj, "KurtShapePatternToolParts", []) if doc.getObject(name)])
+            if not tools or any(tool.Shape.isNull() for tool in tools):
+                continue
+            desired = _scope_parts(doc, operation, tools, index)
+            recorded = list(obj.KurtShapeMergePartIds)
+            if set(desired) != set(recorded):
+                scope_errors.append({"feature": obj.Name, "code": "auto_merge_scope_changed",
+                    "message": "Auto merge scope changed; run a managed rebuild, or reapply the operation if its native consumers prevent part migration",
+                    "recorded_parts": recorded, "intended_parts": desired})
+    _AUTO_SCOPE_CACHE[doc.Name] = scope_errors
+    return list(scope_errors)
+
+
 def validation_errors(doc):
+    """Read cached exact diagnostics and cheap native history inputs only."""
     if not enabled(doc):
         return []
     errors = []
@@ -391,46 +450,22 @@ def validation_errors(doc):
         for key in getattr(obj, "KurtShapeInputPartIds", []):
             if key not in available:
                 errors.append({"feature": obj.Name, "part": key, "message": "Part input is missing at this history position"})
-    if doc.Name not in _AUTO_SCOPE_CACHE:
-        scope_errors = []
-        for index, obj in enumerate(order(doc)[:_cutoff(doc)]):
-            request_text = getattr(obj, "KurtShapeStudioOperation", "")
-            if not request_text:
-                continue
-            request = json.loads(request_text)
-            operation = request.get("operation", "remove" if request["op"] == "pocket" else "new")
-            if operation == "new" or request.get("merge_scope", "auto") != "auto" or "KurtShapeMergePartIds" not in obj.PropertiesList:
-                continue
-            if "KurtShapeTool" in obj.PropertiesList:
-                tool_shapes = [obj.KurtShapeTool.Shape]
-            else:
-                tool_shapes = [doc.getObject(name).Shape for name in getattr(obj, "KurtShapePatternToolParts", []) if doc.getObject(name)]
-            if not tool_shapes or any(shape.isNull() for shape in tool_shapes):
-                continue
-            desired = []
-            for key, (body, tip) in _state(doc, index).items():
-                shape = tip.Shape.copy()
-                shape.Placement = body.Placement * shape.Placement
-                if any(shape.common(tool).Volume > 1e-8 or operation == "add" and shape.distToShape(tool)[0] <= 1e-7
-                       for tool in tool_shapes):
-                    desired.append(key)
-            recorded = list(obj.KurtShapeMergePartIds)
-            if set(desired) != set(recorded):
-                scope_errors.append({"feature": obj.Name, "code": "auto_merge_scope_changed",
-                    "message": "Auto merge scope changed; run a managed rebuild, or reapply the operation if its native consumers prevent part migration",
-                    "recorded_parts": recorded, "intended_parts": desired})
-        _AUTO_SCOPE_CACHE[doc.Name] = scope_errors
-    errors.extend(_AUTO_SCOPE_CACHE[doc.Name])
+    if doc.Name in _AUTO_SCOPE_CACHE:
+        errors.extend(_AUTO_SCOPE_CACHE[doc.Name])
+    else:
+        errors.extend({"feature": obj.Name, "code": "auto_merge_scope_pending",
+                       "message": "Auto merge scope needs a native recompute before it can be accepted"}
+                      for index, obj, operation in _auto_scope_operations(doc))
     return errors
 
 
-def _scope_parts(doc, operation, tool_shapes, before):
+def _scope_parts(doc, operation, tools, before):
     desired = []
     for key, (body, tip) in _state(doc, before).items():
         shape = tip.Shape.copy()
         shape.Placement = body.Placement * shape.Placement
-        if any(shape.common(tool).Volume > 1e-8 or operation == "add" and shape.distToShape(tool)[0] <= 1e-7
-               for tool in tool_shapes):
+        if any(_pair_matches(doc, tip, tool, operation, first=shape, dependencies=(body,),
+                             parameters=("history", before)) for tool in tools):
             desired.append(key)
     return desired
 
@@ -458,7 +493,7 @@ def sync_auto_scopes(doc):
         tool = representative.KurtShapeTool
         if tool.Shape.isNull():
             continue
-        desired = _scope_parts(doc, operation, [tool.Shape], index)
+        desired = _scope_parts(doc, operation, [tool], index)
         if not desired or set(desired) == set(representative.KurtShapeMergePartIds):
             continue
         available = _state(doc, index)
@@ -684,7 +719,7 @@ def _tool(controller, doc, req, name):
             if reference_tools.is_selector(req["up_to_face"]):
                 selectors.bind(tool, "up_to_face", reference_tools.selector_value(req["up_to_face"]), native_property="UpToFace")
             doc.recompute()
-            if tool.Shape.isNull() or not tool.Shape.isValid():
+            if tool.Shape.isNull() or _native_failed(tool):
                 raise _error("build_failed", "The up-to-face tool did not produce valid geometry", status=tool.getStatusString())
             return tool
         tool = doc.addObject("Part::Extrusion", name)
@@ -748,7 +783,7 @@ def _tool(controller, doc, req, name):
         raise _error("unsupported_operation", "Unsupported studio tool")
     _prop(tool, "App::PropertyBool", "KurtShapeInternal", True)
     doc.recompute()
-    if tool.Shape.isNull() or not tool.Shape.isValid() or not tool.Shape.Solids:
+    if tool.Shape.isNull() or not tool.Shape.Solids or _native_failed(tool):
         raise _error("build_failed", "The native tool did not produce valid solid geometry", status=tool.getStatusString())
     return tool
 
@@ -782,9 +817,7 @@ def _result_operation(controller, doc, req, name):
             shape = body.Shape
             if shape.isNull():
                 continue
-            overlap = shape.common(tool.Shape).Volume > 1e-8
-            touching = operation == "add" and shape.distToShape(tool.Shape)[0] <= 1e-7
-            if overlap or touching:
+            if _pair_matches(doc, body, tool, operation, first=shape):
                 chosen.append(part_id(body))
     elif isinstance(scope, list) and scope:
         chosen = [part_id(current_part(doc, item)) for item in scope]
@@ -823,7 +856,7 @@ def _result_operation(controller, doc, req, name):
             outputs.append(result)
             reps.append(rep)
     _validate(doc, outputs)
-    if operation == "remove" and not any(result.Shape.Volume < source.Shape.Volume - 1e-7
+    if operation == "remove" and not any(geometry.scalar(result.Shape, "volume") < geometry.scalar(source.Shape, "volume") - 1e-7
                                           for result, (key, source) in zip(outputs, snapshots)):
         raise _error("empty_cut", "Remove did not remove material from the selected scope")
     _prop(reps[0], "App::PropertyLink", "KurtShapeTool", tool)
@@ -898,7 +931,7 @@ def _plane(doc, req):
         raise _error("missing_reference", "Split face is missing") from exc
     if not isinstance(face, Part.Face) or not isinstance(face.Surface, Part.Plane):
         raise _error("unsupported_split_surface", "This native split requires a planar face")
-    return face.CenterOfMass, face.normalAt(0, 0)
+    return App.Vector(*geometry.scalar(face, "center_of_mass")), face.normalAt(0, 0)
 
 
 def handle(controller, doc, req):
@@ -1075,8 +1108,7 @@ def handle(controller, doc, req):
                 raise _error("empty_merge_scope", "Pattern merge scope must be auto or a nonempty part list")
             relevant = {}
             for body in candidates:
-                matching = [copy for copy in copies if body.Shape.common(copy.Shape).Volume > 1e-8 or
-                            operation == "add" and body.Shape.distToShape(copy.Shape)[0] <= 1e-7]
+                matching = [copy for copy in copies if _pair_matches(doc, body, copy, operation)]
                 if matching:
                     relevant[part_id(body)] = matching
             if not relevant:

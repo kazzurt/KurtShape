@@ -16,7 +16,8 @@ import time
 import FreeCAD as App
 import Part
 
-from .core import OperationError, measurements, number
+from .core import OperationError, number
+from . import geometry
 from .bodies import results as native_results
 
 PREVIEW_OPS = {"pad", "pocket", "revolve", "sweep", "loft", "boolean_parts",
@@ -246,20 +247,22 @@ class ExtrusionEvaluator:
             shape = _aggregate_shape(clone) if aggregate else _world_shape(body)
             material = (previous.cut(shape) if _removal(normalized) else
                         shape if previous.isNull() else shape.cut(previous))
-            if material.isNull() or material.Volume <= 1e-7:
+            if material.isNull() or geometry.scalar(material, "volume") <= 1e-7:
                 # Split, fillet and a New part overlapping an existing part
                 # can preserve the occupied volume while changing valid intent.
                 # Show the resulting feature geometry in that case.
                 if aggregate and created is not None and hasattr(created, "Shape") and not created.Shape.isNull():
                     material = _world_shape(created)
-            if material.isNull() or not material.isValid() or material.Volume <= 1e-7:
+            if material.isNull() or not material.Solids or geometry.scalar(material, "volume") <= 1e-7:
                 raise OperationError("empty_preview", "The extrusion changes no solid material")
             clone.commitTransaction()
             if transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == transaction_id:
                 App.closeActiveTransaction()
             transaction_id = None
             result = ExtrusionResult(True, self.expected_revision, normalized, body.Name if body else None,
-                                     shape, material, measurements(shape))
+                                     shape, material, geometry.measurement_dict({"solid_count": len(shape.Solids),
+                                                                               "volume": geometry.scalar(shape, "volume"),
+                                                                               "bbox": geometry.bounding_box(shape)}))
             self._cache[key] = result
             while len(self._cache) > 8:
                 self._cache.popitem(last=False)
@@ -276,7 +279,7 @@ class ExtrusionEvaluator:
                 if clone_name:
                     if clone_name in App.listDocuments():
                         App.closeDocument(clone_name)
-                    self.controller.evaluations.pop(clone_name, None)
+                    self.controller.geometry.drop_document(clone_name)
                     self.controller.observer.states.pop(clone_name, None)
                 if active and self.controller._is_open(active):
                     App.setActiveDocument(active.Name)

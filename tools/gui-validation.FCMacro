@@ -192,8 +192,9 @@ def validate():
         docname=App.activeDocument().Name
         App.closeDocument(docname);panel.tick()
         check('Native tab close clears stale UI state',panel.state is None)
+        recompute_samples_before=len(panel.core.timings.samples.get('native_recompute', ()))
         require(panel.operation('open',path=str(path)))
-        check('Saved native features rebuild after close and reopen',panel.state['build_status']=='valid')
+        check('Saved native features reopen valid without rebuild',panel.state['build_status']=='valid' and len(panel.core.timings.samples.get('native_recompute', ()))==recompute_samples_before and not Gui.activeDocument().Modified)
         check('Successful save/reopen clears native modified indicator',not Gui.activeDocument().Modified)
         panel.select_feature(pad_name);panel.parameters(show=True)
         panel.value.lineEdit().setText('1/8 in')
@@ -205,8 +206,9 @@ def validate():
         before=(intent_signature(live),panel.state['revision'],live.UndoCount,live.RedoCount,Gui.activeDocument().Modified,
                 Gui.activeDocument().activeView().getCamera(),[(s.ObjectName,list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()],live.FileName)
         preview=panel.core.dispatch({'op':'preview','document_id':panel.state['document_id'],'expected_revision':panel.state['revision'],
+                                    'measure':panel.MEASURE,
                                     'proposal':{'op':'set_parameter','feature':pad_name,'parameter':'Length','value':'1 in'}})
-        after=(intent_signature(live),panel.core.inspect(live)['revision'],live.UndoCount,live.RedoCount,Gui.getDocument(live.Name).Modified,
+        after=(intent_signature(live),panel.core.inspect(live,measure=panel.MEASURE)['revision'],live.UndoCount,live.RedoCount,Gui.getDocument(live.Name).Modified,
                Gui.getDocument(live.Name).activeView().getCamera(),[(s.ObjectName,list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()],live.FileName)
         check('Isolated preview preserves live revision, history, modified flag, camera, selection and file',preview['ok'] and preview['result']['valid'] and before==after)
         plate_doc=App.activeDocument().Name

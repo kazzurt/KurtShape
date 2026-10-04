@@ -3,6 +3,41 @@
   "regression_factor": 1.2,
   "regression_slack_ms": 5,
   "requires_second_run": true,
+  "studio": {
+    "measurement_level": true,
+    "multiplier": 1.5,
+    "total_rebuild_ms": 4467.6294000819325,
+    "baseline": {
+      "fixture": {
+        "kind": "studio",
+        "base_features": 30,
+        "base_parts": 4,
+        "selector_consumers": 11,
+        "scoped_operations": [
+          "BenchAutoCut: remove/auto",
+          "BenchExplicitAdd: add/Part1"
+        ],
+        "studio_features": 34,
+        "logical_parts": 4,
+        "objects": 160
+      },
+      "measurement_level": true,
+      "timings": {
+        "total_rebuild_ms": {
+          "median": 2978.4196000546217,
+          "p95": 3013.4698001202196,
+          "worst": 3013.4698001202196,
+          "samples": [
+            2999.3726999964565,
+            2862.8813999239355,
+            2954.596499912441,
+            3013.4698001202196,
+            2978.4196000546217
+          ]
+        }
+      }
+    }
+  },
   "phase0": {
     "tip_edit.overhead_ms": 150,
     "inspect_after_change_ms": 20
