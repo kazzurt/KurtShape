@@ -32,6 +32,7 @@ SUITES = {
         "test_sketch_cursor.SketchCursorTests",
         "test_review_followup.ReviewFollowupTests", "test_step_import.StepImportTests",
         "test_assembly.AssemblyWorkflowTests", "test_extrusion_preview.ExtrusionPreviewTests",
+        "test_extrusion_edit.ExtrusionEditTests",
         "test_borrowed_preview.BorrowedPreviewTests",
         "test_preview_worker_leases.PreviewWorkerLeaseTests",
         "test_step_export_jobs.StepExportJobTests", "test_step_export_jobs.StepExportWorkerLifetimeTests",

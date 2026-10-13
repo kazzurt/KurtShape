@@ -539,7 +539,7 @@ class ExtrusionPreviewTests(unittest.TestCase):
             (dict(op="pad", profile="OpenProfile", length="2 s"), "invalid_argument"),
             (dict(op="pad", profile="OpenProfile", length=-2), "invalid_argument"),
             (dict(op="pad", profile="Missing", length=2), "missing_reference"),
-            (dict(op="pad", profile="OpenProfile", length=2), "build_failed"),
+            (dict(op="pad", profile="OpenProfile", length=2), "open_profile"),
             (dict(op="pad", profile="OpenProfile", length=2, reversed="yes"), "invalid_argument"),
         ]:
             result = preview.evaluate(proposal)

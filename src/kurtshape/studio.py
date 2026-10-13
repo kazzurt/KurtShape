@@ -982,6 +982,9 @@ def _tool(controller, doc, req, name):
         profile = controller._profile(doc, req.get("profile"))
         if not profile.Shape.Wires:
             raise _error("open_profile", "Profile must contain closed geometry")
+        if op in {"pad", "pocket"} and not any(wire.isClosed() for wire in profile.Shape.Wires):
+            from .extrusion_edit import open_profile_error
+            raise open_profile_error(profile)
     if op in {"pad", "pocket"}:
         end_type = req.get("end_type", "blind")
         if end_type not in {"blind", "through_all", "up_to_face"}:
@@ -1076,6 +1079,11 @@ def _tool(controller, doc, req, name):
     _prop(tool, "App::PropertyBool", "KurtShapeInternal", True)
     doc.recompute()
     if tool.Shape.isNull() or not tool.Shape.Solids or _native_failed(tool):
+        if op in {"pad", "pocket"}:
+            from .extrusion_edit import open_profile_error
+            gap = open_profile_error(profile)
+            if gap is not None:
+                raise gap
         raise _error("build_failed", "The native tool did not produce valid solid geometry", status=tool.getStatusString())
     return tool
 

@@ -8,7 +8,8 @@ from pathlib import Path
 import FreeCAD as App
 import FreeCADGui as Gui
 from PySide import QtCore, QtGui
-from .core import Controller, ROOT, METADATA
+from .core import Controller, ROOT, METADATA, OperationError, number
+from . import extrusion_edit
 from .bridge import Bridge
 from . import navigation
 from . import geometry
@@ -151,6 +152,7 @@ class Panel(QtGui.QDockWidget):
         self.pending_sketch = self.selecting_support = self.refreshing = False
         self.plane_visibility, self.items = {}, {}
         self.task = self.task_profile = self.last_document = self.last_status = None
+        self.task_edit = None
         self.finishing_sketch = False
         self.entering_sketch = False
         self.placement_document = self.task_document = None
@@ -188,6 +190,7 @@ class Panel(QtGui.QDockWidget):
         self.depth.lineEdit().textChanged.connect(self.schedule_preview)
         self.end_type.currentIndexChanged.connect(self.schedule_preview)
         self.reverse.toggled.connect(self.schedule_preview)
+        self.formula.textChanged.connect(self.schedule_preview)
         self.result_operation.currentIndexChanged.connect(self.result_operation_changed)
         self.merge_scope.currentIndexChanged.connect(self.schedule_preview)
         self.merge_parts.itemChanged.connect(self.schedule_preview)
@@ -336,9 +339,10 @@ class Panel(QtGui.QDockWidget):
         self.formula.installEventFilter(self)
         self.depth.lineEdit().installEventFilter(self)
         self.value.lineEdit().installEventFilter(self)
-        for label, control in [("Dimension", self.parameter), ("Value", self.value), ("Formula", self.formula),
+        for label, control in [("Dimension", self.parameter), ("Value", self.value),
                                ("Operation", self.result_operation), ("Merge scope", self.merge_scope),
-                               ("Parts", self.merge_parts), ("End condition", self.end_type), ("End face", self.end_face), ("Depth", self.depth), ("", self.reverse)]:
+                               ("Parts", self.merge_parts), ("End condition", self.end_type), ("End face", self.end_face),
+                               ("Depth", self.depth), ("Formula", self.formula), ("", self.reverse)]:
             self.form.addRow(label, control)
         layout.addLayout(self.form)
         self.preview_hint = self.editor.verdict
@@ -348,6 +352,11 @@ class Panel(QtGui.QDockWidget):
         self.apply = QtGui.QPushButton("Apply dimension")
         self.apply.clicked.connect(self.apply_parameter)
         layout.addWidget(self.apply)
+        self.edit_extrusion_button = QtGui.QPushButton("Edit feature")
+        self.edit_extrusion_button.setObjectName("KurtShapeEditExtrusion")
+        self.edit_extrusion_button.setToolTip("Reopen this feature's settings with a preview")
+        self.edit_extrusion_button.clicked.connect(lambda: self.edit_extrusion())
+        layout.addWidget(self.edit_extrusion_button)
         self.clear_formula = QtGui.QPushButton("Clear formula")
         self.clear_formula.clicked.connect(lambda: self.operation("set_expression", feature=self.selected(), parameter=self.parameter.currentText(), expression=None))
         layout.addWidget(self.clear_formula)
@@ -1252,7 +1261,7 @@ class Panel(QtGui.QDockWidget):
             self._cancel_step_export()
         if op not in {"inspect", "check_geometry"}:
             self._cancel_geometry_check()
-        if op in {"rename_feature", "delete_feature", "set_parameter", "set_expression", "begin_sketch_edit",
+        if op in {"rename_feature", "delete_feature", "set_parameter", "set_expression", "edit_extrusion", "begin_sketch_edit",
                   "add_rectangle", "add_circle", "add_line"} and self.feature_held(args.get("feature") or args.get("sketch")):
             self.notify("Roll forward through this feature before editing it.")
             return None
@@ -1270,7 +1279,8 @@ class Panel(QtGui.QDockWidget):
             return None
         resume_preview = self.task in {"pad", "pocket"} and op in {"save", "export"}
         if op not in {"inspect", "check_geometry"}:
-            if self.task in {"pad", "pocket"} and op != self.task and not resume_preview:
+            editing = op == "edit_extrusion" and self.task_edit is not None
+            if self.task in {"pad", "pocket"} and op != self.task and not resume_preview and not editing:
                 self.cancel_task()
             else:
                 self.extrusion_preview.clear()
@@ -1290,7 +1300,7 @@ class Panel(QtGui.QDockWidget):
                 self.notify("Assembly command canceled because its source project is no longer active.", "error")
                 return None
             args.update(document_id=self.state["document_id"], expected_revision=staged_revision or self.state["revision"])
-            if op in self.core.MODEL_OPS - {"create_body", "rebuild", "delete_features"} and "body" not in args:
+            if op in self.core.MODEL_OPS - {"create_body", "rebuild", "delete_features", "edit_extrusion"} and "body" not in args:
                 target = doc.getObject(args.get("feature") or args.get("profile") or args.get("sketch") or args.get("support", {}).get("feature") or "")
                 body = owner(doc, target) or self.active_body()
                 if body:
@@ -1321,7 +1331,7 @@ class Panel(QtGui.QDockWidget):
         if op == "create_body" and self.state.get("created_feature"):
             self.body_choice.setCurrentIndex(self.body_choice.findData(self.state["created_feature"]))
         navigation.apply_navigation()
-        action_name = {"pad": "Extrude", "pocket": "Remove material", "create_body": "New part"}.get(op, op.replace("_", " ").capitalize())
+        action_name = {"pad": "Extrude", "pocket": "Remove material", "create_body": "New part", "edit_extrusion": "Feature update"}.get(op, op.replace("_", " ").capitalize())
         self.notify(action_name + " complete")
         if op in {"open", "recover"} and self.state.get("rebuild_reason"):
             self.notify("Rebuild required · " + self.rebuild_reason_text(self.state))
@@ -1849,6 +1859,8 @@ class Panel(QtGui.QDockWidget):
             obj = self.document().getObject(key)
             if obj and obj.TypeId == "Sketcher::SketchObject":
                 self.edit_sketch()
+            elif self.editable_extrusion(key) is not None:
+                self.edit_extrusion(key)
             else:
                 self.parameters(show=True)
 
@@ -2512,6 +2524,10 @@ class Panel(QtGui.QDockWidget):
         for control in [self.parameter, self.value, self.formula, self.depth, self.end_type, self.end_face, self.reverse,
                         self.result_operation, self.merge_scope, self.merge_parts]:
             visible = (mode == "parameters" and control in [self.parameter, self.value, self.formula]) or (mode == "extrude" and control in [self.depth, self.end_type, self.end_face, self.reverse, self.result_operation, self.merge_scope, self.merge_parts])
+            if mode == "extrude" and self.task_edit is not None:
+                # Existing features keep their operation and scope; only
+                # their native dimension, formula, direction and end change.
+                visible = control in [self.depth, self.formula, self.end_type, self.end_face, self.reverse, self.result_operation]
             if mode == "parameters" and not self.parameter.count():
                 visible = False
             if control in [self.merge_scope, self.merge_parts] and self.result_operation.currentData() == "new":
@@ -2527,6 +2543,7 @@ class Panel(QtGui.QDockWidget):
         self.apply.setVisible(mode == "parameters" and self.parameter.count() > 0)
         self.clear_formula.setVisible(mode == "parameters" and self.parameter.count() > 0)
         self.edit_button.setVisible(mode == "parameters" and sketch)
+        self.edit_extrusion_button.setVisible(mode == "parameters" and self.editable_extrusion(self.selected()) is not None)
         self.normal_button.setVisible(mode == "parameters" and sketch)
         self.iso_button.hide()
         self.confirm.setVisible(mode in {"sketch", "extrude"})
@@ -3132,6 +3149,7 @@ class Panel(QtGui.QDockWidget):
             return
         self.cancel_placement()
         self.extrusion_preview.clear()
+        self.reset_edit_controls()
         self.task, self.task_profile = ("pocket" if cut else "pad"), (selected_faces[0] if len(selected_faces) == 1 else obj.Name if obj and obj.TypeId == "Sketcher::SketchObject" else None)
         self.task_document = self.document().Name
         self.studio_operation_explicit = False
@@ -3166,6 +3184,8 @@ class Panel(QtGui.QDockWidget):
         self.begin_preview()
 
     def extrusion_proposal(self):
+        if self.task_edit is not None:
+            return self.extrusion_edit_proposal()
         if isinstance(self.task_profile, dict):
             return {"op": "extrude_face", "face": self.task_profile,
                     "length": self.depth.lineEdit().text(), "reversed": self.reverse.isChecked(),
@@ -3179,6 +3199,10 @@ class Panel(QtGui.QDockWidget):
             proposal["merge_scope"] = self.scope_value(self.merge_scope, self.merge_parts)
         if self.task == "pad" or self.reverse.isChecked():
             proposal["reversed"] = self.reverse.isChecked()
+        if self.task == "pocket" and "operation" in proposal and self.end_type.currentIndex() == 0:
+            # A studio Remove cuts into the material with native Reversed set.
+            # Reverse direction must flip that default, as it does elsewhere.
+            proposal["reversed"] = not self.reverse.isChecked()
         if self.task == "pocket":
             proposal["through_all"] = self.end_type.currentIndex() == 1
         elif self.end_type.currentIndex() == 1:
@@ -3190,6 +3214,169 @@ class Panel(QtGui.QDockWidget):
             proposal["end_type"] = "up_to_face"
             proposal["up_to_face"] = self.up_to_face_reference
         return proposal
+
+    def editable_extrusion(self, key):
+        """Current native settings of an Extrude/Remove, or None when not supported here."""
+        doc = self.document()
+        if not doc or not isinstance(key, str) or key.startswith("plane:") or self.workspace_mode == "assembly":
+            return None
+        try:
+            return extrusion_edit.describe(doc, key)
+        except OperationError:
+            return None
+
+    def edit_extrusion(self, key=None):
+        """Reopen an existing Extrude/Remove in the feature dialog with its current settings."""
+        key = key or self.selected()
+        doc = self.document()
+        if not doc or not key:
+            self.notify("Select an Extrude or Remove material feature to edit.")
+            return False
+        if self.state and not self.state.get("managed", True):
+            self.notify("Adopt a copy before editing this reference file.", "error")
+            return False
+        if self.feature_held(key):
+            self.notify("Roll forward through this feature before editing it.")
+            return False
+        if self.active_sketch():
+            self.notify("Finish the sketch before editing another feature.")
+            return False
+        if self.native_feature_task_active():
+            self.notify("Finish or cancel the current feature before starting another tool.")
+            return False
+        try:
+            info = extrusion_edit.describe(doc, key)
+        except OperationError as exc:
+            self.notify(str(exc), "error")
+            return False
+        if self.studio_dialog:
+            self.studio_dialog.reject()
+        self.cancel_placement()
+        self.extrusion_preview.clear()
+        self.task = "pocket" if info["kind"] == "remove" else "pad"
+        self.task_profile, self.task_document, self.task_edit = info["feature"], doc.Name, info
+        self.studio_operation_explicit = False
+        self.up_to_face_reference = None
+        controls = (self.depth, self.end_type, self.reverse, self.result_operation, self.formula, self.merge_scope)
+        blocked = [control.blockSignals(True) for control in controls]
+        try:
+            self.result_operation.setCurrentIndex(max(0, self.result_operation.findData(info["operation"])))
+            self.result_operation.setEnabled(False)
+            self.result_operation.setToolTip("An existing feature keeps its result operation")
+            self.merge_scope.setCurrentIndex(0)
+            names = ("blind", "through_all", "up_to_face")
+            for index, name in enumerate(names):
+                self.end_type.model().item(index).setEnabled(name in info["end_types"])
+            self.end_type.setCurrentIndex(names.index(info["end_type"]))
+            self.end_type.setToolTip("; ".join(info["limitations"]))
+            self.end_face.setText("End face · " + (info["end_face"] or "retained"))
+            self.end_face.setEnabled(False)
+            if info["length"]["value"] is not None:
+                self.depth.setValue(info["length"]["value"])
+            self.formula.setText(info["length"]["expression"] or "")
+            self.formula.setPlaceholderText("Optional depth formula, e.g. Plate.Constraints.Width / 2")
+            self.reverse.setChecked(info["reversed"])
+            self.reverse.setEnabled(info["reverse_editable"])
+            self.reverse.setToolTip(info["reverse_reason"] or "Reverse this feature's direction")
+        finally:
+            for control, previous in zip(controls, blocked):
+                control.blockSignals(previous)
+        self.editor_title.setText(info["label"])
+        self.configure_editor("extrude")
+        self.sync_edit_controls()
+        self.task_feedback(("Remove material" if info["kind"] == "remove" else "Extrude") + " · editing " + info["label"])
+        self.editor.show_compact()
+        if self.depth.isEnabled():
+            self.depth.setFocus()
+            self.depth.selectAll()
+        self.begin_preview()
+        return True
+
+    def sync_edit_controls(self):
+        info = self.task_edit
+        if info is None:
+            return
+        blind = self.end_type.currentIndex() == 0
+        self.depth.setEnabled(blind and not self.formula.text().strip())
+        self.formula.setEnabled(blind)
+        self.depth.setToolTip("Driven by the formula below; clear it to enter a depth"
+                              if self.formula.text().strip() else "Depth")
+        direction = extrusion_edit.direction_after(info, self.reverse.isChecked())
+        reference = info["direction_reference"]
+        words = {"along": "along the " + reference, "against": "against the " + reference,
+                 "both": "in both directions"}[direction]
+        kind = "Remove material" if info["kind"] == "remove" else "Extrude"
+        self.editor_help.setText(f"{info['profile']['label'] or 'Profile'} · {kind} · {words}")
+
+    def extrusion_edit_proposal(self):
+        """Only changed fields; unchanged formulas and directions are never resent."""
+        info = self.task_edit
+        proposal = {"op": "edit_extrusion", "feature": info["feature"]}
+        end_type = ("blind", "through_all", "up_to_face")[self.end_type.currentIndex()]
+        if end_type != info["end_type"]:
+            proposal["end_type"] = end_type
+        if end_type == "blind":
+            formula, current = self.formula.text().strip(), info["length"]["expression"]
+            text = self.depth.lineEdit().text()
+            if formula:
+                if formula != current:
+                    proposal["expression"] = formula
+            else:
+                if current:
+                    proposal["expression"] = None
+                try:
+                    unchanged = abs(number(text, "Depth", True) - (info["length"]["value"] or 0)) < 1e-9
+                except OperationError:
+                    unchanged = False
+                if current or "end_type" in proposal or not unchanged:
+                    proposal["length"] = text
+        if self.reverse.isEnabled() and self.reverse.isChecked() != info["reversed"]:
+            proposal["reversed"] = self.reverse.isChecked()
+        return proposal
+
+    def edit_unchanged(self):
+        return self.task_edit is not None and set(self.extrusion_edit_proposal()) == {"op", "feature"}
+
+    def accept_edit(self):
+        info = self.task_edit
+        proposal = self.extrusion_edit_proposal()
+        if set(proposal) == {"op", "feature"}:
+            self.task = self.task_profile = self.task_document = None
+            self.reset_edit_controls()
+            self.extrusion_preview.clear()
+            self.complete_editor(info["feature"])
+            return True
+        # Same exact-preview acceptance as creation: commit only a current,
+        # valid preview of these fields against its base revision.
+        self.extrusion_preview.schedule(proposal)
+        preview = self.extrusion_preview.flush()
+        if not preview or not preview.valid:
+            return False
+        args = dict(preview.proposal)
+        args.pop("op")
+        args["_expected_revision"] = preview.base_revision
+        result = self.operation("edit_extrusion", **args)
+        if result:
+            self.task = self.task_profile = self.task_document = None
+            self.reset_edit_controls()
+            self.complete_editor(info["feature"])
+        elif self.task_edit is not None:
+            self.begin_preview()
+        return result
+
+    def reset_edit_controls(self):
+        """Return shared Extrude controls to their creation-time behavior."""
+        self.task_edit = None
+        self.result_operation.setEnabled(True)
+        self.result_operation.setToolTip("")
+        self.reverse.setEnabled(True)
+        self.reverse.setToolTip("")
+        self.end_type.setToolTip("")
+        self.end_face.setEnabled(True)
+        self.formula.setEnabled(True)
+        self.formula.setPlaceholderText("Example: Plate.Constraints.Width / 2")
+        for index in range(self.end_type.count()):
+            self.end_type.model().item(index).setEnabled(True)
 
     def begin_preview(self):
         if self.task not in {"pad", "pocket"} or not self.task_profile:
@@ -3210,6 +3397,12 @@ class Panel(QtGui.QDockWidget):
         scope_label = self.form.labelForField(self.merge_parts)
         if scope_label:
             scope_label.setVisible(self.merge_parts.isVisible())
+        if self.task_edit is not None:
+            self.sync_edit_controls()
+            if self.extrusion_preview.evaluator is not None and self.edit_unchanged():
+                self.extrusion_preview.idle()
+                self.preview_status(None)
+                return
         if self.task_profile:
             if self.extrusion_preview.evaluator is None:
                 self.preview_status(None)
@@ -3231,8 +3424,15 @@ class Panel(QtGui.QDockWidget):
             self.preview_hint.clear()
             return
         self.editor.set_accept_enabled(bool(result and result.valid))
-        if result is None:
+        if result is None and self.task_edit is not None and self.extrusion_preview.evaluator is not None and self.edit_unchanged():
+            self.editor.set_accept_enabled(True)
+            self.editor.set_status("No changes · Confirm or Cancel closes without changing the model")
+        elif result is None:
             self.editor.set_status("Select a closed sketch to preview the extrusion." if not self.task_profile else "Preview cleared. Start Extrude again to refresh.")
+        elif result.valid and self.task_edit is not None:
+            change = (result.measurements or {}).get("edit_volume_change_mm3")
+            detail = f" · part volume {change:+.3f} mm³" if isinstance(change, (int, float)) else ""
+            self.editor.set_status("Preview · edited " + self.task_edit["label"] + detail, "success")
         elif result.valid:
             operation = result.proposal.get("operation", "remove" if self.task == "pocket" else "add")
             self.editor.set_status("Preview · removed material" if operation in {"remove", "intersect"} else "Preview · added material", "success")
@@ -3261,6 +3461,8 @@ class Panel(QtGui.QDockWidget):
                 self.cancel_task()
                 self.notify("Feature canceled because its source document is no longer active.")
                 return False
+            if self.task_edit is not None:
+                return self.accept_edit()
             kind, profile = self.task, self.task_profile
             if not profile:
                 self.notify("Select a closed sketch profile from the history.")
@@ -3291,8 +3493,9 @@ class Panel(QtGui.QDockWidget):
 
     def accept_repeat(self):
         kind = self.task
+        editing = self.task_edit is not None
         result = self.accept_task() if kind else False
-        if result and kind in {"pad", "pocket"}:
+        if result and kind in {"pad", "pocket"} and not editing:
             self.extrude(kind == "pocket", choose_new=True)
         return result
 
@@ -3316,9 +3519,11 @@ class Panel(QtGui.QDockWidget):
             self.notify("Sketch placement canceled")
             return True
         if self.task:
+            editing = self.task_edit is not None
             self.task = self.task_profile = self.task_document = None
+            self.reset_edit_controls()
             self.editor.hide()
-            self.notify("Feature canceled")
+            self.notify("Edit canceled · model unchanged" if editing else "Feature canceled")
             return True
         return False
 
@@ -3460,7 +3665,11 @@ class Panel(QtGui.QDockWidget):
         if obj.TypeId == "Sketcher::SketchObject":
             menu.addAction("Edit sketch", self.edit_sketch).setEnabled(not self.feature_held(key))
         if not key.startswith("plane:"):
-            if obj.TypeId.startswith("PartDesign::"):
+            extrusion = self.editable_extrusion(key)
+            if extrusion is not None:
+                menu.addAction("Edit " + ("Remove material" if extrusion["kind"] == "remove" else "Extrude"),
+                               lambda: self.edit_extrusion(key)).setEnabled(not self.feature_held(key))
+            elif obj.TypeId.startswith("PartDesign::"):
                 menu.addAction("Edit feature", self.edit_native_feature).setEnabled(not self.feature_held(key))
             menu.addAction("Rename", self.rename_selected).setEnabled(not self.feature_held(key))
             menu.addAction("Delete", self.delete_selected).setEnabled(not self.feature_held(key))
@@ -3711,7 +3920,10 @@ class Panel(QtGui.QDockWidget):
                 self.apply_parameter()
                 return True
             if watched is self.formula:
-                self.apply_parameter()
+                if self.task_edit is not None:
+                    self.accept_task()
+                else:
+                    self.apply_parameter()
                 return True
         if watched is self.main and event.type() == QtCore.QEvent.Close and (self.active_sketch() or (self.state or {}).get("active_sketch_edit")):
             if not self.finish_sketch():

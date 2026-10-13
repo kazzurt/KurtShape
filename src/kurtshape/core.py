@@ -24,6 +24,7 @@ from . import assembly as native_assembly
 from . import studio
 from . import selectors as native_selectors
 from . import reference_tools
+from . import extrusion_edit
 from .sketch_tools import restore_sketch_content, reference_errors as sketch_reference_errors
 from . import modeling_geometry
 from .contract import CONTRACT_VERSION, CONTRACT_REVISION
@@ -231,7 +232,7 @@ class Controller:
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
                     "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}
     MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line",
-                 "pad", "pocket", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS
+                 "pad", "pocket", "edit_extrusion", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS
     EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "set_parameter", "set_expression", "set_sketch_support", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
     CREATE_OPS = {"new", "open", "recover", "import_step"}
     OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
@@ -247,6 +248,7 @@ class Controller:
         "set_sketch_support": {"sketch", "plane", "support"},
         "pad": {"id","profile","length","reversed","source_feature_id","source_feature_name"},
         "pocket": {"id","profile","length","through_all","reversed","source_feature_id","source_feature_name"},
+        "edit_extrusion": {"feature", "length", "expression", "reversed", "end_type"},
         "rename_feature": {"feature", "name"}, "delete_feature": {"feature", "cascade"},
         "delete_features": {"features", "cascade"},
         "set_parameter": {"feature","parameter","value"}, "rebuild": set(), "undo": set(), "redo": set(),
@@ -1652,7 +1654,7 @@ class Controller:
                         raise OperationError("build_failed", "Native feature rebuild failed", features=errors)
                     affected = doc.getObject(request.get("profile") or request.get("feature") or created_feature or "")
                     affected_body = owner(doc, affected)
-                    if not editing and affected_body and not studio.enabled(doc) and (op in {"pad", "pocket"} or op in {"set_parameter", "set_expression", "duplicate_feature"} and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject"):
+                    if not editing and affected_body and not studio.enabled(doc) and (op in {"pad", "pocket"} or op in {"set_parameter", "set_expression", "duplicate_feature", "edit_extrusion"} and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject"):
                         if self._meta(doc).BuildStatus != "valid" or len(affected_body.Shape.Solids) != 1:
                             raise OperationError("build_failed", "Operation must produce one valid solid")
                     if not editing:
@@ -2198,6 +2200,9 @@ class Controller:
         if op == "delete_features":
             self._delete_features(doc, req)
             return None
+        if op == "edit_extrusion":
+            extrusion_edit.apply(self, doc, req)
+            return None
         if op in modeling_geometry.OPS:
             created = modeling_geometry.handle(self, doc, req)
             self._record_source(doc, req, doc.getObject(created) if created else None)
@@ -2274,6 +2279,8 @@ class Controller:
             profile=self._profile(doc,req["profile"])
             if profile.Shape.isNull() or not profile.Shape.Wires:
                 raise OperationError("open_profile", "Sketch must contain a closed profile")
+            if not any(wire.isClosed() for wire in profile.Shape.Wires):
+                raise extrusion_edit.open_profile_error(profile)
             prior_volume=self._volume(body) if op == "pocket" and not body.Shape.isNull() else 0
             if op=="pocket" and prior_volume<=0:
                 raise OperationError("missing_body", "Pocket requires an existing solid")
@@ -2304,6 +2311,11 @@ class Controller:
                 if str(feature.Type)=="Length":
                     feature.Length=number(req["length"],"length",True)
             self._recompute(doc)
+            if set(feature.State) & {"Error", "Invalid"}:
+                # Native face making reports open wires generically.
+                gap = extrusion_edit.open_profile_error(profile)
+                if gap is not None:
+                    raise gap
             if op=="pocket":
                 def cut_valid():
                     return (not body.Shape.isNull() and len(body.Shape.Solids)==1
@@ -2336,7 +2348,7 @@ class Controller:
                 aliases.add(f"Constraints[{native_parameters(feature)[parameter]['constraint_index']}]")
             if op == "set_expression":
                 expression = req.get("expression")
-                if expression is not None and (not isinstance(expression, str) or len(expression) > 512 or not re.fullmatch(r"[A-Za-z0-9_ .+*/()\[\]-]+", expression)):
+                if expression is not None and (not isinstance(expression, str) or len(expression) > 512 or not re.fullmatch(extrusion_edit.EXPRESSION_PATTERN, expression)):
                     raise OperationError("invalid_argument", "Use a dimensional formula with named properties and arithmetic")
                 feature.setExpression(property_path, expression)
                 self._recompute(doc)
