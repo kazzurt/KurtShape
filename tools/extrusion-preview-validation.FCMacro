@@ -1,9 +1,11 @@
 """Hidden isolated GUI checks for native extrusion preview and lifecycle."""
+import hashlib
 import json
 import os
 from pathlib import Path
 import re
 import sys
+import time
 import traceback
 
 root = Path(os.environ["KURTSHAPE_ROOT"])
@@ -18,6 +20,7 @@ from PySide6 import QtTest
 from pivy import coin  # noqa: F401
 from kurtshape.core import Controller, intent_signature
 from kurtshape.extrusion_preview import DebouncedExtrusionPreview
+from preview_validation import wait_for_exact
 
 main = Gui.getMainWindow()
 main.hide()
@@ -27,6 +30,10 @@ main.show()
 output = evidence_dir("ui-refinement-preview")
 output.mkdir(parents=True, exist_ok=True)
 report = {"passed": False, "checks": [], "method": "Separate hidden FreeCAD 1.1.4 GUI; native BRep plus transient Coin geometry"}
+def source_hashes():
+    return {str(path.relative_to(root)).replace("\\", "/"): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted((root / "src").rglob("*.py"))}
+report["source_before"] = source_hashes()
 core = Controller()
 state = None
 adapter = None
@@ -76,6 +83,19 @@ def validate():
         Gui.Selection.addSelection(doc.Name, "Pad", top)
         core.sync(doc)
         QtTest.QTest.qWait(850)
+        # Unlike opening a disposable clone, saveCopy alone must not need GUI
+        # restoration, including for a source whose Modified flag is false.
+        original_modified = Gui.getDocument(doc.Name).Modified
+        for modified in (False, True):
+            Gui.getDocument(doc.Name).Modified = modified
+            copy_baseline = snapshot(doc)
+            doc.saveCopy(str(output / ("snapshot-only-" + str(modified) + ".FCStd")))
+            core.sync(doc)
+            check("saveCopy alone preserves clean/dirty source and GUI state: " + str(modified),
+                  snapshot(doc) == copy_baseline)
+        Gui.getDocument(doc.Name).Modified = original_modified
+        recovery_manifest = core.checkpoint(doc)
+        check("Ordinary recovery publishes an accepted preview archive", recovery_manifest is not None)
         baseline = snapshot(doc)
         events = []
         editor_visible = [True]
@@ -83,14 +103,33 @@ def validate():
         adapter.begin(doc, state["revision"])
         initial_scene = Gui.getDocument(doc.Name).activeView().getSceneGraph().getNumChildren()
         adapter.schedule(dict(op="pad", profile="Profile", length=2, reversed=False))
+        first_provisional_node = adapter.overlay.node
+        check("Profile preview is visible immediately and cannot authorize acceptance",
+              adapter.result is not None and adapter.result.provisional and not adapter.result.valid
+              and first_provisional_node is not None and adapter.worker is None
+              and adapter.current_result() is None)
         adapter.schedule(dict(op="pad", profile="Profile", length=3, reversed=False))
         adapter.schedule(dict(op="pad", profile="Profile", length=4, reversed=False))
-        QtTest.QTest.qWait(250)
+        check("Depth changes reuse the provisional Coin mesh before snapshot work",
+              adapter.overlay.node is first_provisional_node and adapter.worker is None
+              and adapter.result.transform["depth"] == 4)
+        Gui.getDocument(doc.Name).activeView().saveImage(str(output / "provisional-extrusion.png"), 1200, 800, "White")
+        wait_for_exact(adapter)
         report["initial_preview"] = {"valid": bool(adapter.result and adapter.result.valid),
                                      "error": adapter.result.error if adapter.result else None,
                                      "milliseconds": adapter.result.milliseconds if adapter.result else None,
                                      "evaluations": adapter.evaluator.evaluations if adapter.evaluator else None}
         check("Debounce evaluates only the latest depth", adapter.result and adapter.result.valid and adapter.evaluator.evaluations == 1 and adapter.result.proposal["length"] == 4)
+        report["parent_snapshot_captures"] = adapter.snapshot_captures
+        report["parent_snapshot_reuses"] = adapter.snapshot_reuses
+        check("Exact preview reuses recovery without another GUI native capture",
+              adapter.snapshot_captures == 0 and adapter.snapshot_reuses == 1
+              and adapter.worker.snapshot.parent != adapter.worker.folder)
+        report["initial_worker_phases_ms"] = adapter.result.phase_milliseconds
+        check("Worker phase timings reach exact GUI feedback and diagnostics",
+              {"source_open", "source_attach", "snapshot", "load", "recompute", "render"}.issubset(adapter.result.phase_milliseconds or {})
+              and all(core.timings.samples["preview_worker_phase_" + name]
+                      for name in adapter.result.phase_milliseconds))
         check("Coin overlay is attached without a document object", adapter.overlay.node is not None and Gui.getDocument(doc.Name).activeView().getSceneGraph().getNumChildren() == initial_scene + 1)
         current = snapshot(doc)
         report["invariant_differences"] = [{"index": i, "before": before, "after": after}
@@ -115,13 +154,12 @@ def validate():
               adapter.result is original_result and adapter.evaluator.evaluations == original_evaluations
               and adapter.pending["length"] == "0.4 cm" and snapshot(doc) == baseline)
         adapter.schedule(dict(op="pad", profile="Profile", length="wrong units"))
-        check("Changing to invalid text clears the old ghost immediately", adapter.overlay.node is None and adapter.result is None)
-        QtTest.QTest.qWait(160)
+        check("Changing to invalid text clears the old ghost immediately", adapter.overlay.node is None and adapter.result is not None and not adapter.result.valid)
+        wait_for_exact(adapter)
         check("Invalid depth has readable failure data and no live mutation", adapter.result and not adapter.result.valid and adapter.result.error["code"] == "invalid_argument" and snapshot(doc) == baseline)
         adapter.schedule(dict(op="pocket", profile="Profile", length=2, through_all=False, reversed=False))
-        QtTest.QTest.qWait(220)
-        blind = adapter.result
-        check("Native face-attached blind cut draws removed material", blind and blind.valid and abs(blind.material_shape.Volume - 25.1327412287) < 1e-6)
+        blind = wait_for_exact(adapter)
+        check("Native face-attached blind cut draws removed material", blind and blind.valid and abs(blind.measurements["material_volume_mm3"] - 25.1327412287) < 1e-6)
         depth_search = coin.SoSearchAction()
         depth_search.setType(coin.SoDepthBuffer.getClassTypeId())
         depth_search.setInterest(coin.SoSearchAction.FIRST)
@@ -131,38 +169,68 @@ def validate():
               not depth.getField("test").getValue() and not depth.getField("write").getValue()
               and depth.getField("function").getValue() == coin.SoDepthBuffer.ALWAYS)
         adapter.schedule(dict(op="pocket", profile="Profile", through_all=True, reversed=False))
-        QtTest.QTest.qWait(220)
+        wait_for_exact(adapter)
         report["preview_timings_ms"] = {"initial_pad": report["initial_preview"]["milliseconds"],
                                        "blind_cut": blind.milliseconds,
                                        "through_all_cut": adapter.result.milliseconds if adapter.result else None}
-        check("Through-all changes the actual cut geometry", adapter.result.valid and adapter.result.shape.Volume < blind.shape.Volume)
+        check("Through-all changes the actual cut geometry", adapter.result.valid and adapter.result.measurements["volume_mm3"] < blind.measurements["volume_mm3"])
         check("Cut preview preserves every captured live invariant", snapshot(doc) == baseline)
+        # An obsolete exact job may finish, but only the newest fields can
+        # publish a verdict. Qt continues processing while native work runs.
+        event_start = len(events)
+        heartbeats = []
+        heartbeat = QtCore.QTimer(main)
+        heartbeat.setInterval(5)
+        heartbeat.timeout.connect(lambda: heartbeats.append(time.perf_counter()))
+        adapter.schedule(dict(op="pad", profile="Profile", length=9, reversed=False))
+        adapter.flush()
+        started_deadline = time.monotonic() + 5
+        while not adapter.evaluating and time.monotonic() < started_deadline:
+            QtTest.QTest.qWait(2)
+        check("An exact job starts independently of Qt input", adapter.evaluating)
+        heartbeat.start()
+        adapter.schedule(dict(op="pad", profile="Profile", length=10, reversed=False))
+        adapter.schedule(dict(op="pad", profile="Profile", length=11, reversed=False))
+        check("New input cannot accept the in-flight older exact proposal", adapter.current_result() is None)
+        latest = wait_for_exact(adapter)
+        heartbeat.stop()
+        report["latest_wins"] = {"latest_valid": latest.valid, "latest_proposal": latest.proposal,
+                                  "latest_error": latest.error,
+                                  "exact_events": [event.proposal for event in events[event_start:] if event and event.valid]}
+        check("Latest-wins queue drops intermediate exact verdicts",
+              latest.valid and latest.proposal["length"] == 11 and
+              [event.proposal["length"] for event in events[event_start:] if event and event.valid] == [11])
+        check("Qt timers remain live while exact native geometry runs", len(heartbeats) >= 2)
+        report["worker_interval_heartbeat_count"] = len(heartbeats)
+        report["worker_interval_largest_heartbeat_gap_ms"] = max(
+            [(b-a)*1000 for a, b in zip(heartbeats, heartbeats[1:])], default=0)
+        check("Queued previews preserve every captured live invariant", snapshot(doc) == baseline)
+        Gui.getDocument(doc.Name).activeView().saveImage(str(output / "exact-extrusion.png"), 1200, 800, "White")
         adapter.clear()
         check("Cancel disposes clone snapshots and Coin children", adapter.evaluator is None and adapter.overlay.node is None and Gui.getDocument(doc.Name).activeView().getSceneGraph().getNumChildren() == initial_scene)
         check("Cancel retains the unchanged live solid", snapshot(doc) == baseline and abs(doc.Body.Shape.Volume - 1200) < 1e-6)
         adapter.begin(doc, state["revision"])
         adapter.schedule(dict(op="pad", profile="Profile", length=2))
-        QtTest.QTest.qWait(180)
+        wait_for_exact(adapter)
         editor_visible[0] = False
         QtTest.QTest.qWait(260)
         check("Closing the custom feature editor clears the preview", adapter.evaluator is None and adapter.overlay.node is None)
         editor_visible[0] = True
         adapter.begin(doc, state["revision"])
         adapter.schedule(dict(op="pocket", profile="Profile", length=2, through_all=False, reversed=False))
-        QtTest.QTest.qWait(180)
-        result = adapter.result
+        result = wait_for_exact(adapter)
         adapter.clear()
         call("pocket", id="AcceptedPocket", **{key: value for key, value in result.proposal.items() if key != "op"})
-        check("Acceptance creates one normal controller transaction matching preview", doc.UndoCount == baseline[3] + 1 and abs(doc.Body.Shape.Volume - result.shape.Volume) < 1e-6)
+        check("Acceptance creates one normal controller transaction matching preview", doc.UndoCount == baseline[3] + 1 and abs(doc.Body.Shape.Volume - result.measurements["volume_mm3"]) < 1e-6)
         adapter.begin(doc, state["revision"])
         adapter.schedule(dict(op="pad", profile="Profile", length=2))
-        QtTest.QTest.qWait(180)
+        wait_for_exact(adapter)
         call("rename_feature", feature="Profile", name="Changed profile")
         QtTest.QTest.qWait(260)
         check("A newer accepted revision invalidates the existing ghost", adapter.evaluator is None and adapter.overlay.node is None)
         adapter.begin(doc, state["revision"])
         adapter.schedule(dict(op="pad", profile="Profile", length=2))
-        QtTest.QTest.qWait(180)
+        wait_for_exact(adapter)
         second = App.newDocument("PreviewLifecycleOther")
         App.setActiveDocument(second.Name)
         QtTest.QTest.qWait(260)
@@ -181,6 +249,9 @@ def validate():
     except Exception:
         report["error"] = traceback.format_exc()
     finally:
+        report["source_after"] = source_hashes()
+        report["source_unchanged"] = report["source_before"] == report["source_after"]
+        report["passed"] = bool(report["passed"] and report["source_unchanged"])
         if adapter:
             adapter.close()
         core.close()

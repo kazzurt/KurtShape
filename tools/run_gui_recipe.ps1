@@ -1,12 +1,13 @@
 param(
-    [ValidateSet('interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
-        'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline',
-        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui')]
+    [ValidateSet('step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
+        'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline','responsiveness-preview',
+        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap')]
     [string]$Recipe = 'interface',
     [ValidateRange(1,7200)][int]$TimeoutSeconds = 900,
     [switch]$WriteEvidence,
     [ValidateRange(1,1000)][int]$Holes = 20,
-    [ValidateRange(1,100)][int]$Repeat = 3
+    [ValidateRange(1,100)][int]$Repeat = 3,
+    [string]$PreviewSource = ''
 )
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
@@ -19,11 +20,34 @@ function Convert-GuiRecipeUtc {
     return [DateTimeOffset]::Parse($Value, [Globalization.CultureInfo]::InvariantCulture).UtcDateTime
 }
 $recipes = @{
+    'step-export' = @('step-export-validation.FCMacro', 'step-export\gui-result.json', 0)
+    'parts-refresh' = @('parts-refresh-validation.FCMacro', 'parts-refresh\gui-result.json', 0)
+    'geometry-check-timing' = @('geometry-check-timing-validation.FCMacro', 'geometry-check-timing\gui-result.json', 0)
+    'geometry-check-lifecycle' = @('geometry-check-lifecycle-validation.FCMacro', 'geometry-check-lifecycle\gui-result.json', 0)
+    'geometry-check' = @('geometry-check-validation.FCMacro', 'geometry-check\gui-result.json', 0)
+    'surface-snap' = @('surface-snap-validation.FCMacro', 'surface-snap\gui-result.json', 0)
+    'startup-view' = @('startup-view-validation.FCMacro', 'startup-view\gui-result.json', 0)
+    'sketch-origin-snap' = @('sketch-origin-snap-validation.FCMacro', 'sketch-origin-snap\gui-result.json', 0)
+    'sketch-drag' = @('sketch-drag-validation.FCMacro', 'sketch-drag\gui-result.json', 0)
+    'responsiveness-preview' = @('responsiveness-preview-benchmark.FCMacro', 'responsiveness-preview\gui-result.json', 0)
+    'presentation-scheduling' = @('presentation-scheduling-validation.FCMacro', 'presentation-scheduling\gui-result.json', 0)
+    'unused-sketch-visibility' = @('unused-sketch-visibility-validation.FCMacro', 'unused-sketch-visibility\gui-result.json', 0)
+    'sketch-regions' = @('sketch-regions-validation.FCMacro', 'sketch-regions\gui-result.json', 0)
+    'sketch-dimension-point-colors' = @('sketch-dimension-point-colors-validation.FCMacro', 'sketch-dimension-point-colors\gui-result.json', 0)
+    'theme-startup' = @('theme-startup-validation.FCMacro', 'theme-startup\gui-result.json', 0)
+    'design-surface' = @('design-surface-validation.FCMacro', 'onshape-design\gui-result.json', 0)
+    'view-interaction' = @('view-interaction-validation.FCMacro', 'view-interaction\result.json', 0)
+    'onshape-workflows' = @('onshape-workflows-validation.FCMacro', 'onshape-workflows\gui-result.json', 0)
     'interface' = @('gui-validation.FCMacro', 'interface-pass\gui-test-result.json', 0)
     'ui-refinement' = @('ui-refinement-validation.FCMacro', 'ui-refinement\gui-refinement.json', 0)
     'extrusion-preview' = @('extrusion-preview-validation.FCMacro', 'ui-refinement-preview\gui-result.json', 0)
     'refinement-preview' = @('extrusion-preview-validation.FCMacro', 'ui-refinement-preview\gui-result.json', 0)
     'sketch-behavior' = @('sketch-behavior-validation.FCMacro', 'sketch-behavior\native-behavior.json', 0)
+    'sketch-references' = @('sketch-references-validation.FCMacro', 'sketch-references\gui-result.json', 0)
+    'sketch-edit-state' = @('sketch-edit-state-validation.FCMacro', 'sketch-edit-state\gui-result.json', 0)
+    'sketch-plane-editor' = @('sketch-plane-editor-validation.FCMacro', 'sketch-plane-editor\gui-result.json', 0)
+    'history-selection' = @('history-selection-validation.FCMacro', 'history-selection\gui-result.json', 0)
+    'rollback-history' = @('rollback-history-validation.FCMacro', 'rollback-history\gui-result.json', 0)
     'review-interaction' = @('gui-review-validation.FCMacro', 'review-followup\gui-review.json', 0)
     'review-lifecycle' = @('sketch-lifecycle-validation.FCMacro', 'sketch-lifecycle-result.json', 0)
     'review-copy' = @('general-actions-validation.FCMacro', 'general-actions-gui-result.json', 0)
@@ -63,7 +87,7 @@ while ($ancestor) {
 if (Test-Path -LiteralPath $session) { throw ('GUI recipe requires a new private session: ' + $session) }
 $environmentNames = @('KURTSHAPE_ROOT','KURTSHAPE_SESSION_DIR','KURTSHAPE_EVIDENCE_DIR','KURTSHAPE_WRITE_EVIDENCE',
     'FREECAD_USER_HOME','TEMP','TMP','APPDATA','LOCALAPPDATA','KURTSHAPE_TEST_TMP','PYTHONDONTWRITEBYTECODE',
-    'QT_QPA_PLATFORM','KURTSHAPE_DEMO','KURTSHAPE_STARTUP_BASELINE','KURTSHAPE_NO_DEMO','BENCH_HOLES','BENCH_REPEAT','BENCH_GUI_OUT')
+    'QT_QPA_PLATFORM','KURTSHAPE_DEMO','KURTSHAPE_STARTUP_BASELINE','KURTSHAPE_NO_DEMO','BENCH_HOLES','BENCH_REPEAT','BENCH_GUI_OUT','PREVIEW_BENCH_SOURCE')
 $environmentBefore = @{}
 foreach ($name in $environmentNames) {
     $environmentBefore[$name] = @{present=(Test-Path -LiteralPath ('Env:' + $name));value=[Environment]::GetEnvironmentVariable($name, 'Process')}
@@ -74,6 +98,12 @@ try {
 $publishRecoveryEvidence = $WriteEvidence -and $Recipe -eq 'review-recovery'
 $directWriteEvidence = $WriteEvidence -and -not $publishRecoveryEvidence
 Initialize-KurtShapeValidationEnvironment -Root $repositoryRoot -Session $session -WriteEvidence:$directWriteEvidence
+if ($Recipe -eq 'theme-startup') {
+    # Reproduce the saved native dark theme before FreeCAD initializes its GUI.
+    # The bundled preference pack contains appearance defaults, no user paths.
+    $themeSeedPath = Join-Path $repositoryRoot 'runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\data\Gui\PreferencePacks\FreeCAD Dark\FreeCAD Dark.cfg'
+    Copy-Item -LiteralPath $themeSeedPath -Destination (Join-Path $session 'user-data\user.cfg')
+}
 Remove-Item Env:QT_QPA_PLATFORM -ErrorAction SilentlyContinue
 Remove-Item Env:KURTSHAPE_DEMO -ErrorAction SilentlyContinue
 Remove-Item Env:KURTSHAPE_STARTUP_BASELINE -ErrorAction SilentlyContinue
@@ -84,6 +114,12 @@ if ($Recipe -eq 'bench-gui') {
     $env:BENCH_HOLES = [string]$Holes
     $env:BENCH_REPEAT = [string]$Repeat
     $env:BENCH_GUI_OUT = $reportPath
+}
+if ($Recipe -eq 'responsiveness-preview') {
+    $env:BENCH_HOLES = [string]$Holes
+    $env:BENCH_REPEAT = [string]$Repeat
+    if ($PreviewSource) { $env:PREVIEW_BENCH_SOURCE = [IO.Path]::GetFullPath($PreviewSource) }
+    else { Remove-Item Env:PREVIEW_BENCH_SOURCE -ErrorAction SilentlyContinue }
 }
 $logPath = Join-Path $session 'freecad.log'
 $stdoutPath = Join-Path $session 'freecad-stdout.txt'
@@ -155,6 +191,26 @@ try {
     }
     $nativeReport = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     if ($nativeReport.passed -isnot [bool] -or -not $nativeReport.passed) { throw ('GUI recipe report did not pass: ' + $reportPath) }
+    if ($Recipe -in @('onshape-workflows', 'part-studio')) {
+        $scopeWarnings = @(Select-String -LiteralPath $logPath,$stdoutPath,$stderrPath -Pattern 'go out of the allowed scope' |
+            ForEach-Object { $_.Line.Trim() } | Select-Object -Unique)
+        $result.scope_warning_count = $scopeWarnings.Count
+        if ($scopeWarnings.Count) {
+            $result.scope_warnings = $scopeWarnings
+            throw ('Workflow recipe emitted native link-scope warnings: ' + $scopeWarnings.Count)
+        }
+    }
+    if ($Recipe -eq 'sketch-references') {
+        $sketchReferenceWarnings = @(Select-String -LiteralPath $logPath,$stdoutPath,$stderrPath -Pattern @(
+            'Reading failed from embedded file:.*(?:InternalShape|Shape)\.bin',
+            'Unmanaged change of Constraint Property results in invalid constraint indices',
+            'empty shape') | ForEach-Object { $_.Line.Trim() } | Select-Object -Unique)
+        $result.sketch_reference_warning_count = $sketchReferenceWarnings.Count
+        if ($sketchReferenceWarnings.Count) {
+            $result.sketch_reference_warnings = $sketchReferenceWarnings
+            throw ('Sketch references emitted native shape or constraint warnings: ' + $sketchReferenceWarnings.Count)
+        }
+    }
     if ($Recipe -eq 'review-recovery') {
         if (($nativeReport.pid -isnot [int] -and $nativeReport.pid -isnot [long]) -or $nativeReport.pid -ne $process.Id) {
             throw 'Recovery producer PID does not match the owned GUI process.'

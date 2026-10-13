@@ -1,0 +1,285 @@
+"""Native point degrees of freedom and dimension label colors in a hidden GUI."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+import Sketcher
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from pivy import coin
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui, theme
+from kurtshape_evidence import evidence_dir
+
+source_files = ("theme.py", "sketch_colors.py")
+def hashes():
+    return {name: hashlib.sha256((root / "src/kurtshape" / name).read_bytes()).hexdigest() for name in source_files}
+startup = hashes()
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("sketch-dimension-point-colors")
+report = {"passed": False, "checks": [], "points": [], "screens": [], "engine": App.Version(), "source_sha256": startup,
+          "acceptance": True,
+          "limits": "Pinned FreeCAD 1.1.4 returns start position for all dependent end/center entries. Single-point geometry uses native diagnosis; ambiguous curve points require active constraint graph proof and remain blue when no proof is available. No solve or model mutation is used by the color adapter.",
+          "native_source": "https://raw.githubusercontent.com/FreeCAD/FreeCAD/1.1.4/src/Mod/Sketcher/App/SketchObject.cpp#L9802",
+          "method": "Production native Sketcher edit with real solver constraints and rendered Coin point/label colors; isolated hidden process and fresh profile."}
+panel = None
+cleaned = False
+def save(): (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+def wait(ms=150): QtTest.QTest.qWait(ms)
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+def call(op, **args):
+    assert panel.operation(op, **args), panel.message.text()
+    wait(80)
+    return panel.document()
+def node(name):
+    search = coin.SoSearchAction()
+    search.setName(name)
+    search.apply(Gui.activeDocument().activeView().getSceneGraph())
+    return search.getPath().getTail() if search.getPath() else None
+def colors(name):
+    found = node(name)
+    return [tuple(value.getValue()) for value in found.diffuseColor] if found else []
+def capture(name):
+    wait()
+    main.grab().save(str(output / (name + ".png")))
+    report["screens"].append(name + ".png")
+    save()
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(widget for widget in active.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible() and widget.width() > 300)
+def pixel(sketch, xyz):
+    point = Gui.activeDocument().activeView().getPointOnViewport(sketch.Placement.multVec(xyz))
+    ratio = viewport().devicePixelRatioF()
+    return QtCore.QPoint(round(point[0]/ratio), viewport().height()-1-round(point[1]/ratio))
+def rendered_point(sketch, geo, pos, expected, label):
+    view = Gui.activeDocument().activeView()
+    view.redraw()
+    wait()
+    frame = viewport().grab().toImage()
+    target = view.getPointOnViewport(sketch.Placement.multVec(sketch.getPoint(geo,pos)))
+    x,y = round(target[0]),frame.height()-1-round(target[1])
+    matches = sum(max(abs(a-b) for a,b in zip(frame.pixelColor(i,j).getRgb()[:3],expected)) < 10
+                  for i in range(max(0,x-3),min(frame.width(),x+4)) for j in range(max(0,y-3),min(frame.height(),y+4)))
+    report.setdefault("rendered_points",[]).append({"label":label,"matches":matches,"pixel":[x,y]})
+    check(label,matches>2)
+def label_color(index):
+    label = node("ConstraintGroup").getChild(index).getChild(0)
+    return tuple(label.getField("textColor").getValue().getValue())
+def point_sample(sketch, geometry, position, expected, label):
+    points = colors("PointsMaterials_0")
+    slot = next(i for i in range(len(points)) if tuple(sketch.getGeoVertexIndex(i)) == (geometry,position))
+    report["points"].append({"label": label, "geo": geometry, "pos": position, "slot": slot, "actual": points[slot], "expected": expected})
+    save()
+    # Initial exploratory run records the actual native point policy.
+    if report.get("acceptance"):
+        check(label, max(abs(a-b) for a,b in zip(points[slot], expected)) < 1e-4)
+def inspect(value):
+    result = []
+    for key in dir(value):
+        if key.startswith("_"): continue
+        try:
+            attr = getattr(value, key)
+            result.append({"attribute": key, "value": "callable" if callable(attr) else str(attr)})
+        except Exception as exc: result.append({"attribute": key, "value": type(exc).__name__})
+    return result
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        doc = call("new", name="Sketch dimension and point colors")
+        call("create_sketch", id="ColorSketch", plane="XY")
+        sketch = doc.ColorSketch
+        for y in (10, -5, -20):
+            sketch.addGeometry(Part.LineSegment(App.Vector(-30,y,0), App.Vector(-20,y,0)),False)
+        for y in (10, -5, -20):
+            sketch.addGeometry(Part.Circle(App.Vector(-5,y,0), App.Vector(0,0,1),3),False)
+        sketch.addGeometry(Part.Point(App.Vector(10,10,0)),False)
+        sketch.addGeometry(Part.Point(App.Vector(10,-5,0)),False)
+        sketch.addConstraint([
+            Sketcher.Constraint("DistanceX",1,1,-30.0), Sketcher.Constraint("DistanceY",1,1,-5.0),
+            Sketcher.Constraint("DistanceX",2,1,-30.0),
+            Sketcher.Constraint("DistanceX",3,3,-5.0), Sketcher.Constraint("DistanceY",3,3,10.0),
+            Sketcher.Constraint("Block",5), Sketcher.Constraint("Block",7)])
+        doc.recompute()
+        panel.select_feature("ColorSketch")
+        check("Fixture enters production managed native sketch editing", bool(panel.edit_sketch()))
+        panel.normal()
+        panel.fit()
+        Gui.Selection.clearSelection()
+        Gui.Selection.clearPreselection()
+        wait()
+        report["native_sketch_api"] = inspect(sketch)
+        report["native_facade_api"] = inspect(sketch.GeometryFacadeList[1])
+        report["native_geometry_api"] = inspect(sketch.Geometry[1])
+        report["state"] = sketch.State
+        report["adapter_targets"] = panel.sketch_colors.targets
+        report["adapter_writes"] = panel.sketch_colors.writes
+        report["adapter_timer"] = {"active":panel.timer.isActive(),"interval":panel.timer.interval(),"busy":panel.core.busy}
+        wait(600)
+        report["constraint_api"] = inspect(sketch.Constraints[0])
+        report["dependent_parameters_doc"] = sketch.getGeometryWithDependentParameters.__doc__
+        report["dependent_parameters"] = sketch.getGeometryWithDependentParameters()
+        report["extensions"] = []
+        report["sketcher_module_api"] = dir(Sketcher)
+        for index in (0,1,2,3,5,7):
+            facade = sketch.GeometryFacadeList[index]
+            for name in ("Sketcher::SolverGeometryExtension", "SolverGeometryExtension"):
+                try:
+                    extension = facade.getExtensionOfType(name)
+                    report["extensions"].append({"geo": index, "requested": name, "api": inspect(extension), "value": str(extension)})
+                except Exception as exc:
+                    report["extensions"].append({"geo": index, "requested": name, "error": str(exc)})
+            for extension in facade.getExtensions():
+                report["extensions"].append({"geo": index, "api": inspect(extension)})
+        for geo, pos, expected, label in [
+            (0,1,(0,0,1),"Free line endpoint is blue"),
+            (1,1,(0,0,0),"Fully fixed endpoint of a free line is black"),
+            (1,2,(0,0,1),"Other free endpoint of the same line is blue"),
+            (2,1,(0,0,1),"Point constrained along only one axis is blue"),
+            (3,3,(0,0,0),"Fully fixed center of a variable-radius circle is black"),
+            (4,3,(0,0,1),"Free circle center is blue"),
+            (5,3,(0,0,0),"Center of fixed geometry is black"),
+            (6,1,(0,0,1),"Free standalone point is blue"),
+            (7,1,(0,0,0),"Fixed standalone point is black")]:
+            point_sample(sketch,geo,pos,expected,label)
+        report["dimension_preferences"] = {name: hex(App.ParamGet("User parameter:BaseApp/Preferences/View").GetUnsigned(name)) for name in ("ConstrainedDimColor","NonDrivingConstrDimColor","ExprBasedConstrDimColor","DeactivatedConstrDimColor")}
+        group = node("ConstraintGroup")
+        report["constraint_nodes"] = [str(group.getChild(i)) for i in range(group.getNumChildren())]
+        report["constraint_children"] = []
+        for i in range(group.getNumChildren()):
+            child = group.getChild(i)
+            report["constraint_children"].append({"index":i,"nodes": [str(child.getChild(j)) for j in range(child.getNumChildren())]})
+        for geo,pos,rgb,name in [(1,1,(0,0,0),"Rendered fixed endpoint is black"),(1,2,(0,0,255),"Rendered free endpoint is blue"),(3,3,(0,0,0),"Rendered fixed center with free radius is black"),(4,3,(0,0,255),"Rendered free circle center is blue")]:
+            rendered_point(sketch,geo,pos,rgb,name)
+        check("Native driving dimension labels are black", all(label_color(i)==(0,0,0) for i in range(5)))
+        check("Native fixed sketch origin remains black",tuple(node("OriginPointMaterial").diffuseColor[0].getValue())==(0,0,0))
+        reference = sketch.addConstraint(Sketcher.Constraint("Radius",4,3.0))
+        sketch.setDriving(reference,False)
+        deactivated = sketch.addConstraint(Sketcher.Constraint("Distance",0,10.0))
+        sketch.setActive(deactivated,False)
+        expression = sketch.addConstraint(Sketcher.Constraint("Radius",3,3.0))
+        sketch.renameConstraint(expression,"CircleRadius")
+        sketch.setExpression("Constraints.CircleRadius","3 mm")
+        doc.recompute()
+        wait()
+        check("Reference dimension label is black",label_color(reference)==(0,0,0))
+        check("Deactivated dimension label is black",label_color(deactivated)==(0,0,0))
+        check("Expression dimension label is black",label_color(expression)==(0,0,0))
+        sketch.setExpression("Constraints.CircleRadius",None)
+        sketch.delConstraint(expression)
+        sketch.delConstraint(deactivated)
+        sketch.delConstraint(reference)
+        sketch.delConstraint(1)
+        doc.recompute()
+        wait()
+        point_sample(sketch,1,1,(0,0,1),"Removing a point coordinate constraint changes black back to blue")
+        sketch.addConstraint(Sketcher.Constraint("DistanceY",1,1,-5.0))
+        doc.recompute()
+        wait()
+        point_sample(sketch,1,1,(0,0,0),"Restoring the coordinate constraint changes the fixed endpoint back to black")
+        fixed_color = colors("PointsMaterials_0")[2]
+        point = pixel(sketch,sketch.getPoint(1,1))
+        widget=viewport()
+        event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove,QtCore.QPointF(point),QtCore.QPointF(widget.mapToGlobal(point)),QtCore.Qt.NoButton,QtCore.Qt.NoButton,QtCore.Qt.NoModifier)
+        app.sendEvent(widget,event)
+        wait()
+        QtTest.QTest.mouseClick(viewport(),QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,point)
+        wait()
+        selected_point = any(item.Object==sketch and any(name.lower().startswith("vertex") for name in item.SubElementNames) for item in Gui.Selection.getSelectionEx())
+        check("Actual viewport click selects the fixed sketch point",selected_point)
+        selected_color = colors("PointsMaterials_0")[2]
+        panel.sketch_colors.apply()
+        check("Selected points retain native highlight color",selected_color != fixed_color and colors("PointsMaterials_0")[2] == selected_color)
+        capture("selected-point-native-highlight")
+        Gui.Selection.clearSelection()
+        Gui.Selection.clearPreselection()
+        event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove,QtCore.QPointF(800,100),QtCore.QPointF(widget.mapToGlobal(QtCore.QPoint(800,100))),QtCore.Qt.NoButton,QtCore.Qt.NoButton,QtCore.Qt.NoModifier)
+        app.sendEvent(widget,event)
+        wait()
+        sketch.addGeometry(Part.LineSegment(App.Vector(-30,-5,0),App.Vector(-20,-35,0)),False)
+        sketch.addConstraint(Sketcher.Constraint("Coincident",8,1,1,1))
+        sketch.addGeometry(Part.LineSegment(App.Vector(20,10,0),App.Vector(30,10,0)),False)
+        sketch.addGeometry(Part.LineSegment(App.Vector(20,10,0),App.Vector(20,20,0)),False)
+        sketch.addConstraint(Sketcher.Constraint("Coincident",9,1,10,1))
+        doc.recompute()
+        wait()
+        point_sample(sketch,8,1,(0,0,0),"Coincident endpoint attached to a fixed point is black")
+        point_sample(sketch,9,1,(0,0,1),"Unconstrained coincident point is blue rather than native constraint red")
+        point_sample(sketch,10,1,(0,0,1),"Both members of a free coincident pair stay blue")
+        baseline_writes = panel.sketch_colors.writes
+        wait(800)
+        check("Idle point-color updates make no Coin material writes",panel.sketch_colors.writes == baseline_writes)
+        conflict = sketch.addConstraint(Sketcher.Constraint("DistanceX",1,1,-31.0))
+        doc.recompute()
+        wait()
+        check("Conflicting dimensions keep black native labels", label_color(conflict)==(0,0,0) and label_color(0)==(0,0,0))
+        point_sample(sketch,0,1,(1,0,0),"Native geometry error still colors points red")
+        check("Native geometry error still colors curves red",colors("CurvesMaterials0")[0]==(1,0,0))
+        capture("black-dimensions-red-geometry-error")
+        sketch.delConstraint(conflict)
+        doc.recompute()
+        wait()
+        capture("native-mixed-point-colors")
+        report["source_unchanged"] = hashes() == startup
+        check("Production source remains frozen during GUI validation",report["source_unchanged"])
+        report["check_count"] = len(report["checks"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        capture("failed-dimension-point-colors")
+    finally:
+        save()
+        cleanup()
+def cleanup():
+    global cleaned
+    if cleaned: return
+    cleaned = True
+    if panel: panel.shutdown()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit(): gui.resetEdit()
+        if doc.HasPendingTransaction: doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0,app.quit)
+def timeout():
+    report["error"] = "Dimension/point validation exceeded 90 seconds"
+    save()
+    cleanup()
+QtCore.QTimer.singleShot(90000,timeout)
+QtCore.QTimer.singleShot(1200,run)

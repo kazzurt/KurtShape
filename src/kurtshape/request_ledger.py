@@ -59,3 +59,35 @@ class RequestLedger:
             if record and "response" in record:
                 result["response"] = copy.deepcopy(record["response"])
             return result
+
+
+class RequestStatusLookup:
+    """Opt-in, JSON-only lookup for the canonical Controller status request.
+
+    Configuration is the supported owner's plain instance dictionary. Only
+    ledger identity and primitive default_measure are read here; no owner
+    method, descriptor, native document or timing collector is accessed.
+    All other payloads retain the existing owner-thread validation path.
+    """
+    def __init__(self, ledger, configuration):
+        if type(ledger) is not RequestLedger or type(configuration) is not dict:
+            raise TypeError("Status lookup requires the plain session ledger and configuration")
+        self.ledger = ledger
+        self._configuration = configuration
+
+    def _valid_configuration(self):
+        value = self._configuration.get("default_measure")
+        return (self._configuration.get("ledger") is self.ledger
+                and (type(value) is bool or type(value) is str and value == "full"))
+
+    def lookup(self, request):
+        if (type(request) is not dict or set(request) != {"op", "request_id"}
+                or request["op"] != "request_status"
+                or type(request["request_id"]) is not str
+                or not 1 <= len(request["request_id"]) <= 128
+                or not self._valid_configuration()):
+            return None
+        result = RequestLedger.status(self.ledger, request["request_id"])
+        if not self._valid_configuration():
+            return None
+        return {"ok": True, "result": result}

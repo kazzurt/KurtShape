@@ -210,6 +210,24 @@ def validate():
               all(abs(left - right) < 1e-6 for bound in ("min", "max") for left, right in zip(actual["bbox_mm"][bound], baseline["bbox_mm"][bound])))
         check("First occurrence is grounded and geometry is current", len(panel.assembly_state()["instances"]) == 1 and panel.assembly_state()["instances"][0]["grounded"] and panel.state["build_status"] == "valid")
         check("Insertion preserves the native unsaved Modified flag", Gui.getDocument(doc.Name).Modified)
+        # Presentation-only refreshes must keep native row identity and user
+        # tree state, just as the Part Studio history does.
+        instance_row = panel.items[first]
+        part_row = panel.part_model.items[first]
+        group_row = panel.items["assembly_group:instances"]
+        panel.select_feature(first)
+        group_row.setExpanded(False)
+        created_before = (panel.feature_model.created, panel.part_model.created)
+        for _ in range(10):
+            panel.refresh()
+        check("Assembly refresh retains feature and instance row identity",
+              panel.items[first] is instance_row and panel.part_model.items[first] is part_row)
+        check("Unchanged Assembly refresh creates no additional rows",
+              (panel.feature_model.created, panel.part_model.created) == created_before)
+        check("Assembly refresh preserves collapsed groups and selected instance",
+              panel.items["assembly_group:instances"] is group_row and not group_row.isExpanded()
+              and instance_row.isSelected())
+        group_row.setExpanded(True)
         Gui.Selection.clearSelection()
         Gui.Selection.addSelection(doc.getObject(first), "Face1", 1.25, 2.5, 3.75)
         before_selection = selected_references()

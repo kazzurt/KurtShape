@@ -22,6 +22,7 @@ root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
 sys.path.insert(0, str(root / "tools"))
 sys.dont_write_bytecode = True
 from kurtshape_evidence import evidence_dir
+from preview_validation import wait_for_exact
 session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
 assert session.is_relative_to(root / "runtime"), "Use an isolated runtime profile"
 assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session), "Use this validation profile's FreeCAD home"
@@ -123,20 +124,9 @@ def click_action(bar, label):
 
 
 def preview():
-    for _ in range(80):
-        wait(25)
-        if panel.extrusion_preview.result is not None and not panel.extrusion_preview.timer.isActive():
-            result = panel.extrusion_preview.result
-            report["last_preview"] = {"valid": result.valid, "proposal": result.proposal, "error": result.error, "measurements": result.measurements}
-            return result
-    report["preview_timeout_state"] = {"task": panel.task, "task_document": panel.task_document,
-        "active_document": App.activeDocument().Name if App.activeDocument() else None,
-        "editor_visible": panel.editor.isVisible(), "native_dialog": bool(Gui.Control.activeDialog()),
-        "native_edit": bool(panel.core._native_edit_active()), "timer_active": panel.extrusion_preview.timer.isActive(),
-        "evaluator": panel.extrusion_preview.evaluator is not None, "pending": panel.extrusion_preview.pending,
-        "state_revision": panel.state.get("revision") if panel.state else None,
-        "native_revision": panel.core._meta(panel.document()).Revision if panel.document() else None}
-    raise AssertionError("No extrusion preview in two seconds: " + panel.preview_hint.text())
+    result = wait_for_exact(panel.extrusion_preview)
+    report["last_preview"] = {"valid": result.valid, "proposal": result.proposal, "error": result.error, "measurements": result.measurements}
+    return result
 
 
 def set_depth(text):
@@ -382,10 +372,13 @@ def validate():
         assert_live_overlay("Changed extrusion preview", result)
         QtTest.QTest.mouseClick(panel.reverse, QtCore.Qt.LeftButton)
         reversed_result = preview()
-        check("Reverse direction changes real preview placement", reversed_result.valid and abs(reversed_result.shape.BoundBox.ZMin + 7) < 1e-6)
+        check("Reverse direction changes real preview placement", reversed_result.valid and abs(reversed_result.measurements["bbox_mm"]["min"][2] + 7) < 1e-6)
         QtTest.QTest.mouseClick(panel.reverse, QtCore.Qt.LeftButton)
         preview()
-        check("Depth/reverse previews preserve native geometry, history, revision and selection", authoritative_state() == before)
+        after_reverse = authoritative_state()
+        if after_reverse != before:
+            report["reverse_preview_state_differences"] = {key: {"before": before[key], "after": after_reverse[key]} for key in before if before[key] != after_reverse[key]}
+        check("Depth/reverse previews preserve native geometry, history, revision and selection", after_reverse == before)
         for width in (1200, 1600):
             capture("extrusion-preview", width)
         QtTest.QTest.mouseClick(panel.cancel, QtCore.Qt.LeftButton)

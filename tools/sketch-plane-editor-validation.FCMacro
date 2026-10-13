@@ -1,0 +1,235 @@
+"""Compact sketch support editing and accepted-panel closure through production UI."""
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path[:0] = [str(root / "src"), str(root / "tools")]
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+from preview_validation import wait_for_exact
+
+
+class NoTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("sketch-plane-editor")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "screens": [], "pid": os.getpid(),
+          "method": "Production timer, native sketch lease, Qt header/plane-field/history clicks in a private hidden FreeCAD process."}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=170):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+
+def call(op, **arguments):
+    assert panel.operation(op, **arguments), panel.message.text()
+    wait(80)
+    return panel.document()
+
+
+def click(button):
+    QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
+    wait()
+
+
+def history(key):
+    item = panel.items[key]
+    panel.features.scrollToItem(item)
+    click_point = panel.features.visualItemRect(item).center()
+    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, click_point)
+    wait()
+
+
+def closed(label):
+    wait(250)
+    panel.refresh()
+    wait(200)
+    check(label, not panel.editor.isVisible() and panel.studio_dialog is None)
+
+
+def capture(name, widget=None):
+    wait()
+    (widget or main).grab().save(str(output / (name + ".png")))
+    report["screens"].append(name + ".png")
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        doc = call("new", name="Sketch plane field and acceptance")
+        plane_objects = [doc.Body.Origin] + [panel.plane(doc, key) for key in ("XY", "XZ", "YZ")]
+        plane_visibility = {obj.Name: obj.ViewObject.Visibility for obj in plane_objects}
+        report["original_plane_visibility"] = plane_visibility
+        panel.start_sketch()
+        check("New sketch shows only a plane picker", panel.pending_sketch and panel.sketch_plane_editor.widget.isVisible()
+              and not panel.editor_help.isVisible() and not panel.normal_button.isVisible() and not panel.iso_button.isVisible())
+        history("plane:XY")
+        sketch = panel.active_sketch()
+        check("A history plane starts native sketch editing", bool(sketch))
+        picker = panel.sketch_plane_editor
+        check("Sketch field displays its actual Top support", picker.field.text() == "Top (XY)")
+        check("Sketch panel has no notes or view buttons", not panel.editor_help.isVisible()
+              and not panel.normal_button.isVisible() and not panel.iso_button.isVisible())
+        call("add_circle", sketch=sketch.Name, x=5, y=5, diameter=4)
+        original_support = sketch.AttachmentSupport
+        geometry = [(g.Center.x, g.Center.y, g.Radius) for g in sketch.Geometry]
+        capture("compact-sketch-plane-field", panel.editor)
+        click(picker.clear)
+        check("Clear opens replacement picking without finishing the sketch", picker.picking and not panel.active_sketch()
+              and panel.state.get("active_sketch_edit") == sketch.Name and not panel.confirm.isEnabled())
+        check("Picking preserves the original native support until valid replacement", sketch.AttachmentSupport == original_support)
+        check("Toolbar Finish also waits for a valid plane", not panel.finish_sketch() and picker.picking)
+        wait(600)
+        check("Timer retains the edit lease during plane selection", picker.picking and panel.state.get("active_sketch_edit") == sketch.Name)
+        panel.items["origin"].setExpanded(True)
+        history("plane:XZ")
+        check("History plane choice resumes the same native sketch", panel.active_sketch() == sketch and not picker.picking)
+        check("Replacement is shown as Front with local geometry preserved", picker.field.text() == "Front (XZ)"
+              and geometry == [(g.Center.x, g.Center.y, g.Radius) for g in sketch.Geometry])
+        call("undo")
+        check("Draft Undo restores Top support", picker.field.text() == "Top (XY)")
+        call("redo")
+        check("Draft Redo restores Front support", picker.field.text() == "Front (XZ)")
+        click(picker.clear)
+        QtTest.QTest.keyClick(panel.editor, QtCore.Qt.Key_Escape)
+        wait()
+        check("Escape resumes the current support", panel.active_sketch() == sketch
+              and picker.field.text() == "Front (XZ)")
+        click(panel.confirm)
+        check("Finish exits native sketch editing", panel.active_sketch() is None and not panel.state.get("active_sketch_edit"))
+        closed("Accepted sketch panel stays closed after refresh")
+        panel.features.clearSelection()
+        wait()
+        report["restored_plane_visibility"] = {obj.Name: obj.ViewObject.Visibility for obj in plane_objects}
+        check("Support picking restores exact original plane visibility after deselection", report["restored_plane_visibility"] == plane_visibility)
+
+        panel.select_feature(sketch.Name)
+        panel.edit_sketch()
+        click(picker.clear)
+        history("plane:YZ")
+        click(picker.clear)
+        click(panel.cancel)
+        check("Header cancel while choosing restores the original sketch support", not panel.state.get("active_sketch_edit")
+              and sketch.AttachmentSupport[0][0] == panel.plane(doc, "XZ"))
+        closed("Canceled sketch panel stays closed")
+
+        panel.select_feature(sketch.Name)
+        panel.extrude()
+        wait_for_exact(panel.extrusion_preview)
+        wait()
+        check("Extrusion preview enables acceptance", panel.confirm.isEnabled())
+        click(panel.confirm)
+        closed("Accepted extrusion closes its task and properties panel")
+        check("Extrusion committed a native solid", any(obj.TypeId == "PartDesign::Pad" and not obj.Shape.isNull() for obj in doc.Objects))
+
+        Gui.Selection.clearSelection()
+        plane_dialog = panel.studio_tool("create_plane")
+        wait()
+        wait_for_exact(plane_dialog.preview)
+        wait()
+        check("Create plane preview enables acceptance", plane_dialog.confirm.isEnabled())
+        click(plane_dialog.confirm)
+        closed("Accepted create-plane feature closes its task and properties panel")
+
+        doc = call("new", name="Face support picker fixture")
+        call("sketch_rectangle", id="Base", width=20, height=15)
+        call("pad", id="Plate", profile="Base", length=4)
+        call("sketch_circle", id="FaceSketch", plane="XY", x=5, y=5, diameter=4)
+        call("create_plane", id="LaterPlane", base_plane="XY", offset=8)
+        panel.select_feature("FaceSketch")
+        panel.edit_sketch()
+        picker = panel.sketch_plane_editor
+        click(picker.clear)
+        history("LaterPlane")
+        check("A later support is rejected while the plane picker stays open", picker.picking and not panel.active_sketch()
+              and doc.FaceSketch.AttachmentSupport[0][0] == panel.plane(doc, "XY"))
+        top = "Face" + str(max(range(len(doc.Plate.Shape.Faces)), key=lambda i: doc.Plate.Shape.Faces[i].CenterOfMass.z) + 1)
+        Gui.Selection.addSelection(doc.Plate, top)
+        wait(250)
+        check("Viewport face selection replaces support and resumes editing", panel.active_sketch() == doc.FaceSketch
+              and doc.FaceSketch.AttachmentSupport[0][0] == doc.Plate and abs(doc.FaceSketch.Placement.Base.z - 4) < 1e-7)
+        check("Plane field identifies the chosen body face", "Plate" in picker.field.text() and top in picker.field.text())
+        capture("sketch-face-field", panel.editor)
+        click(panel.confirm)
+        closed("Face-supported sketch also closes on acceptance")
+        report["check_count"] = len(report["checks"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        capture("failed-panel-state")
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    if panel:
+        panel.shutdown()
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+QtCore.QTimer.singleShot(120000, lambda: (report.update(error="Plane editor validation timeout"), save(), cleanup()))
+QtCore.QTimer.singleShot(1200, run)

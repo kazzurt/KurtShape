@@ -16,6 +16,7 @@ root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
 sys.path.insert(0, str(root / "tools"))
 sys.dont_write_bytecode = True
 from kurtshape_evidence import evidence_dir
+from preview_validation import wait_for_exact
 session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
 assert session.is_relative_to(root / "runtime"), "Use an isolated profile"
 assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
@@ -127,11 +128,7 @@ def select_history(key):
 
 
 def preview():
-    for _ in range(80):
-        wait(25)
-        if panel.extrusion_preview.result is not None and not panel.extrusion_preview.timer.isActive():
-            return panel.extrusion_preview.result
-    raise AssertionError("No extrusion preview: " + panel.preview_hint.text())
+    return wait_for_exact(panel.extrusion_preview)
 
 
 def live_state(doc):
@@ -192,7 +189,7 @@ def validate():
         panel.extrude(False)
         panel.depth.lineEdit().setText("3 mm")
         result = preview()
-        check("Preview evaluates selected Body in two-part document", result.valid and result.body_id == "Body" and abs(result.material_shape.Volume - 12 * 3.141592653589793) < 1e-5)
+        check("Preview evaluates selected Body in two-part document", result.valid and result.body_id == "Body" and abs(result.measurements["material_volume_mm3"] - 12 * 3.141592653589793) < 1e-5)
         check("Preview shows actual scenegraph ghost", panel.extrusion_preview.overlay.node is not None and panel.confirm.isEnabled())
         check("Preview preserves both parts and undo history", live_state(doc) == baseline)
         capture("two-parts-extrude-preview")

@@ -48,7 +48,12 @@ def validate():
         REPORT["model"] = {"objects": len(benchmark.doc.Objects), "tree_items": len(panel.items)}
 
         def shell():
+            retained = dict(panel.items)
+            created = panel.feature_model.created
             refresh = timed(panel.refresh, REPEAT)[1]
+            assert all(panel.items.get(key) is item for key, item in retained.items()), "Refresh replaced stable feature rows"
+            assert panel.feature_model.created == created, "Unchanged refresh allocated feature rows"
+            REPORT["checks"].append("Repeated real Panel refresh retains every stable history row")
             idle = timed(panel.tick, max(200, REPEAT))[1]
 
             def dirty_tick():
@@ -59,25 +64,34 @@ def validate():
         add_section("shell", shell)
 
         def checkpoints():
-            forced = []
+            snapshots = []
+            panel.core.recovery.close()
+            panel.core.recovery.last.clear()
+            panel.responsiveness.last_activity = time.perf_counter()
+            panel.checkpoint_projects()
+            assert not panel.core.recovery.pending, "Active input scheduled a native checkpoint"
+            REPORT["checks"].append("Recent input defers the native recovery snapshot")
             for _ in range(REPEAT):
                 panel.core.recovery.last.clear()
+                panel.responsiveness.last_activity = time.perf_counter() - 3
                 began = time.perf_counter()
                 panel.checkpoint_projects()
-                forced.append((time.perf_counter() - began) * 1000)
+                snapshots.append((time.perf_counter() - began) * 1000)
                 identifier = panel.core.identifier(benchmark.doc)
                 revision = panel.core._meta(benchmark.doc).Revision
-                assert panel.core.recovery.last.get(identifier, (None, None))[1] == revision, "GUI checkpoint did not capture the current document revision"
+                assert identifier in panel.core.recovery.pending, "Idle GUI checkpoint did not schedule publication"
+                # Test-only durability wait; interactive capture returns above.
                 _, record = panel.core.recovery.read(panel.core.recovery.directory / (identifier + ".json"))
                 assert record["revision"] == revision, "GUI checkpoint manifest has the wrong revision"
+                assert panel.core.recovery.last.get(identifier, (None, None))[1] == revision
             idle = timed(panel.checkpoint_projects, max(20, REPEAT))[1]
-            return {"checkpoint_projects_forced_ms": forced, "checkpoint_projects_idle_ms": idle}
+            return {"checkpoint_projects_native_snapshot_ms": snapshots, "checkpoint_projects_idle_ms": idle}
         add_section("gui_checkpoint", checkpoints)
 
         def filters():
             from kurtshape import navigation
             app = QtGui.QApplication.instance()
-            installed = [panel, panel.workspace_preferences, panel.router._filter,
+            installed = [panel, panel.workspace_preferences, panel.router._filter, panel.responsiveness,
                          navigation._double_middle_filter, getattr(app, "_kurtshape_theme_filter", None)]
             installed = [item for item in installed if item is not None]
             count = 3000
@@ -123,7 +137,7 @@ def validate():
         REPORT["seconds"] = time.perf_counter() - began
         cleanup_errors = []
         if panel:
-            for cleanup in (lambda: panel.timer.stop(), lambda: panel.recovery_timer.stop(), lambda: panel.bridge.close()):
+            for cleanup in (panel.shutdown,):
                 try:
                     cleanup()
                 except Exception:

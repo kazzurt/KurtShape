@@ -1,14 +1,21 @@
 """Resolve native ownership without depending on GUI focus or internal names."""
 import FreeCAD as App  # noqa: F401
+from . import document_index
 
 
 def bodies(doc):
+    index = document_index.get(doc)
+    if index is not None:
+        return list(index.bodies())
     return [obj for obj in doc.Objects if obj.TypeId == "PartDesign::Body"]
 
 
 def owner(doc, obj):
     if obj is None:
         return None
+    index = document_index.get(doc)
+    if index is not None:
+        return index.owner(obj)
     matches = [body for body in bodies(doc) if obj == body or obj in body.Group or obj == body.Origin or obj in body.Origin.OriginFeatures]
     return matches[0] if len(matches) == 1 else None
 

@@ -8,7 +8,7 @@ import queue
 import secrets
 import threading
 import time
-from .request_ledger import RequestLedger
+from .request_ledger import RequestLedger, RequestStatusLookup
 from .contract import CONTRACT_VERSION, CONTRACT_REVISION
 
 
@@ -19,11 +19,22 @@ class Bridge:
         self.token=secrets.token_urlsafe(32)
         self.request_timeout=request_timeout
         self.ledger=getattr(controller, "ledger", None) or RequestLedger()
+        lookup=getattr(controller, "request_status_lookup", None)
+        self._request_status_lookup=(lookup if type(lookup) is RequestStatusLookup
+                                     and lookup.ledger is self.ledger else None)
         bridge=self
 
         class Handler(BaseHTTPRequestHandler):
             def log_message(self,*args):
                 pass
+
+            def send_json(self, result):
+                raw=json.dumps(result).encode()
+                self.send_response(200)
+                self.send_header("Content-Type","application/json")
+                self.send_header("Content-Length",str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
 
             def do_POST(self):
                 if self.path!="/operation" or self.headers.get("Authorization")!="Bearer "+bridge.token:
@@ -42,6 +53,15 @@ class Bridge:
                     request=json.loads(self.rfile.read(size))
                     if not isinstance(request, dict):
                         raise ValueError("Request must be an object")
+                    lookup=bridge._request_status_lookup
+                    if lookup is not None and lookup.ledger is bridge.ledger:
+                        status=lookup.lookup(request)
+                        if status is not None and lookup.ledger is bridge.ledger:
+                            # No CAD queue or native/Controller call. Timings is
+                            # owner-thread state; do not sample it here.
+                            status["queue_wait_ms"]=0.0
+                            self.send_json(status)
+                            return
                     tracked=request.get("op") not in getattr(bridge.controller, "READ_OPS", {"dummy"})
                     replay=bridge.ledger.register(request, "queued") if tracked else None
                     reply=queue.Queue(maxsize=1)
@@ -66,12 +86,7 @@ class Bridge:
                         result={"ok":False,"error":{"code":"outcome_unknown" if was_started else "timeout","message":"Operation may have completed; look up request_status or replay the identical request" if was_started else "Queued operation canceled before start", "request_id":request.get("request_id"),"session_id":bridge.ledger.session_id}}
                         if tracked and not was_started:
                             bridge.ledger.complete(request["request_id"], result, "cancelled")
-                    raw=json.dumps(result).encode()
-                    self.send_response(200)
-                    self.send_header("Content-Type","application/json")
-                    self.send_header("Content-Length",str(len(raw)))
-                    self.end_headers()
-                    self.wfile.write(raw)
+                    self.send_json(result)
                 except (ValueError,queue.Full):
                     self.send_error(400)
                 except (BrokenPipeError,ConnectionResetError):

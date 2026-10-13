@@ -82,7 +82,7 @@ class ShortcutRouter:
     available_actions() gives registry dicts plus resolved_status, context only.
     """
     def __init__(self, app, callbacks, context_provider, status_callback,
-                 registry_path=None, native_runner=None):
+                 registry_path=None, native_runner=None, native_state=None):
         self.app = app
         self.callbacks = dict(callbacks)
         self.context_provider = context_provider
@@ -96,6 +96,7 @@ class ShortcutRouter:
             self.registry = load_registry(registry_path, ROOT / "runtime" / "no-user-shortcuts")
         self.entries = self.registry["shortcuts"]
         self.native_runner = native_runner
+        self.native_state = native_state
         self._filter = None
         self._dialogs = {}
         self._last_native = None
@@ -161,8 +162,10 @@ class ShortcutRouter:
             command = entry.get("native_command")
             if command:
                 current = context if context is not None else self.context_provider()
-                same_sketch = "sketch" in active_contexts(current) and current == self._native_context
-                if same_sketch and self._last_native == command and entry["id"] in self._toggle_tools:
+                in_sketch = "sketch" in active_contexts(current)
+                same_sketch = in_sketch and (self.native_state is not None or current == self._native_context)
+                active_command = self.native_state() if self.native_state is not None else self._last_native
+                if same_sketch and active_command == command and entry["id"] in self._toggle_tools:
                     command = "Sketcher_StopOperation"
                     self._last_native = None
                 else:
@@ -191,13 +194,18 @@ class ShortcutRouter:
         owner = self
         class Filter(QtCore.QObject):
             def eventFilter(self, watched, event):
-                if event.type() == QtCore.QEvent.MouseButtonPress and event.button() == QtCore.Qt.RightButton:
-                    # Native right-click cancels a continuous Sketcher tool.
+                if (event.type() == QtCore.QEvent.MouseButtonPress
+                        and event.button() == QtCore.Qt.RightButton
+                        and event.buttons() == QtCore.Qt.RightButton
+                        and event.modifiers() == QtCore.Qt.NoModifier):
+                    # SketchReferences ends the handler on a plain right-click.
+                    # Navigation modifiers/chords must retain the active tool.
                     owner._last_native = None
                     return False
                 if event.type() not in (QtCore.QEvent.ShortcutOverride, QtCore.QEvent.KeyPress):
                     return False
                 widget = owner.app.focusWidget()
+                receiver = watched if isinstance(watched, QtGui.QWidget) else widget
                 key = owner._event_key(event, QtCore)
                 if owner._dialog_has_focus(widget):
                     help_dialog = owner._dialogs.get("help")
@@ -215,7 +223,7 @@ class ShortcutRouter:
                 if entry is None or entry["status"] == "pass_through":
                     return False
                 global_file_action = entry["id"] in {"local.save", "local.new", "local.open"}
-                if owner._text_input(widget, QtGui) and key != "Escape" and not global_file_action:
+                if (owner._text_input(widget, QtGui) or owner._text_input(receiver, QtGui)) and key != "Escape" and not global_file_action:
                     return False
                 # Dimension input dialogs retain Enter and Escape handling.
                 if widget is not None and isinstance(widget.window(), QtGui.QDialog):

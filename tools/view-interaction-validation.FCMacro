@@ -1,0 +1,138 @@
+"""Isolated native hover pixels, face selection and deterministic orbit."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+sys.dont_write_bytecode = True
+root = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(root / 'src'))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from pivy import coin  # noqa: F401
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1200, 850)
+main.show()
+report = {'passed': False, 'checks': [], 'version': App.Version()}
+out = Path(os.environ['KURTSHAPE_EVIDENCE_DIR']) / 'view-interaction'
+out.mkdir(parents=True, exist_ok=True)
+
+
+def move(widget, point, buttons=QtCore.Qt.NoButton):
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point),
+                             QtCore.QPointF(widget.mapToGlobal(point)), QtCore.Qt.NoButton,
+                             buttons, QtCore.Qt.NoModifier)
+    QtWidgets.QApplication.sendEvent(widget, event)
+    QtTest.QTest.qWait(150)
+
+
+def validate():
+    try:
+        Gui.activateWorkbench('PartWorkbench')
+        doc = App.newDocument('ViewInteractionValidation')
+        box = doc.addObject('Part::Feature', 'Box')
+        box.Shape = Part.makeBox(50, 35, 12)
+        doc.recompute()
+        view = Gui.activeDocument().activeView()
+        from kurtshape.navigation import apply_navigation
+        from kurtshape.hover_outline import _selection_nodes
+        apply_navigation(view)
+        import kurtshape.hover_outline as hover
+        controller = hover._controller.outline
+        view.viewTop()
+        view.fitAll()
+        QtTest.QTest.qWait(350)
+        gl = next(widget for widget in main.findChildren(QtWidgets.QWidget)
+                  if widget.metaObject().className() == 'QOpenGLWidget'
+                  and widget.parentWidget().metaObject().className() == 'Gui::View3DInventorViewer')
+        report['native_preselection_doc'] = Gui.Selection.setPreselection.__doc__
+        report['native_nodes'] = [str(node)[:500] for node in _selection_nodes(view.getSceneGraph())]
+        prefs = App.ParamGet('User parameter:BaseApp/Preferences/View')
+        report['navigation'] = {key: prefs.GetInt(key) for key in ['OrbitStyle', 'RotationMode']}
+        report['navigation']['native_type'] = view.getNavigationType()
+        assert report['navigation']['OrbitStyle'] == 3
+        assert report['navigation']['RotationMode'] == 2
+        pixels = view.getPointOnViewport(App.Vector(25, 17.5, 12))
+        point = QtCore.QPoint(round(pixels[0] / gl.devicePixelRatioF()),
+                             round((view.getSize()[1] - 1 - pixels[1]) / gl.devicePixelRatioF()))
+        report['hit'] = view.getObjectInfo(tuple(pixels))
+        view.saveImage(str(out / 'before-hover.png'), 1000, 700, 'White')
+        before_image = gl.grab().toImage()
+        sample = QtCore.QPoint(before_image.width() // 2, before_image.height() // 2)
+        before_color = before_image.pixelColor(sample).name()
+        camera = view.getCamera()
+        Gui.getDocument(doc.Name).Modified = False
+        geometry = box.Shape.exportBrepToString()
+        move(gl, point)
+        preselection = Gui.Selection.getPreselection()
+        report['hover'] = {'object': preselection.ObjectName if preselection else None,
+                           'elements': list(preselection.SubElementNames) if preselection else [],
+                           'outline_key': controller.key, 'native_modes': [node.preselectionMode.getValue() for node, _ in controller.native_modes]}
+        assert preselection and preselection.ObjectName == box.Name
+        assert controller.node is not None, report['hover']
+        assert not Gui.Selection.getSelection()
+        view.saveImage(str(out / 'face-hover.png'), 1000, 700, 'White')
+        hover_image = gl.grab().toImage()
+        hover_image.save(str(out / 'face-hover-framebuffer.png'))
+        report['hover']['interior_color'] = hover_image.pixelColor(sample).name()
+        assert hover_image.pixelColor(sample).name() == before_color, report['hover']
+        report['checks'].append('Native face hover publishes preselection and draws only line geometry')
+        QtTest.QTest.mouseClick(gl, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+        QtTest.QTest.qWait(200)
+        selected = Gui.Selection.getSelectionEx()
+        report['selection'] = [list(item.SubElementNames) for item in selected]
+        assert selected and selected[0].ObjectName == box.Name
+        view.saveImage(str(out / 'face-selected.png'), 1000, 700, 'White')
+        selected_image = gl.grab().toImage()
+        selected_image.save(str(out / 'face-selected-framebuffer.png'))
+        report['selected_interior_color'] = selected_image.pixelColor(sample).name()
+        assert selected_image.pixelColor(sample).name() != before_color
+        assert view.getCamera() == camera
+        assert box.Shape.exportBrepToString() == geometry
+        assert not Gui.getDocument(doc.Name).Modified
+        report['checks'].append('Hover and click preserve camera, document modified state, and BRep')
+        report['checks'].append('Native left click selects the same filled face')
+        move(gl, QtCore.QPoint(15, 15))
+        assert controller.node is None and not controller.native_modes
+        report['checks'].append('Empty-space hover removes outline and restores native hover')
+        Gui.Selection.clearSelection()
+        view.viewTop()
+        # Far from the viewport center, native arcball used to introduce roll.
+        begin = QtCore.QPoint(30, gl.height() // 3)
+        before = view.getCameraOrientation()
+        QtTest.QTest.mousePress(gl, QtCore.Qt.MiddleButton, QtCore.Qt.NoModifier, begin)
+        for index in range(1, 7):
+            move(gl, begin + QtCore.QPoint(index * 12, 0), QtCore.Qt.MiddleButton)
+        QtTest.QTest.mouseRelease(gl, QtCore.Qt.MiddleButton, QtCore.Qt.NoModifier, begin + QtCore.QPoint(72, 0))
+        after = view.getCameraOrientation()
+        change = before.inverted() * after
+        axis = change.Axis
+        report['horizontal_orbit'] = {'before': list(before.Q), 'after': list(after.Q), 'axis': list(axis)}
+        assert not before.isSame(after, 1e-6)
+        assert abs(axis.y) > .999 and abs(axis.z) < 1e-4, report['horizontal_orbit']
+        report['checks'].append('Off-center horizontal orbit produces yaw without incidental roll')
+        view.viewTop()
+        view.fitAll()
+        move(gl, point)
+        assert controller.node is not None
+        box.Shape = Part.makeBox(52, 35, 12)
+        doc.recompute()
+        assert controller.node is None and not controller.native_modes
+        report['checks'].append('Recompute removes stale hover boundary without touching the source')
+        report['passed'] = True
+    except Exception:
+        report['error'] = traceback.format_exc()
+    finally:
+        (out / 'result.json').write_text(json.dumps(report, indent=2, default=str), encoding='utf-8')
+        for name in list(App.listDocuments()):
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(100, QtWidgets.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(700, validate)

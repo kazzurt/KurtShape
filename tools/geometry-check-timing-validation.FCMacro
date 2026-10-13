@@ -1,0 +1,425 @@
+"""Buffered native GUI/child timing; separate from geometry lifecycle acceptance."""
+import functools
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import queue
+import shutil
+import sys
+import time
+import traceback
+from unittest.mock import patch
+
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui, geometry
+from kurtshape.core import Controller
+from kurtshape.geometry_check_worker import NativeGeometryCheckWorker
+from kurtshape_evidence import evidence_dir
+from native_validation_snapshot import snapshot_document
+
+helper_path = root / "tools/geometry_check_timing_probe.py"
+spec = importlib.util.spec_from_file_location("s07b_geometry_check_probe", helper_path)
+probe = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(probe)
+output = evidence_dir("geometry-check-timing")
+probe.TimingGeometryCheckWorker.evidence_directory = output
+clock = time.perf_counter_ns
+
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+paths = [root / "src/kurtshape" / name for name in
+         ("ui.py", "core.py", "geometry.py", "geometry_check_worker.py", "preview_worker.py", "snapshots.py")]
+paths += [root / "tools/geometry-check-validation.FCMacro", root / "tools/geometry-check-timing-validation.FCMacro", helper_path]
+
+
+def sha(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def hashes():
+    return {str(path.relative_to(root)): sha(path) for path in paths}
+
+
+report = {"passed": False, "responsiveness_passed": False, "lifecycle_assessed": False,
+          "pid": os.getpid(), "engine": App.Version(), "clock": "time.perf_counter_ns",
+          "source_sha256": hashes(), "cases": [],
+          "method": "Class-level wrappers installed before Panel construction; unconditional 5ms GUI pulse; normal helpers retained; no artificial child delay; all report writes after measured windows."}
+panel = active = None
+cleaned = False
+workers = []
+patches = []
+cases = [("small-nested", "nested", False), ("small-event-loop", "event_loop", False),
+         ("face-rich-event-loop", "event_loop", True)]
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def event(kind, **fields):
+    if active is not None:
+        active["events"].append({"kind": kind, "at_ns": clock(), "phase": active["phase"], **fields})
+
+
+def instrument(cls, name):
+    original = getattr(cls, name)
+    @functools.wraps(original)
+    def wrapped(self, *args, **kwargs):
+        row = active
+        began = clock()
+        phase = row["phase"] if row else None
+        result = None
+        error = None
+        try:
+            if cls is Controller and name == "prepare_geometry_check":
+                kwargs["worker_factory"] = probe.TimingGeometryCheckWorker
+            result = original(self, *args, **kwargs)
+            return result
+        except BaseException as exc:
+            error = str(exc)
+            raise
+        finally:
+            ended = clock()
+            if row is not None:
+                extra = {}
+                if name == "reconcile":
+                    extra = {"model": "parts" if self is panel.part_model else "features",
+                             "rows": len(args[1]) if len(args) > 1 else None}
+                row["spans"].append({"method": cls.__name__ + "." + name, "phase": phase,
+                                     "start_ns": began, "end_ns": ended, "ms": (ended - began) / 1e6,
+                                     "error": error, **extra})
+                if name == "prepare_geometry_check" and result is not None:
+                    worker = result["worker"]
+                    row["worker"] = worker
+                    workers.append(worker)
+                    row["snapshot_reused"] = result["snapshot_reused"]
+                    # Preserve the actual archive before launch. This file work
+                    # is timed separately and included in check_geometry wall time.
+                    copy_began = clock()
+                    archive = output / (row["name"] + "-source.FCStd")
+                    shutil.copyfile(worker.snapshot, archive)
+                    row["archive"] = str(archive)
+                    row["archive_sha_before"] = sha(worker.snapshot)
+                    row["archive_copy_ms"] = (clock() - copy_began) / 1e6
+                if name == "submit":
+                    row["worker"] = self
+                    event("submit_return", pid=self.process.pid if self.process else None,
+                          alive=self.process.poll() is None if self.process else None)
+                if name == "check_geometry":
+                    worker = row.get("worker")
+                    event("check_geometry_return", pid=worker.process.pid if worker and worker.process else None,
+                          alive=worker.process.poll() is None if worker and worker.process else None)
+                if name == "poll" and result is not None:
+                    row["response"] = result
+                    hash_began = clock()
+                    row["archive_sha_after"] = sha(self.snapshot)
+                    row["archive_hash_ms"] = (clock() - hash_began) / 1e6
+                    event("result_read", pid=self.process.pid, alive=self.process.poll() is None)
+                if name == "accept_geometry_check":
+                    row["accepted"] = result is not None
+                    row["accepted_report"] = result.get("geometry_check_report") if result else None
+    handle = patch.object(cls, name, wrapped)
+    handle.start()
+    patches.append(handle)
+
+
+# Qt connects bound slots during construction, so patching instances later
+# would miss production timer callbacks. Preserve the exact original methods.
+for method in ("tick", "refresh", "check_geometry", "_poll_geometry_check", "sketch_owners",
+               "plane", "filter_features", "parameters", "status_detail", "update_document_identity"):
+    instrument(ui.Panel, method)
+instrument(ui, "icon_for")
+instrument(ui.HistoryModel, "reconcile")
+for method in ("before_refresh", "restore_selection"):
+    instrument(ui.HistorySelection, method)
+instrument(ui.RollbackMarker, "bind_history")
+for method in ("prepare_geometry_check", "accept_geometry_check"):
+    instrument(Controller, method)
+for method in ("submit", "poll"):
+    instrument(NativeGeometryCheckWorker, method)
+
+pulse = QtCore.QTimer(main)
+pulse.setTimerType(QtCore.Qt.PreciseTimer)
+pulse.setInterval(5)
+service = QtCore.QTimer(main)
+service.setInterval(10)
+
+
+def heartbeat():
+    if active is None:
+        return
+    at = clock()
+    worker = active.get("worker")
+    process = worker.process if worker else None
+    job = panel._geometry_check_job if panel else None
+    active["pulses"].append({"at_ns": at, "phase": active["phase"],
+        "pid": process.pid if process else None, "alive": process.poll() is None if process else None,
+        "owner_current": bool(job and job["bundle"]["worker"] is worker),
+        "job_generation": job["generation"] if job else None,
+        "panel_generation": panel._geometry_check_generation if panel else None})
+
+
+def stats(values):
+    ordered = sorted(values)
+    return {"count": len(ordered), "p95_ms": ordered[(95 * len(ordered) + 99) // 100 - 1] if ordered else None,
+            "max_ms": ordered[-1] if ordered else None}
+
+
+def gaps(rows, start, end):
+    points = [start] + [row["at_ns"] for row in rows if start <= row["at_ns"] <= end] + [end]
+    return stats([(second-first)/1e6 for first, second in zip(points, points[1:])])
+
+
+def call(op, **args):
+    state = panel.operation(op, **args)
+    assert state, panel.message.text()
+    return panel.document()
+
+
+def begin_case():
+    global active
+    if not cases:
+        finish_all()
+        return
+    try:
+        name, mode, rich = cases.pop(0)
+        doc = call("new", name="Geometry timing " + name)
+        if rich:
+            fixture = probe.make_face_rich_fixture(panel.core, doc, count=1000)
+            panel.state = panel.core.inspect(doc)
+            panel.refresh()
+        else:
+            fixture = None
+            call("sketch_rectangle", id="Profile", width=40, height=30)
+            call("pad", id="Pad", profile="Profile", length=8)
+        panel.tick()
+        targets = panel.core._geometry_check_targets(doc)
+        source_startup = snapshot_document(doc, panel.core)["strict"]
+        oracle = [dict(geometry.check_shape(geometry.source_of(target).Shape.copy()), id=target.Name) for target in targets]
+        active = {"name": name, "mode": mode, "representative": rich, "fixture": str(fixture),
+                  "document": doc, "source_startup": source_startup, "oracle": oracle,
+                  "target_ids": [target.Name for target in targets],
+                  "solid_count": sum(len(target.Shape.Solids) for target in targets),
+                  "face_count": sum(len(target.Shape.Faces) for target in targets),
+                  "events": [], "spans": [], "pulses": [], "phase": "warmup",
+                  "warmup_start_ns": clock()}
+        panel.fit()
+        Gui.activeDocument().activeView().redraw()
+        # Let first scene clipping/layout and queued native work settle in the
+        # ordinary event loop, separately from the measured baseline.
+        QtCore.QTimer.singleShot(2500, begin_baseline)
+    except Exception:
+        fail()
+
+
+def begin_baseline():
+    try:
+        active["source_before_baseline"] = snapshot_document(active["document"], panel.core)["strict"]
+        active["warmup_end_ns"] = clock()
+        active["phase"] = "baseline"
+        active["baseline_start_ns"] = clock()
+        # At least two seconds on this same active fixture, including multiple
+        # ordinary 0.5-second reconciliation opportunities. No helpers stopped.
+        QtCore.QTimer.singleShot(2500, launch_case)
+    except Exception:
+        fail()
+
+
+def launch_case():
+    try:
+        active["baseline_end_ns"] = clock()
+        active["phase"] = "precheck_snapshot"
+        active["source_before"] = snapshot_document(active["document"], panel.core)["strict"]
+        active["phase"] = "check"
+        active["check_start_ns"] = clock()
+        panel.check_geometry()
+        active["deadline_ns"] = clock() + 40_000_000_000
+        if active["mode"] == "nested":
+            while panel._geometry_check_job is not None and clock() < active["deadline_ns"]:
+                event("qwait_enter")
+                QtTest.QTest.qWait(10)
+                event("qwait_return")
+            end_case()
+        else:
+            # Return to the ordinary Qt event loop; no nested processEvents or
+            # qWait while this real child is running.
+            service.start()
+    except Exception:
+        fail()
+
+
+def service_case():
+    if active is None:
+        return
+    event("ordinary_service")
+    if panel._geometry_check_job is None or clock() >= active["deadline_ns"]:
+        service.stop()
+        end_case()
+
+
+def end_case():
+    global active
+    try:
+        row = active
+        row["check_end_ns"] = clock()
+        row["phase"] = "proof"
+        if panel._geometry_check_job is not None:
+            row["timed_out"] = True
+            panel._cancel_geometry_check()
+        worker = row.get("worker")
+        row["child_timing"] = probe.read_child_timing(worker) if worker else None
+        row["source_after"] = snapshot_document(row["document"], panel.core)["strict"]
+        row["source_unchanged"] = row["source_before"] == row["source_after"]
+        row["archive_unchanged"] = bool(row.get("archive_sha_before")) and row["archive_sha_before"] == row.get("archive_sha_after") == sha(row["archive"])
+        actual = (row.get("response") or {}).get("checks", [])
+        verdict = lambda values: [{"id": value["id"], "valid": value["valid"], "issues": value["issues"]} for value in values]
+        row["synchronous_verdict_parity"] = verdict(actual) == verdict(row["oracle"])
+        pulses = row["pulses"]
+        row["baseline_gaps"] = gaps(pulses, row["baseline_start_ns"], row["baseline_end_ns"])
+        row["check_gaps"] = gaps(pulses, row["check_start_ns"], row["check_end_ns"])
+        during = [point for point in pulses if row["check_start_ns"] <= point["at_ns"] <= row["check_end_ns"]]
+        row["unconditional_check_pulses"] = len(during)
+        row["first_event_delay_ms"] = (during[0]["at_ns"]-row["check_start_ns"])/1e6 if during else None
+        row["child_alive_pulses"] = sum(point["alive"] is True for point in during)
+        intervals = (row.get("child_timing") or {}).get("checks", [])
+        row["actual_check_overlap_pulses"] = sum(any(interval["check_start_ns"] <= point["at_ns"] <= interval["check_end_ns"] for interval in intervals) for point in during)
+        row["two_child_alive_pulses"] = row["child_alive_pulses"] >= 2
+        row["two_actual_check_overlap_pulses"] = row["actual_check_overlap_pulses"] >= 2
+        row["semantic_passed"] = bool(row.get("accepted") and (row.get("response") or {}).get("ok") and row["synchronous_verdict_parity"] and row["source_unchanged"] and row["archive_unchanged"] and not row.get("timed_out"))
+        row["callback_summary"] = {name: stats([span["ms"] for span in row["spans"] if span["method"] == name]) for name in {span["method"] for span in row["spans"]}}
+        row["baseline_tick_count"] = sum(span["method"] == "Panel.tick" and span["phase"] == "baseline" for span in row["spans"])
+        row["worker_pid"] = worker.process.pid if worker and worker.process else None
+        row.pop("worker", None)
+        row.pop("document", None)
+        report["cases"].append(row)
+        active = None
+        save()
+        await_case_cleanup(row, worker, clock() + 3_000_000_000)
+    except Exception:
+        fail()
+
+
+def await_case_cleanup(row, worker, deadline):
+    complete = worker is None or worker.cleanup_complete.is_set()
+    exited = worker is None or worker.process is None or worker.process.poll() is not None
+    row["cleanup_complete_before_next_case"] = complete
+    row["process_exited_before_next_case"] = exited
+    if complete and exited:
+        save()
+        QtCore.QTimer.singleShot(0, begin_case)
+    elif clock() < deadline:
+        QtCore.QTimer.singleShot(20, lambda: await_case_cleanup(row, worker, deadline))
+    else:
+        report["error"] = "Previous geometry timing child did not finish cleanup within three seconds"
+        save()
+        cleanup()
+
+
+def finish_all():
+    if any(not worker.cleanup_complete.is_set() for worker in workers):
+        deadline = report.setdefault("cleanup_deadline_ns", clock() + 3_000_000_000)
+        if clock() < deadline:
+            QtCore.QTimer.singleShot(20, finish_all)
+            return
+    report["owned_children_exited"] = all(worker.cleanup_complete.is_set() and
+        (worker.process is None or worker.process.poll() is not None) for worker in workers)
+    report["source_hashes_unchanged"] = report["source_sha256"] == hashes()
+    representative = next((row for row in report["cases"] if row["representative"]), None)
+    report["responsiveness_passed"] = bool(representative and representative["two_child_alive_pulses"]
+        and representative["two_actual_check_overlap_pulses"] and all(row["semantic_passed"] for row in report["cases"])
+        and all(row["baseline_end_ns"]-row["baseline_start_ns"] >= 2_000_000_000 and row["baseline_tick_count"] >= 3 for row in report["cases"]))
+    report["passed"] = (report["responsiveness_passed"] and report["source_hashes_unchanged"]
+        and report["owned_children_exited"] and all(row["cleanup_complete_before_next_case"]
+        and row["process_exited_before_next_case"] for row in report["cases"]))
+    save()
+    cleanup()
+
+
+def fail():
+    global active
+    report["error"] = traceback.format_exc()
+    if active is not None:
+        active.pop("worker", None)
+        active.pop("document", None)
+        report["partial_case"] = active
+        active = None
+    save()
+    cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    pulse.stop()
+    service.stop()
+    if panel:
+        panel.shutdown()
+    for worker in workers:
+        worker.close()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    for handle in reversed(patches):
+        handle.stop()
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        pulse.timeout.connect(heartbeat)
+        service.timeout.connect(service_case)
+        pulse.start()
+        begin_case()
+    except Exception:
+        fail()
+
+
+def timeout():
+    report["error"] = "Geometry timing diagnosis exceeded 150 seconds"
+    save()
+    cleanup()
+
+
+QtCore.QTimer.singleShot(150000, timeout)
+QtCore.QTimer.singleShot(1200, run)

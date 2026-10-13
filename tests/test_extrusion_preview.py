@@ -6,8 +6,11 @@ import math
 import os
 from pathlib import Path
 import sys
+import time
+from collections import OrderedDict
+from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import support
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,7 +18,8 @@ sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
 import Part
 from kurtshape.core import Controller, OperationError, intent_signature
-from kurtshape.extrusion_preview import ExtrusionEvaluator
+from kurtshape.extrusion_preview import ExtrusionEvaluator, ProvisionalExtrusion, DebouncedExtrusionPreview, ExtrusionResult
+from kurtshape.preview_worker import NativePreviewWorker
 from native_validation_snapshot import snapshot_document
 
 
@@ -35,6 +39,361 @@ LIFECYCLE_SOURCES = (
 
 
 class ExtrusionPreviewTests(unittest.TestCase):
+    def _adapter_without_qt(self):
+        adapter = object.__new__(DebouncedExtrusionPreview)
+        adapter.controller = self.core
+        adapter.evaluator = self.preview()
+        adapter.provisional = ProvisionalExtrusion(adapter.evaluator)
+        adapter.closed = adapter.evaluating = False
+        adapter.allowed = None
+        adapter.timer, adapter.poll_timer, adapter.lifetime_timer = Mock(), Mock(), Mock()
+        adapter.timer.isActive.return_value = False
+        adapter.overlay = Mock()
+        adapter.worker = adapter.snapshotting = None
+        adapter.pending = adapter.normalized = adapter.result = adapter.submitted = adapter.ready_sequence = None
+        adapter.sequence = 0
+        adapter.source_generation = None
+        adapter.source_key = None
+        adapter.snapshot_captures = adapter.snapshot_reuses = 0
+        adapter.exact_cache = OrderedDict()
+        adapter.status = Mock()
+        adapter.delay_ms = 160
+        adapter.normalizing = 0
+        def display(result):
+            adapter.result = result
+            adapter.status(result)
+            return result
+        adapter._display = display
+        self.addCleanup(adapter.close)
+        return adapter
+
+    def test_async_generation_invalidates_revision_equal_derived_geometry(self):
+        self.plate()
+        self.call("sketch_circle", id="Attached", x=10, y=5, diameter=4,
+                  support={"feature": "Pad", "subelement": self.top()})
+        adapter = self._adapter_without_qt()
+        proposal = adapter.evaluator._proposal(dict(op="pad", profile="Attached", length=2), solve=False)
+        adapter.pending = adapter.normalized = proposal
+        adapter._sync_generation()
+        adapter.result = ExtrusionResult(True, self.state["revision"], proposal)
+        adapter.exact_cache[adapter._key(proposal)] = adapter.result
+        worker = adapter.worker = Mock()
+        revision, generation = self.core._meta(self.doc).Revision, adapter.source_generation
+        # Native regeneration publishes a new derived Shape generation while
+        # authored parameters remain identical. It must invalidate the clone
+        # even though a revision-only guard accepts the task.
+        self.doc.Pad.touch()
+        self.doc.recompute()
+        self.core.sync(self.doc)
+        self.assertEqual(self.core._meta(self.doc).Revision, revision)
+        self.assertNotEqual(self.core.observer.state(self.doc)["generation"], generation)
+        adapter.schedule = Mock()
+        self.assertIsNone(adapter.current_result(proposal))
+        worker.close.assert_called_once()
+        self.assertFalse(adapter.exact_cache)
+        self.assertIsNone(adapter.worker)
+        self.assertIsNone(adapter.result)
+        adapter.schedule.assert_called_once_with(proposal)
+
+    def test_async_snapshot_cancel_defers_cleanup_and_never_submits(self):
+        self.call("sketch_rectangle", id="Profile", width=20, height=10)
+        adapter = self._adapter_without_qt()
+        adapter.pending = adapter.normalized = dict(op="pad", profile="Profile", body="Body", length=2)
+        adapter.check_lifetime = Mock(return_value=True)
+        worker = Mock(snapshot=self.folder / "cancel-snapshot.FCStd")
+        evaluator = adapter.evaluator
+        evaluator._guard = Mock()
+        def snapshot(path):
+            adapter.clear()
+            worker.close.assert_not_called()
+            Path(path).write_text("private simulated snapshot", encoding="utf-8")
+        evaluator.document = SimpleNamespace(Name=self.doc.Name, saveCopy=snapshot)
+        with patch("kurtshape.preview_worker.NativePreviewWorker", return_value=worker), \
+                patch.object(self.core, "snapshot_key", return_value=None):
+            adapter._start_exact()
+        worker.submit.assert_not_called()
+        worker.close.assert_called_once()
+        self.assertIsNone(adapter.evaluator)
+        self.assertIsNone(adapter.result)
+        self.assertIsNone(adapter.snapshotting)
+        adapter.status.assert_called_with(None)
+        self.assertFalse(self.core.busy)
+
+    def test_async_failed_worker_can_retry_identical_proposal(self):
+        self.call("sketch_rectangle", id="Profile", width=20, height=10)
+        adapter = self._adapter_without_qt()
+        proposal = dict(op="pad", profile="Profile", length=2)
+        adapter.pending = adapter.normalized = adapter.evaluator._proposal(proposal, solve=False)
+        adapter.result = ExtrusionResult(False, self.state["revision"], adapter.normalized,
+                                         error={"code": "preview_failed", "message": "worker stopped"})
+        adapter.schedule(proposal)
+        self.assertTrue(adapter.result.provisional)
+        self.assertFalse(adapter.result.valid)
+        adapter.timer.start.assert_called_once_with(160)
+
+    def test_async_snapshot_preserves_newer_camera_and_selection_input(self):
+        self.call("sketch_rectangle", id="Profile", width=20, height=10)
+        adapter = self._adapter_without_qt()
+        adapter.pending = adapter.normalized = dict(op="pad", profile="Profile", body="Body", length=2)
+        adapter.check_lifetime = Mock(return_value=True)
+        worker = Mock(snapshot=self.folder / "interaction-snapshot.FCStd")
+        evaluator = adapter.evaluator
+        evaluator._guard = Mock()
+        ui = {"camera": "initial camera", "selection": "initial face"}
+        def snapshot(path):
+            # Native saveCopy can pump Qt and deliver newer user input.
+            ui.update(camera="new orbit during snapshot", selection="new face during snapshot")
+            Path(path).write_text("private simulated snapshot", encoding="utf-8")
+        evaluator.document = SimpleNamespace(Name=self.doc.Name, saveCopy=snapshot)
+        with patch("kurtshape.preview_worker.NativePreviewWorker", return_value=worker), \
+                patch.object(self.core, "snapshot_key", return_value=None), \
+                patch.object(self.core, "_is_open", return_value=True), \
+                patch("kurtshape.extrusion_preview._capture_gui", side_effect=lambda doc: dict(ui)), \
+                patch("kurtshape.extrusion_preview._restore_gui", side_effect=lambda doc, state: ui.update(state)):
+            adapter._start_exact()
+        self.assertEqual(ui, {"camera": "new orbit during snapshot", "selection": "new face during snapshot"})
+        self.assertTrue(adapter.evaluating)
+        worker.submit.assert_called_once()
+        adapter.status.assert_not_called()
+
+    def test_async_reentrant_poll_cannot_publish_previous_input(self):
+        self.call("sketch_rectangle", id="Profile", width=20, height=10)
+        adapter = self._adapter_without_qt()
+        old = adapter.evaluator._proposal(dict(op="pad", profile="Profile", length=9), solve=False)
+        adapter.pending = adapter.normalized = old
+        adapter._sync_generation()
+        adapter.submitted = (adapter.sequence, old, adapter.source_generation)
+        adapter.evaluating = True
+        adapter.result = ExtrusionResult(False, self.state["revision"], old, provisional=True)
+        adapter.worker = Mock()
+        adapter.worker.poll.return_value = dict(sequence=adapter.sequence, valid=True,
+                                                measurements={}, milliseconds=1, evaluation_delta=1)
+        calls = []
+        def reentrant_guard():
+            calls.append(True)
+            if len(calls) == 1:
+                adapter._poll()
+                adapter._start_exact()
+                self.assertIsNone(adapter.current_result())
+        adapter.evaluator._guard = Mock(side_effect=reentrant_guard)
+        adapter.schedule(dict(op="pad", profile="Profile", length=10))
+        self.assertFalse(any(call.args[0] is not None and call.args[0].valid for call in adapter.status.call_args_list))
+        self.assertTrue(adapter.result.provisional)
+        self.assertEqual(adapter.result.proposal["length"], 10)
+        self.assertGreaterEqual(adapter.timer.start.call_count, 2)
+        self.assertEqual(adapter.normalizing, 0)
+        adapter._poll()
+        self.assertFalse(any(call.args[0] is not None and call.args[0].valid for call in adapter.status.call_args_list))
+
+    def test_worker_phase_timings_reach_exact_result_and_parent_diagnostics(self):
+        self.call("sketch_rectangle", id="Profile", width=20, height=10)
+        adapter = self._adapter_without_qt()
+        proposal = adapter.evaluator._proposal(dict(op="pad", profile="Profile", length=2), solve=False)
+        adapter.pending = adapter.normalized = proposal
+        adapter._sync_generation()
+        adapter.submitted = (adapter.sequence, proposal, adapter.source_generation)
+        adapter.evaluating = True
+        phases = {"source_open": 12.0, "snapshot": 0.0, "load": 8.0,
+                  "recompute": 45.0, "render": 6.0}
+        adapter.worker = Mock()
+        adapter.worker.poll.return_value = dict(sequence=adapter.sequence, valid=True,
+            measurements={}, milliseconds=71.0, evaluation_delta=1, phase_milliseconds=phases)
+        adapter._poll()
+        self.assertTrue(adapter.result.valid)
+        self.assertEqual(adapter.result.phase_milliseconds, phases)
+        self.assertIsNot(adapter.result.phase_milliseconds, phases)
+        for name, value in phases.items():
+            self.assertEqual(list(self.core.timings.samples["preview_worker_phase_" + name]), [value])
+        self.assertEqual(adapter.current_result(proposal), adapter.result)
+
+    def test_worker_result_file_locks_retry_without_losing_valid_response(self):
+        worker = NativePreviewWorker(Path(App.getHomePath()) / "bin" / "python.exe", ROOT / "runtime")
+        self.addCleanup(worker.close)
+        worker.active, worker.started = 1, time.monotonic()
+        worker.process = Mock()
+        worker.process.poll.return_value = None
+        path = worker.folder / "result-1.json"
+        payload = {"task": worker.token, "sequence": 1, "valid": True}
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        with patch.object(Path, "read_text", side_effect=PermissionError("temporary reader lock")):
+            self.assertIsNone(worker.poll())
+        self.assertEqual(worker.active, 1)
+        worker.process.kill.assert_not_called()
+        with patch.object(Path, "unlink", side_effect=PermissionError("temporary cleanup lock")):
+            self.assertEqual(worker.poll(), payload)
+        self.assertIsNone(worker.active)
+        self.assertTrue(path.exists())
+        worker.active, worker.started = 1, time.monotonic() - worker.timeout - 1
+        with patch.object(Path, "read_text", side_effect=PermissionError("persistent reader lock")):
+            with self.assertRaises(TimeoutError):
+                worker.poll()
+        worker.process = None
+
+    def test_native_guard_cancel_or_replace_never_revives_old_callback(self):
+        self.call("sketch_rectangle", id="Profile", width=20, height=10)
+        for method, guard_number in (("_poll", 1), ("_poll", 2), ("current_result", 1), ("_start_exact", 1)):
+            for replacement in (False, True):
+                with self.subTest(method=method, guard_number=guard_number, replacement=replacement):
+                    adapter = self._adapter_without_qt()
+                    proposal = adapter.evaluator._proposal(dict(op="pad", profile="Profile", length=9), solve=False)
+                    adapter.pending = adapter.normalized = proposal
+                    adapter._sync_generation()
+                    adapter.result = ExtrusionResult(True, self.state["revision"], proposal)
+                    old_evaluator = adapter.evaluator
+                    old_worker = adapter.worker = Mock()
+                    old_worker.poll.return_value = dict(sequence=adapter.sequence, valid=True,
+                                                        measurements={}, milliseconds=1, evaluation_delta=1)
+                    adapter.submitted = (adapter.sequence, proposal, adapter.source_generation)
+                    adapter.evaluating = method == "_poll"
+                    new_worker = Mock()
+                    new_result = ExtrusionResult(True, self.state["revision"], proposal)
+                    calls, after_reentry = [], []
+                    def reenter():
+                        calls.append(True)
+                        if len(calls) != guard_number:
+                            return
+                        adapter.clear()
+                        if replacement:
+                            adapter.begin(self.doc, self.state["revision"])
+                            adapter.pending = adapter.normalized = proposal
+                            adapter.result, adapter.worker = new_result, new_worker
+                            adapter._sync_generation()
+                            adapter.evaluating = True
+                        after_reentry.append(adapter.status.call_count)
+                    old_evaluator._guard = Mock(side_effect=reenter)
+                    returned = (adapter.current_result(proposal) if method == "current_result"
+                                else getattr(adapter, method)())
+                    self.assertIsNone(returned)
+                    self.assertEqual(adapter.status.call_count, after_reentry[0])
+                    self.assertIs(adapter.result, new_result if replacement else None)
+                    self.assertIsNot(adapter.evaluator, old_evaluator)
+                    new_worker.poll.assert_not_called()
+                    new_worker.submit.assert_not_called()
+                    new_worker.close.assert_not_called()
+                    adapter.close()
+
+    def test_post_snapshot_guard_cannot_submit_into_replacement_task(self):
+        self.call("sketch_rectangle", id="Profile", width=20, height=10)
+        for replacement in (False, True):
+            with self.subTest(replacement=replacement):
+                adapter = self._adapter_without_qt()
+                proposal = adapter.evaluator._proposal(dict(op="pad", profile="Profile", length=9), solve=False)
+                adapter.pending = adapter.normalized = proposal
+                adapter._sync_generation()
+                adapter._sync_generation = Mock(return_value=True)
+                adapter.check_lifetime = Mock(return_value=True)
+                old_evaluator = adapter.evaluator
+                old_worker = Mock(snapshot=self.folder / ("post-snapshot-" + str(replacement) + ".FCStd"))
+                old_evaluator.document = SimpleNamespace(Name=self.doc.Name,
+                    saveCopy=lambda path: Path(path).write_text("private simulated snapshot", encoding="utf-8"))
+                new_worker = Mock()
+                new_result = ExtrusionResult(True, self.state["revision"], proposal)
+                replacement_submission = (999, proposal, 2)
+                calls, after_reentry = [], []
+                def reenter():
+                    calls.append(True)
+                    if len(calls) != 2:
+                        return
+                    adapter.clear()
+                    if replacement:
+                        adapter.begin(self.doc, self.state["revision"])
+                        adapter.pending = adapter.normalized = proposal
+                        adapter.result, adapter.worker = new_result, new_worker
+                        adapter.submitted = replacement_submission
+                        adapter.source_generation = 2
+                        adapter.evaluating = True
+                    after_reentry.append(adapter.status.call_count)
+                old_evaluator._guard = Mock(side_effect=reenter)
+                with patch("kurtshape.preview_worker.NativePreviewWorker", return_value=old_worker), \
+                        patch.object(self.core, "snapshot_key", return_value=None), \
+                        patch.object(self.core, "_is_open", return_value=True):
+                    adapter._start_exact()
+                self.assertEqual(len(calls), 2)
+                self.assertEqual(adapter.status.call_count, after_reentry[0])
+                self.assertIs(adapter.result, new_result if replacement else None)
+                self.assertIs(adapter.submitted, replacement_submission if replacement else None)
+                new_worker.poll.assert_not_called()
+                new_worker.submit.assert_not_called()
+                new_worker.close.assert_not_called()
+                old_worker.submit.assert_not_called()
+                adapter.close()
+
+    def test_provisional_profile_mesh_is_disposable_and_reused_for_depth(self):
+        self.call("sketch_rectangle", id="Profile", width=20, height=10)
+        baseline = self.invariant()
+        evaluator = self.preview()
+        provisional = ProvisionalExtrusion(evaluator)
+        with patch.object(App, "openDocument", side_effect=AssertionError("No clone for a provisional mesh")), \
+                patch.object(App, "newDocument", side_effect=AssertionError("No document for a provisional mesh")):
+            first = provisional.evaluate(evaluator._proposal(dict(op="pad", profile="Profile", length=2), solve=False))
+            second = provisional.evaluate(evaluator._proposal(dict(op="pad", profile="Profile", length=5), solve=False))
+        self.assertTrue(first.provisional)
+        self.assertFalse(first.valid)
+        self.assertIsNone(first.shape)
+        self.assertIs(first.mesh, second.mesh)
+        self.assertEqual(first.mesh_key, second.mesh_key)
+        self.assertEqual(second.transform["depth"], 5)
+        self.assertTrue(first.mesh["triangles"])
+        self.assertIsNone(evaluator._snapshot)
+        self.assertEqual(self.invariant(), baseline)
+
+    def _wait_worker(self, worker):
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
+            result = worker.poll()
+            if result is not None:
+                return result
+            time.sleep(.02)
+        self.fail("Private exact worker did not finish within 30 seconds")
+
+    def test_exact_process_returns_mesh_and_measurements_without_live_changes(self):
+        self.plate()
+        self.call("sketch_circle", id="Attached", x=10, y=5, diameter=4,
+                  support={"feature": "Pad", "subelement": self.top()})
+        proposal = dict(op="pocket", profile="Attached", length=2, through_all=False, reversed=False)
+        reference = self.preview().evaluate(proposal)
+        self.assertTrue(reference.valid, reference.error)
+        worker = NativePreviewWorker(Path(App.getHomePath()) / "bin" / "python.exe", ROOT / "runtime")
+        self.addCleanup(worker.close)
+        baseline = self.invariant()
+        self.doc.saveCopy(str(worker.snapshot))
+        worker.submit(1, proposal)
+        result = self._wait_worker(worker)
+        self.assertTrue(result["valid"], result["error"])
+        self.assertEqual(result["sequence"], 1)
+        self.assertEqual(result["task"], worker.token)
+        self.assertEqual(result["evaluation_delta"], 1)
+        self.assertAlmostEqual(result["measurements"]["volume_mm3"], reference.shape.Volume, places=6)
+        self.assertAlmostEqual(result["measurements"]["material_volume_mm3"], reference.material_shape.Volume, places=6)
+        self.assertTrue(result["mesh"]["triangles"])
+        self.assertTrue(result["mesh"]["vertices"])
+        self.assertEqual(self.invariant(), baseline)
+        worker.submit(2, dict(proposal, length="0.2 cm"))
+        cached = self._wait_worker(worker)
+        self.assertTrue(cached["valid"], cached["error"])
+        self.assertTrue(cached["cached"])
+        self.assertEqual(cached["evaluation_delta"], 0)
+        self.assertEqual(self.invariant(), baseline)
+
+    def test_exact_worker_is_bounded_cancelable_and_rejects_foreign_response(self):
+        self.call("sketch_rectangle", id="Profile", width=20, height=10)
+        worker = NativePreviewWorker(Path(App.getHomePath()) / "bin" / "python.exe", ROOT / "runtime")
+        self.addCleanup(worker.close)
+        self.doc.saveCopy(str(worker.snapshot))
+        worker.submit(1, dict(op="pad", profile="Profile", length=2))
+        with self.assertRaisesRegex(RuntimeError, "already evaluating"):
+            worker.submit(2, dict(op="pad", profile="Profile", length=3))
+        (worker.folder / "result-1.json").write_text(json.dumps({"task": "foreign", "sequence": 1}), encoding="utf-8")
+        with self.assertRaisesRegex(RuntimeError, "another task"):
+            worker.poll()
+        process = worker.process
+        worker.close()
+        process.wait(timeout=10)
+        self.assertIsNotNone(process.returncode)
+        self.assertIsNone(worker.poll())
+        with self.assertRaisesRegex(RuntimeError, "closed"):
+            worker.submit(3, {})
+
     def setUp(self):
         self.names = set(App.listDocuments())
         if self._testMethodName in LIFECYCLE_METHODS:
@@ -597,6 +956,29 @@ class ExtrusionPreviewTests(unittest.TestCase):
         self._finish_lifecycle_proof(real_dimension_change_rejects_stale=True, real_body_placement_change_rejects_stale=True,
                                      stale_rejection_opens_no_clone=True, stale_rejection_preserves_cache_and_snapshot=True,
                                      fresh_tasks_use_changed_native_geometry=True, original_saved_bytes_preserved=True)
+
+    def test_reference_plane_preview_without_solids_and_face_remove_direction(self):
+        initial = intent_signature(self.doc)
+        preview = self.preview()
+        plane = preview.evaluate({"op": "create_plane", "body": "Body", "base_plane": "XY", "offset": -3})
+        self.assertTrue(plane.valid, plane.error)
+        self.assertTrue(plane.material_shape.Faces)
+        self.assertAlmostEqual(plane.material_shape.BoundBox.ZMin, -3)
+        self.assertEqual(intent_signature(self.doc), initial)
+        preview.close()
+        self.call("sketch_rectangle", id="FaceProfile", width=10, height=8)
+        self.call("pad", id="FaceBase", profile="FaceProfile", length=6)
+        top = "Face" + str(next(i + 1 for i, face in enumerate(self.doc.FaceBase.Shape.Faces)
+                               if abs(face.CenterOfMass.z - 6) < 1e-7))
+        proposal = {"op": "extrude_face", "face": {"feature": "FaceBase", "subelement": top},
+                    "length": 2, "operation": "remove"}
+        preview = self.preview()
+        removed = preview.evaluate(proposal)
+        self.assertTrue(removed.valid, removed.error)
+        self.assertAlmostEqual(removed.shape.Volume, 320)
+        self.call("extrude_face", id="FaceRemove", **{k: v for k, v in proposal.items() if k != "op"})
+        from kurtshape import studio
+        self.assertAlmostEqual(studio.current_part(self.doc, "Body").Shape.Volume, removed.shape.Volume)
 
     def test_closed_source_name_reuse_cannot_reuse_cached_preview(self):
         source_file = self._saved_preview_plate()

@@ -9,6 +9,10 @@ import math
 import FreeCAD as App
 
 SOLIDWORKS_STYLE = 'Gui::SolidWorksNavigationStyle'
+# Classic trackball applies screen-horizontal yaw and screen-vertical pitch,
+# without the edge-of-window roll of a sphere/rounded-arcball projector.
+CLASSIC_TRACKBALL = 3
+CURSOR_OR_MODEL_CENTER = 2
 NAVIGATION_STYLES = (
     ('SolidWorks', SOLIDWORKS_STYLE), ('CAD', 'Gui::CADNavigationStyle'),
     ('Blender', 'Gui::BlenderNavigationStyle'), ('Gesture', 'Gui::GestureNavigationStyle'),
@@ -58,31 +62,46 @@ def _active_view(view=None):
 def apply_navigation(view=None):
     """Apply the user's style, defaulting to verified SolidWorks controls.
 
-    Wheel forward zooms out, as in default SolidWorks.  Rotation uses a
-    picked scene point, falling back to the window focal plane on empty space.
+    Wheel forward zooms out, as in default SolidWorks. Rotation uses a
+    picked scene point, falling back to the model center on empty space.
+    Screen-aligned yaw/pitch avoids incidental roll at the viewport edges.
     Safe before a document exists; call again for each new/opened native view.
     """
     prefs = App.ParamGet('User parameter:BaseApp/Preferences/View')
     style = selected_style()
+    reset_native = style == SOLIDWORKS_STYLE and (
+        prefs.GetInt('RotationMode', 0) != CURSOR_OR_MODEL_CENTER
+        or prefs.GetBool('ResetCursorPosition', True))
     flags = [('UseNavigationAnimations', False, True), ('UseSpinningAnimations', False, False)]
     if style == SOLIDWORKS_STYLE:
         flags.extend([('InvertZoom', False, True), ('ZoomAtCursor', True, True)])
     for key, value, default in flags:
         if prefs.GetBool(key, default) != value:
             prefs.SetBool(key, value)
-    if style == SOLIDWORKS_STYLE and prefs.GetInt('RotationMode', 0) != 1:
-        prefs.SetInt('RotationMode', 1)
+    if style == SOLIDWORKS_STYLE:
+        for key, value, default in [('RotationMode', CURSOR_OR_MODEL_CENTER, 0),
+                                    ('OrbitStyle', CLASSIC_TRACKBALL, 4)]:
+            if prefs.GetInt(key, default) != value:
+                prefs.SetInt(key, value)
+        if prefs.GetBool('ResetCursorPosition', True):
+            prefs.SetBool('ResetCursorPosition', False)
     # Native styles read some navigation preferences when instantiated.
     if prefs.GetString('NavigationStyle', '') != style:
         prefs.SetString('NavigationStyle', style)
     allow_sketch_3d()
     view = _active_view(view)
     if view is not None:
+        if reset_native and view.getNavigationType() == style:
+            # RotationMode is read by the native style's constructor, unlike
+            # OrbitStyle which updates live. Preserve the existing camera.
+            view.setNavigationType('Gui::CADNavigationStyle')
         if view.getNavigationType() != style:
             view.setNavigationType(style)
         if view.getNavigationType() != style:
             raise RuntimeError('The chosen mouse navigation style is unavailable.')
     _install_double_middle_fit()
+    from .hover_outline import install_hover_outline
+    install_hover_outline()
     return style
 
 
@@ -186,6 +205,29 @@ def view_isometric_keep_sketch(view=None):
     rotation = App.Rotation(App.Vector(1, 1, 0), App.Vector(-1, 1, 2),
                             App.Vector(1, -1, 1), 'ZXY')
     return _set_orientation_keeping_focus(view, rotation)
+
+
+def reset_new_document_view(view=None):
+    """Start an empty part at the origin with a predictable 100 mm frame.
+
+    Normal/isometric commands deliberately preserve the user's focus and zoom.
+    Empty documents need an explicit camera reset because there is no model
+    bounding box to fit; fitting origin planes can also frame their labels.
+    Call only for a newly created document, never when editing or reopening.
+    """
+    view = _active_view(view)
+    if view is None:
+        return False
+    view.setCameraType('Orthographic')
+    view_isometric_keep_sketch(view)
+    camera = view.getCameraNode()
+    distance = 100.0
+    position = view.getCameraOrientation().multVec(App.Vector(0, 0, distance))
+    camera.position.setValue(position.x, position.y, position.z)
+    camera.focalDistance.setValue(distance)
+    camera.height.setValue(100.0)
+    view.redraw()
+    return True
 
 
 def intersect_sketch_plane(ray_origin, ray_direction, sketch_or_placement):

@@ -172,6 +172,7 @@ def validate():
         panel.end_type.setCurrentIndex(0)
         panel.depth.setValue(2)
         before_volume=App.activeDocument().Body.Shape.Volume
+        wait_for_confirm()
         require(panel.accept_task())
         check('Blind face-pocket respects depth and automatic inward direction',abs((before_volume-App.activeDocument().Body.Shape.Volume)-math.pi*16*2)<1e-4)
         pocket=App.activeDocument().Body.Tip
@@ -254,11 +255,28 @@ def validate():
         Gui.activeDocument().resetEdit();panel.tick()
         check('Native task Close finalizes managed edit lease',not panel.state['active_sketch_edit'])
         drawing_name=drawing.Name
+        def drawing_selection():
+            current = panel.features.currentItem()
+            return {'active_document':App.activeDocument().Name,
+                    'drawing_document':drawing.Document.Name,
+                    'drawing_name':drawing_name, 'item_present':drawing_name in panel.items,
+                    'current':current.data(0,QtCore.Qt.UserRole) if current else None,
+                    'selected':panel.history_controller.selected_ids(),
+                    'state_features':[entry['id'] for entry in panel.state['features']],
+                    'tree_items':list(panel.items),
+                    'raw_selected':panel.items[drawing_name].isSelected() if drawing_name in panel.items else None,
+                    'hidden':panel.items[drawing_name].isHidden() if drawing_name in panel.items else None,
+                    'flags':panel.items[drawing_name].flags().value if drawing_name in panel.items else None}
+        report['native_close_selection_before']=drawing_selection()
         panel.select_feature(drawing_name)
+        report['native_close_selection_after']=drawing_selection()
+        check('Programmatic history selection retains the requested sketch after native Close',
+              panel.history_controller.selected_ids() == [drawing_name])
         require(panel.edit_sketch())
         key(QtCore.Qt.Key_E,QtCore.Qt.ShiftModifier)
         check('Shift+E from active sketch finishes it and opens Extrude',not panel.active_sketch() and panel.task=='pad')
         panel.depth.lineEdit().setText('4')
+        wait_for_confirm()
         QtTest.QTest.keyClick(panel.depth.lineEdit(),QtCore.Qt.Key_Return,QtCore.Qt.ShiftModifier);wait(180)
         check('Shift+Enter in depth field accepts and repeats extrusion',panel.state['build_status']=='valid' and panel.task=='pad' and panel.task_profile is None)
         new_doc=App.activeDocument().Name

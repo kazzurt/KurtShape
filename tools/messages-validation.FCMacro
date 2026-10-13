@@ -197,12 +197,12 @@ def validate():
             check('Native ' + text.split(':', 1)[0] + ' is retained once without opening a dock or interrupting status',
                   panel.messages.toPlainText().count(text.strip()) == 1 and panel.messages_dock.isHidden() and report_dock.isHidden()
                   and panel.message.text() == status and panel.message.styleSheet() == status_style and panel.unread_messages > before_unread)
-        check('Unread log entries appear on the Messages button', '(' in panel.messages_button.text() and 'unread' in panel.messages_button.toolTip())
+        check('Unread log entries have a quiet indicator and full count in hover help', panel.unread_messages > 0 and '•' in panel.messages_button.text() and 'unread' in panel.messages_button.toolTip())
         rejected = panel.operation('set_parameter', feature='NoSuchFeature', parameter='Length', value='1 mm')
         wait()
         error_text = panel.message.text()
         check('A rejected controller operation shows red readable status and retains its error without opening Messages',
-              rejected is None and '#a2322c' in panel.message.styleSheet() and error_text in panel.messages.toPlainText()
+              rejected is None and ui.COLORS['error'] in panel.message.styleSheet() and error_text in panel.messages.toPlainText()
               and panel.messages_dock.isHidden() and not panel.messages_button.isChecked())
         click(panel.messages_button)
         check('Actual Messages button opens details and clears unread count', panel.messages_dock.isVisible() and panel.messages_button.isChecked() and panel.unread_messages == 0 and panel.messages_button.text() == 'Messages')
@@ -237,7 +237,7 @@ def validate():
         wait()
         result['fragment_continuity_preserved'] = 'messages fragmented: first half second half 😀' in panel.messages.toPlainText()
         check('Partial native messages preserve both their text and Unicode without opening a dock', 'messages fragmented: first half' in panel.messages.toPlainText() and 'second half 😀' in panel.messages.toPlainText() and panel.messages_dock.isHidden() and report_dock.isHidden())
-        check('Native warnings and errors do not overwrite the explicit application error status', panel.message.text() == 'messages managed error after close' and '#a2322c' in panel.message.styleSheet())
+        check('Native warnings and errors do not overwrite the explicit application error status', panel.message.text() == 'messages managed error after close' and ui.COLORS['error'] in panel.message.styleSheet())
         click(panel.messages_button)
         check('Messages can be reopened after native Clear/trim with full retained details and unread reset', panel.messages_dock.isVisible() and panel.unread_messages == 0 and panel.messages.toPlainText().count(retained) == 1)
         check('Messages exposes an explicit Copy all button', panel.copy_messages_button.isVisible() and panel.copy_messages_button.objectName() == 'KurtShapeCopyMessagesButton')
@@ -293,7 +293,7 @@ def validate():
             wait()
             check('Ctrl+C on a selected status error copies exact text without invoking model copy or changing status',
                   clipboard.text() == status_copy_text and panel.message.text() == status_copy_text
-                  and '#a2322c' in panel.message.styleSheet() and not model_clipboard_actions)
+                  and ui.COLORS['error'] in panel.message.styleSheet() and not model_clipboard_actions)
             long_status_text = 'messages long status copy: <native> ☀ 😀 ' + ('diagnostic detail ' * 45)
             original_maximum_width = panel.message.maximumWidth()
             try:
@@ -314,7 +314,7 @@ def validate():
                 check('Status context-menu Copy message copies the full clipped Unicode diagnostic',
                       menu_result.get('triggered') == 'Copy message' and clipboard.text() == long_status_text
                       and menu_result.get('actions', {}).get('Copy selection') is False
-                      and panel.message.text() == long_status_text and '#a2322c' in panel.message.styleSheet() and not model_clipboard_actions)
+                      and panel.message.text() == long_status_text and ui.COLORS['error'] in panel.message.styleSheet() and not model_clipboard_actions)
             finally:
                 panel.message.setMaximumWidth(original_maximum_width)
             panel.notify(status_copy_text, 'error')

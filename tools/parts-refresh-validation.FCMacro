@@ -1,0 +1,334 @@
+"""Exact native parts-row/render parity for per-refresh body icon reuse."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+from unittest.mock import patch
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui, presentation_icons
+from kurtshape_evidence import evidence_dir
+from native_validation_snapshot import snapshot_document
+
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("parts-refresh")
+source_paths = [root / "src/kurtshape" / name for name in
+                ("ui.py", "history_model.py", "history_selection.py", "presentation_icons.py", "bodies.py", "core.py", "studio.py")]
+source_paths.append(root / "tools/parts-refresh-validation.FCMacro")
+
+
+def hashes():
+    return {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in source_paths}
+
+
+report = {"passed": False, "checks": [], "cases": [], "pid": os.getpid(),
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "source_sha256": hashes(),
+          "method": "Actual native Bodies/Part features and production Panel.refresh; old per-solid row oracle; exact RGBA icon raster parity in four modes and three sizes; retained Qt item identity. Narrow native-results proxies count only parts-loop icon reads.",
+          "limits": "Correctness/work-count recipe, not a timing benchmark. Recovery publication disabled. Null-native-icon branch is explicitly injected through the counting proxy; other fixtures use genuine native icons."}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition):
+    assert condition, label
+    report["checks"].append(label)
+    save()
+
+
+def call(op, **args):
+    assert panel.operation(op, **args), panel.message.text()
+    QtTest.QTest.qWait(70)
+    return panel.document()
+
+
+def icon_pixels(icon):
+    values = []
+    for size in (20, 32, 64):
+        for mode in (QtGui.QIcon.Normal, QtGui.QIcon.Disabled, QtGui.QIcon.Active, QtGui.QIcon.Selected):
+            pixmap = icon.pixmap(QtCore.QSize(size, size), mode, QtGui.QIcon.Off)
+            assert not pixmap.isNull(), "Expected a usable rendered parts icon"
+            image = pixmap.toImage().convertToFormat(QtGui.QImage.Format_RGBA8888)
+            values.append({"size": size, "mode": str(mode), "width": image.width(), "height": image.height(),
+                           "dpr": image.devicePixelRatio(),
+                           "rgba_sha256": hashlib.sha256(bytes(image.constBits())).hexdigest()})
+    return values
+
+
+def row_signature(row):
+    return {"key": row["key"], "text": row["text"], "checked": row.get("checked"),
+            "bold": row.get("bold", False), "tooltip": row.get("tooltip", ""),
+            "data": {str(int(role)): value for role, value in row.get("data", {}).items()},
+            "icon": icon_pixels(row["icon"]) if row.get("icon") is not None else None}
+
+
+def legacy_oracle(doc, null_icons=False):
+    # Frozen pre-S08 body/solid row construction. Do not hoist values here.
+    rows = []
+    for body in ui.native_results(doc):
+        solids = body.Shape.Solids if not body.Shape.isNull() else []
+        for i, solid in enumerate(solids):
+            rows.append({"key": body.Name + ":" + str(i),
+                         "text": body.Label if len(solids) == 1 else f"{body.Label} · solid {i + 1}",
+                         "data": {QtCore.Qt.UserRole: body.Name, QtCore.Qt.UserRole + 1: body.Name},
+                         "checked": body.ViewObject.Visibility,
+                         "icon": ui.icon_for("Part", native=QtGui.QIcon() if null_icons else body.ViewObject.Icon),
+                         "bold": body.Name == panel.body_choice.currentData()})
+    return rows
+
+
+def studio_oracle(doc):
+    rows = []
+    for entry in panel.state["studio"]["parts"]:
+        body = doc.getObject(entry["body"])
+        row = {"key": entry["id"], "text": entry["name"], "checked": entry.get("visible", True),
+               "data": {QtCore.Qt.UserRole: entry["id"], QtCore.Qt.UserRole + 1: entry["body"]},
+               "bold": entry["body"] == panel.body_choice.currentData()}
+        if body:
+            row["icon"] = ui.icon_for("Part", native=body.ViewObject.Icon)
+        row["tooltip"] = entry["id"] + (" · active part for new features" if row["bold"] else "") + " · right-click to rename, color or operate on this part"
+        rows.append(row)
+    return rows
+
+
+def ui_retention():
+    tree = panel.parts
+    return {"items": dict(panel.part_model.items), "current": tree.currentItem(),
+            "selected": [item for item in tree.selectedItems()],
+            "scroll": tree.verticalScrollBar().value(), "filter": panel.filter.text(),
+            "feature_hidden": {key: item.isHidden() for key, item in panel.items.items()}}
+
+
+def verify_refresh(label, *, null_icons=False, retain=False, studio=False):
+    doc = panel.document()
+    originals = ui.native_results(doc)
+    expected = studio_oracle(doc) if studio else legacy_oracle(doc, null_icons)
+    expected_signatures = [row_signature(row) for row in expected]
+    held = ui_retention()
+    before = snapshot_document(doc, panel.core)["strict"]
+    icon_reads = {body.Name: 0 for body in originals}
+    captured = []
+    original_results, original_reconcile, original_icon = ui.native_results, panel.part_model.reconcile, ui.icon_for
+    part_icon_calls = []
+
+    class NativeView:
+        def __init__(self, body): self.body = body
+        @property
+        def Icon(self):
+            icon_reads[self.body.Name] += 1
+            return QtGui.QIcon() if null_icons else self.body.ViewObject.Icon
+        def __getattr__(self, name): return getattr(self.body.ViewObject, name)
+
+    class NativeResult:
+        def __init__(self, body):
+            self.body = body
+            self.ViewObject = NativeView(body)
+        def __getattr__(self, name): return getattr(self.body, name)
+
+    def results(current):
+        return [NativeResult(body) for body in original_results(current)]
+
+    def reconcile(identity, rows):
+        captured.extend(rows)
+        return original_reconcile(identity, rows)
+
+    def icon(label, *args, **kwargs):
+        if label == "Part": part_icon_calls.append(label)
+        return original_icon(label, *args, **kwargs)
+
+    with patch.object(ui, "native_results", side_effect=results), patch.object(panel.part_model, "reconcile", side_effect=reconcile), patch.object(ui, "icon_for", side_effect=icon):
+        panel.refresh()
+    after = snapshot_document(doc, panel.core)["strict"]
+    actual_signatures = [row_signature(row) for row in captured]
+    row = {"label": label, "expected": expected_signatures, "actual": actual_signatures,
+           "icon_reads": icon_reads, "part_icon_calls": len(part_icon_calls),
+           "strict_source_before": before, "strict_source_after": after}
+    report["cases"].append(row)
+    check(label + ": exact ordered row fields and rendered icon pixels match old oracle", actual_signatures == expected_signatures)
+    check(label + ": strict native source remains unchanged", before == after)
+    check(label + ": parts title reports exact solid/Studio part count", panel.parts_title.text() == f"Parts ({len(expected)})")
+    actual_items = [panel.parts.topLevelItem(i) for i in range(panel.parts.topLevelItemCount())]
+    check(label + ": actual Qt row order/key identity matches oracle", actual_items == [panel.part_model.items[row["key"]] for row in expected])
+    for wanted, item in zip(expected_signatures, actual_items):
+        observed = {"key": wanted["key"], "text": item.text(0), "checked": item.checkState(0) == QtCore.Qt.Checked,
+                    "bold": item.font(0).bold(), "tooltip": item.toolTip(0),
+                    "data": {str(int(role)): item.data(0, role) for role in (QtCore.Qt.UserRole, QtCore.Qt.UserRole + 1)},
+                    "icon": icon_pixels(item.icon(0))}
+        assert observed == wanted, label + ": actual rendered item mismatch: " + wanted["key"]
+    check(label + ": actual Qt text/check/bold/data/tooltip/icon rendering matches oracle", True)
+    if studio:
+        check(label + ": unchanged Studio branch performs one Part icon call per existing part", len(part_icon_calls) == len(expected))
+    else:
+        counts = {body.Name: len(body.Shape.Solids) if not body.Shape.isNull() else 0 for body in originals}
+        check(label + ": one native icon read per nonempty result and none for zero-solid results", icon_reads == {name: int(count > 0) for name, count in counts.items()})
+        check(label + ": one Part icon evaluation per nonempty result", len(part_icon_calls) == sum(count > 0 for count in counts.values()))
+    if retain:
+        current = ui_retention()
+        check(label + ": retained rows preserve actual Qt object identity", all(current["items"].get(key) is item for key, item in held["items"].items() if key in current["items"]))
+        check(label + ": selection/current item and scroll remain exact", current["current"] is held["current"] and current["selected"] == held["selected"] and current["scroll"] == held["scroll"])
+        check(label + ": feature filter and hidden rows remain exact", current["filter"] == held["filter"] and current["feature_hidden"] == held["feature_hidden"])
+    panel.parts.viewport().grab().save(str(output / (label + ".png")))
+    return actual_signatures
+
+
+def choose_body(name):
+    panel.body_choice.blockSignals(True)
+    panel.body_choice.setCurrentIndex(panel.body_choice.findData(name))
+    panel.body_choice.blockSignals(False)
+    assert panel.body_choice.currentData() == name
+
+
+def compound(count):
+    return Part.makeCompound([Part.makeBox(2, 3, 4, App.Vector(i * 5, 0, 0)) for i in range(count)])
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        doc = call("new", name="Parts refresh legacy parity")
+        first = doc.Body
+        first.Label = "Alpha group"
+        result = first.newObject("PartDesign::Feature", "AlphaResult")
+        result.Shape = compound(24)
+        first.Tip = result
+        second = doc.addObject("PartDesign::Body", "SecondBody")
+        second.Label = "Beta singleton"
+        second_result = second.newObject("PartDesign::Feature", "BetaResult")
+        second_result.Shape = Part.makeBox(3, 4, 5, App.Vector(0, 12, 0))
+        second.Tip = second_result
+        empty = doc.addObject("PartDesign::Body", "EmptyBody")
+        face = doc.addObject("Part::Feature", "FaceOnly")
+        face.Shape = Part.makeBox(2, 2, 2).Faces[0]
+        doc.recompute()
+        panel.core.sync(doc)
+        panel.state = panel.core.inspect(doc)
+        panel.refresh()
+        check("Fixture stays on the genuine legacy branch", not (panel.state.get("studio") or {}).get("enabled"))
+        check("Fixture has multiple native result bodies and both zero-solid cases", len(first.Shape.Solids) == 24 and len(second.Shape.Solids) == 1 and empty.Shape.isNull() and not face.Shape.isNull() and len(face.Shape.Solids) == 0)
+        native_names = [body.Name for body in ui.native_results(doc)]
+        check("Both zero-solid fixtures actually enter the native results loop", empty.Name in native_names and face.Name in native_names)
+        panel.parts.setFixedHeight(130)
+        panel.fit()
+        Gui.activeDocument().activeView().redraw()
+        QtTest.QTest.qWait(500)
+        choose_body(first.Name)
+        initial = verify_refresh("legacy-native-fallback")
+        check("Part presentation uses the real native grayscale fallback", presentation_icons.original_icon_name("Part") is None and not first.ViewObject.Icon.isNull())
+        selected = panel.part_model.items[first.Name + ":2"]
+        panel.parts.setCurrentItem(selected)
+        selected.setSelected(True)
+        panel.filter.setText("result")
+        panel.parts.verticalScrollBar().setValue(panel.parts.verticalScrollBar().maximum() // 2)
+        check("Scroll preservation has a nonzero native scrollbar positive control", panel.parts.verticalScrollBar().value() > 0)
+        verify_refresh("legacy-retained", retain=True)
+        first.Label = "Renamed alpha"
+        first.ViewObject.Visibility = False
+        second.Label = "Renamed beta"
+        second.ViewObject.Visibility = True
+        panel.core.sync(doc)
+        panel.state = panel.core.inspect(doc)
+        choose_body(second.Name)
+        changed = verify_refresh("legacy-native-changes", retain=True)
+        check("Changed native metadata and active body produce fresh rows", changed != initial and all(not row["checked"] and not row["bold"] for row in changed if row["key"].startswith(first.Name + ":")) and next(row for row in changed if row["key"].startswith(second.Name + ":"))["bold"])
+        null_rows = verify_refresh("legacy-null-native-icon", null_icons=True, retain=True)
+        check("Injected null native icons render the neutral fallback afresh", null_rows[0]["icon"] != changed[0]["icon"])
+        verify_refresh("legacy-native-icon-restored", retain=True)
+        result.Shape = compound(26)
+        doc.recompute()
+        panel.core.sync(doc)
+        panel.state = panel.core.inspect(doc)
+        verify_refresh("legacy-solid-growth", retain=True)
+        result.Shape = compound(24)
+        doc.recompute()
+        panel.core.sync(doc)
+        panel.state = panel.core.inspect(doc)
+        verify_refresh("legacy-solid-shrink", retain=True)
+        doc = call("new", name="Parts refresh Studio parity")
+        call("sketch_rectangle", id="StudioProfile", body="Body", width=10, height=8)
+        call("pad", id="StudioPad", profile="StudioProfile", body="Body", length=6, operation="new")
+        call("create_body", id="StudioSecond", name="Studio second part")
+        call("sketch_rectangle", id="StudioSecondProfile", body="StudioSecond", x=20, width=7, height=6)
+        call("pad", id="StudioSecondPad", profile="StudioSecondProfile", body="StudioSecond", length=5, operation="new")
+        panel.fit()
+        Gui.activeDocument().activeView().redraw()
+        QtTest.QTest.qWait(500)
+        check("Studio fixture contains two genuine native parts", (panel.state.get("studio") or {}).get("enabled") and len(panel.state["studio"]["parts"]) == 2)
+        verify_refresh("studio-unchanged", studio=True)
+        verify_refresh("studio-retained", studio=True, retain=True)
+        check("All production and recipe source hashes remain unchanged", report["source_sha256"] == hashes())
+        report["passed"] = True
+        save()
+    except Exception:
+        report["error"] = traceback.format_exc()
+        save()
+    finally:
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned: return
+    cleaned = True
+    if panel: panel.shutdown()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        if doc.HasPendingTransaction: doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["error"] = "Parts refresh correctness exceeded 100 seconds"
+    save()
+    cleanup()
+
+
+QtCore.QTimer.singleShot(100000, timeout)
+QtCore.QTimer.singleShot(1200, run)

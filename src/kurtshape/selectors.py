@@ -5,7 +5,7 @@ persisted here. Creator tracing uses the verified FreeCAD 1.1.4 unhashed H trail
 grammar; unsupported maps fail closed rather than guess another face.
 """
 from __future__ import annotations
-from collections import Counter
+from collections import Counter, OrderedDict
 import json
 import io
 import math
@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 import FreeCAD as App
 import Part
 from .bodies import owner, results as native_results
-from . import geometry
+from . import document_index, geometry
 
 
 TOLERANCE = 1e-7
@@ -34,6 +34,7 @@ _evaluation_milliseconds = 0.0
 _refresh_milliseconds = 0.0
 _rebuild_metrics = {}
 _native_pending = set()
+_CONTEXT_LIMIT = 16
 
 
 def _shape_frame(shape):
@@ -88,11 +89,25 @@ def _in_transaction(doc):
 
 
 def _property(obj, name, value, property_type="App::PropertyString"):
+    if name in obj.PropertiesList and obj.getTypeIdOfProperty(name) != property_type:
+        prior = getattr(obj, name)
+        editor_mode = obj.getEditorMode(name)
+        obj.removeProperty(name)
+        obj.addProperty(property_type, name, "KurtShape references")
+        setattr(obj, name, prior)
+        obj.setEditorMode(name, editor_mode)
     if name not in obj.PropertiesList:
         obj.addProperty(property_type, name, "KurtShape references")
         obj.setEditorMode(name, 1)
     if getattr(obj, name) != value:
         setattr(obj, name, value)
+
+
+def migrate_link_scopes(doc):
+    """Selector sources can be native features in any Body in this document."""
+    for obj in doc.Objects:
+        if "QuerySources" in obj.PropertiesList and obj.getTypeIdOfProperty("QuerySources") != "App::PropertyLinkListGlobal":
+            _property(obj, "QuerySources", list(obj.QuerySources), "App::PropertyLinkListGlobal")
 
 
 def _vector(value, name):
@@ -224,17 +239,58 @@ def _results(doc, before=None):
 
 
 class _Context:
-    def __init__(self, doc, before=None):
+    def __init__(self, doc, before=None, *, eager=False, cache=True):
         self.doc, self.before = doc, before
-        self.objects = {obj.ID: obj for obj in doc.Objects}
-        self.positions = {obj.Name: index for index, obj in enumerate(doc.Objects)}
-        self.map_owners = {}
-        for obj in doc.Objects:
-            if hasattr(obj, "Shape") and obj.TypeId != "PartDesign::Body":
-                for name in obj.Shape.ElementMap:
-                    self.map_owners.setdefault(name, []).append(obj)
+        self.index = index = document_index.get(doc) if cache else None
+        topology = index.derived.get("selector_topology") if index is not None else None
+        if topology is None:
+            objects = index.objects() if index is not None else doc.Objects
+            topology = {"objects": {obj.ID: obj for obj in objects},
+                        "positions": {obj.Name: position for position, obj in enumerate(objects)},
+                        "map_owners": None}
+            if index is not None:
+                index.derived["selector_topology"] = topology
+        self._topology = topology
+        self.objects, self.positions = topology["objects"], topology["positions"]
         self.lineages, self.multiplicities, self.dependencies = {}, {}, {}
-        self.rows = []
+        self._results = self._rows = None
+        self._literal_rows = {}
+        self._world_shapes = {}
+        self.full_preparation = False
+        self._count("selector_contexts")
+        if eager:
+            self.prepare_full()
+
+    def _count(self, name, amount=1):
+        if self.index is not None:
+            self.index.counts[name] = self.index.counts.get(name, 0) + amount
+
+    @property
+    def map_owners(self):
+        owners = self._topology["map_owners"]
+        if owners is None:
+            owners = {}
+            entries = 0
+            for obj in self.objects.values():
+                if hasattr(obj, "Shape") and obj.TypeId != "PartDesign::Body":
+                    for name in obj.Shape.ElementMap:
+                        owners.setdefault(name, []).append(obj)
+                        entries += 1
+            self._topology["map_owners"] = owners
+            self._count("selector_map_owner_builds")
+            self._count("selector_map_entries", entries)
+        return owners
+
+    @property
+    def results(self):
+        if self._results is None:
+            self._results = self._prepare_results()
+            self._count("selector_membership_builds")
+        return self._results
+
+    def _prepare_results(self):
+        """Keep native result order and part identity without enumerating entities."""
+        doc, before = self.doc, self.before
         results = list(_results(doc, before))
         boundary = self.positions.get(before.Name if hasattr(before, "Name") else before, len(doc.Objects))
         from . import studio
@@ -248,16 +304,74 @@ class _Context:
             allowed_sketches = None
         results.extend(obj for obj in doc.Objects if obj.TypeId == "Sketcher::SketchObject"
                        and (obj.Name in allowed_sketches if allowed_sketches is not None else self.positions[obj.Name] < boundary) and _active(obj))
+        prepared = []
         for result in results:
             obj = result.Tip if result.TypeId == "PartDesign::Body" and result.Tip else result
             if not hasattr(obj, "Shape") or obj.Shape.isNull():
                 continue
-            shape = _world_shape(obj)
+            prepared.append((obj, obj.Name if obj.TypeId == "Sketcher::SketchObject" else _part_id(doc, result)))
+        return prepared
+
+    @property
+    def rows(self):
+        if self._rows is None:
+            self._rows = self._build_rows_full()
+            self._count("selector_row_builds")
+            self._count("selector_rows", len(self._rows))
+        return self._rows
+
+    def _build_rows_full(self):
+        """The complete native entity enumeration remains the comparison path."""
+        rows = []
+        for obj, part in self.results:
+            shape = self.world_shape(obj)
             for kind, (collection, prefix) in _ENTITY.items():
                 for i, subshape in enumerate(getattr(shape, collection)):
-                    self.rows.append({"feature": obj.Name, "subelement": prefix + str(i + 1),
-                                      "entity_type": kind, "part": obj.Name if obj.TypeId == "Sketcher::SketchObject" else _part_id(doc, result),
-                                      "_object": obj, "_shape": subshape})
+                    rows.append({"feature": obj.Name, "subelement": prefix + str(i + 1),
+                                 "entity_type": kind, "part": part, "_object": obj, "_shape": subshape})
+        return rows
+
+    def world_shape(self, obj):
+        # Literal seeds and later adjacency/tangent enumeration must share the
+        # same copied native topology for OCCT isSame comparisons.
+        if obj.Name not in self._world_shapes:
+            self._world_shapes[obj.Name] = _world_shape(obj)
+        return self._world_shapes[obj.Name]
+
+    def prepare_full(self):
+        """Force the former eager preparation for comparison and fallback."""
+        self.rows
+        self.map_owners
+        self.full_preparation = True
+        return self
+
+    def prior_part(self, part):
+        # The historical Body rule selects the first matching full row. Empty
+        # compounds have no rows, so they cannot become a new literal target.
+        for obj, identifier in self.results:
+            if identifier == part and any(getattr(obj.Shape, collection) for collection, _ in _ENTITY.values()):
+                return obj
+        return None
+
+    def literal_rows(self, obj, element, entity_type):
+        if self._rows is not None:
+            available = [row for row in self._rows if row["feature"] == obj.Name and row["subelement"] == element]
+            if available:
+                return available
+        key = obj.Name, element
+        if key not in self._literal_rows:
+            # Preserve the full path's current-result part identity (notably
+            # sketches) and its fallback for explicit historical features.
+            parts = [part for source, part in self.results if source == obj]
+            try:
+                shape = self.world_shape(obj).getElement(element)
+            except Exception:
+                return []
+            self._literal_rows[key] = [{"feature": obj.Name, "subelement": element,
+                "entity_type": entity_type, "part": part, "_object": obj, "_shape": shape}
+                for part in parts or [_part_id(self.doc, obj)]]
+            self._count("selector_literal_reads")
+        return self._literal_rows[key]
 
     def _source_keys(self, name):
         decoded = _decode(name)
@@ -534,6 +648,34 @@ def _on_cap_shapes(context, rows, start, end, cap, sources=(), parameters=()):
     return answer
 
 
+def _literal_reference_full(context, selector):
+    """Original row-based literal rules, independent of lazy membership reads."""
+    obj = context.doc.getObject(selector["feature"])
+    if obj is None:
+        return []
+    if obj.TypeId == "PartDesign::Body" and context.before is not None:
+        prior = [row["_object"] for row in context.rows if row["part"] == _part_id(context.doc, obj)]
+        if not prior:
+            return []
+        obj = prior[0]
+    else:
+        obj = obj.Tip if obj.TypeId == "PartDesign::Body" and obj.Tip else obj
+    element = selector.get("subelement", "")
+    match = re.fullmatch(r"(Face|Edge|Vertex)([1-9][0-9]*)", str(element))
+    if not match or not hasattr(obj, "Shape"):
+        raise _error("invalid_reference", "Native reference requires FaceN, EdgeN or VertexN")
+    available = [row for row in context.rows if row["feature"] == obj.Name and row["subelement"] == element]
+    if available:
+        return available
+    try:
+        shape = _world_shape(obj).getElement(element)
+    except Exception:
+        return []
+    return [{"feature": obj.Name, "subelement": element,
+             "entity_type": {"Face": "face", "Edge": "edge", "Vertex": "vertex"}[match.group(1)],
+             "part": _part_id(context.doc, obj), "_object": obj, "_shape": shape}]
+
+
 def _evaluate(context, selector, depth=0):
     if depth > 24 or not isinstance(selector, dict):
         raise _error("invalid_selector", "Selector must be a bounded declarative object")
@@ -544,29 +686,22 @@ def _evaluate(context, selector, depth=0):
     if allowed is None or set(selector) - allowed:
         raise _error("invalid_selector", "Unknown selector kind or fields", kind=kind, fields=sorted(set(selector) - (allowed or set())))
     if kind is None and "feature" in selector:
+        if context.full_preparation:
+            return _literal_reference_full(context, selector)
         obj = context.doc.getObject(selector["feature"])
         if obj is None:
             return []
         if obj.TypeId == "PartDesign::Body" and context.before is not None:
-            prior = [row["_object"] for row in context.rows if row["part"] == _part_id(context.doc, obj)]
-            if not prior:
+            obj = context.prior_part(_part_id(context.doc, obj))
+            if obj is None:
                 return []
-            obj = prior[0]
         else:
             obj = obj.Tip if obj.TypeId == "PartDesign::Body" and obj.Tip else obj
         element = selector.get("subelement", "")
         match = re.fullmatch(r"(Face|Edge|Vertex)([1-9][0-9]*)", str(element))
         if not match or not hasattr(obj, "Shape"):
             raise _error("invalid_reference", "Native reference requires FaceN, EdgeN or VertexN")
-        available = [row for row in context.rows if row["feature"] == obj.Name and row["subelement"] == element]
-        if available:
-            return available
-        try:
-            shape = _world_shape(obj).getElement(element)
-        except Exception:
-            return []
-        return [{"feature": obj.Name, "subelement": element, "entity_type": {"Face": "face", "Edge": "edge", "Vertex": "vertex"}[match.group(1)],
-                 "part": _part_id(context.doc, obj), "_object": obj, "_shape": shape}]
+        return context.literal_rows(obj, element, {"Face": "face", "Edge": "edge", "Vertex": "vertex"}[match.group(1)])
     entity_type = str(selector.get("entity_type", "face")).lower()
     if entity_type not in _ENTITY:
         raise _error("invalid_selector", "entity_type must be face, edge or vertex")
@@ -712,14 +847,81 @@ def _summary(row):
     return result
 
 
+def _resolved(context, selector):
+    values = _evaluate(context, selector)
+    return [{**{key: value for key, value in row.items() if not key.startswith("_")}, "summary": _summary(row)}
+            for row in sorted(values, key=_identity)]
+
+
+def _resolve_full(doc, selector, before=None):
+    """Fresh complete preparation, retained as an explicit correctness oracle."""
+    return _resolved(_Context(doc, before, eager=True, cache=False), selector)
+
+
 def resolve(doc, selector, before=None):
     global _evaluation_milliseconds
     start = time.perf_counter()
     try:
-        context = _Context(doc, before)
-        values = _evaluate(context, selector)
-        return [{**{key: value for key, value in row.items() if not key.startswith("_")}, "summary": _summary(row)}
-                for row in sorted(values, key=_identity)]
+        index = document_index.get(doc)
+        if index is not None and not document_index.local_dependencies(index):
+            # Foreign sources can change without advancing this document's
+            # token. Use fresh full topology and dispose nested scalar caches.
+            def discard_foreign():
+                current = document_index.get(doc)
+                if current is not None:
+                    current.invalidate(structure=True)
+                provider = geometry.provider(doc)
+                if provider is not None:
+                    provider.drop_document(doc)
+            discard_foreign()
+            try:
+                return _resolve_full(doc, selector, before)
+            finally:
+                discard_foreign()
+        token = index.token(*sorted(document_index.DOMAINS)) if index is not None else None
+        def changed():
+            return index is not None and (document_index.get(doc) is not index
+                or token != index.token(*sorted(document_index.DOMAINS)))
+        try:
+            if index is None:
+                context = _Context(doc, before)
+            else:
+                contexts = index.derived.setdefault("selector_contexts", OrderedDict())
+                boundary = before.Name if hasattr(before, "Name") else before
+                if boundary not in contexts:
+                    contexts[boundary] = _Context(doc, before)
+                    while len(contexts) > _CONTEXT_LIMIT:
+                        contexts.popitem(last=False)
+                contexts.move_to_end(boundary)
+                context = contexts[boundary]
+            result = _resolved(context, selector)
+        except Exception:
+            if not changed():
+                raise
+        else:
+            if not changed():
+                return result
+        # Native reads can reenter document callbacks. Discard nested history
+        # and geometry memos too: a builder can store an old shape's scalar
+        # under an object's new version after that callback has invalidated it.
+        def discard():
+            current = document_index.get(doc)
+            if current is not None:
+                current.invalidate(structure=True)
+            provider = geometry.provider(doc)
+            if provider is not None:
+                provider.drop_document(doc)
+        discard()
+        current = document_index.get(doc)
+        fallback_token = current.token(*sorted(document_index.DOMAINS)) if current is not None else None
+        try:
+            result = _resolve_full(doc, selector, before)
+            if (document_index.get(doc) is not current or current is not None
+                    and fallback_token != current.token(*sorted(document_index.DOMAINS))):
+                raise _error("selector_document_changed", "Native document changed during selector resolution; retry")
+            return result
+        finally:
+            discard()
     finally:
         _evaluation_milliseconds += (time.perf_counter() - start) * 1000
 
@@ -781,12 +983,13 @@ def _set_reference(feature, info, values):
         names[index] = references[0][1]
         setattr(feature, prop, (obj, names))
     elif mode == "external":
+        from .sketch_tools import external_links
         index = info["index"]
         obj, name = references[0]
-        current = list(feature.ExternalGeometry)
+        current = external_links(feature)
         if not 0 <= index < len(current):
             raise _error("invalid_selector_metadata", "Native external geometry input no longer exists")
-        if current[index] != (obj, (name,)) and current[index] != (obj, [name]):
+        if current[index] != (obj, name):
             # The public property is read-only and delExternal drops constraints.
             # Edit only its native persistence link, retaining the exact sketch
             # buffer, external slots and projection/intersection mode metadata.
@@ -803,7 +1006,8 @@ def _set_reference(feature, info, values):
                     for entry in source.infolist():
                         destination.writestr(entry, ET.tostring(root, encoding="utf-8", xml_declaration=True)
                                              if entry.filename == "Persistence.xml" else source.read(entry.filename))
-            feature.restoreContent(output.getvalue())
+            from .sketch_tools import restore_sketch_content
+            restore_sketch_content(feature, output.getvalue())
             feature.touch()
     else:
         raise _error("invalid_selector_metadata", "Unknown native reference binding mode")
@@ -814,8 +1018,10 @@ def _native_references(feature, info):
     mode = info.get("mode", "linksub")
     value = getattr(feature, info["native_property"])
     if mode == "external":
+        from .sketch_tools import external_links
+        value = external_links(feature)
         index = info["index"]
-        links = [value[index]] if 0 <= index < len(value) else []
+        links = [(value[index][0], [value[index][1]])] if 0 <= index < len(value) else []
     elif mode == "linksub_index":
         index = info.get("index", 0)
         links = [(value[0], [value[1][index]])] if value[0] is not None and 0 <= index < len(value[1]) else []
@@ -850,12 +1056,70 @@ def bind(feature, input_name, selector, native_property="AttachmentSupport", man
     _set_reference(feature, info, values)
     _property(feature, "QueryInputs", json.dumps(inputs, sort_keys=True))
     sources = {obj.Name: obj for item in inputs.values() for obj in _sources(feature.Document, item["selector"], before=feature)}
-    _property(feature, "QuerySources", list(sources.values()), "App::PropertyLinkList")
+    _property(feature, "QuerySources", list(sources.values()), "App::PropertyLinkListGlobal")
     health = _health(feature)
     health[input_name] = {"status": "healthy", "count": len(values)}
     _write_health(feature, health)
     _property(feature, "QueryResolutionLog", "[]")
     return values
+
+
+def unbind(feature, input_name):
+    """Stop an authored selector from overwriting a replaced native input."""
+    if not _in_transaction(feature.Document):
+        raise _error("selector_transaction_required", "Selector bindings must be removed inside the native mutation transaction")
+    inputs = _json(feature, "QueryInputs")
+    if input_name not in inputs:
+        return False
+    inputs.pop(input_name)
+    if inputs:
+        _property(feature, "QueryInputs", json.dumps(inputs, sort_keys=True))
+        sources = {obj.Name: obj for info in inputs.values()
+                   for obj in _sources(feature.Document, info["selector"], before=feature)}
+        _property(feature, "QuerySources", list(sources.values()), "App::PropertyLinkListGlobal")
+        health = _health(feature)
+        health.pop(input_name, None)
+        _write_health(feature, health)
+        logs = json.loads(getattr(feature, "QueryResolutionLog", "[]"))
+        _property(feature, "QueryResolutionLog", json.dumps([entry for entry in logs if entry.get("input") != input_name], sort_keys=True))
+    else:
+        for prop in ("QueryInputs", "QuerySources", "QueryHealth", "QueryResolutionLog"):
+            if prop in feature.PropertiesList:
+                feature.removeProperty(prop)
+    return True
+
+
+def move_binding(source, destination, input_name, native_property, mode):
+    """Transfer an authored native input during scope migration, preserving history."""
+    inputs = _json(source, "QueryInputs")
+    binding = inputs.pop(input_name, None)
+    if binding is None:
+        return False
+    moved = dict(binding, native_property=native_property, mode=mode)
+    moved["resolved"] = _native_references(destination, moved)
+    target_inputs = _json(destination, "QueryInputs")
+    target_inputs[input_name] = moved
+    _property(destination, "QueryInputs", json.dumps(target_inputs, sort_keys=True))
+    sources = {obj.Name: obj for info in target_inputs.values()
+               for obj in _sources(source.Document, info["selector"], before=source)}
+    _property(destination, "QuerySources", list(sources.values()), "App::PropertyLinkListGlobal")
+    health = _health(source)
+    target_health = _health(destination)
+    target_health[input_name] = health.pop(input_name, {"status": "healthy", "count": len(moved["resolved"])})
+    _write_health(destination, target_health)
+    logs = json.loads(getattr(source, "QueryResolutionLog", "[]"))
+    _property(destination, "QueryResolutionLog", json.dumps([entry for entry in logs if entry.get("input") == input_name], sort_keys=True))
+    if inputs:
+        _property(source, "QueryInputs", json.dumps(inputs, sort_keys=True))
+        remaining = {obj.Name: obj for info in inputs.values() for obj in _sources(source.Document, info["selector"], before=source)}
+        _property(source, "QuerySources", list(remaining.values()), "App::PropertyLinkListGlobal")
+        _write_health(source, health)
+        _property(source, "QueryResolutionLog", json.dumps([entry for entry in logs if entry.get("input") != input_name], sort_keys=True))
+    else:
+        for prop in ("QueryInputs", "QuerySources", "QueryHealth", "QueryResolutionLog"):
+            if prop in source.PropertiesList:
+                source.removeProperty(prop)
+    return True
 
 
 def _refresh_feature_impl(feature, allow_reference_writes=True):

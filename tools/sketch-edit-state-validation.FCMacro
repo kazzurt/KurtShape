@@ -1,0 +1,325 @@
+"""Native solver geometry colors and temporary earlier-history visibility."""
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+import math
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+import Sketcher
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from pivy import coin
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui, studio, theme, sketch_tools
+from kurtshape_evidence import evidence_dir
+
+
+class NoTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("sketch-edit-state")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "samples": [], "screens": [], "pid": os.getpid(), "engine": App.Version(),
+          "method": "Production Panel and native Sketcher solver/render in an isolated hidden process, with the production timer running."}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=150):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+
+def call(op, **arguments):
+    assert panel.operation(op, **arguments), panel.message.text()
+    wait(80)
+    return panel.document()
+
+
+def visibility(doc):
+    return {obj.Name: bool(obj.ViewObject.Visibility) for obj in doc.Objects
+            if obj.ViewObject and "Visibility" in obj.ViewObject.PropertiesList}
+
+
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(widget for widget in active.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible() and widget.width() > 300)
+
+
+def capture(name):
+    wait()
+    main.grab().save(str(output / (name + ".png")))
+    report["screens"].append(name + ".png")
+    save()
+
+
+def sample(sketch, name, xyz, rgb):
+    view = Gui.activeDocument().activeView()
+    view.redraw()
+    wait(150)
+    frame = viewport().grab().toImage()
+    pixel = view.getPointOnViewport(sketch.Placement.multVec(App.Vector(*xyz)))
+    x, y = round(pixel[0]), frame.height() - 1 - round(pixel[1])
+    colors = [frame.pixelColor(i, j).getRgb()[:3]
+              for i in range(max(0, x - 4), min(frame.width(), x + 5))
+              for j in range(max(0, y - 4), min(frame.height(), y + 5))]
+    matches = sum(max(abs(a-b) for a, b in zip(color, rgb)) < 10 for color in colors)
+    report["samples"].append({"name": name, "world": list(xyz), "pixel": [x, y], "expected_rgb": rgb,
+        "matching_pixels": matches, "sample_rgb": sorted(set(colors))})
+    check(name, matches >= 2)
+
+
+def pixel(sketch, xyz):
+    point = Gui.activeDocument().activeView().getPointOnViewport(sketch.Placement.multVec(App.Vector(*xyz)))
+    ratio = viewport().devicePixelRatioF()
+    return QtCore.QPoint(round(point[0] / ratio), viewport().height() - 1 - round(point[1] / ratio))
+
+
+def curve_color(slot=0):
+    search = coin.SoSearchAction()
+    search.setName("CurvesMaterials0")
+    search.apply(Gui.activeDocument().activeView().getSceneGraph())
+    return tuple(search.getPath().getTail().diffuseColor[slot].getValue())
+
+
+def move(position):
+    widget = viewport()
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(position),
+        QtCore.QPointF(widget.mapToGlobal(position)), QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+    app.sendEvent(widget, event)
+    wait()
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        prefs = App.ParamGet("User parameter:BaseApp/Preferences/View")
+        check("Native solver color preferences are blue, black and red", all(
+            prefs.GetUnsigned(name) == int(color[1:] + "ff", 16) for name, color in theme.SKETCH_STATE_COLORS.items()))
+        doc = call("new", name="Earlier sketch colors and visibility")
+        call("sketch_rectangle", id="PriorProfile", width=40, height=30)
+        call("pad", id="PriorPlate", profile="PriorProfile", length=8)
+        call("create_sketch", id="EarlySketch", plane="XY")
+        sketch = doc.EarlySketch
+        sketch.AttachmentOffset = App.Placement(App.Vector(0, 0, 8), App.Rotation())
+        sketch.addGeometry(Part.LineSegment(App.Vector(-30, -12, 0), App.Vector(-20, -12, 0)), False)
+        sketch.addGeometry(Part.LineSegment(App.Vector(-30, 0, 0), App.Vector(-20, 0, 0)), False)
+        sketch.addGeometry(Part.Circle(App.Vector(-8, -12, 0), App.Vector(0, 0, 1), 3), False)
+        sketch.addGeometry(Part.Circle(App.Vector(-8, 0, 0), App.Vector(0, 0, 1), 3), False)
+        sketch.addGeometry(Part.LineSegment(App.Vector(-30, 12, 0), App.Vector(-20, 12, 0)), True)
+        sketch.addConstraint(Sketcher.Constraint("Block", 0))
+        sketch.addConstraint(Sketcher.Constraint("Block", 2))
+        doc.recompute()
+        call("sketch_circle", id="FutureProfile", x=55, y=10, diameter=10)
+        call("pad", id="FuturePart", profile="FutureProfile", length=12, operation="new")
+        future = doc.getObject(doc.FuturePart.KurtShapeOutputParts[0])
+        doc.FutureProfile.ViewObject.Visibility = True
+        doc.PriorProfile.ViewObject.Visibility = True
+        doc.EarlySketch.ViewObject.Visibility = False
+        before = visibility(doc)
+        before_tips = {obj.Name: obj.Tip.Name if obj.Tip else None for obj in doc.Objects if obj.TypeId == "PartDesign::Body"}
+        before_rollback = doc.KurtShapeProject.KurtShapeRollbackIndex
+        report["history"] = {"order": [obj.Name for obj in studio.order(doc)], "before_visibility": before,
+            "before_tips": before_tips, "rollback": before_rollback}
+        Gui.activeDocument().activeView().viewAxonometric()
+        panel.select_feature("EarlySketch")
+        check("Earlier sketch enters managed native editing", bool(panel.edit_sketch()))
+        wait()
+        check("Future sketch and future part are hidden across shared history", not doc.FutureProfile.ViewObject.Visibility
+              and not doc.FuturePart.ViewObject.Visibility and not future.ViewObject.Visibility)
+        check("The previous plate remains visible while editing the earlier sketch", doc.PriorPlate.ViewObject.Visibility)
+        check("Historical edit does not move persisted rollback or body tips", doc.KurtShapeProject.KurtShapeRollbackIndex == before_rollback and before_tips == {
+            obj.Name: obj.Tip.Name if obj.Tip else None for obj in doc.Objects if obj.TypeId == "PartDesign::Body"})
+        check("Historical source guard accepts prior plate and rejects future part", panel.sketch_history.allows_source(doc.PriorPlate)
+              and not panel.sketch_history.allows_source(doc.FuturePart))
+        missing = panel.operation("project_geometry", sketch="EarlySketch", references=[{"feature": "FuturePart", "subelement": "Edge1"}])
+        check("Later geometry cannot be imported through a raw projection request", not missing and not sketch_tools.external_links(sketch))
+        panel.normal()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(100)
+        panel.fit()
+        Gui.Selection.clearSelection()
+        Gui.Selection.clearPreselection()
+        check("Mixed-color fixture has remaining degrees of freedom", not sketch.FullyConstrained and sketch.solve() == 0)
+        wait()
+        save()
+        sample(sketch, "Fixed line is black inside a partially constrained sketch", (-25, -12, 0), (0, 0, 0))
+        sample(sketch, "Free line is blue", (-25, 0, 0), (0, 0, 255))
+        sample(sketch, "Fixed circle is black", (-5, -12, 0), (0, 0, 0))
+        sample(sketch, "Free circle is blue", (-5, 0, 0), (0, 0, 255))
+        sample(sketch, "Fixed endpoint is black", (-30, -12, 0), (0, 0, 0))
+        sample(sketch, "Free endpoint is blue", (-30, 0, 0), (0, 0, 255))
+        construction = prefs.GetUnsigned("ConstructionColor")
+        rgb = [(construction >> shift) & 255 for shift in (24, 16, 8)]
+        check("Construction geometry uses the same underconstrained blue", rgb == [0, 0, 255])
+        sample(sketch, "Free construction line is blue and retains its dashed style", (-25, 12, 0), rgb)
+        writes = panel.sketch_colors.writes
+        wait(1000)
+        check("Idle production ticks make no material writes", panel.sketch_colors.writes == writes)
+        move(pixel(sketch, (-25, -12, 0)))
+        wait()
+        highlighted = curve_color()
+        check("A fixed curve retains native hover highlighting", highlighted != (0.0, 0.0, 0.0))
+        panel.sketch_colors.apply()
+        check("The Block color adapter preserves preselection color", curve_color() == highlighted)
+        QtTest.QTest.mouseClick(viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, pixel(sketch, (-25, -12, 0)))
+        wait()
+        check("Native viewport click selects the fixed sketch edge", any(item.Object == sketch and any(name.lower() == "edge1" for name in item.SubElementNames)
+              for item in Gui.Selection.getSelectionEx()))
+        selected_color = curve_color()
+        for unused in range(5):
+            panel.sketch_colors.apply()
+        check("The Block color adapter preserves native selection color", curve_color() == selected_color and selected_color != (0.0, 0.0, 0.0))
+        sample(sketch, "The selected fixed curve remains highlighted", (-25, -12, 0), tuple(round(channel * 255) for channel in selected_color))
+        capture("native-selection-highlight")
+        Gui.Selection.clearSelection()
+        Gui.Selection.clearPreselection()
+        move(QtCore.QPoint(800, 100))
+        sketch.addGeometry(Part.LineSegment(App.Vector(-30, -24, 0), App.Vector(-20, -24, 0)), False)
+        sketch.addGeometry(Part.Circle(App.Vector(-8, -24, 0), App.Vector(0, 0, 1), 3), False)
+        sketch.addConstraint([
+            Sketcher.Constraint("DistanceX", 5, 1, -30.0), Sketcher.Constraint("DistanceY", 5, 1, -24.0),
+            Sketcher.Constraint("Horizontal", 5), Sketcher.Constraint("Distance", 5, 10.0),
+            Sketcher.Constraint("DistanceX", 6, 3, -8.0), Sketcher.Constraint("DistanceY", 6, 3, -24.0),
+            Sketcher.Constraint("Diameter", 6, 6.0)])
+        doc.recompute()
+        check("Dimensional fixture remains a partially constrained sketch", sketch.solve() == 0 and not sketch.FullyConstrained)
+        sample(sketch, "Dimensionally constrained line is black in a mixed sketch", (-25, -24, 0), (0, 0, 0))
+        sample(sketch, "Dimensionally constrained circle is black in a mixed sketch", (-5, -24, 0), (0, 0, 0))
+        sample(sketch, "Dimensionally constrained endpoint is black", (-30, -24, 0), (0, 0, 0))
+        sketch.addGeometry(Part.Point(App.Vector(-38, -12, 0)), False)
+        sketch.addGeometry(Part.Point(App.Vector(-38, 0, 0)), False)
+        sketch.addGeometry(Part.ArcOfCircle(Part.Circle(App.Vector(-8, 12, 0), App.Vector(0, 0, 1), 3), -math.pi / 2, math.pi / 2), False)
+        sketch.addConstraint(Sketcher.Constraint("Block", 7))
+        sketch.addConstraint(Sketcher.Constraint("Block", 9))
+        doc.recompute()
+        sample(sketch, "A fixed standalone sketch point is black", (-38, -12, 0), (0, 0, 0))
+        sample(sketch, "A free standalone sketch point is blue", (-38, 0, 0), (0, 0, 255))
+        sample(sketch, "A fixed arc is black in a mixed sketch", (-5, 12, 0), (0, 0, 0))
+        edge_index = next(index for index, edge in enumerate(doc.PriorPlate.Shape.Edges, 1)
+                          if abs(edge.CenterOfMass.y - 30) < .01 and edge.CenterOfMass.x > 5 and abs(edge.CenterOfMass.z - 8) < .01)
+        edge = doc.PriorPlate.Shape.Edges[edge_index - 1]
+        call("project_geometry", sketch="EarlySketch", references=[{"feature": "PriorPlate", "subelement": "Edge" + str(edge_index)}], defining=True)
+        Gui.Selection.clearSelection()
+        Gui.Selection.clearPreselection()
+        sample(sketch, "A defining projected edge is fully constrained black", (edge.CenterOfMass.x, edge.CenterOfMass.y, 0), (0, 0, 0))
+        call("project_geometry", sketch="EarlySketch", references=[{"feature": "PriorPlate", "subelement": "Edge" + str(edge_index)}], defining=False)
+        sample(sketch, "A projected reference edge is fully constrained black", (edge.CenterOfMass.x, edge.CenterOfMass.y, 0), (0, 0, 0))
+        capture("mixed-native-solver-colors")
+        sketch.addConstraint(Sketcher.Constraint("Distance", 5, 11.0))
+        report["conflict_solve"] = sketch.solve()
+        check("The conflicting length creates an actual native solver error", report["conflict_solve"] != 0)
+        doc.recompute()
+        wait()
+        sample(sketch, "A conflicting sketch renders its free curve red", (-5, 0, 0), (255, 0, 0))
+        sample(sketch, "A conflicting sketch renders its point red", (-30, 0, 0), (255, 0, 0))
+        capture("native-solver-error-red")
+        sketch.delConstraint(sketch.ConstraintCount - 1)
+        sketch.solve()
+        wait()
+        sample(sketch, "Removing the conflict restores blue free geometry", (-5, 0, 0), (0, 0, 255))
+        for index in (1, 3, 4, 8):
+            sketch.addConstraint(Sketcher.Constraint("Block", index))
+        sketch.solve()
+        wait()
+        check("The native solver reports the fully constrained fixture", sketch.FullyConstrained)
+        sample(sketch, "A fully constrained line is black", (-25, 0, 0), (0, 0, 0))
+        sample(sketch, "A fully constrained curve is black", (-5, 0, 0), (0, 0, 0))
+        sample(sketch, "A fully constrained point is black", (-30, 0, 0), (0, 0, 0))
+        sample(sketch, "A fully constrained construction line is black", (-25, 12, 0), (0, 0, 0))
+        capture("fully-constrained-native-black")
+        check("Cancel restores every original visibility", panel.finish_sketch(cancel=True) and visibility(doc) == before)
+        panel.select_feature("EarlySketch")
+        check("Earlier sketch can be reopened after cancellation", bool(panel.edit_sketch()))
+        wait()
+        check("Future geometry stays hidden after a production refresh", not doc.FuturePart.ViewObject.Visibility and not doc.FutureProfile.ViewObject.Visibility)
+        expected = {**before, sketch.Name: True}
+        check("Finish restores other visibility and reveals the accepted unused sketch",
+              panel.finish_sketch() and visibility(doc) == expected and sketch.ViewObject.Selectable)
+        check("History boundary remains unchanged after Finish and Cancel", doc.KurtShapeProject.KurtShapeRollbackIndex == before_rollback)
+        project = output / "earlier-sketch-colors-visibility.FCStd"
+        panel.core.settings.grant_destination(str(project))
+        call("save", path=str(project))
+        report["project"] = str(project)
+        report["check_count"] = len(report["checks"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        capture("failed-edit-state")
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    if panel:
+        panel.shutdown()
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["error"] = "Sketch edit state validation exceeded 90 seconds"
+    save()
+    cleanup()
+
+
+QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(1200, run)

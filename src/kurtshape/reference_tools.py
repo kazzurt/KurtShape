@@ -8,7 +8,7 @@ ARGS = {
     "fillet": {"id", "part", "edges", "radius"},
     "chamfer": {"id", "part", "edges", "size"},
     "shell": {"id", "part", "faces", "thickness", "reversed"},
-    "project_geometry": {"sketch", "references"},
+    "project_geometry": {"sketch", "references", "defining"},
 }
 
 
@@ -44,21 +44,8 @@ def handle(core, doc, req):
     from .core import OperationError, number
     op = req["op"]
     if op == "project_geometry":
-        sketch = core._profile(doc, req.get("sketch"))
-        refs = _references(doc, req.get("references"), "edge", None, before=sketch)
-        for index, reference in enumerate(refs):
-            source = doc.getObject(reference["feature"])
-            if source == sketch or sketch in source.OutListRecursive:
-                raise OperationError("cyclic_reference", "Projected geometry must precede its sketch")
-            slot = len(sketch.ExternalGeometry)
-            sketch.addExternal(source.Name, reference["subelement"])
-            if is_selector(req["references"][index]):
-                selectors.bind(sketch, "use_" + str(slot), selector_value(req["references"][index]),
-                               mode="external", index=slot)
-        core._recompute(doc)
-        if sketch.solve() != 0:
-            raise OperationError("constraint_conflict", "Projected geometry conflicts with sketch constraints")
-        return None
+        from .sketch_tools import project_geometry
+        return project_geometry(core, doc, req)
 
     body_request = dict(req)
     if "part" in req:

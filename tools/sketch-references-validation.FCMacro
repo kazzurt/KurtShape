@@ -1,0 +1,512 @@
+"""Sketch references workflow in an independent hidden native GUI process."""
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import time
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "tools"))
+sys.path.insert(0, str(root / "src"))
+from kurtshape_evidence import evidence_dir
+from kurtshape import ui, sketch_tools
+
+
+class NoTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("sketch-references")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "probe": [], "pid": os.getpid(), "engine": App.Version(),
+          "timings": [],
+          "method": "Production Panel, actual Qt keyboard/viewport clicks and native Sketcher geometry in a private hidden FreeCAD process; assistant transport disabled."}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=100):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+
+def call(op, **arguments):
+    result = panel.operation(op, **arguments)
+    assert result, panel.message.text()
+    wait(60)
+    return panel.document()
+
+
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(widget for widget in active.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible() and widget.width() > 300)
+
+
+def click(world, modifiers=QtCore.Qt.NoModifier, press=True):
+    gl = viewport()
+    pixel = Gui.activeDocument().activeView().getPointOnViewport(world)
+    ratio = gl.devicePixelRatioF()
+    position = QtCore.QPoint(round(pixel[0] / ratio), gl.height() - 1 - round(pixel[1] / ratio))
+    if press:
+        report["probe"].append({"stage": "click-hits", "world": str(world),
+            "pixel": list(pixel)})
+    assert gl.rect().contains(position), (world, position, gl.size())
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(position),
+                            QtCore.QPointF(gl.mapToGlobal(position)), QtCore.Qt.NoButton,
+                            QtCore.Qt.NoButton, modifiers)
+    app.sendEvent(gl, event)
+    wait(80)
+    if press:
+        QtTest.QTest.mouseClick(gl, QtCore.Qt.LeftButton, modifiers, position)
+    wait(140)
+    return gl
+
+
+def key(code):
+    gl = viewport()
+    gl.setFocus()
+    sketch = panel.active_sketch()
+    external_before = len(sketch_tools.external_links(sketch)) if sketch else None
+    profile_before = len(sketch.Shape.Edges) if sketch else None
+    started = time.perf_counter()
+    QtTest.QTest.keyClick(gl, code)
+    elapsed = (time.perf_counter() - started) * 1000
+    report["timings"].append({"action": "keyboard", "key": str(code), "elapsed_ms": round(elapsed, 3),
+        "external_before": external_before, "external_after": len(sketch_tools.external_links(sketch)) if sketch else None,
+        "profile_before": profile_before, "profile_after": len(sketch.Shape.Edges) if sketch else None})
+    wait(120)
+
+
+def clear_hover(sketch):
+    local_click(sketch, (-8, -8, 0), press=False)
+
+
+def local_click(sketch, xyz, **arguments):
+    return click(sketch.Placement.multVec(App.Vector(*xyz)), **arguments)
+
+
+def capture(stage):
+    wait(120)
+    main.grab().save(str(output / (stage + ".png")))
+    report.setdefault("screens", []).append(stage + ".png")
+    save()
+
+
+def constraint_menu(command):
+    menu = panel.tool_menus["Constraints"]
+    action = next(action for action in menu.actions() if action.data() == command)
+    button = panel.sketch_bar.widgetForAction(menu.menuAction())
+    check("Constraint toolbar menu is available", button.isVisible() and button.isEnabled())
+    def choose():
+        QtTest.QTest.mouseClick(menu, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, menu.actionGeometry(action).center())
+    QtCore.QTimer.singleShot(180, choose)
+    QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
+    wait(160)
+
+
+def selected(sketch, prefix):
+    return any(entry.Object == sketch and any(name.startswith(prefix) for name in entry.SubElementNames)
+               for entry in Gui.Selection.getSelectionEx())
+
+
+def constraint_details(sketch):
+    return [{"type": c.Type, "first": c.First, "first_pos": c.FirstPos, "second": c.Second,
+             "second_pos": c.SecondPos, "value": c.Value} for c in sketch.Constraints]
+
+
+def dimension(sketch, value, placement, before):
+    report["dimension_input"] = {"expected": value, "accepted": False}
+    QtCore.QTimer.singleShot(180, lambda: accept_dimension(value))
+    local_click(sketch, placement)
+    wait(120)
+    check("Native dimension dialog accepts " + str(value) + " mm", report["dimension_input"]["accepted"])
+    check("Dimension adds one native constraint", sketch.ConstraintCount == before + 1)
+    check("Native dimension drives the selected value", abs(sketch.Constraints[-1].Value - value) < 1e-7)
+    report["constraints"] = constraint_details(sketch)
+    save()
+    key(QtCore.Qt.Key_Escape)
+
+
+def probe(stage):
+    sketch = panel.active_sketch()
+    preselection = Gui.Selection.getPreselection()
+    report["probe"].append({"stage": stage,
+        "selection": [(entry.ObjectName, list(entry.SubElementNames)) for entry in Gui.Selection.getSelectionEx()],
+        "preselection": [getattr(preselection, "ObjectName", ""), list(getattr(preselection, "SubElementNames", []))],
+        "geometry": [str(g) for g in sketch.Geometry] if sketch else [],
+        "external": [(entry.Name, list(names)) for entry, names in sketch.ExternalGeometry] if sketch else [],
+        "geometry_count": sketch.GeometryCount if sketch else None,
+        "message": panel.message.text(),
+        "widgets": [{"class": w.metaObject().className(), "text": w.text() if hasattr(w, "text") else "", "object": w.objectName()}
+                    for w in app.allWidgets() if w.isVisible() and isinstance(w, (QtWidgets.QLineEdit, QtWidgets.QAbstractSpinBox, QtWidgets.QDialog, QtWidgets.QPushButton))]})
+    save()
+
+
+def accept_dimension(value):
+    dialog = app.activeModalWidget()
+    if not dialog:
+        QtCore.QTimer.singleShot(100, lambda: accept_dimension(value))
+        return
+    report["probe"].append({"stage": "dimension-dialog", "class": dialog.metaObject().className(),
+        "widgets": [{"class": w.metaObject().className(), "text": w.text() if hasattr(w, "text") else "", "object": w.objectName()}
+                    for w in dialog.findChildren(QtWidgets.QWidget)]})
+    edits = [w for w in dialog.findChildren(QtWidgets.QLineEdit) if w.isVisible() and w.isEnabled()]
+    if edits:
+        edits[0].setText(str(value) + " mm")
+        QtTest.QTest.keyClick(edits[0], QtCore.Qt.Key_Return)
+        report["dimension_input"]["accepted"] = True
+    else:
+        dialog.accept()
+    save()
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        call("new", name="Sketch edge reference validation")
+        doc = call("sketch_rectangle", id="BaseProfile", width=40, height=30)
+        call("pad", id="Base", profile="BaseProfile", length=8)
+        Gui.activeDocument().activeView().viewAxonometric()
+        panel.fit()
+        wait(150)
+        top = max(enumerate(doc.Base.Shape.Faces, 1), key=lambda pair: pair[1].CenterOfMass.z)
+        Gui.Selection.clearSelection()
+        click(top[1].CenterOfMass)
+        check("Actual viewport face click selects the body support", any(
+            entry.Object == doc.Base and "Face" + str(top[0]) in entry.SubElementNames
+            for entry in Gui.Selection.getSelectionEx()))
+        panel.start_sketch()
+        wait(150)
+        sketch = panel.active_sketch()
+        check("Sketch begins on selected body face", bool(sketch) and abs(sketch.Placement.Base.z - 8) < 1e-7)
+        panel.normal()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(70)
+        wait(150)
+        edges = [("Edge" + str(i), e) for i, e in enumerate(doc.Base.Shape.Edges, 1)]
+        horizontal = next((name, edge) for name, edge in edges if abs(edge.CenterOfMass.z - 8) < 1e-6 and abs(edge.CenterOfMass.y) < 1e-6)
+        vertical = next((name, edge) for name, edge in edges if abs(edge.CenterOfMass.z - 8) < 1e-6 and abs(edge.CenterOfMass.x) < 1e-6)
+        untouched = next((name, edge) for name, edge in edges if abs(edge.CenterOfMass.z - 8) < 1e-6 and abs(edge.CenterOfMass.x - 40) < 1e-6)
+        lower = next((name, edge) for name, edge in edges if abs(edge.CenterOfMass.z) < 1e-6 and abs(edge.CenterOfMass.y - 30) < 1e-6)
+        Gui.Selection.clearSelection()
+        click(horizontal[1].CenterOfMass)
+        check("Actual face-edge click selects its source without changing the sketch", not sketch_tools.external_links(sketch) and any(
+            entry.Object == doc.Base and horizontal[0] in entry.SubElementNames for entry in Gui.Selection.getSelectionEx()))
+        key(QtCore.Qt.Key_U)
+        check("U converts the preselected body edge immediately", len(sketch_tools.external_links(sketch)) == 1)
+        check("Preselected Use geometry participates in the sketch profile", len(sketch.Shape.Edges) == 1)
+        check("Use keeps its projected edge selected for the next hover", selected(sketch, "ExternalEdge1"))
+        click(vertical[1].CenterOfMass, press=False)
+        probe("hovered-body-edge-before-use")
+        check("A real model-edge hover displays an edge highlight", panel.sketch_references.hover_source == (doc.Base, vertical[0]) and panel.sketch_references.hover_node is not None)
+        capture("hover-body-edge-before-u")
+        key(QtCore.Qt.Key_U)
+        check("Hover then U converts the highlighted edge without a mouse click", len(sketch_tools.external_links(sketch)) == 2 and not panel.sketch_references.picking)
+        check("Hovered Use geometry is defining and keeps its native source link", len(sketch.Shape.Edges) == 2 and any(
+            source == doc.Base and vertical[0] in names for source, names in sketch.ExternalGeometry))
+        check("Hover conversion keeps the newly projected edge selected", selected(sketch, "ExternalEdge2"))
+        panel.isometric()
+        wait(180)
+        click(lower[1].CenterOfMass, press=False)
+        check("A second consecutive hover highlights an out-of-plane model edge", panel.sketch_references.hover_source == (doc.Base, lower[0]))
+        key(QtCore.Qt.Key_U)
+        check("Consecutive hover then U converts a different edge without clearing selection", len(sketch_tools.external_links(sketch)) == 3
+              and len(sketch.Shape.Edges) == 3 and selected(sketch, "ExternalEdge3") and not panel.sketch_references.picking)
+        panel.normal()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(70)
+        Gui.Selection.clearSelection()
+        click(untouched[1].CenterOfMass, press=False)
+        check("Hovering another body edge prepares a new source", panel.sketch_references.hover_source == (doc.Base, untouched[0]))
+        app.sendEvent(viewport(), QtCore.QEvent(QtCore.QEvent.Leave))
+        wait(80)
+        check("Leaving the viewport clears the cached source and highlight", panel.sketch_references.hover_source is None and panel.sketch_references.hover_node is None)
+        key(QtCore.Qt.Key_U)
+        check("U after leaving the viewport cannot convert a stale hovered edge", len(sketch_tools.external_links(sketch)) == 3 and bool(panel.sketch_references.picking))
+        key(QtCore.Qt.Key_Escape)
+        clear_hover(sketch)
+        key(QtCore.Qt.Key_U)
+        check("Moving to empty space clears stale hover and starts Use picking", bool(panel.sketch_references.picking) and len(sketch_tools.external_links(sketch)) == 3)
+        key(QtCore.Qt.Key_Escape)
+        panel.isometric()
+        wait(180)
+        clear_hover(sketch)
+        key(QtCore.Qt.Key_U)
+        check("U without a hovered or selected edge starts viewport Use picking", bool(panel.sketch_references.picking))
+        click(lower[1].CenterOfMass)
+        check("Tool-first Use reuses the out-of-plane source without duplicates", len(sketch_tools.external_links(sketch)) == 3 and selected(sketch, "ExternalEdge3"))
+        key(QtCore.Qt.Key_Escape)
+        projected = sketch.ExternalGeo[4]
+        lower_local = sketch.Placement.inverse().multVec(lower[1].CenterOfMass)
+        check("Out-of-plane Use projects orthogonally onto local z zero", abs(projected.StartPoint.z) < 1e-7 and abs(projected.EndPoint.z) < 1e-7
+              and abs((projected.StartPoint.y + projected.EndPoint.y) / 2 - lower_local.y) < 1e-7)
+        check("Projected Use retains the native source link", any(source == doc.Base and lower[0] in names for source, names in sketch.ExternalGeometry))
+        panel.normal()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(70)
+        Gui.Selection.clearSelection()
+        key(QtCore.Qt.Key_C)
+        for local in [(12, 12, 0), (15, 12, 0)]:
+            local_click(sketch, local)
+        key(QtCore.Qt.Key_Escape)
+        check("C and actual viewport clicks create a circle on the body face", sketch.GeometryCount == 1 and hasattr(sketch.Geometry[0], "Center"))
+        Gui.Selection.clearSelection()
+        click(sketch.Placement.multVec(sketch.Geometry[0].Center))
+        click(horizontal[1].CenterOfMass, modifiers=QtCore.Qt.ControlModifier)
+        check("Circle-center and used edge remain selected together", selected(sketch, "Vertex") and selected(sketch, "ExternalEdge"))
+        before_dimension = sketch.ConstraintCount
+        key(QtCore.Qt.Key_D)
+        report["native_dimension_cursor"] = {"shape": str(viewport().cursor().shape()),
+                                              "pixmap": not viewport().cursor().pixmap().isNull(),
+                                              "native_tool": panel.sketch_references.native_tool,
+                                              "cursor_widgets": len(panel.sketch_references.dimension_cursor_widgets),
+                                              "message": panel.message.text()}
+        save()
+        check("Selection-first D displays the dimension cursor",
+              viewport().cursor().shape() == QtCore.Qt.BitmapCursor)
+        dimension(sketch, 9, (23, 5, 0), before_dimension)
+        check("Circle-center offset references the used horizontal edge", sketch.Constraints[-1].Type in {"Distance", "DistanceY"} and min(sketch.Constraints[-1].First, sketch.Constraints[-1].Second) < -2)
+        check("The used-edge dimension positions the circle center", abs(sketch.Geometry[0].Center.y - 9) < 1e-6)
+
+        Gui.Selection.clearSelection()
+        key(QtCore.Qt.Key_C)
+        for local in [(34, 24, 0), (35, 24, 0)]:
+            local_click(sketch, local)
+        key(QtCore.Qt.Key_Escape)
+        check("A second native circle can dimension to an untouched model edge", sketch.GeometryCount == 2 and hasattr(sketch.Geometry[1], "Center"))
+        Gui.Selection.clearSelection()
+        click(sketch.Placement.multVec(sketch.Geometry[1].Center))
+        click(untouched[1].CenterOfMass, modifiers=QtCore.Qt.ControlModifier)
+        check("Circle-center and raw body-edge selection preserves the sketch", selected(sketch, "Vertex") and len(sketch_tools.external_links(sketch)) == 3 and any(
+            entry.Object == doc.Base and untouched[0] in entry.SubElementNames for entry in Gui.Selection.getSelectionEx()))
+        before_dimension = sketch.ConstraintCount
+        key(QtCore.Qt.Key_D)
+        check("Selection-first D imports only reference geometry", len(sketch_tools.external_links(sketch)) == 4 and len(sketch.Shape.Edges) == 5)
+        dimension(sketch, 4, (35, 20, 0), before_dimension)
+        check("Selection-first body-edge dimension positions the second center", abs(sketch.Geometry[1].Center.x - 36) < 1e-6)
+
+        Gui.Selection.clearSelection()
+        before_dimension = sketch.ConstraintCount
+        cursor_before = viewport().cursor()
+        key(QtCore.Qt.Key_D)
+        check("D immediately displays a dimension cursor before selecting geometry",
+              bool(panel.sketch_references.dimension_picking)
+              and not viewport().cursor().pixmap().isNull()
+              and viewport().cursor().hotSpot() == QtCore.QPoint(6, 6))
+        viewport().cursor().pixmap().save(str(output / "dimension-picking-cursor.png"))
+        key(QtCore.Qt.Key_Escape)
+        check("Escape restores the cursor and ends dimension picking",
+              not panel.sketch_references.dimension_picking
+              and not panel.sketch_references.dimension_cursor_widgets
+              and viewport().cursor().shape() == cursor_before.shape())
+        key(QtCore.Qt.Key_D)
+        QtTest.QTest.mouseClick(viewport(), QtCore.Qt.RightButton)
+        wait(100)
+        check("Right-click restores the cursor and ends dimension picking",
+              not panel.sketch_references.dimension_picking
+              and not panel.sketch_references.dimension_cursor_widgets
+              and viewport().cursor().shape() == cursor_before.shape())
+        key(QtCore.Qt.Key_D)
+        key(QtCore.Qt.Key_L)
+        check("Switching to a drawing tool releases the dimension cursor",
+              not panel.sketch_references.dimension_picking
+              and not panel.sketch_references.dimension_cursor_widgets)
+        key(QtCore.Qt.Key_Escape)
+        key(QtCore.Qt.Key_D)
+        check("D starts Dimension before geometry is selected", bool(panel.sketch_references.dimension_picking))
+        click(sketch.Placement.multVec(sketch.Geometry[0].Center))
+        probe("tool-first-dimension-center")
+        click(untouched[1].CenterOfMass)
+        probe("tool-first-dimension-edge")
+        report["dimension_stage"] = {"active": panel.sketch_references.dimension_picking, "refs": panel.sketch_references.dimension_refs}
+        check("Tool-first Dimension collects a center and existing body-edge reference", len(sketch_tools.external_links(sketch)) == 4 and not panel.sketch_references.dimension_picking)
+        check("Dimension cursor remains visible during native dimension placement",
+              bool(panel.sketch_references.dimension_cursor_widgets)
+              and viewport().cursor().shape() == QtCore.Qt.BitmapCursor)
+        dimension(sketch, 11, (25, 18, 0), before_dimension)
+        check("Body-edge reference produces a native horizontal offset", sketch.Constraints[-1].Type in {"Distance", "DistanceX"} and min(sketch.Constraints[-1].First, sketch.Constraints[-1].Second) < -2)
+        check("The body-edge dimension positions the circle center", abs(abs(sketch.Geometry[0].Center.x - 40) - 11) < 1e-6)
+        check("Edge imported for Dimension stays outside the profile", len(sketch.Shape.Edges) == 5)
+
+        Gui.Selection.clearSelection()
+        key(QtCore.Qt.Key_L)
+        for point in [(8, 18, 0), (22, 21, 0)]:
+            local_click(sketch, point)
+        key(QtCore.Qt.Key_Escape)
+        check("Native line drawing remains available with projected references", sketch.GeometryCount == 3)
+        line = sketch.Geometry[2]
+        midpoint = (line.StartPoint + line.EndPoint) * 0.5
+        Gui.Selection.clearSelection()
+        click(sketch.Placement.multVec(midpoint))
+        probe("parallel-line-selected")
+        click(horizontal[1].CenterOfMass, modifiers=QtCore.Qt.ControlModifier)
+        probe("parallel-line-and-edge-selected")
+        check("Line and used edge can be selected for another constraint", selected(sketch, "Edge3") and selected(sketch, "ExternalEdge"))
+        constraint_menu("Sketcher_ConstrainParallel")
+        wait(120)
+        check("Parallel applies to the used body edge", any(c.Type == "Parallel" and min(c.First, c.Second) < -2 for c in sketch.Constraints))
+        check("Parallel changes the native line orientation", abs(sketch.Geometry[2].EndPoint.y - sketch.Geometry[2].StartPoint.y) < 1e-6)
+        check("Sketch solver accepts dimensions and reference constraints", sketch.solve() == 0)
+        capture("circle-dimensions-and-parallel-used-edge")
+        accepted_geometry = sketch.GeometryCount
+        accepted_external = len(sketch_tools.external_links(sketch))
+        accepted_constraints = sketch.ConstraintCount
+        accepted_details = constraint_details(sketch)
+        editing = panel.core.sketch_edits[panel.core.identifier(doc)]
+        report["draft_history"] = {"before_undo": len(editing["undo"]), "pending": panel.core.observer.state(doc)["snapshot_pending"], "accepted_constraints": accepted_constraints}
+        panel.history_move("undo")
+        report["draft_history"].update(after_undo=len(editing["undo"]), constraints_after_undo=sketch.ConstraintCount, message=panel.message.text())
+        save()
+        check("Undo within the sketch removes the last reference constraint", sketch.ConstraintCount == accepted_constraints - 1)
+        panel.history_move("redo")
+        check("Redo within the sketch restores the reference constraint", sketch.ConstraintCount == accepted_constraints and constraint_details(sketch) == accepted_details)
+        sketch_name = sketch.Name
+        Gui.Selection.clearSelection()
+        key(QtCore.Qt.Key_D)
+        check("Finish accepts the face sketch with references", bool(panel.finish_sketch()))
+        check("Finish clears dimension picking and restores its viewport cursor",
+              not panel.sketch_references.dimension_picking
+              and not panel.sketch_references.dimension_cursor_widgets)
+        check("Finish leaves no pending native transaction", not doc.HasPendingTransaction)
+        panel.history_move("undo")
+        check("One document Undo removes the entire accepted sketch edit", doc.getObject(sketch_name).GeometryCount == 0 and not doc.getObject(sketch_name).ExternalGeometry)
+        panel.history_move("redo")
+        sketch = doc.getObject(sketch_name)
+        check("One document Redo restores all geometry, references and constraints", sketch.GeometryCount == accepted_geometry and len(sketch_tools.external_links(sketch)) == accepted_external and sketch.ConstraintCount == accepted_constraints)
+
+        panel.select_feature(sketch_name)
+        panel.edit_sketch()
+        panel.isometric()
+        panel.normal()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(70)
+        Gui.Selection.clearSelection()
+        clear_hover(sketch)
+        key(QtCore.Qt.Key_U)
+        cancel_edge = next((name, edge) for name, edge in edges if abs(edge.CenterOfMass.z - 8) < 1e-6 and abs(edge.CenterOfMass.y - 30) < 1e-6)
+        click(cancel_edge[1].CenterOfMass)
+        probe("cancel-reference-added")
+        report["cancel_projection"] = {"message": panel.message.text(), "last_failure": panel.core.last_failures.get(panel.core.identifier(doc))}
+        key(QtCore.Qt.Key_Escape)
+        check("A later edit can add the visible top edge as another reference", not panel.sketch_references.picking and len(sketch_tools.external_links(sketch)) == accepted_external + 1)
+        check("Reopened viewport picking chooses the front model boundary", any(source == doc.Base and cancel_edge[0] in names for source, names in sketch.ExternalGeometry))
+        Gui.Selection.clearSelection()
+        key(QtCore.Qt.Key_C)
+        for point in [(23, 23, 0), (25, 23, 0)]:
+            local_click(sketch, point)
+        key(QtCore.Qt.Key_Escape)
+        check("Cancel fixture contains newly drawn geometry", sketch.GeometryCount == accepted_geometry + 1)
+        check("Cancel restores accepted geometry and source references", bool(panel.finish_sketch(cancel=True)) and sketch.GeometryCount == accepted_geometry and len(sketch_tools.external_links(sketch)) == accepted_external and sketch.ConstraintCount == accepted_constraints)
+        check("Cancel leaves no transaction or discarded Redo", not doc.HasPendingTransaction and not doc.RedoCount)
+
+        project = output / "face-sketch-references.FCStd"
+        panel.core.settings.grant_destination(str(project))
+        call("save", path=str(project))
+        report["project"] = str(project)
+        call("open", path=str(project))
+        reopened = panel.document().getObject(sketch_name)
+        check("Saved project reopens all projected source links", reopened.GeometryCount == accepted_geometry and len(sketch_tools.external_links(reopened)) == accepted_external)
+        check("Saved project reopens native dimension and parallel constraints", reopened.ConstraintCount == accepted_constraints and constraint_details(reopened) == accepted_details and reopened.solve() == 0)
+        report["constraints"] = constraint_details(reopened)
+        call("set_parameter", feature="BaseProfile", parameter="Width", value=50)
+        updated = panel.document().getObject(sketch_name)
+        check("Changing the upstream plate width updates the converted edge", abs(updated.ExternalGeo[2].length() - 50) < 1e-6)
+        check("Upstream changes preserve circle-center dimensions to body edges", abs(updated.Geometry[0].Center.x - 39) < 1e-6 and abs(updated.Geometry[0].Center.y - 9) < 1e-6
+              and abs(updated.Geometry[1].Center.x - 46) < 1e-6 and constraint_details(updated) == accepted_details and updated.solve() == 0)
+        updated_project = output / "face-sketch-references-source-updated.FCStd"
+        panel.core.settings.grant_destination(str(updated_project))
+        call("save", path=str(updated_project))
+        report["upstream_project"] = str(updated_project)
+        panel.select_feature(sketch_name)
+        panel.edit_sketch()
+        before_missing = constraint_details(updated)
+        missing = panel.operation("project_geometry", sketch=sketch_name,
+                                  references=[{"feature": "MissingProjectionSource", "subelement": "Edge1"}])
+        check("A missing projection source produces an explicit error", not missing and any(word in panel.message.text().lower() for word in ("missing", "exist", "reference")))
+        report["missing_source"] = {"message": panel.message.text(), "failure": panel.core.last_failures.get(panel.core.identifier(panel.document()))}
+        check("Missing-source rejection preserves all accepted geometry and dimensions", updated.GeometryCount == accepted_geometry
+              and len(sketch_tools.external_links(updated)) == accepted_external and constraint_details(updated) == before_missing and updated.solve() == 0)
+        check("Cancel remains available after a rejected projection", bool(panel.finish_sketch(cancel=True)))
+        conversions = [entry["elapsed_ms"] for entry in report["timings"] if entry["key"] == str(QtCore.Qt.Key_U)
+                       and (entry["external_before"] != entry["external_after"] or entry["profile_before"] != entry["profile_after"])]
+        report["performance"] = {"conversion_dispatch_ms": conversions, "max_conversion_dispatch_ms": max(conversions), "budget_ms": 2000,
+            "method": "Synchronous actual U key dispatch for conversions, excluding artificial QTest waits; this is a bound, not a comparative benchmark."}
+        check("Simple body-edge conversions stay within the responsiveness bound", max(conversions) < 2000)
+        report["check_count"] = len(report["checks"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        capture("failed-reference-workflow")
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    if panel:
+        panel.shutdown()
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["error"] = "Sketch references validation exceeded 90 second bound"
+    save()
+    cleanup()
+
+
+QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(1200, run)

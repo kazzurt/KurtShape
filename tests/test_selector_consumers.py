@@ -236,6 +236,54 @@ class SelectorConsumerTests(unittest.TestCase):
         self.assertAlmostEqual(self.doc.Supported.Placement.Base.z, 6)
         self.assert_healthy(self.doc.Supported)
 
+    def test_face_extrusion_selector_rebinds_after_cap_renumbering(self):
+        self.call("extrude_face", id="SelectedRaise", face=self.cap(), length=2)
+        binder = self.doc.SelectedRaiseTool.Base
+        before = binder.Support[0][1][0]
+        self.call("add_circle", sketch="Plate", x=10, y=6, diameter=2)
+        after = binder.Support[0][1][0]
+        self.assertNotEqual(before, after)
+        self.assert_healthy(binder)
+        self.assertTrue(studio.current_part(self.doc, "Body").Shape.isValid())
+        self.assertAlmostEqual(studio.current_part(self.doc, "Body").Shape.BoundBox.ZMax, 8)
+        self.call("set_parameter", feature="Pad", parameter="Length", value=9)
+        self.assertAlmostEqual(studio.current_part(self.doc, "Body").Shape.BoundBox.ZMax, 11)
+
+    def test_plane_and_mirror_selectors_keep_native_links_after_reopen(self):
+        self.call("create_plane", id="TopDatum", support=self.cap(), offset=3)
+        self.assert_healthy(self.doc.TopDatum)
+        self.call("mirror_parts", id="PlaneMirror", parts=["Body"], plane={"feature": "TopDatum"})
+        self.call("set_parameter", feature="Pad", parameter="Length", value=8)
+        self.assertAlmostEqual(self.doc.TopDatum.Placement.Base.z, 11)
+        self.assertAlmostEqual(studio.current_part(self.doc, "PlaneMirrorPart").Shape.BoundBox.ZMin, 14)
+        destination = support.scratch(self, prefix="selected-plane-face-native-persistence-")
+        path = destination / "selected-plane-mirror.FCStd"
+        self.call("save", path=str(path))
+        App.closeDocument(self.doc.Name)
+        self.call("open", path=str(path))
+        self.call("rebuild")
+        self.assert_healthy(self.doc.TopDatum)
+        self.assertEqual(self.doc.PlaneMirror.MirrorPlane[0].AttachmentSupport[0][0], self.doc.TopDatum)
+        self.assertAlmostEqual(studio.current_part(self.doc, "PlaneMirrorPart").Shape.BoundBox.ZMin, 14)
+        script = (
+            "import sys,json;sys.path.insert(0," + repr(str(ROOT / "src")) + ");"
+            "import FreeCAD as A;from kurtshape import studio;"
+            "d=A.openDocument(" + repr(str(path)) + ");"
+            "[o.touch() for o in d.Objects if o.TypeId.startswith(('Part::','PartDesign::','Sketcher::'))];"
+            "studio.prepare_recompute(d);d.recompute();"
+            "assert d.PlaneMirror.MirrorPlane[0].AttachmentSupport[0][0]==d.TopDatum;"
+            "p=studio.current_part(d,'PlaneMirrorPart');"
+            "assert p.Shape.isValid() and abs(p.Shape.BoundBox.ZMin-14)<1e-7;"
+            "d.Pad.Length=10;d.recompute();"
+            "assert abs(d.TopDatum.Placement.Base.z-13)<1e-7;"
+            "assert abs(p.Shape.BoundBox.ZMin-16)<1e-7;"
+            "print(json.dumps({'fresh_process':True,'forced_recompute':True,'native_plane_link':True}));"
+            "A.closeDocument(d.Name)"
+        )
+        process = support.run_native_proof([sys.executable, "-B", "-c", script], capture_output=True, text=True,
+                                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), timeout=30)
+        self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

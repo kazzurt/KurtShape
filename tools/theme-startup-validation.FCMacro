@@ -1,0 +1,242 @@
+"""Diagnose actual native dark-theme startup in a new isolated GUI process."""
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "tools"))
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+from kurtshape.theme import COLORS, STYLESHEET
+from kurtshape_evidence import evidence_dir
+
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+
+class HiddenWindows(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() == QtCore.QEvent.Polish and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+ui.Bridge = NoTransport
+app = QtGui.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.show()
+hidden = HiddenWindows(app)
+app.installEventFilter(hidden)
+output = evidence_dir("theme-startup")
+output.mkdir(parents=True, exist_ok=True)
+panel = None
+report = {"passed": False, "checks": [], "snapshots": [], "screens": [],
+          "method": "Bundled FreeCAD Dark pack loaded before GUI initialization; real native sketch/report widgets, theme reload and settings clicks in hidden isolated process",
+          "limits": "Native palette/fragment/render checks at actual desktop DPI; no inspection or manipulation of the user's running window"}
+
+
+def check(name, condition):
+    assert condition, name
+    report["checks"].append(name)
+
+
+def contrast(first, second):
+    def luminance(color):
+        values = [color.redF(), color.greenF(), color.blueF()]
+        linear = [value / 12.92 if value <= .04045 else ((value + .055) / 1.055) ** 2.4 for value in values]
+        return sum(a * b for a, b in zip((.2126, .7152, .0722), linear))
+    light, dark = sorted((luminance(first), luminance(second)), reverse=True)
+    return (light + .05) / (dark + .05)
+
+
+def rgba_color(value):
+    return QtGui.QColor((value >> 24) & 255, (value >> 16) & 255, (value >> 8) & 255)
+
+
+def capture(name, widget):
+    pixmap = widget.grab()
+    path = output / (name + ".png")
+    check(name + " actual native widget capture saved", pixmap.save(str(path)))
+    report["screens"].append({"file": path.name, "device_pixel_ratio": pixmap.devicePixelRatio(),
+                              "logical_size": [widget.width(), widget.height()]})
+
+
+def check_report_fragment(widget, phrase):
+    block = widget.document().begin()
+    matches = []
+    while block.isValid():
+        iterator = block.begin()
+        while not iterator.atEnd():
+            fragment = iterator.fragment()
+            if fragment.isValid() and phrase in fragment.text():
+                matches.append(fragment.charFormat().foreground().color())
+            iterator += 1
+        block = block.next()
+    check("Inherited report text is preserved and readable", bool(matches)
+          and all(contrast(color, QtGui.QColor("white")) >= 4.5 for color in matches))
+
+
+def check_rendered_report_formats(widget):
+    colors = []
+    block = widget.document().begin()
+    while block.isValid():
+        for item in block.layout().formats():
+            if item.length and block.text()[item.start:item.start + item.length].strip():
+                color = item.format.foreground().color()
+                colors.append({"foreground": color.name(), "contrast": contrast(color, QtGui.QColor("white")),
+                               "text": block.text()[item.start:item.start + item.length][:100]})
+        block = block.next()
+    report["retained_native_report_formats"] = colors
+    check("Retained native highlighter warning/error/text formats are readable", bool(colors)
+          and all(item["contrast"] >= 4.5 for item in colors))
+
+
+def record(label):
+    general = App.ParamGet("User parameter:BaseApp/Preferences/MainWindow")
+    report["snapshots"].append({"state": label, "native_theme": general.GetString("Theme"),
+        "app_css_length": len(app.styleSheet()), "main_css_length": len(main.styleSheet()),
+        "window_text": app.palette().color(QtGui.QPalette.WindowText).name(),
+        "window": app.palette().color(QtGui.QPalette.Window).name(),
+        "edited_edge": hex(App.ParamGet("User parameter:BaseApp/Preferences/View").GetUnsigned("EditedEdgeColor")),
+        "cursor_text": hex(App.ParamGet("User parameter:BaseApp/Preferences/View").GetUnsigned("CursorTextColor")),
+        "report_text": hex(App.ParamGet("User parameter:BaseApp/Preferences/OutputWindow").GetUnsigned("colorText")),
+    })
+
+
+def validate():
+    global panel
+    try:
+        record("native startup")
+        view_prefs = App.ParamGet("User parameter:BaseApp/Preferences/View")
+        native = App.ParamGet("User parameter:BaseApp/Preferences/MainWindow")
+        check("Actual saved native dark theme is reproduced", native.GetString("Theme") == "FreeCAD Dark")
+        check("Inherited pale sketch text conflicts with white canvas",
+              contrast(rgba_color(view_prefs.GetUnsigned("CursorTextColor")), QtGui.QColor("white")) < 3)
+        preserved = {key: view_prefs.GetUnsigned(key) for key in ("DefaultShapeColor", "SelectionColor", "HighlightColor")}
+        native_report = next((widget for widget in main.findChildren(QtGui.QTextEdit)
+                              if widget.metaObject().className() == "Gui::DockWnd::ReportOutput"), None)
+        check("Actual native ReportOutput is available", native_report is not None)
+        report["native_highlighters"] = [{"class": item.metaObject().className(),
+            "methods": [str(item.metaObject().method(index).methodSignature().data().decode())
+                        for index in range(item.metaObject().methodCount())]}
+            for item in native_report.findChildren(QtGui.QSyntaxHighlighter)]
+        phrase = "Inherited native report readability fixture"
+        old_text = App.ParamGet("User parameter:BaseApp/Preferences/OutputWindow").GetUnsigned("colorText")
+        native_report.setTextColor(rgba_color(old_text))
+        native_report.append(phrase)
+        report["initial_report_format_colors"] = []
+        block = native_report.document().begin()
+        while block.isValid():
+            report["initial_report_format_colors"].extend({"color": item.format.foreground().color().name(),
+                "text": block.text()[item.start:item.start + item.length][:80]} for item in block.layout().formats())
+            block = block.next()
+        record("before light correction")
+        panel = ui.start()
+        panel.timer.stop()
+        panel.recovery_timer.stop()
+        record("immediately after shell")
+        QtTest.QTest.qWait(5000)
+        record("after native deferred startup")
+        check("Native profile now records FreeCAD Light", native.GetString("Theme") == "FreeCAD Light")
+        check("Owned application CSS survives deferred native startup", app.styleSheet() == STYLESHEET and not main.styleSheet())
+        check("Model default and selection preferences are preserved",
+              preserved == {key: view_prefs.GetUnsigned(key) for key in preserved})
+        for key in ("CursorTextColor", "SketchEdgeColor", "EditedEdgeColor", "CreateLineColor"):
+            check(key + " is readable on white canvas", contrast(rgba_color(view_prefs.GetUnsigned(key)), QtGui.QColor("white")) >= 4.5)
+        check_report_fragment(native_report, phrase)
+        check_rendered_report_formats(native_report)
+
+        # Reproduce FreeCAD's later stylesheet replacement without polling.
+        app.setStyleSheet("QWidget { color: white; background: #191919; }")
+        QtTest.QTest.qWait(250)
+        check("Delayed native stylesheet replacement is repaired", app.styleSheet() == STYLESHEET)
+        hostile = QtGui.QPalette(app.palette())
+        hostile.setColor(QtGui.QPalette.Text, QtGui.QColor("white"))
+        hostile.setColor(QtGui.QPalette.Base, QtGui.QColor("#191919"))
+        app.setPalette(hostile)
+        QtTest.QTest.qWait(250)
+        check("Input palette changes recover even with unchanged WindowText",
+              app.palette().color(QtGui.QPalette.Text).name() == COLORS["ink"]
+              and app.palette().color(QtGui.QPalette.Base).name() == COLORS["surface"])
+        capture("light-shell-after-dark-profile", main)
+
+        response = panel.operation("new", name="Native theme readability fixture")
+        check("Private model fixture created", bool(response))
+        doc = panel.document()
+        check("Native sketch fixture created", bool(panel.operation("sketch_rectangle", id="Profile", width=30, height=20)))
+        check("Native solid fixture created", bool(panel.operation("pad", id="Base", profile="Profile", length=8)))
+        before = doc.Profile.Shape.exportBrepToString()
+        before_solid = doc.Base.Shape.exportBrepToString()
+        panel.maximize_document_view()
+        panel.isometric()
+        panel.fit()
+        panel.select_feature("Profile")
+        panel.edit_sketch()
+        panel.fit()
+        QtTest.QTest.qWait(200)
+        check("Actual native sketch edit remains available", panel.active_sketch() == doc.Profile)
+        capture("native-sketch-readable", main)
+        panel.finish_sketch(cancel=True)
+        check("Theme recovery preserves sketch and solid geometry", before == doc.Profile.Shape.exportBrepToString()
+              and before_solid == doc.Base.Shape.exportBrepToString())
+
+        panel.messages_dock.show()
+        report_dock = main.findChild(QtGui.QDockWidget, "Report view")
+        report_dock.setFloating(True)
+        report_dock.resize(660, 300)
+        report_dock.show()
+        QtTest.QTest.qWait(120)
+        App.Console.PrintMessage("New native report text after light correction\n")
+        QtTest.QTest.qWait(200)
+        native_report.verticalScrollBar().setValue(native_report.verticalScrollBar().maximum())
+        capture("native-report-readable", native_report)
+        check_report_fragment(native_report, phrase)
+        check_report_fragment(native_report, "New native report text after light correction")
+        check_rendered_report_formats(native_report)
+        panel.workspace_preferences.show()
+        settings = panel.workspace_preferences.dialog
+        QtTest.QTest.qWait(120)
+        appearance = settings.findChild(QtGui.QLabel, "KurtShapeAppearance")
+        restore = settings.findChild(QtGui.QPushButton, "KurtShapeRestoreLightAppearance")
+        check("Settings exposes the active light appearance", appearance is not None and appearance.text() == "Light (Onshape)")
+        capture("appearance-settings", settings)
+        QtTest.QTest.mouseClick(restore, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(250)
+        check("Actual Restore light appearance button succeeds", panel.message.text() == "Light appearance restored")
+        check("Restore retains model BRep and owned styling", before == doc.Profile.Shape.exportBrepToString()
+              and before_solid == doc.Base.Shape.exportBrepToString() and app.styleSheet() == STYLESHEET)
+        check_report_fragment(native_report, phrase)
+        settings.reject()
+        record("final")
+        report["passed"] = True
+    except Exception:
+        report["traceback"] = traceback.format_exc()
+    finally:
+        if panel is not None:
+            if panel.active_sketch():
+                panel.finish_sketch(cancel=True)
+            if panel.workspace_preferences.dialog:
+                panel.workspace_preferences.dialog.reject()
+            panel.shutdown()
+            main.destroyed.disconnect(panel.shutdown)
+        for name in list(App.listDocuments()):
+            App.closeDocument(name)
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        QtCore.QTimer.singleShot(100, main.close)
+        QtCore.QTimer.singleShot(300, app.quit)
+
+
+QtCore.QTimer.singleShot(200, validate)

@@ -1,0 +1,293 @@
+"""Native circle origin snapping through real Qt clicks in an isolated GUI."""
+import hashlib
+import math
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("sketch-origin-snap")
+report = {"passed": False, "checks": [], "samples": [], "engine": App.Version(),
+          "source_sha256": {name: hashlib.sha256((root / "src/kurtshape" / name).read_bytes()).hexdigest()
+                            for name in ("ui.py", "sketch_snapping.py", "sketch_tools.py")},
+          "method": "Production sketch edit, native Circle command, actual Qt clicks near origin, inspect native coincidence and radius DOF; isolated hidden GUI."}
+panel = None
+cleaned = False
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+def wait(ms=90): QtTest.QTest.qWait(ms)
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(widget for widget in active.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible() and widget.width() > 300)
+
+def pixel(sketch, xyz):
+    point = Gui.activeDocument().activeView().getPointOnViewport(sketch.Placement.multVec(App.Vector(*xyz)))
+    ratio = viewport().devicePixelRatioF()
+    return QtCore.QPoint(round(point[0]/ratio), viewport().height()-1-round(point[1]/ratio))
+
+def click(point, modifiers=QtCore.Qt.NoModifier):
+    gl = viewport()
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point),
+                             QtCore.QPointF(gl.mapToGlobal(point)), QtCore.Qt.NoButton,
+                             QtCore.Qt.NoButton, modifiers)
+    app.sendEvent(gl, event)
+    wait()
+    QtTest.QTest.mouseClick(gl, QtCore.Qt.LeftButton, modifiers, point)
+    wait()
+
+def marker_state(point):
+    from pivy import coin
+    view = Gui.activeDocument().activeView()
+    renderer = view.getViewer().getSoRenderManager()
+    search = coin.SoSearchAction()
+    search.setType(coin.SoPointSet.getClassTypeId(), True)
+    search.setInterest(coin.SoSearchAction.ALL)
+    search.apply(renderer.getSceneGraph())
+    markers = []
+    for path in search.getPaths():
+        name = str(path.getTail().getName())
+        if name == "OriginPointSet" or name.startswith("PointSet"):
+            markers.append([name, str(path.getNode(path.getLength()-2).getName())])
+    region = renderer.getViewportRegion()
+    size = region.getViewportSizePixels()
+    dpr = viewport().devicePixelRatioF()
+    x, y = int(point.x()*dpr), int((viewport().height()-point.y()-1)*dpr)
+    pick = coin.SoRayPickAction(region)
+    pick.setPoint(coin.SbVec2s(x, y))
+    pick.setRadius(13.5)
+    pick.setPickAll(True)
+    pick.apply(renderer.getSceneGraph())
+    hits = []
+    volume = renderer.getCamera().getViewVolume(region.getViewportAspectRatio())
+    for hit in pick.getPickedPointList():
+        name = str(hit.getPath().getTail().getName())
+        if name != "OriginPointSet" and not name.startswith("PointSet"): continue
+        screen = volume.projectToScreen(hit.getPoint())
+        hits.append({"name": name, "point": list(hit.getPoint().getValue()),
+                     "object_point": list(hit.getObjectPoint().getValue()),
+                     "distance": math.hypot(screen[0]*size[0]-x, screen[1]*size[1]-y)})
+    return {"markers": markers, "hits": hits, "priority_active": panel.sketch_snapping._origin is not None}
+
+def sample(mode, offset, oblique=False, modifier=None, expect_origin=True):
+    panel.begin_sketch(plane="XY")
+    sketch = panel.active_sketch()
+    panel.normal()
+    view = Gui.activeDocument().activeView()
+    if oblique:
+        view.setCameraOrientation(App.Rotation(App.Vector(1, 0, 0), 35).Q)
+    view.getCameraNode().height.setValue(80)
+    wait()
+    snapping = panel.sketch_snapping
+    production_sync = snapping.sync_tool
+    production_begin = snapping.begin
+    if mode == "baseline":
+        snapping.restore()
+        snapping.sync_tool = lambda command: None
+        snapping.begin = lambda *args: None
+        App.ParamGet("User parameter:BaseApp/Preferences/View").SetFloat("PickRadius", 5.0)
+    panel.native_command("Sketcher_CreateCircle")
+    modifiers = QtCore.Qt.ControlModifier if modifier == "Control" else QtCore.Qt.NoModifier
+    if modifier:
+        QtTest.QTest.keyPress(viewport(), QtCore.Qt.Key_Control)
+    click(pixel(sketch, (0, 0, 0)) + QtCore.QPoint(*offset), modifiers)
+    click(pixel(sketch, (12, 8, 0)), modifiers)
+    if modifier:
+        QtTest.QTest.keyRelease(viewport(), QtCore.Qt.Key_Control)
+    panel.native_command("Sketcher_StopOperation")
+    wait()
+    entry = {"mode": mode, "offset": offset, "oblique": oblique, "modifier": modifier, "geometry_count": sketch.GeometryCount,
+             "constraints": [[c.Type, c.First, c.FirstPos, c.Second, c.SecondPos] for c in sketch.Constraints],
+             "center": tuple(sketch.Geometry[0].Center) if sketch.GeometryCount else None,
+             "fully_constrained": sketch.FullyConstrained,
+             "device_pixel_ratio": viewport().devicePixelRatioF()}
+    report["samples"].append(entry)
+    save()
+    if mode == "enhanced" and not modifier and expect_origin:
+        check("Native circle center is exactly at origin " + str(offset) + (" oblique" if oblique else ""),
+              sketch.GeometryCount == 1 and sketch.Geometry[0].Center.Length < 1e-7)
+        check("Origin is a two-coordinate coincidence " + str(offset) + (" oblique" if oblique else ""),
+              any(c.Type == "Coincident" and c.First == 0 and c.FirstPos == 3 and c.Second == -1 and c.SecondPos == 1
+                  for c in sketch.Constraints))
+        check("Circle radius remains editable " + str(offset) + (" oblique" if oblique else ""), not sketch.FullyConstrained)
+    if mode == "enhanced":
+        check("Stop restores original native marker pick order " + str(offset) + str(modifier), snapping._origin is None)
+    if mode == "enhanced" and not expect_origin:
+        check("Outside origin aperture center stays where clicked", sketch.Geometry[0].Center.Length > 1.0)
+        check("Outside origin aperture no origin coincidence is added", not any(c.Type == "Coincident" for c in sketch.Constraints))
+    snapping.sync_tool = production_sync
+    snapping.begin = production_begin
+    panel.finish_sketch(cancel=True)
+    wait()
+    return entry
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        wait(150)
+        App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher").SetBool("ContinuousCreationMode", False)
+        for offset in ((0, 0), (7, 1), (1, 7), (6, 5)):
+            baseline = sample("baseline", offset)
+            if offset in ((7, 1), (1, 7)):
+                check("Five-pixel native baseline reproduces axis-only origin snap " + str(offset),
+                      any(c[0] == "PointOnObject" for c in baseline["constraints"])
+                      and not any(c[0] == "Coincident" for c in baseline["constraints"]))
+        for offset in ((0, 0), (7, 1), (1, 7), (6, 5)):
+            sample("enhanced", offset)
+        sample("enhanced", (0, 0), oblique=True)
+        sample("enhanced", (7, 1), oblique=True)
+        sample("enhanced", (1, 7), oblique=True)
+        sample("enhanced", (30, 25), expect_origin=False)
+        baseline_control = sample("baseline", (0, 0), modifier="Control")
+        enhanced_control = sample("enhanced", (0, 0), modifier="Control")
+        check("Native Control circle behavior is preserved", baseline_control["constraints"] == enhanced_control["constraints"])
+        panel.begin_sketch(plane="XY")
+        panel.native_command("Sketcher_CreateCircle")
+        check("Drawing installs scoped native origin priority", panel.sketch_snapping._origin is not None)
+        QtTest.QTest.keyClick(viewport(), QtCore.Qt.Key_Escape)
+        wait(600)
+        check("Escape removes origin priority before selection", panel.sketch_snapping._origin is None)
+        panel.native_command("Sketcher_CreateLine")
+        QtTest.QTest.mouseClick(viewport(), QtCore.Qt.RightButton)
+        wait(600)
+        check("Right click removes origin priority before selection", panel.sketch_snapping._origin is None)
+        panel.native_command("Sketcher_Dimension")
+        check("Dimension keeps native marker pick order", panel.sketch_snapping._origin is None)
+        panel.native_command("Sketcher_StopOperation")
+        panel.finish_sketch(cancel=True)
+        prefs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher")
+        prefs.SetBool("ContinuousCreationMode", True)
+        panel.begin_sketch(plane="XY")
+        sketch = panel.active_sketch()
+        panel.normal()
+        view = Gui.activeDocument().activeView()
+        view.setCameraOrientation(App.Rotation(App.Vector(1, 0, 0), 35).Q)
+        view.getCameraNode().height.setValue(80)
+        panel.native_command("Sketcher_CreateCircle")
+        report["repeated_creation"] = []
+        for offset, radius in [((7, 1), (12, 8, 0)), ((-6, 1), (19, 11, 0))]:
+            center_pixel = pixel(sketch, (0, 0, 0)) + QtCore.QPoint(*offset)
+            before_center = marker_state(center_pixel)
+            click(center_pixel)
+            pre = Gui.Selection.getPreselection()
+            entry = {"offset": offset, "center_preselection": [getattr(pre, "ObjectName", ""), list(getattr(pre, "SubElementNames", []))],
+                     "center_pick_radius": view.getViewer().getPickRadius(), "before_center": before_center,
+                     "after_center": marker_state(center_pixel)}
+            click(pixel(sketch, radius))
+            entry.update({"geometry": [str(g) for g in sketch.Geometry],
+                          "constraints": [[c.Type, c.First, c.FirstPos, c.Second, c.SecondPos] for c in sketch.Constraints],
+                          "radius_pick_radius": view.getViewer().getPickRadius(), "after_radius": marker_state(center_pixel)})
+            report["repeated_creation"].append(entry)
+            save()
+        check("Repeated native Circle keeps both centers exactly at origin", sketch.GeometryCount == 2 and all(g.Center.Length < 1e-7 for g in sketch.Geometry))
+        # Native point priority can connect a subsequent center to the first
+        # center at the origin. Prove both coordinates are anchored through
+        # real coincidences, without requiring a particular graph topology.
+        anchored = {(-1, 1)}
+        coincidences = [((c.First, c.FirstPos), (c.Second, c.SecondPos))
+                        for c in sketch.Constraints if c.Type == "Coincident"]
+        for _ in range(len(coincidences)):
+            for first, second in coincidences:
+                if first in anchored or second in anchored:
+                    anchored.update((first, second))
+        check("Both repeated centers have a native two-coordinate coincidence path to origin",
+              {(0, 3), (1, 3)} <= anchored)
+        report["repeated_center_coincidences"] = coincidences
+        from pivy import coin
+        search = coin.SoSearchAction()
+        search.setName("OriginPointSet")
+        search.apply(view.getSceneGraph())
+        path = search.getPath()
+        check("Repeated native geometry creation retains current live marker wrapper", path is not None and str(path.getNode(path.getLength()-2).getName()) == "KurtShapeNativeOriginPickPriority")
+        panel.native_command("Sketcher_StopOperation")
+        import Sketcher
+        second_radius = sketch.Geometry[1].Radius
+        radius0 = sketch.addConstraint(Sketcher.Constraint("Radius", 0, 11.0))
+        check("First radius edits independently while second radius stays free",
+              sketch.solve() == 0 and not sketch.FullyConstrained
+              and abs(sketch.Geometry[0].Radius-11.0) < 1e-7
+              and abs(sketch.Geometry[1].Radius-second_radius) < 1e-7)
+        sketch.addConstraint(Sketcher.Constraint("Radius", 1, 17.0))
+        check("Only the two radii were free and both centers remain anchored",
+              sketch.solve() == 0 and sketch.FullyConstrained
+              and all(g.Center.Length < 1e-7 for g in sketch.Geometry))
+        sketch.setDatum(radius0, App.Units.Quantity("13 mm"))
+        check("Changing one radius preserves the other radius and both origin centers",
+              sketch.solve() == 0 and abs(sketch.Geometry[0].Radius-13.0) < 1e-7
+              and abs(sketch.Geometry[1].Radius-17.0) < 1e-7
+              and all(g.Center.Length < 1e-7 for g in sketch.Geometry))
+        panel.finish_sketch(cancel=True)
+        check("Native aperture returns to previous setting after edit", App.ParamGet("User parameter:BaseApp/Preferences/View").GetFloat("PickRadius") == 5.0)
+        report["check_count"] = len(report["checks"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        main.grab().save(str(output / "failed-origin-snap.png"))
+    finally:
+        save()
+        cleanup()
+
+def cleanup():
+    global cleaned
+    if cleaned: return
+    cleaned = True
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction: doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    if panel: panel.shutdown()
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+def timeout():
+    report["error"] = "Origin snapping validation exceeded 90 seconds"
+    save()
+    cleanup()
+
+QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(1200, run)

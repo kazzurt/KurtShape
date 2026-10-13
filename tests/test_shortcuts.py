@@ -55,6 +55,32 @@ class RouterTests(unittest.TestCase):
         self.router.dispatch("C", "sketch")
         self.assertEqual(self.commands, ["Sketcher_CreateCircle", "Sketcher_StopOperation"])
 
+    def test_toolbar_tool_toggles_without_router_history(self):
+        self.router.native_state = lambda: "Sketcher_CreateCircle"
+        self.assertIsNone(self.router._native_context)
+        self.router.dispatch("C", "sketch")
+        self.assertEqual(self.commands, ["Sketcher_StopOperation"])
+
+    def test_idle_session_overrides_stale_router_command_history(self):
+        self.router.native_state = lambda: None
+        self.router._native_context = "sketch"
+        self.router._last_native = "Sketcher_CreateCircle"
+        self.router.dispatch("C", "sketch")
+        self.assertEqual(self.commands, ["Sketcher_CreateCircle"])
+
+    def test_session_provider_tracks_stop_restart_and_context(self):
+        state = {"command": None}
+        self.router.native_state = lambda: state["command"]
+        def run(command):
+            self.commands.append(command)
+            state["command"] = None if command == "Sketcher_StopOperation" else command
+        self.router.native_runner = run
+        for _ in range(3):
+            self.router.dispatch("C", "sketch")
+        self.assertEqual(self.commands, ["Sketcher_CreateCircle", "Sketcher_StopOperation", "Sketcher_CreateCircle"])
+        self.router.invoke("sketch.circle", "part_studio")
+        self.assertEqual(self.commands[-1], "Sketcher_CreateCircle")
+
     def test_context_switch_does_not_cancel_next_sketch_tool(self):
         self.router.dispatch("C", "sketch")
         self.router.dispatch("F", "part_studio")
@@ -235,6 +261,13 @@ class QtRoutingTests(unittest.TestCase):
         QtTest.QTest.mouseClick(self.viewport, QtCore.Qt.RightButton)
         QtTest.QTest.keyClick(self.viewport, QtCore.Qt.Key_C)
         self.assertEqual(self.commands, ["Sketcher_CreateCircle"] * 2)
+
+    def test_modified_right_click_keeps_drawing_tool_toggle_state(self):
+        self.focus(self.viewport)
+        QtTest.QTest.keyClick(self.viewport, QtCore.Qt.Key_C)
+        QtTest.QTest.mouseClick(self.viewport, QtCore.Qt.RightButton, QtCore.Qt.ControlModifier)
+        QtTest.QTest.keyClick(self.viewport, QtCore.Qt.Key_C)
+        self.assertEqual(self.commands, ["Sketcher_CreateCircle", "Sketcher_StopOperation"])
 
     def test_file_shortcuts_in_fields_use_application_callbacks_once(self):
         calls, native_calls = [], []

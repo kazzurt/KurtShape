@@ -34,6 +34,9 @@ class WorkspacePreferences(QtCore.QObject):
         self.dialog = dialog
         layout = QtGui.QVBoxLayout(dialog)
         form = QtGui.QFormLayout()
+        appearance = QtGui.QLabel("Light (Onshape)")
+        appearance.setObjectName("KurtShapeAppearance")
+        form.addRow("Appearance", appearance)
         choice = QtGui.QComboBox()
         choice.setObjectName("KurtShapeMouseNavigation")
         for name, style in navigation.NAVIGATION_STYLES:
@@ -41,6 +44,27 @@ class WorkspacePreferences(QtCore.QObject):
         choice.setCurrentIndex(choice.findData(navigation.selected_style()))
         form.addRow("Mouse navigation", choice)
         layout.addLayout(form)
+        restore = QtGui.QPushButton("Restore light appearance")
+        restore.setObjectName("KurtShapeRestoreLightAppearance")
+        layout.addWidget(restore)
+
+        def restore_appearance():
+            from .theme import apply_theme, apply_view_theme
+            import FreeCAD as App
+            import FreeCADGui as Gui
+            try:
+                apply_theme(self.panel.main)
+                for doc in App.listDocuments().values():
+                    gui_document = Gui.getDocument(doc.Name)
+                    view = gui_document.activeView() if gui_document else None
+                    if view is not None and hasattr(view, "getViewer"):
+                        apply_view_theme(view)
+                App.saveParameter()
+                self.panel.notify("Light appearance restored")
+            except Exception as exc:
+                self.panel.notify(str(exc), "error")
+
+        restore.clicked.connect(restore_appearance)
         help_text = QtGui.QLabel()
         help_text.setWordWrap(True)
         layout.addWidget(help_text)

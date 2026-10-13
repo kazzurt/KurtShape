@@ -13,12 +13,14 @@ root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
 sys.path.insert(0, str(root / "tools"))
 sys.dont_write_bytecode = True
 from kurtshape_evidence import evidence_dir
+from preview_validation import wait_for_exact
 session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
 assert session.is_relative_to(root / "runtime")
 assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
 sys.path.insert(0, str(root / "src"))
 source_files = ["core.py", "studio.py", "selectors.py", "ui.py", "extrusion_preview.py",
-                "reference_tools.py", "bodies.py", "document_state.py"]
+                "reference_tools.py", "bodies.py", "document_state.py", "feature_panel.py",
+                "sketch_tools.py", "modeling_geometry.py"]
 
 
 def source_hashes():
@@ -151,12 +153,7 @@ def snapshot():
 
 
 def preview():
-    for _ in range(120):
-        wait(25)
-        result = panel.extrusion_preview.result
-        if result is not None and not panel.extrusion_preview.timer.isActive():
-            return result
-    raise AssertionError("Preview timeout: " + panel.preview_hint.text())
+    return wait_for_exact(panel.extrusion_preview)
 
 
 def check_ids(widget, ids):
@@ -167,37 +164,38 @@ def check_ids(widget, ids):
 
 def dialog_operation(operation, configure, label=None, commit=True, part=None):
     dialog_started = time.perf_counter()
-    outcome = {}
     baseline = snapshot()
-    def automate():
-        try:
-            dialog = panel.studio_dialog
-            check(operation + ": actual typed modal dialog", dialog is not None and dialog.isVisible())
-            configure(dialog)
-            buttons = dialog.findChild(QtWidgets.QDialogButtonBox)
-            confirm = buttons.button(QtWidgets.QDialogButtonBox.Ok)
-            for _ in range(160):
-                wait(25)
-                if confirm.isEnabled():
-                    break
-            hint = dialog.findChild(QtWidgets.QLabel, "KurtShapeStudioPreviewHint")
-            check(operation + ": valid geometry preview enables Confirm (" + hint.text() + ")", confirm.isEnabled())
-            check(operation + ": preview preserves live intent/revision/undo", snapshot() == baseline)
-            capture(label or operation + "-dialog")
-            report["dialogs"].append(operation)
-            QtTest.QTest.mouseClick(confirm if commit else buttons.button(QtWidgets.QDialogButtonBox.Cancel), QtCore.Qt.LeftButton)
-        except Exception:
-            outcome["error"] = traceback.format_exc()
-            if panel.studio_dialog:
-                panel.studio_dialog.reject()
-    QtCore.QTimer.singleShot(120, automate)
-    result = panel.studio_tool(operation, part=part)
+    dialog = panel.studio_tool(operation, part=part)
+    wait(120)
+    try:
+        check(operation + ": actual typed modeless feature panel",
+              isinstance(dialog, QtWidgets.QDockWidget) and dialog.isVisible() and panel.studio_dialog is dialog)
+        configure(dialog)
+        confirm = dialog.confirm
+        evaluated = wait_for_exact(dialog.preview)
+        count = dialog.findChild(QtWidgets.QSpinBox, "KurtShapeStudio_count")
+        if count is not None:
+            report.setdefault("count_previews", []).append({"operation": operation,
+                "field": count.value(), "proposal": evaluated.proposal.get("count")})
+            check(operation + ": exact preview uses the current count field",
+                  evaluated.proposal.get("count") == count.value())
+        hint = dialog.findChild(QtWidgets.QLabel, "KurtShapeStudioPreviewHint")
+        check(operation + ": valid geometry preview enables Confirm (" + hint.text() + ")", confirm.isEnabled())
+        check(operation + ": preview preserves live intent/revision/undo", snapshot() == baseline)
+        capture(label or operation + "-dialog")
+        report["dialogs"].append(operation)
+        QtTest.QTest.mouseClick(confirm if commit else dialog.cancel, QtCore.Qt.LeftButton)
+        wait(100)
+    except Exception:
+        if panel.studio_dialog:
+            panel.studio_dialog.reject()
+        raise
     report.setdefault("dialog_timings_ms", {})[label or operation] = round((time.perf_counter() - dialog_started) * 1000, 2)
-    if outcome.get("error"):
-        raise AssertionError(outcome["error"])
+    after = snapshot()
     check(operation + ": accepted shared-controller operation" if commit else operation + ": Cancel preserves the model",
-          bool(result) if commit else snapshot() == baseline)
-    return result
+          panel.studio_dialog is None and after["revision"] != baseline["revision"] and after["undo"] == baseline["undo"] + 1
+          if commit else after == baseline and panel.studio_dialog is None)
+    return after
 
 
 def value(dialog, key, text):
@@ -302,7 +300,11 @@ def validate():
         def pattern(dialog):
             check_ids(dialog.findChild(QtWidgets.QListWidget, "KurtShapeStudio_parts"), ["SecondBody"])
             value(dialog, "spacing", "20 mm")
-            dialog.findChild(QtWidgets.QSpinBox, "KurtShapeStudio_count").setValue(2)
+            count = dialog.findChild(QtWidgets.QSpinBox, "KurtShapeStudio_count")
+            count.setValue(2)
+            count.setFocus()
+            QtTest.QTest.keyClick(count, QtCore.Qt.Key_Up)
+            QtTest.QTest.keyClick(count, QtCore.Qt.Key_Down)
         dialog_operation("linear_pattern_parts", pattern)
         check("Whole-part pattern retains source and adds a new part", len(current_parts()) == 5)
         order = panel.state["studio"]["feature_order"]
@@ -313,7 +315,7 @@ def validate():
         QtTest.QTest.keyClick(panel.rollback_bar, QtCore.Qt.Key_Up)
         wait(100)
         check("Up rebuilds studio before its final feature", panel.state["studio"]["rollback_index"] == index - 1 and len(current_parts()) == 4)
-        check("Held future feature remains visible in ordered history", "held" in panel.items[order[-1]].text(0))
+        check("Rolled-back feature remains gray and italic without a suffix", panel.items[order[-1]].font(0).italic() and panel.items[order[-1]].foreground(0).color().name() == ui.COLORS["disabled_ink"] and "held" not in panel.items[order[-1]].text(0))
         Gui.Selection.clearSelection()
         panel.isometric()
         panel.fit()
@@ -340,6 +342,7 @@ def validate():
         def revolve(dialog):
             choice(dialog, "profile", "FirstProfile")
             choice(dialog, "operation", "new")
+            choice(dialog, "axis_by", "custom")
         dialog_operation("revolve", revolve, commit=False)
         call("sketch_circle", id="SweepSection", x=2, y=0, diameter=2, body="Body")
         call("create_sketch", id="SweepPath", plane="XZ", body="Body")
@@ -376,6 +379,10 @@ def validate():
         for operation in ("circular_pattern_parts", "mirror_parts"):
             def part_pattern(dialog):
                 check_ids(dialog.findChild(QtWidgets.QListWidget, "KurtShapeStudio_parts"), ["SecondBody"])
+                if operation == "mirror_parts":
+                    from kurtshape.bodies import origin_plane
+                    plane = origin_plane(panel.document().SecondBody, "YZ")
+                    dialog.fields["plane"].add({"feature": plane.Name}, plane.Label)
             dialog_operation(operation, part_pattern, commit=False)
         source = panel.document().SecondBody.Tip
         for operation in ("fillet", "chamfer"):

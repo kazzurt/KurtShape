@@ -1,0 +1,302 @@
+"""Actual native framebuffer/selection proof for transient closed regions."""
+import json
+import math
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from pivy import coin
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+
+class NoTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("sketch-regions")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "samples": [], "screens": [], "pid": os.getpid(), "engine": App.Version(),
+          "method": "Isolated hidden native production Panel/timer; framebuffer pixels and native viewport selection, with no live user CAD interaction."}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=240):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+
+def call(op, **arguments):
+    assert panel.operation(op, **arguments), panel.message.text()
+    wait()
+    return panel.document()
+
+
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(widget for widget in active.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible() and widget.width() > 300)
+
+
+def sample(sketch, label, xyz, expected):
+    view = Gui.activeDocument().activeView()
+    view.redraw()
+    wait()
+    frame = viewport().grab().toImage()
+    point = view.getPointOnViewport(sketch.getGlobalPlacement().multVec(App.Vector(*xyz)))
+    x, y = round(point[0]), frame.height() - 1 - round(point[1])
+    colors = [frame.pixelColor(i, j).getRgb()[:3] for i in range(x - 2, x + 3) for j in range(y - 2, y + 3)]
+    matching = sum(max(abs(a-b) for a, b in zip(color, expected)) < 5 for color in colors)
+    report["samples"].append({"name": label, "point": xyz, "pixel": [x, y], "expected": expected, "matching": matching, "colors": sorted(set(colors))})
+    check(label, matching >= 2)
+
+
+def capture(name):
+    main.grab().save(str(output / (name + ".png")))
+    report["screens"].append(name + ".png")
+    save()
+
+
+def native_boundary_rgb(sketch, xyz, direction="front"):
+    switch = entry(sketch)["node"]
+    switch.whichChild = coin.SO_SWITCH_NONE
+    view = Gui.activeDocument().activeView()
+    view.redraw()
+    wait()
+    frame = viewport().grab().toImage()
+    point = view.getPointOnViewport(sketch.getGlobalPlacement().multVec(App.Vector(*xyz)))
+    x, y = round(point[0]), frame.height() - 1 - round(point[1])
+    colors = [frame.pixelColor(i, j).getRgb()[:3] for i in range(x - 2, x + 3) for j in range(y - 2, y + 3)]
+    blue = [color for color in colors if color[2] > color[0] + 50 and color[2] > color[1] + 30]
+    check("The unshaded {} finished native boundary is visible".format(direction), bool(blue))
+    rgb = max(set(blue), key=blue.count)
+    report.setdefault("finished_native_boundaries", {})[direction] = {
+        "line_color": list(sketch.ViewObject.LineColor), "unshaded_rgb": rgb,
+        "method": "Same native view and pixel neighborhood with only the presentation switch temporarily disabled."}
+    switch.whichChild = coin.SO_SWITCH_ALL
+    return rgb
+
+
+def click(sketch, xyz):
+    widget = viewport()
+    point = Gui.activeDocument().activeView().getPointOnViewport(sketch.getGlobalPlacement().multVec(App.Vector(*xyz)))
+    ratio = widget.devicePixelRatioF()
+    position = QtCore.QPoint(round(point[0] / ratio), widget.height() - 1 - round(point[1] / ratio))
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(position), QtCore.QPointF(widget.mapToGlobal(position)),
+                            QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+    app.sendEvent(widget, event)
+    wait(80)
+    QtTest.QTest.mouseClick(widget, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, position)
+    wait()
+
+
+def rectangle(sketch, x1, y1, x2, y2, construction=False):
+    points = [App.Vector(x1, y1, 0), App.Vector(x2, y1, 0), App.Vector(x2, y2, 0), App.Vector(x1, y2, 0)]
+    sketch.addGeometry([Part.LineSegment(points[index], points[(index + 1) % 4]) for index in range(4)], construction)
+
+
+def entry(sketch):
+    return panel.sketch_regions.entries[(sketch.Document.Name, sketch.Name)]
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        doc = call("new", name="Closed sketch region shading")
+        call("sketch_rectangle", id="Support", width=40, height=30)
+        call("pad", id="Plate", profile="Support", length=8)
+        call("create_sketch", id="Regions", plane="XY")
+        sketch = doc.Regions
+        sketch.AttachmentOffset = App.Placement(App.Vector(0, 0, 8), App.Rotation())
+        rectangle(sketch, -35, -10, -5, 20)
+        sketch.addGeometry(Part.Circle(App.Vector(-20, 5, 0), App.Vector(0, 0, 1), 5), False)
+        sketch.addGeometry(Part.Circle(App.Vector(-20, 5, 0), App.Vector(0, 0, 1), 2), False)
+        sketch.addGeometry(Part.Circle(App.Vector(10, 10, 0), App.Vector(0, 0, 1), 6), False)
+        sketch.addGeometry(Part.ArcOfCircle(Part.Circle(App.Vector(25, -10, 0), App.Vector(0, 0, 1), 8), 0, math.pi), False)
+        sketch.addGeometry(Part.LineSegment(App.Vector(17, -10, 0), App.Vector(33, -10, 0)), False)
+        sketch.addGeometry(Part.LineSegment(App.Vector(-35, -30, 0), App.Vector(-25, -30, 0)), False)
+        sketch.addGeometry(Part.LineSegment(App.Vector(-25, -30, 0), App.Vector(-25, -20, 0)), False)
+        rectangle(sketch, 5, -35, 15, -25, construction=True)
+        sketch.addGeometry(Part.LineSegment(App.Vector(-5, 20, 0), App.Vector(0, 25, 0)), False)
+        doc.recompute()
+        call("create_sketch", id="FutureLoop", plane="XY")
+        doc.FutureLoop.addGeometry(Part.Circle(App.Vector(50, 5, 0), App.Vector(0, 0, 1), 4), False)
+        doc.FutureLoop.ViewObject.Visibility = True
+        doc.recompute()
+        wait(500)
+        check("A visible later unused sketch initially has its own fill", entry(doc.FutureLoop)["shown"])
+        intent = (sketch.GeometryCount, sketch.ConstraintCount, sketch.MakeInternals, tuple(obj.Name for obj in doc.Objects))
+        panel.select_feature(sketch.Name)
+        check("Native sketch editing starts", bool(panel.edit_sketch()))
+        check("Editing earlier history hides the later sketch fill", not entry(doc.FutureLoop)["shown"])
+        doc.FutureLoop.ViewObject.Visibility = True
+        panel.sketch_regions.apply()
+        check("Historical source guard prevents fill leaking from later children", not entry(doc.FutureLoop)["shown"])
+        doc.FutureLoop.ViewObject.Visibility = False
+        panel.normal()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(100)
+        wait(500)
+        gray = tuple(round(channel * 255) for channel in panel.sketch_regions.COLOR)
+        from kurtshape.sketch_regions import _prune_open_tails, region_faces
+        edges = [edge for index, geometry in enumerate(sketch.Geometry) if not sketch.getConstruction(index) for edge in geometry.toShape().Edges]
+        report["topology_probe"] = {"regions": entry(sketch)["region_count"], "area": entry(sketch)["area"],
+            "edges": len(edges), "pruned_edges": len(_prune_open_tails(edges)),
+            "wires": [{"count": len(wire.Edges), "closed": wire.isClosed(), "valid": wire.isValid()} for wire in Part.makeCompound(_prune_open_tails(edges)).makeWires("SketchRegionProbe").Wires],
+            "face_areas": [face.Area for face in region_faces(sketch)]}
+        save()
+        check("Native planar face builder finds four closed regions", entry(sketch)["region_count"] == 4)
+        check("Nested holes and islands have correct native face area", abs(entry(sketch)["area"] - (900 + 47 * math.pi)) < 1e-5)
+        sample(sketch, "Closed rectangle interior is light gray", (-30, 0, 0), gray)
+        sample(sketch, "A nested hole stays white", (-17, 5, 0), (255, 255, 255))
+        sample(sketch, "A nested closed island is light gray", (-19, 6, 0), gray)
+        sample(sketch, "A disjoint circle on the supporting face is light gray", (10, 12, 0), gray)
+        sample(sketch, "An arc and diameter enclose a shaded region", (25, -6, 0), gray)
+        sample(sketch, "Open polyline geometry has no interior fill", (-30, -25, 0), (255, 255, 255))
+        sample(sketch, "Construction-only loops have no interior fill", (10, -30, 0), (255, 255, 255))
+        sample(sketch, "Native boundary geometry keeps its blue state color", (-20, -10, 0), (0, 0, 255))
+        capture("closed-regions-holes-arcs-open-construction")
+        check("Shading leaves model objects and native sketch intent unchanged", intent ==
+              (sketch.GeometryCount, sketch.ConstraintCount, sketch.MakeInternals, tuple(obj.Name for obj in doc.Objects)))
+        Gui.Selection.clearSelection()
+        click(sketch, (-30, 3, 0))
+        check("The presentation fill does not intercept native selection", not Gui.Selection.getSelectionEx())
+        click(sketch, (-20, -10, 0))
+        check("Native viewport edge selection still works through shading", any(item.Object == sketch and any(name.lower() == "edge1" for name in item.SubElementNames)
+              for item in Gui.Selection.getSelectionEx()))
+        idle = (panel.sketch_regions.builds, panel.sketch_regions.scene_writes)
+        wait(1000)
+        check("Idle ticks do not rebuild faces or rewrite the scene", idle == (panel.sketch_regions.builds, panel.sketch_regions.scene_writes))
+        Gui.Selection.clearSelection()
+        Gui.Selection.clearPreselection()
+        sketch.delGeometry(0)
+        doc.recompute()
+        wait(500)
+        check("Breaking a boundary removes that region while preserving independent loops", entry(sketch)["region_count"] == 3)
+        sample(sketch, "An opened boundary no longer has gray fill", (-30, 0, 0), (255, 255, 255))
+        sketch.addGeometry(Part.LineSegment(App.Vector(-35, -10, 0), App.Vector(-5, -10, 0)), False)
+        doc.recompute()
+        wait(500)
+        check("Closing the boundary restores the region", entry(sketch)["region_count"] == 4)
+        sketch.AttachmentOffset = App.Placement(App.Vector(0, 0, 8), App.Rotation(App.Vector(1, 0, 0), 25))
+        doc.recompute()
+        panel.normal()
+        wait(500)
+        sample(sketch, "Fill follows a rotated and offset sketch plane", (-30, 0, 0), gray)
+        capture("rotated-offset-sketch-regions")
+        sketch.AttachmentOffset = App.Placement(App.Vector(0, 0, 8), App.Rotation())
+        doc.recompute()
+        check("Finish accepts the sketch", bool(panel.finish_sketch()))
+        panel.normal()
+        Gui.activeDocument().activeView().viewTop()
+        wait(500)
+        check("A visible finished unconsumed sketch retains shading", sketch.ViewObject.Visibility and entry(sketch)["shown"])
+        sample(sketch, "Finished sketch fill remains visible on its supporting face", (10, 12, 0), gray)
+        baseline_rgb = native_boundary_rgb(sketch, (16, 10, 0))
+        sample(sketch, "Finished shading preserves the exact native boundary color", (16, 10, 0), baseline_rgb)
+        capture("finished-visible-sketch-region")
+        Gui.activeDocument().activeView().viewBottom()
+        wait(500)
+        sample(sketch, "A finished region is shaded from the back", (-30, 3, 0), gray)
+        baseline_rgb = native_boundary_rgb(sketch, (-20, -10, 0), "back")
+        sample(sketch, "Back shading preserves the exact native boundary color", (-20, -10, 0), baseline_rgb)
+        capture("finished-sketch-regions-back-view")
+        Gui.activeDocument().activeView().viewTop()
+        wait()
+        container = sketch.getParentGeoFeatureGroup()
+        container.ViewObject.Visibility = False
+        panel.sketch_regions.apply()
+        check("A hidden parent body suppresses child sketch fill", not entry(sketch)["shown"])
+        container.ViewObject.Visibility = True
+        panel.sketch_regions.apply()
+        project = output / "closed-sketch-regions.FCStd"
+        panel.core.settings.grant_destination(str(project))
+        call("save", path=str(project))
+        call("open", path=str(project))
+        sketch = panel.document().Regions
+        Gui.activeDocument().activeView().viewTop()
+        wait(500)
+        check("Reopened native sketch regenerates its transient shading", entry(sketch)["shown"] and entry(sketch)["region_count"] == 4)
+        check("No saved modeling option was enabled for shading", not sketch.MakeInternals)
+        report["project"] = str(project)
+        report["performance"] = {"build_ms": entry(sketch)["build_ms"], "total_builds": panel.sketch_regions.builds}
+        panel.sketch_regions.close()
+        check("Closing the presentation controller removes every fill node", not panel.sketch_regions.entries and panel.sketch_regions.scene is None)
+        report.update(passed=True, check_count=len(report["checks"]))
+    except Exception:
+        report["error"] = traceback.format_exc()
+        capture("failed-sketch-regions")
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    if panel:
+        panel.sketch_regions.close()
+    for name in list(App.listDocuments()):
+        doc, gui = App.getDocument(name), Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    if panel:
+        panel.shutdown()
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+QtCore.QTimer.singleShot(90000, cleanup)
+QtCore.QTimer.singleShot(1200, run)

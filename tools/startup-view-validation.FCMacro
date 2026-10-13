@@ -1,0 +1,151 @@
+"""Native primary-monitor maximization and empty-part camera regression."""
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+
+sys.dont_write_bytecode = True
+root = Path(os.environ['KURTSHAPE_ROOT'])
+sys.path.insert(0, str(root / 'src'))
+sys.path.insert(0, str(root / 'tools'))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import navigation, ui
+from kurtshape_evidence import evidence_dir
+
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+
+class HiddenWindows(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+ui.Bridge = NoTransport
+app = QtGui.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+hidden = HiddenWindows(app)
+app.installEventFilter(hidden)
+output = evidence_dir('startup-view')
+output.mkdir(parents=True, exist_ok=True)
+panel = None
+report = {'passed': False, 'checks': [], 'cameras': [], 'engine': App.Version(),
+          'method': 'Real hidden native window starts with displaced geometry; production startup and New commands reset placement and camera.'}
+
+
+def check(label, value):
+    assert value, label
+    report['checks'].append(label)
+
+
+def camera_state(label):
+    view = Gui.activeDocument().activeView()
+    camera = view.getCameraNode()
+    position = App.Vector(*camera.position.getValue().getValue())
+    focus = position - view.getCameraOrientation().multVec(App.Vector(0, 0, camera.focalDistance.getValue()))
+    pixels = list(view.getPointOnViewport(App.Vector()))
+    size = list(view.getSize())
+    value = {'label': label, 'focus': list(focus), 'height': camera.height.getValue(),
+             'origin_pixel': pixels, 'viewport_size': size, 'projection': view.getCameraType()}
+    report['cameras'].append(value)
+    return value
+
+
+def check_origin(label):
+    state = camera_state(label)
+    check(label + ': orthographic camera looks at the world origin',
+          state['projection'] == 'Orthographic' and App.Vector(*state['focus']).Length < 1e-4)
+    check(label + ': origin projects to viewport center',
+          all(abs(pixel - extent / 2) <= 2 for pixel, extent in zip(state['origin_pixel'][:2], state['viewport_size'][:2])))
+    check(label + ': predictable 100 mm vertical frame', abs(state['height'] - 100) < 1e-4)
+
+
+def validate():
+    global panel
+    try:
+        primary = app.primaryScreen()
+        screens = app.screens()
+        initial_screen = next((screen for screen in screens if screen != primary), primary)
+        main.winId()
+        main.windowHandle().setScreen(initial_screen)
+        available = initial_screen.availableGeometry()
+        main.setGeometry(available.x() + 40, available.y() + 50, 700, 500)
+        main.showNormal()
+        QtTest.QTest.qWait(100)
+        report['initial_screen'] = initial_screen.name()
+        report['primary_screen'] = primary.name()
+        report['screen_count'] = len(screens)
+        report['initial_geometry'] = list(main.geometry().getRect())
+        panel = ui.start()
+        panel.timer.stop()
+        panel.recovery_timer.stop()
+        QtTest.QTest.qWait(500)
+        # Windows/Qt may rebuild QScreen wrappers when a mixed-DPI window
+        # moves between monitors; reacquire after processing native events.
+        primary = app.primaryScreen()
+        report['window'] = {'maximized': main.isMaximized(), 'screen': main.windowHandle().screen().name(),
+                            'geometry': list(main.geometry().getRect()),
+                            'available_geometry': list(primary.availableGeometry().getRect())}
+        check('Startup maximizes the application window', main.isMaximized())
+        check('Startup selects the primary monitor', main.windowHandle().screen() == primary)
+        check_origin('Startup part')
+        main.grab().save(str(output / 'maximized-origin-centered-startup.png'))
+
+        first_document = panel.document()
+        first_view = Gui.activeDocument().activeView()
+        camera = first_view.getCameraNode()
+        camera.position.setValue(400, 600, 800)
+        camera.height.setValue(10000)
+        displaced_position = App.Vector(*camera.position.getValue().getValue())
+        displaced_orientation = first_view.getCameraOrientation()
+        displaced_height = camera.height.getValue()
+        panel.new()
+        QtTest.QTest.qWait(250)
+        check_origin('New part after displaced view')
+        old_view = Gui.getDocument(first_document.Name).activeView()
+        old_camera = old_view.getCameraNode()
+        check('Creating a new part preserves the old document camera',
+              (App.Vector(*old_camera.position.getValue().getValue()) - displaced_position).Length < 1e-4
+              and old_view.getCameraOrientation().isSame(displaced_orientation, 1e-6)
+              and abs(old_camera.height.getValue() - displaced_height) < 1e-4)
+
+        # Orientation changes must keep the intentional pan/zoom in normal use.
+        second_view = Gui.activeDocument().activeView()
+        camera = second_view.getCameraNode()
+        camera.position.setValue(300, 400, 700)
+        camera.height.setValue(63)
+        before = camera_state('Before normal/isometric commands')
+        navigation.normal_to_sketch(App.Placement(), second_view)
+        navigation.view_isometric_keep_sketch(second_view)
+        after = camera_state('After normal/isometric commands')
+        check('Normal and isometric commands preserve intentional focus and zoom',
+              (App.Vector(*before['focus']) - App.Vector(*after['focus'])).Length < 1e-3
+              and abs(before['height'] - after['height']) < 1e-4)
+        report['passed'] = True
+    except Exception:
+        report['error'] = traceback.format_exc()
+    finally:
+        if panel is not None:
+            panel.shutdown()
+            main.destroyed.disconnect(panel.shutdown)
+        for name in list(App.listDocuments()):
+            App.getDocument(name).setClosable(True)
+            App.closeDocument(name)
+        (output / 'gui-result.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(100, app.quit)
+
+
+QtCore.QTimer.singleShot(400, validate)

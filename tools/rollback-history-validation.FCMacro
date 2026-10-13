@@ -1,0 +1,334 @@
+"""Named feature-gap rollback, using actual production Qt events in a hidden app."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import socket
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.path.insert(0, str(root / "src"))
+source_files = ["ui.py", "rollback_history.py", "core.py", "studio.py", "shortcuts.py", "theme.py"]
+
+
+def source_hashes():
+    return {name: hashlib.sha256((root / "src" / "kurtshape" / name).read_bytes()).hexdigest()
+            for name in source_files}
+
+
+startup_source_hashes = source_hashes()
+
+
+def deny_network(*args, **kwargs):
+    raise RuntimeError("Python networking denied for rollback GUI validation")
+
+
+socket.socket.connect = deny_network
+socket.socket.connect_ex = deny_network
+socket.socket.sendto = deny_network
+socket.create_connection = deny_network
+socket.getaddrinfo = deny_network
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+
+
+class NoSocketTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+application = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden_popups = HiddenPopupFilter(application)
+application.installEventFilter(hidden_popups)
+output = evidence_dir("rollback-history")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "screens": [], "source_sha256": startup_source_hashes,
+          "method": "Production Panel and native document; actual Qt clicks, dragging, keyboard and context-menu events in a fresh isolated hidden process.",
+          "limits": "Small synthetic offline native fixture; Python networking denied, C++ networking is not intercepted.",
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}, "runtime_profile": str(session.relative_to(root))}
+panel = None
+cleaned = False
+started = time.perf_counter()
+
+
+def save_report():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=80):
+    QtTest.QTest.qWait(ms)
+    if report.get("aborted"):
+        raise RuntimeError("Rollback GUI validation exceeded its time bound")
+
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label + ": " + (panel.message.text() if panel else "startup"))
+    report["checks"].append(label)
+    save_report()
+
+
+def call(op, **args):
+    result = panel.operation(op, **args)
+    if not result:
+        raise AssertionError(op + ": " + panel.message.text())
+    wait(60)
+    return result
+
+
+def capture(label):
+    wait(120)
+    for filename, widget in ((label + ".png", main), (label + "-history.png", panel)):
+        pixmap = widget.grab()
+        check(filename + ": nonempty rendered UI", not pixmap.isNull())
+        pixmap.save(str(output / filename))
+        report["screens"].append(filename)
+
+
+def index():
+    return panel.state["studio"]["rollback_index"]
+
+
+def gap(position):
+    marker = panel.rollback_bar
+    item_name = marker.order[min(position, len(marker.order) - 1)] if marker.order else None
+    if item_name:
+        panel.features.scrollToItem(panel.items[item_name], QtWidgets.QAbstractItemView.PositionAtCenter)
+    wait(40)
+    point = marker.gap_point(position)
+    check("Requested named feature gap is in the viewport", point is not None and 0 <= point.y() < panel.features.viewport().height())
+    return point
+
+
+def click_gap(position):
+    point = gap(position)
+    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+    wait(120)
+    check("Physical gap click commits its native boundary", index() == position and panel.rollback_bar.value() == position)
+
+
+def menu_feature(name, choose=None):
+    panel.features.scrollToItem(panel.items[name])
+    wait(40)
+    rect = panel.features.visualItemRect(panel.items[name])
+    captured = {}
+    def choose_menu():
+        menu = application.activePopupWidget()
+        if not isinstance(menu, QtWidgets.QMenu):
+            menu = next((widget for widget in application.topLevelWidgets()
+                         if isinstance(widget, QtWidgets.QMenu) and widget.isVisible()), None)
+        if not isinstance(menu, QtWidgets.QMenu):
+            captured["error"] = "No actual history menu"
+            return
+        captured["actions"] = {action.text(): action.isEnabled() for action in menu.actions() if not action.isSeparator()}
+        if choose:
+            action = next((action for action in menu.actions() if action.text() == choose), None)
+            if action is None:
+                captured["error"] = "Missing action: " + choose
+                menu.close()
+            else:
+                QtTest.QTest.mouseClick(menu, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, menu.actionGeometry(action).center())
+        else:
+            menu.close()
+    QtCore.QTimer.singleShot(60, choose_menu)
+    def close_unselected():
+        for widget in application.topLevelWidgets():
+            if isinstance(widget, QtWidgets.QMenu) and widget.isVisible():
+                widget.close()
+    QtCore.QTimer.singleShot(1500, close_unselected)
+    panel.history_menu(rect.center())
+    wait(100)
+    check("Actual named feature context menu opened", "actions" in captured and "error" not in captured)
+    return captured["actions"]
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        call("new", name="Rollback boundary validation")
+        last_plane = panel.features.visualItemRect(panel.items["plane:YZ"])
+        check("Empty history boundary follows the origin planes", panel.rollback_bar.gap_point(0).y() == last_plane.bottom() + 1)
+        call("sketch_rectangle", id="PlateOutline", width=20, height=12, body="Body")
+        call("pad", id="PlateExtrusion", profile="PlateOutline", length=8, body="Body")
+        pad = panel.document().PlateExtrusion
+        top = "Face" + str(next(i + 1 for i, face in enumerate(pad.Shape.Faces) if abs(face.CenterOfMass.z - 8) < 1e-7))
+        call("sketch_circle", id="HolePosition", x=10, y=6, diameter=4, support={"feature": pad.Name, "subelement": top}, body="Body")
+        call("pocket", id="HoleCut", profile="HolePosition", length=8, through_all=True, body="Body")
+        call("rename_feature", feature="PlateOutline", name="Plate outline")
+        call("rename_feature", feature="PlateExtrusion", name="Plate extrusion")
+        call("rename_feature", feature="HolePosition", name="Hole position")
+        call("rename_feature", feature="HoleCut", name="Through hole")
+        order = panel.state["studio"]["feature_order"]
+        marker = panel.rollback_bar
+        check("Legacy single Body has a visible graphical boundary before studio conversion",
+              not panel.state["studio"]["enabled"] and order == ["PlateOutline", "PlateExtrusion", "HolePosition", "HoleCut"] and marker.isVisible())
+        check("Boundary is a child of the feature viewport with no separate numeric slider",
+              marker.parent() is panel.features.viewport() and not isinstance(marker, QtWidgets.QSlider) and "4 / 4" not in panel.rollback_label.text())
+        panel.isometric()
+        panel.fit()
+        capture("end-of-history")
+        click_gap(2)
+        check("Middle boundary names both neighboring features", panel.rollback_label.text() == "After Plate extrusion · before Hole position")
+        check("Later steps are gray and italic without a held suffix", all(panel.items[name].font(0).italic() and panel.items[name].foreground(0).color().name() == ui.COLORS["disabled_ink"] and "held" not in panel.items[name].text(0) for name in order[2:]))
+        check("Rollback restores the preceding solid", abs(panel.document().Body.Shape.Volume - 1920) < 1e-6)
+        actions = menu_feature("HolePosition")
+        check("Held feature edits are disabled while rollback choices remain enabled",
+              all(actions[label] is False for label in ["Edit sketch", "Rename", "Delete", "Feature settings"])
+              and actions["Roll forward through Hole position"])
+        panel.parameters(show=True)
+        check("Held feature selection keeps parameter editing closed", not panel.editor.isVisible())
+        held_baseline = (panel.state["revision"], panel.document().UndoCount, len(panel.document().Objects))
+        QtTest.QTest.keyClick(panel.features, QtCore.Qt.Key_Delete)
+        wait(100)
+        check("Delete shortcut cannot alter a held feature",
+              (panel.state["revision"], panel.document().UndoCount, len(panel.document().Objects)) == held_baseline
+              and panel.document().getObject("HolePosition") is not None
+              and "Roll forward through this feature" in panel.message.text())
+        capture("between-extrusion-and-hole")
+        call("undo")
+        check("Undo synchronizes native boundary and marker at end", index() == 4 and marker.value() == 4 and all(not panel.items[name].font(0).italic() for name in order))
+        call("redo")
+        check("Redo synchronizes native boundary and marker at middle", index() == 2 and marker.value() == 2)
+        marker.setFocus()
+        QtTest.QTest.keyClick(marker, QtCore.Qt.Key_Up)
+        wait(120)
+        check("Up moves the selected graphical boundary one feature", index() == 1)
+        QtTest.QTest.keyClick(marker, QtCore.Qt.Key_Down)
+        wait(120)
+        check("Down moves the selected graphical boundary one feature", index() == 2)
+        click_gap(0)
+        check("Start boundary names its first feature and makes all steps italic", panel.rollback_label.text() == "Before Plate outline" and all(panel.items[name].font(0).italic() for name in order))
+        capture("before-first-feature")
+        click_gap(4)
+        check("End boundary restores every build step", all(not panel.items[name].font(0).italic() for name in order) and panel.document().Body.Shape.Volume < 1920)
+        previous_height = panel.features.maximumHeight()
+        panel.features.setMaximumHeight(150)
+        wait(120)
+        check("Short feature viewport exposes a native scrollbar", panel.features.verticalScrollBar().maximum() > 0)
+        click_gap(0)
+        click_gap(4)
+        check("Scrolled tree keeps the committed boundary visible at its named gap", marker.isVisible() and marker.gap_point(4).y() == marker.geometry().top() + 5)
+        panel.features.setMaximumHeight(previous_height)
+        wait(120)
+        target = gap(2)
+        initial_undo = panel.document().UndoCount
+        QtTest.QTest.mousePress(marker, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, QtCore.QPoint(12, 5))
+        QtTest.QTest.mouseMove(marker, marker.mapFromParent(target), 80)
+        wait(80)
+        check("Dragging previews names without rebuilding or adding Undo", marker.value() == 2 and index() == 4 and panel.document().UndoCount == initial_undo and panel.rollback_label.text() == "After Plate extrusion · before Hole position")
+        QtTest.QTest.mouseRelease(marker, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, marker.mapFromParent(target))
+        wait(140)
+        check("Drag release commits exactly one rollback transaction", index() == 2 and marker.value() == 2 and panel.document().UndoCount == initial_undo + 1)
+        menu_feature("HoleCut", "Roll forward through Through hole")
+        check("Named context-menu roll forward restores the end", index() == 4 and marker.value() == 4)
+        center = panel.features.visualItemRect(panel.items["PlateExtrusion"]).center()
+        QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, center)
+        wait(100)
+        check("Feature-center click selects its feature without moving rollback", panel.selected() == "PlateExtrusion" and index() == 4 and not panel.rollback_selected)
+        panel.editor.hide()
+        panel.select_feature("HolePosition")
+        check("An included sketch can enter native editing", panel.edit_sketch() is not None)
+        wait(100)
+        check("Rollback boundary is disabled during native sketch editing", not marker.isEnabled() and panel.move_rollback(-1) is False and index() == 4)
+        check("Cancel sketch restores enabled rollback interaction", panel.finish_sketch(cancel=True) and marker.isEnabled())
+        panel.editor.hide()
+        Gui.Selection.clearSelection()
+        class PaintCounter(QtCore.QObject):
+            def __init__(self):
+                super().__init__()
+                self.count = 0
+            def eventFilter(self, watched, event):
+                if event.type() == QtCore.QEvent.Paint:
+                    self.count += 1
+                return False
+        counter = PaintCounter()
+        marker.installEventFilter(counter)
+        wait(200)
+        counter.count = 0
+        wait(600)
+        report["idle_marker_paints_600ms"] = counter.count
+        check("Idle marker does not run a self-sustaining repaint loop", counter.count <= 3 and not marker.scroll_timer.isActive())
+        marker.removeEventFilter(counter)
+        panel.isometric()
+        panel.fit()
+        capture("final-graphical-history")
+        call("save", path=str(output / "rollback-history.FCStd"))
+        report["fixture"] = str((output / "rollback-history.FCStd").relative_to(root))
+        report["source_unchanged"] = source_hashes() == startup_source_hashes
+        assert report["source_unchanged"], "Source changed during isolated GUI acceptance; rerun against the frozen implementation"
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        report["seconds"] = time.perf_counter() - started
+        report["check_count"] = len(report["checks"])
+        save_report()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    finally:
+        application.removeEventFilter(hidden_popups)
+        QtCore.QTimer.singleShot(0, application.quit)
+
+
+def timeout():
+    if not report.get("seconds"):
+        report["aborted"] = True
+        report["error"] = "Rollback GUI validation exceeded 90 seconds"
+        save_report()
+        cleanup()
+
+
+QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(1500, validate)

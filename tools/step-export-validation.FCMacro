@@ -1,0 +1,952 @@
+"""Private native STEP job: real work overlap, export parity and GUI ownership."""
+import hashlib
+from contextlib import ExitStack, contextmanager
+import json
+import math
+import os
+from pathlib import Path
+import queue
+import shutil
+import sys
+import time
+import traceback
+import zipfile
+from unittest.mock import patch
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+from native_validation_snapshot import snapshot_document
+
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("step-export")
+paths = [root / "src/kurtshape" / name for name in
+         ("ui.py", "core.py", "step_export_worker.py", "preview_worker.py", "snapshots.py", "geometry.py")]
+paths.append(root / "tools/step-export-validation.FCMacro")
+clock = time.perf_counter_ns
+
+
+def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+def hashes(): return {str(path.relative_to(root)): sha(path) for path in paths}
+
+
+report = {"passed": False, "checks": [], "pid": os.getpid(), "engine": App.Version(),
+          "source_sha256": hashes(), "pulses": [], "spans": [], "workers": [],
+          "method": "Ordinary QTimer-driven native GUI cases; unconditional buffered pulses; real child check/write interval; no artificial worker delay. Exact private destination sentinels, native source/archive hashes, synchronous STEP/provenance oracle and GUI lifecycle fences.",
+          "limits": "Synthetic axis-aligned world-solid fixture. Event overlap is not an end-to-end latency budget. Metadata parity excludes only separately verified file SHA and native check timing; no source snapshot fields are dropped."}
+panel = None
+workers = []
+preparation_workers = []
+patches = []
+worker_evidence = {}
+phase = "setup"
+measuring = False
+cleaned = False
+shutdown_done = False
+flow = pending = None
+invalid_boundary_probe = None
+service = QtCore.QTimer(main)
+service.setInterval(10)
+pulse = QtCore.QTimer(main)
+pulse.setTimerType(QtCore.Qt.PreciseTimer)
+pulse.setInterval(5)
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition):
+    assert condition, label
+    report["checks"].append(label)
+    if not measuring: save()
+
+
+def wait_for(predicate, label, seconds=40):
+    return {"predicate": predicate, "label": label, "deadline": clock() + int(seconds * 1e9)}
+
+
+def pause(seconds, label):
+    end = clock() + int(seconds * 1e9)
+    return wait_for(lambda: clock() >= end, label, seconds + 5)
+
+
+def heartbeat():
+    if not panel: return
+    job = panel._step_export_job
+    worker = job["bundle"]["worker"] if job else None
+    process = worker.process if worker else None
+    report["pulses"].append({"at_ns": clock(), "phase": phase,
+        "pid": process.pid if process else None, "alive": process.poll() is None if process else False,
+        "owner_current": job is not None, "generation": panel._step_export_generation})
+
+
+def call(op, **args):
+    assert panel.operation(op, **args), panel.message.text()
+    return panel.document()
+
+
+def activate(doc):
+    App.setActiveDocument(doc.Name)
+    Gui.ActiveDocument = Gui.getDocument(doc.Name)
+    panel.tick()
+
+
+def destination(name, suffix=".step"):
+    path = output / (name + suffix)
+    sidecar = path.with_suffix(path.suffix + ".json")
+    path.write_bytes((name + " previous STEP sentinel").encode())
+    sidecar.write_bytes((name + " previous provenance sentinel").encode())
+    panel.core.settings.grant_destination(str(path))
+    return path, (path.read_bytes(), sidecar.read_bytes())
+
+
+def pair(path):
+    sidecar = path.with_suffix(path.suffix + ".json")
+    return (path.read_bytes() if path.exists() else None, sidecar.read_bytes() if sidecar.exists() else None)
+
+
+def start(path):
+    panel.start_step_export(str(path))
+    job = panel._step_export_job
+    assert job is not None, "Expected eligible native STEP child: " + panel.message.text()
+    worker = job["bundle"]["worker"]
+    assert worker.process is not None and worker.process.pid != os.getpid()
+    worker_evidence[id(worker)].update(pid=worker.process.pid, job_generation=job["generation"],
+                                      pending_status=panel.message.text())
+    return job, worker
+
+
+def closed(worker):
+    return worker.cleanup_complete.is_set() and (worker.process is None or worker.process.poll() is not None)
+
+
+def successful_child(worker, label, *, published):
+    info = worker_evidence[id(worker)]
+    response = info.get("response") or {}
+    check(label + ": real child succeeded with confirmed zero exit",
+          response.get("ok") is True and info.get("process_exited_at_response") is True
+          and info.get("exit_code_at_response") == 0)
+    check(label + ": publication outcome matches the current request",
+          info.get("acceptance_called") is True and info.get("accepted") is published
+          and info.get("published") is published)
+
+
+def published_pair(path, worker, label):
+    successful_child(worker, label, published=True)
+    info = worker_evidence[id(worker)]
+    sidecar = path.with_suffix(path.suffix + ".json")
+    metadata = json.loads(sidecar.read_text())
+    check(label + ": published sidecar identifies this request and exact bytes",
+          metadata["document_id"] == info["document_id"] and metadata["sha256"] == sha(path)
+          and metadata["included_body_ids"] == info["request"]["target_ids"])
+    return metadata
+
+
+def lifecycle_fixture(label):
+    doc = call("new", name=label)
+    solid = doc.addObject("Part::Feature", "LifecycleSolid")
+    solid.Shape = Part.makeBox(20, 12, 8)
+    doc.recompute()
+    panel.core.sync(doc)
+    panel.state = panel.core.inspect(doc)
+    panel.refresh()
+    return doc, solid
+
+
+@contextmanager
+def observe_source_capture(doc, evidence):
+    """Count the actual native saveCopy call without replacing capture work."""
+    previous = sys.getprofile()
+    assert previous is None, "Native capture proof requires an unused profile hook"
+    evidence["native_savecopy_calls"] = 0
+    context_code = ui.Panel._step_export_context_current.__code__
+    def observe(frame, event, function):
+        if (event == "c_call" and getattr(function, "__name__", None) == "saveCopy"
+                and getattr(function, "__self__", None) is doc):
+            evidence["native_savecopy_calls"] += 1
+        failure = evidence.get("callback_failure")
+        if (failure and failure["raise_count"] and event == "return"
+                and frame.f_code is context_code):
+            failure["normal_context_checks_after_exception"].append(function)
+    sys.setprofile(observe)
+    try:
+        yield
+    finally:
+        sys.setprofile(previous)
+
+
+def preparation_reentry_cases(doc, other):
+    """Invalidate real preparation at its admission/allocation boundaries."""
+    from kurtshape import step_capture, step_export_worker
+    from kurtshape.core import OperationError
+    worker_type = step_export_worker.NativeStepExportWorker
+    original_admission = step_capture.roundtrip_digest
+    for boundary in ("post-admission", "post-allocation"):
+        cases = [("cancel", False), ("document-switch", False)]
+        cases.append(("cancel" if boundary == "post-admission" else "document-switch", True))
+        for action, callback_error in cases:
+            activate(doc)
+            suffix = "-callback-error" if callback_error else ""
+            target, sentinel = destination("prepare-" + boundary + "-" + action + suffix)
+            label = boundary + " " + action + (" callback error" if callback_error else "")
+            evidence = {"boundary": boundary, "action": action, "allocations": [],
+                        "admissions": [], "blocked_calls": [], "generation_before": panel._step_export_generation,
+                        "strict_before": snapshot_document(doc, panel.core)["strict"]}
+            report.setdefault("preparation_reentry", []).append(evidence)
+            allocated = []
+            original_close_methods = []
+            if callback_error:
+                injected_error = OSError("One-shot supplied ownership callback failure: " + label)
+                failure = {"armed": False, "raise_count": 0, "delegated_results": [],
+                           "normal_context_checks_after_exception": []}
+                evidence["callback_failure"] = failure
+                original_prepare = panel.core.prepare_step_export
+                def prepare_with_failure(*args, **kwargs):
+                    predicate = kwargs["is_current"]
+                    failure["predicate_module"] = predicate.__module__
+                    failure["predicate_name"] = predicate.__name__
+                    def supplied_predicate():
+                        current = predicate()
+                        failure["delegated_results"].append(current)
+                        if failure["armed"]:
+                            failure["armed"] = False
+                            failure["raise_count"] += 1
+                            failure["delegated_before_raise"] = current
+                            raise injected_error
+                        return current
+                    kwargs["is_current"] = supplied_predicate
+                    try:
+                        return original_prepare(*args, **kwargs)
+                    except OperationError as exc:
+                        failure["error_code"] = exc.code
+                        failure["cause_is_injected"] = exc.__cause__ is injected_error
+                        failure["cause_type"] = type(exc.__cause__).__name__
+                        raise
+            def invalidate():
+                evidence["invalidated"] = True
+                if action == "cancel":
+                    panel._cancel_step_export()
+                else:
+                    activate(other)
+                panel.notify("New feedback after preparation " + label)
+                evidence["newer_feedback"] = panel.message.text()
+                # Existing preparation exclusion must suppress this reentry.
+                panel.start_step_export(str(target))
+                panel._poll_step_export()
+                if callback_error:
+                    failure["armed"] = True
+            def admission(*args, **kwargs):
+                result = original_admission(*args, **kwargs)
+                evidence["admissions"].append({"stable": result[0], "ticket": result[1] is not None})
+                if boundary == "post-admission":
+                    invalidate()
+                return result
+            def allocate(*args, **kwargs):
+                worker = worker_type(*args, **kwargs)
+                allocated.append(worker)
+                preparation_workers.append(worker)
+                row = {"folder": str(worker.folder), "snapshot": str(worker.snapshot), "close_calls": 0}
+                evidence["allocations"].append(row)
+                original_close = worker.close
+                original_close_methods.append((worker, original_close))
+                def close():
+                    row["close_calls"] += 1
+                    if "before_close" not in row:
+                        row["before_close"] = {"snapshot_exists": worker.snapshot.exists(),
+                            "snapshot_identity": worker._snapshot_identity,
+                            "lease_present": worker._snapshot_lease is not None,
+                            "accepted_key": worker._accepted_key,
+                            "process_present": worker.process is not None}
+                    return original_close()
+                worker.close = close
+                if boundary == "post-allocation":
+                    invalidate()
+                return worker
+            def forbidden(name):
+                def invoke(*args, **kwargs):
+                    evidence["blocked_calls"].append(name)
+                    raise AssertionError("Abandoned preparation reached " + name)
+                return invoke
+            with ExitStack() as stack:
+                if callback_error:
+                    stack.enter_context(patch.object(panel.core, "prepare_step_export", side_effect=prepare_with_failure))
+                stack.enter_context(patch.object(step_capture, "roundtrip_digest", side_effect=admission))
+                stack.enter_context(patch.object(step_export_worker, "NativeStepExportWorker", side_effect=allocate))
+                stack.enter_context(patch.object(panel.core.snapshots, "try_acquire", side_effect=forbidden("snapshot_acquire")))
+                stack.enter_context(patch.object(panel, "_step_export_fallback", side_effect=forbidden("fallback")))
+                for method in ("borrow_snapshot", "own_snapshot", "submit"):
+                    stack.enter_context(patch.object(worker_type, method, side_effect=forbidden(method)))
+                stack.enter_context(observe_source_capture(doc, evidence))
+                panel.start_step_export(str(target))
+            evidence.update(strict_after=snapshot_document(doc, panel.core)["strict"],
+                            final_status=panel.message.text(), final_generation=panel._step_export_generation,
+                            preparing=panel._step_export_preparing, busy=panel.core.busy,
+                            job_present=panel._step_export_job is not None,
+                            timer_active=panel.step_export_timer.isActive(), destination_unchanged=pair(target) == sentinel)
+            yield wait_for(lambda: all(closed(worker) for worker in allocated), "Abandoned preparation cleanup: " + label)
+            for worker, row in zip(allocated, evidence["allocations"]):
+                row.update(cleanup_complete=closed(worker), folder_exists=worker.folder.exists(),
+                           process_present=worker.process is not None)
+            expected_allocations = 0 if boundary == "post-admission" else 1
+            check("Preparation ownership fence stops allocation/capture/submission: " + label,
+                  evidence.get("invalidated") is True and len(evidence["admissions"]) == 1
+                  and evidence["admissions"][0]["stable"] is True
+                  and len(allocated) == expected_allocations and not evidence["blocked_calls"]
+                  and evidence["native_savecopy_calls"] == 0
+                  and not evidence["preparing"] and not evidence["busy"]
+                  and not evidence["job_present"] and not evidence["timer_active"]
+                  and all(row["close_calls"] == 1 and row["cleanup_complete"] and not row["folder_exists"]
+                          and row["before_close"] == {"snapshot_exists": False, "snapshot_identity": None,
+                              "lease_present": False, "accepted_key": None, "process_present": False}
+                          for row in evidence["allocations"]))
+            check("Preparation cancellation preserves source, destination and newer feedback: " + label,
+                  evidence["strict_before"] == evidence["strict_after"] and evidence["destination_unchanged"]
+                  and evidence["final_status"] == evidence["newer_feedback"])
+            if callback_error:
+                check("Supplied ownership callback failure preserves its cause and normal stale checks: " + label,
+                      failure["raise_count"] == 1 and not failure["armed"]
+                      and failure["delegated_before_raise"] is False
+                      and failure["error_code"] == "cancelled_step_export"
+                      and failure["cause_is_injected"] and failure["cause_type"] == "OSError"
+                      and failure["predicate_module"] == "kurtshape.ui" and failure["predicate_name"] == "<lambda>"
+                      and bool(failure["normal_context_checks_after_exception"])
+                      and all(value is False for value in failure["normal_context_checks_after_exception"]))
+            # Preserve the verified boundary count when later ordinary shutdown
+            # idempotently closes the same already-cleaned worker again.
+            for worker, original_close in original_close_methods:
+                worker.close = original_close
+            activate(doc)
+
+
+def synchronous_export(doc, path, label, *, observe_sync=False):
+    before = snapshot_document(doc, panel.core)["strict"]
+    expected = {"document_id": panel.core.identifier(doc),
+                "expected_revision": panel.core._meta(doc).Revision, "path": str(path)}
+    evidence = {"label": label, "expected_request": expected, "strict_before": before,
+                "workers_before": len(workers), "dispatches": []}
+    report.setdefault("synchronous_fallbacks", []).append(evidence)
+    original_dispatch = panel.core.dispatch
+    original_sync = panel.core.sync
+    def sync(captured_doc, *args, **kwargs):
+        result = original_sync(captured_doc, *args, **kwargs)
+        if observe_sync and captured_doc == doc and "strict_after_sync" not in evidence:
+            evidence["strict_after_sync"] = snapshot_document(doc, panel.core)["strict"]
+        return result
+    def dispatch(request):
+        entry = None
+        if request.get("op") == "export":
+            entry = {"request": dict(request), "current_document_id": panel.core.identifier(doc),
+                     "current_revision": panel.core._meta(doc).Revision}
+            evidence["dispatches"].append(entry)
+        try:
+            response = original_dispatch(request)
+            if entry is not None:
+                entry["response"] = response
+            return response
+        except Exception as exc:
+            if entry is not None:
+                entry["exception"] = {"type": type(exc).__name__, "message": str(exc)}
+            raise
+    with patch.object(panel.core, "dispatch", side_effect=dispatch), patch.object(panel.core, "sync", side_effect=sync):
+        panel.start_step_export(str(path))
+    evidence.update(strict_after=snapshot_document(doc, panel.core)["strict"],
+                    workers_after=len(workers), final_status=panel.message.text(),
+                    generation=panel._step_export_generation,
+                    job_present=panel._step_export_job is not None)
+    dispatches = evidence["dispatches"]
+    check(label + ": actual fallback dispatch uses the current document, revision and destination",
+          len(dispatches) == 1 and dispatches[0]["request"].get("document_id") == expected["document_id"]
+          == dispatches[0]["current_document_id"]
+          and dispatches[0]["request"].get("expected_revision") == dispatches[0]["current_revision"]
+          and dispatches[0]["request"].get("path") == expected["path"])
+    check(label + ": actual synchronous export succeeds before reading its sidecar",
+          dispatches[0].get("response", {}).get("ok") is True
+          and evidence["workers_before"] == evidence["workers_after"]
+          and not evidence["job_present"] and evidence["final_status"] == "Exported " + path.name)
+    if observe_sync:
+        check(label + ": real sync records the authored edit before dispatch",
+              "strict_after_sync" in evidence
+              and evidence["strict_after_sync"]["revision"] != evidence["strict_before"]["revision"]
+              and dispatches[0]["current_revision"] == evidence["strict_after_sync"]["revision"])
+    oracle = evidence["strict_after_sync"] if observe_sync else evidence["strict_before"]
+    check(label + ": every strict source and camera field matches its full source oracle",
+          oracle == evidence["strict_after"])
+    metadata = json.loads(path.with_suffix(path.suffix + ".json").read_text())
+    evidence["metadata"] = metadata
+    check(label + ": provenance identifies the requested format, document and exact output bytes",
+          path.is_file() and path.stat().st_size > 0 and metadata["format"] == path.suffix
+          and metadata["sha256"] == sha(path) and metadata["document_id"] == expected["document_id"]
+          and metadata["revision"] == dispatches[0]["current_revision"])
+    return evidence, metadata
+
+
+def gap_statistics(start, end):
+    points = [start] + [point["at_ns"] for point in report["pulses"] if start <= point["at_ns"] <= end] + [end]
+    gaps = sorted((b - a) / 1e6 for a, b in zip(points, points[1:]))
+    return {"count": len(points) - 2, "max_ms": max(gaps), "p95_ms": gaps[(95 * len(gaps) + 99) // 100 - 1]}
+
+
+def install_class_observers():
+    # QTimer connects bound methods in Panel.__init__, so patch the class first.
+    def observe(name):
+        original = getattr(ui.Panel, name)
+        def measured(self, *args, **kwargs):
+            began, captured_phase = clock(), phase
+            captured_job = getattr(self, "_step_export_job", None)
+            try:
+                return original(self, *args, **kwargs)
+            finally:
+                ended = clock()
+                report["spans"].append({"method": name, "phase": captured_phase,
+                                        "start_ns": began, "end_ns": ended, "ms": (ended - began) / 1e6})
+                if name == "_poll_step_export" and invalid_boundary_probe is not None:
+                    invalid_boundary_probe()
+                if captured_job is not None and self._step_export_job is not captured_job:
+                    info = worker_evidence.get(id(captured_job["bundle"]["worker"]))
+                    if info is not None:
+                        info.update(final_status=self.message.text(), final_generation=self._step_export_generation,
+                                    final_state_document=(self.state or {}).get("document_id"),
+                                    published=bool(captured_job["bundle"].get("published")), retired_by=name)
+        handle = patch.object(ui.Panel, name, measured)
+        handle.start()
+        patches.append(handle)
+    for name in ("tick", "start_step_export", "_poll_step_export", "_cancel_step_export"):
+        observe(name)
+
+
+def provenance_semantics(value):
+    value = json.loads(json.dumps(value))
+    value.pop("sha256")
+    for body in value["geometry_check"]["bodies"]: body.pop("check_ms")
+    return value
+
+
+def geometry_signature(path):
+    shape = Part.Shape()
+    shape.read(str(path))
+    def vector(point): return [point.x, point.y, point.z]
+    def bound(box): return [box.XMin, box.YMin, box.ZMin, box.XMax, box.YMax, box.ZMax]
+    return {"valid": shape.isValid(), "bounds": bound(shape.BoundBox),
+            "solids": [{"volume": solid.Volume, "area": solid.Area, "center": vector(solid.CenterOfMass),
+                        "bounds": bound(solid.BoundBox), "faces": [face.Area for face in solid.Faces],
+                        "edges": [edge.Length for edge in solid.Edges],
+                        "vertices": [vector(vertex.Point) for vertex in solid.Vertexes]} for solid in shape.Solids]}
+
+
+def install_observers():
+    original_prepare = panel.core.prepare_step_export
+    original_accept = panel.core.accept_step_export
+    def prepare(*args, **kwargs):
+        bundle = original_prepare(*args, **kwargs)
+        if bundle is not None:
+            worker = bundle["worker"]
+            workers.append(worker)
+            info = {"index": len(workers), "archive_sha_before": sha(worker.snapshot), "phase": phase,
+                    "request": json.loads(json.dumps(bundle["envelope"])),
+                    "document_id": bundle["document_id"], "document_name": bundle["document"].Name,
+                    "destination": str(bundle["destination"]), "request_generation": panel._step_export_generation,
+                    "snapshot_reused": bundle["snapshot_reused"], "acceptance_called": False,
+                    "accepted": None, "published": False}
+            worker_evidence[id(worker)] = info
+            report["workers"].append(info)
+            archive = output / ("representative-source.FCStd" if phase == "representative" else
+                                f"source-{len(workers):02d}-{bundle['document'].Name}.FCStd")
+            began = clock()
+            shutil.copyfile(worker.snapshot, archive)
+            info["preserved_archive"] = str(archive)
+            info["archive_copy_ms"] = (clock() - began) / 1e6
+            original_poll = worker.poll
+            def poll():
+                response = original_poll()
+                if response is not None:
+                    info["response"] = response
+                    info["response_seen_ns"] = clock()
+                    info["process_exited_at_response"] = worker.process.poll() is not None
+                    info["exit_code_at_response"] = worker.process.poll()
+                    began = clock()
+                    info["archive_sha_after"] = sha(worker.snapshot)
+                    info["archive_hash_ms"] = (clock() - began) / 1e6
+                return response
+            handle = patch.object(worker, "poll", side_effect=poll)
+            handle.start()
+            patches.append(handle)
+        return bundle
+    def accept(*args, **kwargs):
+        bundle = args[1]
+        info = worker_evidence[id(bundle["worker"])]
+        info["acceptance_called"] = True
+        try:
+            result = original_accept(*args, **kwargs)
+            info["accepted"] = result is not None
+            return result
+        except Exception as exc:
+            info["accepted"] = False
+            info["acceptance_error"] = {"code": getattr(exc, "code", None), "message": str(exc)}
+            raise
+        finally:
+            info["published"] = bool(bundle.get("published"))
+    for name, function in (("prepare_step_export", prepare), ("accept_step_export", accept)):
+        handle = patch.object(panel.core, name, side_effect=function)
+        handle.start()
+        patches.append(handle)
+
+
+def scenarios():
+    global phase, measuring, shutdown_done, invalid_boundary_probe
+    rich = call("new", name="STEP work overlap and world geometry")
+    feature = rich.addObject("Part::Feature", "WorldSolids")
+    feature.Shape = Part.makeCompound([Part.makeBox(2, 3, 4, App.Vector((i % 25) * 5, (i // 25) * 6, 0)) for i in range(1000)])
+    feature.Placement = App.Placement(App.Vector(13, 17, 19), App.Rotation())
+    rich.recompute()
+    panel.core.sync(rich)
+    panel.state = panel.core.inspect(rich)
+    panel.refresh()
+    source_path = output / "representative.FCStd"
+    panel.core.settings.grant_destination(str(source_path))
+    call("save", path=str(source_path))
+    oracle = output / "synchronous-oracle.step"
+    panel.core.settings.grant_destination(str(oracle))
+    panel.core._export(rich, str(oracle))
+    panel.fit()
+    Gui.activeDocument().activeView().redraw()
+    phase = "warmup"
+    yield pause(2.5, "Native scene warmup")
+    phase = "baseline"
+    report["baseline_start_ns"] = clock()
+    yield pause(2.5, "Same-fixture normal event-loop baseline")
+    report["baseline_end_ns"] = clock()
+    report["baseline_gaps"] = gap_statistics(report["baseline_start_ns"], report["baseline_end_ns"])
+    report["baseline_tick_count"] = sum(row["method"] == "tick" and row["phase"] == "baseline" for row in report["spans"])
+    check("Measured baseline includes normal Panel ticks over at least two seconds", report["baseline_end_ns"] - report["baseline_start_ns"] >= 2_000_000_000 and report["baseline_tick_count"] >= 3)
+    report["strict_source_before"] = snapshot_document(rich, panel.core)["strict"]
+    target, sentinel = destination("representative")
+    phase = "representative"
+    measuring = True
+    report["launch_start_ns"] = clock()
+    job, worker = start(target)
+    report["launch_return_ns"] = clock()
+    check("STEP request returns pending with a real child and no wait cursor", panel._step_export_job is job and panel.step_export_timer.isActive() and panel.message.text() == "Exporting STEP… Escape to cancel" and QtWidgets.QApplication.overrideCursor() is None)
+    check("Pending worker has not overwritten either authorized destination", pair(target) == sentinel)
+    yield wait_for(lambda: panel._step_export_job is None, "Representative STEP completion", 70)
+    report["completed_ns"] = clock()
+    measuring = False
+    phase = "representative-proof"
+    info = worker_evidence[id(worker)]
+    report["check_gaps"] = gap_statistics(report["launch_start_ns"], report["completed_ns"])
+    response = info.get("response") or {}
+    work = response.get("export_work") or {}
+    overlap = [point for point in report["pulses"] if work.get("start_ns", 0) <= point["at_ns"] <= work.get("end_ns", -1)
+               and point["pid"] == worker.process.pid and point["alive"] and point["owner_current"]]
+    report["actual_work_overlap_pulses"] = overlap
+    report["strict_source_after"] = snapshot_document(rich, panel.core)["strict"]
+    check("Actual native checking/writing overlaps at least two owned live-child GUI pulses", work.get("clock") == "time.perf_counter_ns" and len(overlap) >= 2)
+    check("Current STEP child result is accepted only after confirmed exit", info.get("accepted") and response.get("ok") and info.get("process_exited_at_response"))
+    check("Successful current export stops polling and reports its actual filename", not panel.step_export_timer.isActive() and panel.message.text() == "Exported " + target.name)
+    check("Representative source remains exactly unchanged including camera", report["strict_source_before"] == report["strict_source_after"])
+    check("Source archive remains byte-identical through child work", info["archive_sha_before"] == info.get("archive_sha_after") == sha(info["preserved_archive"]))
+    actual_meta = published_pair(target, worker, "Representative export")
+    oracle_meta = json.loads(oracle.with_suffix(".step.json").read_text())
+    report["actual_provenance"], report["oracle_provenance"] = actual_meta, oracle_meta
+    check("Both provenance files identify their exact STEP bytes", actual_meta["sha256"] == sha(target) and oracle_meta["sha256"] == sha(oracle))
+    check("Async original provenance matches synchronous oracle excluding hash and check timing only", provenance_semantics(actual_meta) == provenance_semantics(oracle_meta))
+    actual_geometry, oracle_geometry = geometry_signature(target), geometry_signature(oracle)
+    report["actual_geometry"], report["oracle_geometry"] = actual_geometry, oracle_geometry
+    check("Imported asynchronous STEP exactly matches synchronous world geometry", actual_geometry == oracle_geometry and actual_geometry["valid"] and len(actual_geometry["solids"]) == 1000 and actual_geometry["bounds"][:3] == [13.0, 17.0, 19.0])
+    yield wait_for(lambda: closed(worker), "Representative worker cleanup")
+
+    phase = "lifecycle"
+    for mutation in (None, "with-feedback", "silent"):
+        mutate_on_error = mutation is not None
+        invalid_doc = call("new", name="STEP native invalid verdict " + str(mutation))
+        points = [(0, 0), (10, 0), (10, 10), (5, 10), (5, -5), (0, -5), (0, 0)]
+        invalid = invalid_doc.addObject("Part::Feature", "OrthogonalCrossing")
+        invalid.Shape = Part.Face(Part.makePolygon([App.Vector(x, y, 0) for x, y in points])).extrude(App.Vector(0, 0, 5))
+        invalid_doc.recompute()
+        panel.core.sync(invalid_doc)
+        panel.state = panel.core.inspect(invalid_doc, measure=False)
+        panel.refresh()
+        check("Invalid fixture is a real one-solid native crossing with an uncached verdict", len(invalid.Shape.Solids) == 1 and not invalid.Shape.isValid() and panel.core._meta(invalid_doc).BuildStatus == "valid")
+        target, sentinel = destination("invalid-reentry-" + mutation if mutate_on_error else "invalid-verdict")
+        job, worker = start(target)
+        changed = {}
+        diagnostic = {"mutation": mutation, "job_generation": job["generation"]}
+        report.setdefault("invalid_publication_diagnostics", []).append(diagnostic)
+        def record_invalid_boundary():
+            if changed.get("state") is not None and panel._step_export_job is None and "boundary" not in diagnostic:
+                diagnostic["boundary"] = {"generation": panel._step_export_generation,
+                    "same_state_object": panel.state is changed["state"],
+                    "equal_state": panel.state == changed["state"],
+                    "obsolete_state_applied": panel.state is job["bundle"].get("invalid_state"),
+                    "state": json.loads(json.dumps(panel.state)), "message": panel.message.text()}
+        invalid_boundary_probe = record_invalid_boundary
+        original_document = panel.document
+        def document_during_invalid_publication():
+            if (mutate_on_error and not changed and job["bundle"].get("invalid_state") is not None
+                    and worker.closed and panel._step_export_job is None):
+                changed["generation"] = panel._step_export_generation
+                invalid.Shape = Part.makeBox(10, 10, 5)
+                invalid_doc.recompute()
+                panel.core.sync(invalid_doc)
+                changed["state"] = panel.core.inspect(invalid_doc, measure=False)
+                panel.state = changed["state"]
+                if mutation == "with-feedback":
+                    panel.notify("Replacement native model feedback")
+            return original_document()
+        with patch.object(panel, "document", side_effect=document_during_invalid_publication):
+            yield wait_for(lambda: panel._step_export_job is None, "Actual invalid STEP child completion")
+        invalid_boundary_probe = None
+        diagnostic["deferred"] = {"generation": panel._step_export_generation,
+            "mutation_generation": changed.get("generation"),
+            "same_state_object": panel.state is changed.get("state"),
+            "equal_state": panel.state == changed.get("state"),
+            "obsolete_state_applied": panel.state is job["bundle"].get("invalid_state"),
+            "state": panel.state, "replacement_state": changed.get("state"),
+            "current_native_state": panel.core.inspect(invalid_doc, measure=False),
+            "message": panel.message.text()}
+        info = worker_evidence[id(worker)]
+        response = info.get("response") or {}
+        check("Actual invalid child reports invalid_geometry and preserves both destinations", response.get("error", {}).get("code") == "invalid_geometry" and response.get("ok") is False and pair(target) == sentinel)
+        if mutate_on_error:
+            boundary = diagnostic.get("boundary") or {}
+            check("Same-generation invalid callback preserves exact replacement state at publication boundary: " + mutation,
+                  changed.get("generation") == job["generation"] == boundary.get("generation")
+                  and boundary.get("same_state_object") and boundary.get("equal_state")
+                  and not boundary.get("obsolete_state_applied"))
+            expected_current = dict(diagnostic["deferred"]["current_native_state"])
+            # Normal Panel.tick dispatch adds its measured operation_ms to a
+            # fresh inspect result. Account for that one timing annotation;
+            # retain exact equality for every native/current-state field.
+            valid_timing = True
+            if "operation_ms" in panel.state:
+                duration = panel.state["operation_ms"]
+                valid_timing = type(duration) in (int, float) and math.isfinite(duration) and duration >= 0
+                expected_current["operation_ms"] = duration
+            check("Later normal tick state exactly describes the current native model: " + mutation,
+                  valid_timing and panel.state == expected_current and panel.state["build_status"] == "valid"
+                  and panel.state is not job["bundle"].get("invalid_state"))
+            if mutation == "with-feedback":
+                check("Invalid callback preserves replacement native model feedback", panel.message.text() == "Replacement native model feedback")
+            else:
+                check("Silent native mutation clears pending status without publishing stale invalid error", not panel.step_export_timer.isActive() and panel.message.text() not in {"Preparing STEP export…", "Exporting…", "Exporting STEP… Escape to cancel", "Geometry check failed; nothing was exported"})
+        else:
+            current = panel.core.inspect(invalid_doc, measure=False)
+            check("Real invalid verdict publishes truthful failed UI state and error", panel.state == current and current["build_status"] == "failed" and current["geometry_check"] == "invalid" and panel.message.text() == "Geometry check failed; nothing was exported" and not panel.step_export_timer.isActive())
+        yield wait_for(lambda: closed(worker), "Invalid verdict child cleanup")
+
+    doc, lifecycle_solid = lifecycle_fixture("STEP direct-native-edit rejection source")
+    other = call("new", name="STEP lifecycle destination")
+    activate(doc)
+
+    target, sentinel = destination("cancel")
+    _, worker = start(target)
+    panel._cancel_step_export(notify=True)
+    check("Explicit cancel retires its job without destination publication", panel._step_export_job is None and not panel.step_export_timer.isActive() and panel.message.text() == "STEP export canceled" and worker.closed and pair(target) == sentinel)
+    yield wait_for(lambda: closed(worker), "Canceled child cleanup")
+    check("Canceled child cannot later overwrite either destination", pair(target) == sentinel)
+
+    target, sentinel = destination("native-edit")
+    _, worker = start(target)
+    lifecycle_solid.Shape = Part.makeBox(20, 12, 9)
+    doc.recompute()
+    yield wait_for(lambda: panel._step_export_job is None, "Native edit rejection")
+    check("Native source edit makes old STEP result unable to publish", pair(target) == sentinel)
+    yield wait_for(lambda: closed(worker), "Stale native-edit child cleanup")
+    panel.core.sync(doc)
+    panel.state = panel.core.inspect(doc)
+    panel.refresh()
+    # Keep the directly mutated document and its evidence independent of the
+    # positive lifecycle fixture; attachment diagnostics own that separate case.
+    report["direct_mutation_document"] = {"name": doc.Name, "document_id": panel.core.identifier(doc),
+                                           "strict_state": snapshot_document(doc, panel.core)["strict"]}
+    panel.fit()
+    Gui.activeDocument().activeView().redraw()
+    yield pause(0.5, "Settle directly edited source camera before fallback proof")
+    target, _ = destination("direct-edit-synchronous-fallback")
+    check("Direct native edit has the diagnosed attachment-ineligible metadata flags", "Touched" not in panel.core._meta(doc).State)
+    fallback_evidence, fallback_meta = synchronous_export(doc, target, "Direct-edit STEP fallback")
+    fallback_geometry = geometry_signature(target)
+    report["direct_mutation_fallback"] = dict(fallback_evidence, geometry=fallback_geometry)
+    check("Direct-edit fallback exports the latest real native dimensions", fallback_geometry["valid"] and len(fallback_geometry["solids"]) == 1 and fallback_geometry["bounds"] == [0.0, 0.0, 0.0, 20.0, 12.0, 9.0] and fallback_geometry["solids"][0]["volume"] == lifecycle_solid.Shape.Volume)
+    check("Direct-edit fallback provenance identifies latest document and exact output", fallback_meta["sha256"] == sha(target) and fallback_meta["document_id"] == panel.core.identifier(doc) and fallback_meta["revision"] == panel.core._meta(doc).Revision and fallback_meta["included_body_ids"] == [lifecycle_solid.Name] and fallback_meta["native_file"] == (doc.FileName or None))
+    stl_target, _ = destination("direct-edit-stl-fallback", ".stl")
+    lifecycle_solid.Label = "Unsynced authored label before STL export"
+    stl_evidence, stl_meta = synchronous_export(doc, stl_target, "Actual unsynced STL UI fallback", observe_sync=True)
+    check("STL fallback preserves current body selection and native-file provenance",
+          stl_meta["included_body_ids"] == [lifecycle_solid.Name]
+          and stl_meta["native_file"] == (doc.FileName or None))
+
+    # Exercise real synchronous revision/context fences without replacing work.
+    for seam in ("sync-cancel", "dispatch-native-edit"):
+        target, sentinel = destination("fallback-" + seam, ".stl")
+        diagnostic = {"seam": seam, "workers_before": len(workers),
+                      "generation_before": panel._step_export_generation, "dispatches": []}
+        report.setdefault("fallback_reentry", []).append(diagnostic)
+        lifecycle_solid.Label = "Authored label before " + seam
+        diagnostic["strict_before"] = snapshot_document(doc, panel.core)["strict"]
+        original_sync, original_dispatch = panel.core.sync, panel.core.dispatch
+        def sync_at_boundary(captured_doc, *args, **kwargs):
+            result = original_sync(captured_doc, *args, **kwargs)
+            if captured_doc == doc:
+                if seam == "sync-cancel" and "strict_after_sync" not in diagnostic:
+                    diagnostic["strict_after_sync"] = snapshot_document(doc, panel.core)["strict"]
+                    panel._cancel_step_export()
+                    panel.notify("New feedback after fallback sync cancellation")
+                elif seam == "dispatch-native-edit" and diagnostic.get("edited_at_dispatch"):
+                    diagnostic["strict_after_sync"] = snapshot_document(doc, panel.core)["strict"]
+            return result
+        def dispatch_at_boundary(request):
+            if request.get("op") != "export":
+                return original_dispatch(request)
+            entry = {"request": dict(request), "revision_at_entry": panel.core._meta(doc).Revision}
+            diagnostic["dispatches"].append(entry)
+            if seam == "dispatch-native-edit":
+                lifecycle_solid.Label = "New native label after fallback request capture"
+                diagnostic["edited_at_dispatch"] = True
+            response = original_dispatch(request)
+            entry["response"] = response
+            return response
+        with patch.object(panel.core, "sync", side_effect=sync_at_boundary), patch.object(panel.core, "dispatch", side_effect=dispatch_at_boundary):
+            panel.start_step_export(str(target))
+        diagnostic.update(strict_after=snapshot_document(doc, panel.core)["strict"],
+                          final_status=panel.message.text(), generation_after=panel._step_export_generation,
+                          workers_after=len(workers))
+        check("Fallback reentry preserves both destination sentinels without a child: " + seam,
+              pair(target) == sentinel and diagnostic["workers_before"] == diagnostic["workers_after"]
+              and panel._step_export_job is None and not panel.step_export_timer.isActive())
+        check("Fallback reentry preserves the complete actual post-sync source oracle: " + seam,
+              diagnostic.get("strict_after_sync") == diagnostic["strict_after"])
+        if seam == "sync-cancel":
+            check("Cancellation during actual sync prevents dispatch and preserves newer feedback",
+                  not diagnostic["dispatches"]
+                  and diagnostic["generation_after"] > diagnostic["generation_before"] + 1
+                  and diagnostic["final_status"] == "New feedback after fallback sync cancellation")
+        else:
+            dispatches = diagnostic["dispatches"]
+            check("Native edit after fallback token capture is rejected by the real revision contract",
+                  len(dispatches) == 1
+                  and dispatches[0]["request"]["expected_revision"] == dispatches[0]["revision_at_entry"]
+                  and dispatches[0]["request"]["expected_revision"] != panel.core._meta(doc).Revision
+                  and dispatches[0]["response"].get("ok") is False
+                  and dispatches[0]["response"].get("error", {}).get("code") == "stale_revision"
+                  and diagnostic["final_status"] == dispatches[0]["response"]["error"]["message"])
+    doc, lifecycle_solid = lifecycle_fixture("STEP independently successful lifecycle source")
+    target, _ = destination("lifecycle-positive-control")
+    capture_positive = report["preparation_capture_positive"] = {}
+    with observe_source_capture(doc, capture_positive):
+        _, worker = start(target)
+    check("Preparation capture observer sees the real eligible native saveCopy",
+          capture_positive["native_savecopy_calls"] == 1 and not worker_evidence[id(worker)]["snapshot_reused"])
+    yield wait_for(lambda: panel._step_export_job is None, "Independent lifecycle positive control")
+    published_pair(target, worker, "Independent lifecycle positive control")
+    yield wait_for(lambda: closed(worker), "Independent positive-control child cleanup")
+    yield from preparation_reentry_cases(doc, other)
+
+    target, sentinel = destination("destination-change")
+    _, worker = start(target)
+    target.write_bytes(b"Newer private destination contents")
+    target.with_suffix(".step.json").write_bytes(b"Newer private metadata contents")
+    newer_pair = pair(target)
+    yield wait_for(lambda: panel._step_export_job is None, "Changed destination rejection")
+    successful_child(worker, "Destination-change causality", published=False)
+    check("Destination changes during child work are preserved exactly", pair(target) == newer_pair and newer_pair != sentinel)
+    yield wait_for(lambda: closed(worker), "Changed-destination child cleanup")
+
+    for fail_old in (False, True):
+        old_path, old_sentinel = destination("old-poll-" + str(fail_old))
+        new_path, _ = destination("new-poll-" + str(fail_old))
+        previous, old_worker = start(old_path)
+        replacement = {}
+        def replace_in_poll():
+            replacement["job"], replacement["worker"] = start(new_path)
+            replacement["status"] = panel.message.text()
+            if fail_old: raise RuntimeError("Injected stale STEP poll failure")
+            return None
+        with patch.object(old_worker, "poll", side_effect=replace_in_poll):
+            panel._poll_step_export()
+        check("Stale poll " + ("error" if fail_old else "return") + " preserves new job and feedback", panel._step_export_job is replacement["job"] and panel._step_export_job is not previous and panel.message.text() == replacement["status"])
+        yield wait_for(lambda: panel._step_export_job is None, "Replacement STEP completion")
+        published_pair(new_path, replacement["worker"], "Replacement export " + str(fail_old))
+        check("Replacement leaves the older destination pair intact", pair(old_path) == old_sentinel)
+        yield wait_for(lambda: closed(old_worker) and closed(replacement["worker"]), "Replacement/retired child cleanup")
+
+    target, sentinel = destination("capture-switch")
+    prepare = panel.core.prepare_step_export
+    capture = {}
+    def switch_after_capture(*args, **kwargs):
+        bundle = prepare(*args, **kwargs)
+        capture["bundle"] = bundle
+        panel.start_step_export(str(target))
+        panel._poll_step_export()
+        activate(other)
+        return bundle
+    with patch.object(panel.core, "prepare_step_export", side_effect=switch_after_capture):
+        panel.start_step_export(str(target))
+    worker = capture["bundle"]["worker"]
+    check("Capture reentry/document switch cannot submit or publish abandoned work", panel._step_export_job is None and not panel._step_export_preparing and worker.process is None and worker.closed and pair(target) == sentinel and "Preparing STEP export" not in panel.message.text())
+    yield wait_for(lambda: closed(worker), "Abandoned capture archive cleanup")
+    activate(doc)
+
+    target, sentinel = destination("document-switch")
+    _, worker = start(target)
+    activate(other)
+    panel.notify("New document feedback")
+    panel._poll_step_export()
+    check("Native document switch preserves new state/status and old destination", panel._step_export_job is None and panel.state["document_id"] == panel.core.identifier(other) and panel.message.text() == "New document feedback" and pair(target) == sentinel)
+    yield wait_for(lambda: closed(worker), "Switched-document child cleanup")
+    activate(doc)
+
+    target, sentinel = destination("save-invalidates")
+    _, worker = start(target)
+    saved = output / "explicit-save.FCStd"
+    with patch.object(QtGui.QFileDialog, "getSaveFileName", return_value=(str(saved), "FreeCAD project (*.FCStd)")):
+        panel.save()
+    with zipfile.ZipFile(saved) as archive:
+        readable = "Document.xml" in archive.namelist() and archive.testzip() is None
+    check("Explicit Save is durable and invalidates pending export without publication", readable and Path(doc.FileName) == saved and panel._step_export_job is None and pair(target) == sentinel)
+    yield wait_for(lambda: closed(worker), "Save-invalidated child cleanup")
+    report["metadata_flags_after_explicit_save"] = list(panel.core._meta(doc).State)
+    doc, lifecycle_solid = lifecycle_fixture("STEP error and source-close lifecycle source")
+    target, _ = destination("post-save-independent-positive-control")
+    _, worker = start(target)
+    yield wait_for(lambda: panel._step_export_job is None, "Post-save independent positive control")
+    published_pair(target, worker, "Post-save independent positive control")
+    yield wait_for(lambda: closed(worker), "Post-save positive-control child cleanup")
+
+    target, sentinel = destination("poll-error")
+    _, worker = start(target)
+    with patch.object(worker, "poll", side_effect=TimeoutError("Injected STEP export timeout")):
+        panel._poll_step_export()
+    check("Current worker failure ends pending state and reports truthful error", panel._step_export_job is None and not panel.step_export_timer.isActive() and "Injected STEP export timeout" in panel.message.text() and pair(target) == sentinel)
+    yield wait_for(lambda: closed(worker), "Errored child cleanup")
+
+    target, sentinel = destination("source-close")
+    _, worker = start(target)
+    App.closeDocument(doc.Name)
+    panel.tick()
+    check("Closing the source retires export without destination writes", panel._step_export_job is None and worker.closed and pair(target) == sentinel)
+    yield wait_for(lambda: closed(worker), "Closed-source child cleanup")
+    activate(other)
+    closing_solid = other.addObject("Part::Feature", "ClosingSolid")
+    closing_solid.Shape = Part.makeBox(12, 8, 4)
+    other.recompute()
+    panel.core.sync(other)
+    panel.state = panel.core.inspect(other)
+    panel.refresh()
+    target, sentinel = destination("shutdown")
+    _, worker = start(target)
+    panel.shutdown()
+    shutdown_done = True
+    check("Panel shutdown invalidates export without destination writes", panel._step_export_closed and panel._step_export_job is None and worker.closed and pair(target) == sentinel)
+    yield wait_for(lambda: all(closed(value) for value in workers + preparation_workers), "All STEP child cleanup")
+    check("All owned workers confirm exit and cleanup", all(closed(value) for value in workers + preparation_workers))
+    for value in workers:
+        worker_evidence[id(value)].update(pid=value.process.pid if value.process else None,
+                                         cleanup_complete=value.cleanup_complete.is_set(),
+                                         exit_code=value.process.poll() if value.process else None)
+    check("STEP source and recipe hashes remain frozen", report["source_sha256"] == hashes())
+    report["passed"] = True
+    report["check_count"] = len(report["checks"])
+    save()
+
+
+def drive():
+    global pending
+    try:
+        if pending is not None:
+            if not pending["predicate"]():
+                if clock() >= pending["deadline"]: raise TimeoutError(pending["label"])
+                return
+            pending = None
+        pending = next(flow)
+    except StopIteration:
+        cleanup()
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["check_count"] = len(report["checks"])
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned, shutdown_done
+    if cleaned: return
+    cleaned = True
+    service.stop()
+    pulse.stop()
+    if panel and not shutdown_done:
+        panel.shutdown()
+        shutdown_done = True
+    for worker in workers + preparation_workers: worker.close()
+    for handle in reversed(patches): handle.stop()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        if doc.HasPendingTransaction: doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+def run():
+    global panel, flow
+    try:
+        install_class_observers()
+        panel = ui.start()
+        install_observers()
+        flow = scenarios()
+        pulse.timeout.connect(heartbeat)
+        service.timeout.connect(drive)
+        pulse.start()
+        service.start()
+    except Exception:
+        report["error"] = traceback.format_exc()
+        save()
+        cleanup()
+
+
+def timeout():
+    report["error"] = "STEP GUI validation exceeded 210 seconds"
+    report["passed"] = False
+    save()
+    cleanup()
+
+
+QtCore.QTimer.singleShot(210000, timeout)
+QtCore.QTimer.singleShot(1200, run)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict, defaultdict
+import math
 import time
 import weakref
 
@@ -200,6 +201,40 @@ class GeometryCache:
         if value is not None:
             self._checks.move_to_end(key)
         return None if value is None else dict(value, issues=list(value["issues"]))
+
+    def accept_checks(self, entries):
+        """Atomically import detached verdicts under validated parent keys.
+
+        The controller owns native identity/topology validation. This method
+        validates every payload before touching the cache and never substitutes
+        worker-process topology hashes for the captured parent keys.
+        """
+        prepared = []
+        for key, value in entries:
+            if (type(value.get("valid")) is not bool or not isinstance(value.get("issues"), list)
+                    or any(not isinstance(issue, str) for issue in value["issues"])
+                    or type(value.get("ms")) not in (int, float)
+                    or not math.isfinite(value["ms"]) or value["ms"] < 0):
+                raise ValueError("Invalid geometry check verdict")
+            hash(key)
+            prepared.append((key, {"valid": value["valid"], "issues": list(value["issues"]), "ms": value["ms"]}))
+        receipt = []
+        for key, value in prepared:
+            receipt.append((key, self._checks.get(key), value))
+            self._checks[key] = value
+            self._checks.move_to_end(key)
+        while len(self._checks) > self.CHECK_LIMIT:
+            self._checks.popitem(last=False)
+        return receipt
+
+    def discard_accepted_checks(self, receipt):
+        """Undo only this import if native status reads invalidate its owner."""
+        for key, previous, inserted in reversed(receipt):
+            if self._checks.get(key) is inserted:
+                if previous is None:
+                    del self._checks[key]
+                else:
+                    self._checks[key] = previous
 
     def memo(self, kind, objects, parameters, compute):
         key = kind, tuple(self.key(obj) for obj in objects), parameters

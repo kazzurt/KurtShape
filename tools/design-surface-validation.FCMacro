@@ -1,0 +1,580 @@
+"""Independent native acceptance for the dense shell and delayed hover labels.
+
+Run only through the registered isolated GUI recipe runner. No transport,
+production launch, user document or user profile is used by this recipe.
+"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "tools"))
+sys.path.insert(0, str(root / "src"))
+from kurtshape_evidence import evidence_dir
+from preview_validation import wait_for_exact
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+from kurtshape.feature_panel import FeaturePanel, ReferencePicker
+from kurtshape.presentation_icons import icon_for, original_icon_name
+
+
+class NoTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+
+    def tick(self):
+        return False
+
+    def close(self):
+        pass
+
+
+class HiddenWindows(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() == QtCore.QEvent.Polish and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+ui.Bridge = NoTransport
+app = QtGui.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.show()
+hidden_windows = HiddenWindows(app)
+app.installEventFilter(hidden_windows)
+output = evidence_dir("onshape-design")
+output.mkdir(parents=True, exist_ok=True)
+panel = None
+report = {
+    "passed": False, "checks": [], "screens": [], "toolbars": [],
+    "method": "Private hidden native FreeCAD GUI; production QAction buttons, actual QEnterEvent/timer, reference-row clicks and native feature previews. Screens are actual main.grab plus floating QWidget.grab composites at their global positions; no fabricated model/rendering.",
+    "limits": "Hidden-window mechanics and native geometry assertions; not hands-on comfort, all-DPI or screen-reader acceptance. No screen capture of the user's running window.",
+}
+
+
+def wait(ms=100):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, condition):
+    assert condition, label
+    report["checks"].append(label)
+
+
+def call(op, **args):
+    response = panel.operation(op, **args)
+    assert response, panel.message.text()
+    wait(80)
+    return panel.document()
+
+
+def select(doc, obj=None, element=""):
+    Gui.Selection.clearSelection()
+    if obj is not None:
+        Gui.Selection.addSelection(obj, element) if element else Gui.Selection.addSelection(obj)
+    wait(100)
+
+
+def selection_signature():
+    return [(item.Object.Document.Name, item.Object.Name, tuple(item.SubElementNames))
+            for item in Gui.Selection.getSelectionEx()]
+
+
+def snapshot(doc):
+    geometry = []
+    for obj in doc.Objects:
+        if hasattr(obj, "Shape"):
+            shape = obj.Shape
+            digest = None if shape.isNull() else hashlib.sha256(shape.exportBrepToString().encode("utf-8")).hexdigest()
+            geometry.append((obj.Name, digest))
+    return {"objects": [(obj.Name, obj.TypeId) for obj in doc.Objects],
+            "geometry": geometry, "revision": panel.core._meta(doc).Revision,
+            "undo": doc.UndoCount, "label": doc.Label}
+
+
+def capture(label, expected_hover=None):
+    """Composite real top-level widget grabs; main.grab omits floating windows."""
+    # A hover capture records the already asserted production popup immediately.
+    # Waiting here can deliver unrelated native cursor events on hidden windows.
+    if expected_hover is None:
+        wait(150)
+    else:
+        popup = panel.toolbar_labels.popup
+        expected_text = panel.toolbar_labels._buttons[id(expected_hover)][1]
+        check(label + ": capture shows the tested hovered symbol", popup.isVisible()
+              and panel.toolbar_labels._showing == id(expected_hover)
+              and popup.text().startswith(expected_text))
+    canvas = main.grab()
+    origin = main.mapToGlobal(QtCore.QPoint(0, 0))
+    overlays = []
+    if panel is not None:
+        for widget in (panel.editor, panel.studio_dialog, panel.toolbar_labels.popup):
+            if widget is not None and widget.isVisible() and widget.isWindow() and widget not in overlays:
+                overlays.append(widget)
+    painter = QtGui.QPainter(canvas)
+    metadata = []
+    try:
+        for widget in overlays:
+            position = widget.mapToGlobal(QtCore.QPoint(0, 0)) - origin
+            painter.drawPixmap(position, widget.grab())
+            metadata.append({"object": widget.objectName(), "x": position.x(), "y": position.y(),
+                             "width": widget.width(), "height": widget.height(),
+                             "text": widget.text() if isinstance(widget, QtWidgets.QLabel) else None})
+    finally:
+        painter.end()
+    filename = label + ".png"
+    hover_metadata = None
+    if expected_hover is not None:
+        popup = panel.toolbar_labels.popup
+        check(label + ": raster capture retains the tested hover state", popup.isVisible()
+              and panel.toolbar_labels._showing == id(expected_hover)
+              and popup.text().startswith(expected_text))
+        anchor = expected_hover.mapToGlobal(QtCore.QPoint(0, expected_hover.height()))
+        hover_metadata = {"button_object": expected_hover.objectName(), "expected_command": expected_text,
+                          "actual_popup_text": popup.text(), "button_bottom_global": [anchor.x(), anchor.y()],
+                          "popup_global": [popup.x(), popup.y(), popup.width(), popup.height()],
+                          "method": "No additional qWait; identity and text asserted immediately before and after real widget grabs."}
+    check(label + " native capture saved", canvas.save(str(output / filename)))
+    report["screens"].append({"file": filename, "logical_size": [main.width(), main.height()],
+                             "pixel_size": [canvas.width(), canvas.height()],
+                             "device_pixel_ratio": canvas.devicePixelRatioF(), "floating_overlays": metadata,
+                             "tested_hover": hover_metadata})
+
+
+def resize_case(width, height, label):
+    main.resize(width, height)
+    wait(220)
+    screen = main.screen().availableGeometry()
+    report.setdefault("client_sizes", []).append({"case": label, "requested_logical": [width, height],
+        "actual_logical": [main.width(), main.height()], "device_pixel_ratio": main.devicePixelRatioF(),
+        "available_screen_logical": [screen.width(), screen.height()]})
+
+
+def background_evidence():
+    view = Gui.activeDocument().activeView()
+    preferences = App.ParamGet("User parameter:BaseApp/Preferences/View")
+    defaults = {"Simple": False, "Gradient": True, "BackgroundColor": 0,
+                "BackgroundColor2": 0, "BackgroundColor3": 0, "BackgroundColor4": 0}
+    values = {name: preferences.GetBool(name, value) if isinstance(value, bool)
+              else preferences.GetUnsigned(name, value) for name, value in defaults.items()}
+    stored = [list(entry) for entry in preferences.GetContents() if entry[1] in defaults]
+    report["background_evidence"] = {"native_view_background_color_methods":
+        [name for name in dir(view) if "background" in name.lower() or "color" in name.lower()],
+        "parameter_path": "User parameter:BaseApp/Preferences/View", "read_defaults": defaults,
+        "values_with_those_defaults": values, "stored_entries": stored,
+        "method": "Native view dir() and read-only preference inspection; a missing key is a supplied read default, not a verified engine default."}
+
+
+def png_hash(icon):
+    data = QtCore.QByteArray()
+    buffer = QtCore.QBuffer(data)
+    buffer.open(QtCore.QIODevice.WriteOnly)
+    icon.pixmap(QtCore.QSize(40, 40)).save(buffer, "PNG")
+    buffer.close()
+    return hashlib.sha256(bytes(data)).hexdigest()
+
+
+def inspect_bar(bar, name):
+    commands = []
+    for action in bar.actions():
+        if action.isSeparator():
+            continue
+        button = bar.widgetForAction(action)
+        if not isinstance(button, QtWidgets.QToolButton):
+            continue  # search field, document identity and workspace selector
+        commands.append(action.text())
+        check(name + ": named accessible icon-only action " + action.text(),
+              bool(action.text().strip()) and bool(button.accessibleName().strip())
+              and button.defaultAction() == action and button.toolButtonStyle() == QtCore.Qt.ToolButtonIconOnly)
+        check(name + ": rendered icon " + action.text(),
+              not action.icon().isNull() and not action.icon().pixmap(QtCore.QSize(20, 20)).isNull())
+        record = panel.toolbar_labels._buttons.get(id(button))
+        check(name + ": delayed label registered " + action.text(),
+              record is not None and record[0] is button and bool(record[1].strip()))
+    report["toolbars"].append({"name": name, "commands": commands, "icon_size": bar.iconSize().width()})
+    return commands
+
+
+def inspect_menu(menu, prefix):
+    for action in menu.actions():
+        if action.isSeparator():
+            continue
+        check(prefix + ": preserved menu action " + action.text(), bool(action.text().strip()))
+        if action.menu() is not None:
+            inspect_menu(action.menu(), prefix + "/" + action.text())
+        else:
+            check(prefix + ": usable menu symbol " + action.text(), not action.icon().isNull())
+
+
+def tool_button(bar, label):
+    action = next(action for action in bar.actions() if action.text() == label)
+    button = bar.widgetForAction(action)
+    assert isinstance(button, QtWidgets.QToolButton) and button.isVisible(), label + " is not an exposed symbol"
+    return button
+
+
+def enter(button):
+    local = QtCore.QPointF(button.rect().center())
+    global_position = QtCore.QPointF(button.mapToGlobal(button.rect().center()))
+    event = QtGui.QEnterEvent(local, local, global_position)
+    check("Actual Enter event delivered to " + (button.accessibleName() or button.text()), app.sendEvent(button, event))
+
+
+def leave(button):
+    app.sendEvent(button, QtCore.QEvent(QtCore.QEvent.Leave))
+    wait(30)
+
+
+def hover(button, label):
+    panel.toolbar_labels.hide()
+    enter(button)
+    wait(180)
+    check(label + ": hover waits before showing label", not panel.toolbar_labels.popup.isVisible())
+    wait(260)
+    check(label + ": delayed shaded label visible", panel.toolbar_labels.popup.isVisible())
+    popup = panel.toolbar_labels.popup
+    anchor = button.mapToGlobal(QtCore.QPoint(0, button.height()))
+    bounds = button.screen().availableGeometry().adjusted(4, 4, -4, -4)
+    check(label + ": label below symbol and screen bounded", popup.y() >= anchor.y() and bounds.contains(popup.geometry()))
+    check(label + ": readable command text with no focus takeover",
+          popup.text().startswith(panel.toolbar_labels._buttons[id(button)][1])
+          and popup.height() <= 70 and popup.width() <= 400 and popup.focusPolicy() == QtCore.Qt.NoFocus
+          and popup.testAttribute(QtCore.Qt.WA_TransparentForMouseEvents))
+
+
+def inspect_overflow(bar, original_commands):
+    commands = [action.text() for action in bar.actions() if not action.isSeparator()
+                and isinstance(bar.widgetForAction(action), QtWidgets.QToolButton)]
+    check("Narrow model row preserves every original command name and action", commands == original_commands)
+    hidden = [action.text() for action in bar.actions() if not action.isSeparator()
+              and isinstance(bar.widgetForAction(action), QtWidgets.QToolButton)
+              and not bar.widgetForAction(action).isVisible()]
+    extension = bar.findChild(QtWidgets.QToolButton, "qt_toolbar_ext_button")
+    report["narrow_overflow"] = {"hidden_commands": hidden,
+                                 "extension_visible": bool(extension and extension.isVisible())}
+    if not hidden:
+        return  # A platform with smaller controls may fit all preserved actions.
+    check("Narrow hidden commands have an exposed, named Qt overflow control", extension is not None
+          and extension.isVisible() and bool(extension.accessibleName())
+          and id(extension) in panel.toolbar_labels._buttons)
+    observed = {}
+
+    def inspect_and_close():
+        menu = app.activePopupWidget()
+        observed["native_menu"] = isinstance(menu, QtWidgets.QMenu)
+        if isinstance(menu, QtWidgets.QMenu):
+            observed["commands"] = [action.text() for action in menu.actions() if not action.isSeparator()]
+            menu.close()
+
+    QtCore.QTimer.singleShot(150, inspect_and_close)
+    QtTest.QTest.mouseClick(extension, QtCore.Qt.LeftButton)
+    wait(180)
+    report["narrow_overflow"].update(observed)
+    check("Native Qt overflow exposes each hidden command", observed.get("native_menu")
+          and all(label in observed.get("commands", []) for label in hidden))
+
+
+def preview(adapter, wanted, label):
+    result = wait_for_exact(adapter)
+    check(label + ": " + str(result.error), bool(result.valid) == wanted)
+    return result
+
+
+def compact(editor, label):
+    check(label + ": bounded modeless floating editor", isinstance(editor, FeaturePanel) and editor.isFloating()
+          and editor.isVisible() and editor.windowModality() == QtCore.Qt.NonModal
+          and editor.width() <= 440 and editor.height() < main.height() - 80)
+    check(label + ": native header owns accessible Confirm and Cancel",
+          editor.titleBarWidget() is editor.header and editor.confirm.parentWidget() is editor.header
+          and editor.cancel.parentWidget() is editor.header and bool(editor.confirm.accessibleName())
+          and bool(editor.cancel.accessibleName()) and not editor.confirm.icon().isNull() and not editor.cancel.icon().isNull())
+
+
+def verdict_visible(editor, label):
+    wait(100)  # Let the status-driven native layout request settle.
+    hint = editor.verdict
+    location = hint.mapTo(editor, QtCore.QPoint(0, 0))
+    bounds = QtCore.QRect(location, hint.size())
+    report.setdefault("verdicts", []).append({"state": label, "text": hint.text(),
+        "bounds": [bounds.x(), bounds.y(), bounds.width(), bounds.height()],
+        "editor": [editor.width(), editor.height()], "required_height": hint.heightForWidth(hint.width())})
+    check(label + ": copyable verdict stays outside the scrollable fields",
+          hint.isVisible() and not editor.scroll.isAncestorOf(hint)
+          and bool(hint.textInteractionFlags() & QtCore.Qt.TextSelectableByMouse))
+    check(label + ": complete verdict is visible within bounded editor",
+          editor.rect().contains(bounds) and hint.height() >= hint.heightForWidth(hint.width()))
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.start()
+        panel.timer.stop()
+        panel.recovery_timer.stop()
+        resize_case(1440, 920, "desktop")
+        check("Desktop shell remains usable at actual platform dimensions", main.width() >= 1024 and main.height() >= 700)
+        doc = call("new", name="Design acceptance plate")
+        call("sketch_rectangle", id="Profile", width=30, height=20)
+        call("pad", id="Base", profile="Profile", length=8)
+        panel.isometric()
+        panel.fit()
+        wait(200)
+        check("Fixture is a valid native 4800 mm3 solid", doc.Base.Shape.isValid()
+              and len(doc.Base.Shape.Solids) == 1 and abs(doc.Base.Shape.Volume - 4800) < 1e-6)
+        background_evidence()
+
+        model_commands = inspect_bar(panel.model_bar, "Model")
+        inspect_bar(panel.document_bar, "Document")
+        inspect_bar(panel.sketch_bar, "Sketch")
+        inspect_bar(panel.assembly_bar, "Assembly")
+        check("Every toolbar label uses the requested 350 ms delay", panel.toolbar_labels.timer.interval() == 350)
+        check("Model row exposes dense command set without adding default Hole", len(model_commands) >= 24 and "Hole" not in model_commands)
+        inspect_menu(panel.document_menu, "Document menu")
+        inspect_menu(panel.tool_menus["More"], "Model toolsets")
+        for label in ("Sketch", "Extrude", "Revolve", "Fillet", "Mirror", "Plane", "Fit", "3D", "More"):
+            check("Mapped icon usable: " + label, not icon_for(label).pixmap(QtCore.QSize(40, 40)).isNull())
+        check("Move face keeps distinct icon despite sharing the Pad command",
+              original_icon_name("Move face", "PartDesign_Pad") != original_icon_name("Extrude", "PartDesign_Pad")
+              and png_hash(icon_for("Move face", "PartDesign_Pad")) != png_hash(icon_for("Extrude", "PartDesign_Pad")))
+        check("History and parts use independent native splitter", panel.history_splitter.count() == 2
+              and panel.history_splitter.orientation() == QtCore.Qt.Vertical)
+        sizes = panel.history_splitter.sizes()
+        panel.history_splitter.setSizes([sum(sizes) - 180, 180])
+        wait(80)
+        check("Both split regions remain available", all(size >= 60 for size in panel.history_splitter.sizes()))
+        capture("model-workspace-1440")
+        hover(tool_button(panel.document_bar, "Document"), "Document menu symbol")
+        leave(tool_button(panel.document_bar, "Document"))
+
+        # Hover must not type, select, execute a command or alter native intent.
+        source_before = snapshot(doc)
+        select(doc, doc.Base, "Face1")
+        before_selection = selection_signature()
+        search = panel.model_bar.findChild(QtWidgets.QLineEdit)
+        assert search is not None, "Model command search missing"
+        search.setText("hover proof")
+        focus_before = app.focusWidget()
+        action_texts = [action.text() for action in panel.model_bar.actions()]
+        button = tool_button(panel.model_bar, "Fit")
+        hover(button, "Fit")
+        check("Hover leaves search text, action names, focus, selection and native geometry unchanged",
+              search.text() == "hover proof" and [action.text() for action in panel.model_bar.actions()] == action_texts
+              and app.focusWidget() == focus_before and selection_signature() == before_selection and snapshot(doc) == source_before)
+        capture("hover-label-below-1440", expected_hover=button)
+        leave(button)
+        check("Label hides on Leave", not panel.toolbar_labels.popup.isVisible() and not panel.toolbar_labels.timer.isActive())
+        hover(button, "Fit click")
+        QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
+        wait(440)
+        check("Label hides on click and stays dismissed", not panel.toolbar_labels.popup.isVisible())
+        check("Presentation click does not mutate source geometry", snapshot(doc) == source_before)
+        hover(button, "Menu dismissal")
+        menu = panel.tool_menus["More"]
+        QtCore.QTimer.singleShot(150, menu.close)
+        QtTest.QTest.mouseClick(tool_button(panel.model_bar, "More"), QtCore.Qt.LeftButton)
+        wait(80)
+        check("Opening a native toolset menu hides hover label", not panel.toolbar_labels.popup.isVisible())
+        search.clear()
+
+        # Exercise actual screen-edge clamp without renaming a production action.
+        bounds = main.screen().availableGeometry()
+        probe = QtWidgets.QToolButton(main)
+        probe.setWindowFlags(QtCore.Qt.Tool | QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowDoesNotAcceptFocus)
+        probe.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        probe.setAttribute(QtCore.Qt.WA_ShowWithoutActivating, True)
+        probe.setFocusPolicy(QtCore.Qt.NoFocus)
+        probe.setObjectName("DesignScreenBoundaryProbe")
+        probe.setAccessibleName("Screen boundary label")
+        probe.setIcon(icon_for("Fit"))
+        probe.setFixedSize(30, 30)
+        requested_position = QtCore.QPoint(bounds.right() - probe.width() + 1, bounds.top() + 140)
+        probe.move(requested_position)
+        probe.show()
+        probe.move(requested_position)
+        panel.toolbar_labels.register(probe, "Screen boundary label")
+        wait(80)
+        enter(probe)
+        wait(440)
+        popup = panel.toolbar_labels.popup
+        available = probe.screen().availableGeometry().adjusted(4, 4, -4, -4)
+        anchor = probe.mapToGlobal(QtCore.QPoint(0, probe.height()))
+        unclamped_x = anchor.x() + (probe.width() - popup.width()) // 2
+        probe_origin = probe.mapToGlobal(QtCore.QPoint(0, 0))
+        report["screen_clamp"] = {"popup_visible": popup.isVisible(), "popup_text": popup.text(),
+            "popup": [popup.x(), popup.y(), popup.width(), popup.height()],
+            "probe_requested_global": [requested_position.x(), requested_position.y()],
+            "probe_actual_global": [probe_origin.x(), probe_origin.y(), probe.width(), probe.height()],
+            "probe_anchor_global": [anchor.x(), anchor.y()], "probe_window": probe.isWindow(),
+            "unclamped_x": unclamped_x, "unclamped_right": unclamped_x + popup.width() - 1,
+            "available": [available.x(), available.y(), available.width(), available.height()],
+            "main_position": [main.x(), main.y()], "main_global_origin": [main.mapToGlobal(QtCore.QPoint()).x(),
+                main.mapToGlobal(QtCore.QPoint()).y()], "screen_name": probe.screen().name(),
+            "device_pixel_ratio": probe.devicePixelRatioF(),
+            "method": "Hidden owned frameless no-focus QToolButton placed at the actual screen's right edge; real Enter event and production timer."}
+        check("Screen-edge probe genuinely requires horizontal clamping", probe_origin.x() == requested_position.x()
+              and unclamped_x + popup.width() - 1 > available.right())
+        check("Actual screen-edge label clamps inside available screen", popup.isVisible()
+              and panel.toolbar_labels._showing == id(probe) and popup.text().startswith("Screen boundary label")
+              and popup.y() >= anchor.y() and available.contains(popup.geometry()))
+        leave(probe)
+        probe.hide()
+        probe.deleteLater()
+        wait(80)
+
+        # Switch real managed documents, retaining the plate's source data.
+        other = call("new", name="Design document switch fixture")
+        App.setActiveDocument(doc.Name)
+        Gui.ActiveDocument = Gui.getDocument(doc.Name)
+        panel.tick()
+        wait(100)
+        hover(tool_button(panel.model_bar, "Fit"), "Document switch")
+        App.setActiveDocument(other.Name)
+        Gui.ActiveDocument = Gui.getDocument(other.Name)
+        panel.tick()
+        wait(100)
+        check("Real active-document switch hides the hover label", panel.document() == other and not panel.toolbar_labels.popup.isVisible())
+        check("Document-switch presentation preserves original plate", snapshot(doc) == source_before)
+        App.setActiveDocument(doc.Name)
+        Gui.ActiveDocument = Gui.getDocument(doc.Name)
+        panel.tick()
+        select(doc)
+
+        # Invalid/valid fillet previews are deliberately canceled, never committed.
+        before = snapshot(doc)
+        dock = panel.studio_tool("fillet")
+        wait(160)
+        compact(dock, "Fillet")
+        picker = dock.fields["edges"]
+        check("Active reference picker is explicit and empty rows collapse", isinstance(picker, ReferencePicker)
+              and bool(picker.pick.property("activePicking")) and picker.value() == [] and not picker.items.isVisible())
+        preview(dock.preview, False, "Missing Fillet edges produces an invalid preview")
+        check("Invalid Fillet cannot be accepted from header", not dock.confirm.isEnabled())
+        verdict_visible(dock, "Invalid Fillet")
+        capture("fillet-invalid-1440")
+        select(doc, doc.Base, "Edge1")
+        preview(dock.preview, True, "Selected native edge produces valid Fillet preview")
+        check("Valid Fillet enables header Confirm", dock.confirm.isEnabled() and len(picker.value()) == 1)
+        verdict_visible(dock, "Valid Fillet")
+        check("Fillet preview preserves source BRep, revision and undo count", snapshot(doc) == before)
+        capture("fillet-valid-1440")
+        item = picker.items.item(0)
+        row = picker.items.itemWidget(item)
+        remove = row.findChild(QtWidgets.QToolButton, "KurtShapeReferenceRowRemove")
+        check("Reference row offers an accessible per-row removal symbol", remove is not None and bool(remove.accessibleName()))
+        QtTest.QTest.mouseClick(remove, QtCore.Qt.LeftButton)
+        wait(120)
+        check("Per-row click removes the reference and native selection", picker.value() == []
+              and not any("Edge1" in entry[2] for entry in selection_signature()))
+        select(doc, doc.Base, "Edge2")
+        wait(100)
+        check("Reference picker can be repopulated after removal", len(picker.value()) == 1)
+        picker.clear_action.trigger()
+        wait(100)
+        check("Reference Clear all removes references and collapses rows", picker.value() == [] and not picker.items.isVisible())
+        QtTest.QTest.mouseClick(dock.cancel, QtCore.Qt.LeftButton)
+        wait(150)
+        check("Header Cancel closes Fillet without a model mutation", panel.studio_dialog is None and snapshot(doc) == before)
+
+        # Existing native sketch remains editable with icon-only toolbars and compact header.
+        panel.select_feature("Profile")
+        panel.edit_sketch()
+        wait(180)
+        check("Native sketch edit exposes sketch toolbar", panel.active_sketch() == doc.Profile
+              and panel.sketch_bar.isVisible() and not panel.model_bar.isVisible())
+        compact(panel.editor, "Sketch")
+        check("Sketch header Confirm and Cancel are usable", panel.editor.confirm.isEnabled() and panel.editor.cancel.isEnabled())
+        hover(tool_button(panel.sketch_bar, "Line"), "Sketch Line symbol")
+        leave(tool_button(panel.sketch_bar, "Line"))
+        capture("sketch-editor-1440")
+        QtTest.QTest.mouseClick(panel.editor.cancel, QtCore.Qt.LeftButton)
+        wait(180)
+        check("Sketch header Cancel restores native sketch geometry", panel.active_sketch() is None
+              and doc.Profile.GeometryCount == 4 and abs(doc.Base.Shape.Volume - 4800) < 1e-6)
+
+        # Generic extrusion editor shares the same floating header and guards.
+        before_extrude = snapshot(doc)
+        panel.select_feature("Profile")
+        select(doc)
+        panel.extrude()
+        wait(120)
+        compact(panel.editor, "Extrude")
+        panel.end_type.setCurrentIndex(2)  # no end-face reference: invalid input
+        preview(panel.extrusion_preview, False, "Missing end face produces invalid Extrude preview")
+        check("Invalid Extrude disables header Confirm", not panel.editor.confirm.isEnabled())
+        verdict_visible(panel.editor, "Invalid Extrude")
+        capture("extrude-invalid-1440")
+        panel.end_type.setCurrentIndex(0)
+        panel.depth.lineEdit().setText("14 mm")
+        preview(panel.extrusion_preview, True, "Corrected depth produces valid Extrude preview")
+        check("Valid Extrude enables header Confirm without committing source",
+              panel.editor.confirm.isEnabled() and snapshot(doc) == before_extrude)
+        verdict_visible(panel.editor, "Valid Extrude")
+        capture("extrude-valid-1440")
+        QtTest.QTest.mouseClick(panel.editor.cancel, QtCore.Qt.LeftButton)
+        wait(120)
+        check("Extrude Cancel preserves native source data", panel.task is None and snapshot(doc) == before_extrude)
+
+        resize_case(1024, 768, "narrow")
+        panel.fit()
+        check("Narrow shell keeps requested 1024 by 768 dimensions", main.width() == 1024 and main.height() == 768)
+        inspect_overflow(panel.model_bar, model_commands)
+        capture("model-workspace-1024")
+        hover(tool_button(panel.model_bar, "Undo"), "Narrow Undo symbol")
+        capture("hover-label-below-1024", expected_hover=tool_button(panel.model_bar, "Undo"))
+        leave(tool_button(panel.model_bar, "Undo"))
+        dock = panel.studio_tool("fillet")
+        wait(120)
+        compact(dock, "Narrow Fillet")
+        check("Narrow floating feature stays within available screen", dock.screen().availableGeometry().contains(dock.geometry()))
+        capture("fillet-editor-1024")
+        QtTest.QTest.mouseClick(dock.cancel, QtCore.Qt.LeftButton)
+        wait(120)
+
+        resize_case(1440, 920, "assembly")
+        call("new", name="Design assembly shell fixture")
+        call("create_assembly", id="DesignAssembly", name="Design assembly")
+        check("Native assembly context exposes its icon toolbar", panel.assembly_bar.isVisible()
+              and panel.workspace_mode == "assembly" and not panel.model_bar.isVisible())
+        hover(tool_button(panel.assembly_bar, "Insert"), "Assembly Insert symbol")
+        leave(tool_button(panel.assembly_bar, "Insert"))
+        capture("assembly-workspace-1440")
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        try:
+            capture("failure")
+        except Exception:
+            report["capture_error"] = traceback.format_exc()
+    finally:
+        if panel is not None:
+            try:
+                if panel.studio_dialog:
+                    panel.studio_dialog.reject()
+                if panel.active_sketch():
+                    panel.finish_sketch(cancel=True)
+                if panel.task:
+                    panel.cancel_task()
+                panel.shutdown()
+                main.destroyed.disconnect(panel.shutdown)
+            except Exception:
+                report["cleanup_error"] = traceback.format_exc()
+                report["passed"] = False
+        for name in list(App.listDocuments()):
+            App.closeDocument(name)
+        app.removeEventFilter(hidden_windows)
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        QtCore.QTimer.singleShot(100, main.close)
+        QtCore.QTimer.singleShot(300, app.quit)
+
+
+QtCore.QTimer.singleShot(800, validate)

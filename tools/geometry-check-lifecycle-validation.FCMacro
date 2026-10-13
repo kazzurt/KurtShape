@@ -1,0 +1,378 @@
+"""Private lifecycle-only GUI checks for native geometry jobs and ownership.
+
+Responsiveness is assessed by a separate recipe. Every job here still uses a
+real native child; lifecycle assertions do not depend on timer overlap.
+"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import time
+import traceback
+from unittest.mock import patch
+
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("geometry-check-lifecycle")
+source_files = [root / "src/kurtshape" / name for name in
+    ("ui.py", "core.py", "geometry.py", "geometry_check_worker.py", "preview_worker.py", "snapshots.py")]
+source_files.append(root / "tools/geometry-check-lifecycle-validation.FCMacro")
+
+
+def source_hashes():
+    return {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in source_files}
+
+
+startup_hashes = source_hashes()
+report = {"passed": False, "checks": [], "failed_checks": [], "assertions": [],
+          "pid": os.getpid(), "engine": App.Version(),
+          "source_sha256": startup_hashes,
+          "method": "Lifecycle-only real native child geometry checks and callback ownership injections. No responsiveness, timer overlap, kernel timing or performance claim."}
+panel = None
+cleaned = False
+shutdown_done = False
+workers = []
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, value, *, critical=False):
+    passed = bool(value)
+    report["assertions"].append({"label": label, "passed": passed})
+    report["checks" if passed else "failed_checks"].append(label)
+    save()
+    # Continue independent assertions after a failed invariant, but stop when
+    # an unfinished native job or cleanup makes subsequent scenarios unsafe.
+    if not passed and critical:
+        raise AssertionError(label)
+
+
+def until(predicate, milliseconds=20000):
+    deadline = time.perf_counter() + milliseconds / 1000
+    while not predicate() and time.perf_counter() < deadline:
+        QtTest.QTest.qWait(10)
+    return predicate()
+
+
+def call(op, **args):
+    assert panel.operation(op, **args), panel.message.text()
+    return panel.document()
+
+
+def activate(doc):
+    App.setActiveDocument(doc.Name)
+    Gui.ActiveDocument = Gui.getDocument(doc.Name)
+    panel.tick()
+
+
+def start_check():
+    panel.check_geometry()
+    job = panel._geometry_check_job
+    assert job is not None, panel.message.text()
+    worker = job["bundle"]["worker"]
+    assert worker.process is not None and worker.process.pid != os.getpid()
+    return job, worker
+
+
+def run():
+    global panel, shutdown_done
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        doc = call("new", name="Async geometry check")
+        call("sketch_rectangle", id="Profile", width=40, height=30)
+        call("pad", id="Pad", profile="Profile", length=8)
+        other = call("new", name="Geometry check destination")
+        activate(doc)
+        original_prepare = panel.core.prepare_geometry_check
+        original_accept = panel.core.accept_geometry_check
+        accepted = []
+        preparation_reentry = []
+
+        def prepare(*args, **kwargs):
+            preparation_reentry.append(panel._geometry_check_preparing)
+            panel.check_geometry()
+            panel._poll_geometry_check()
+            bundle = original_prepare(*args, **kwargs)
+            if bundle is not None:
+                workers.append(bundle["worker"])
+            return bundle
+
+        def accept(*args, **kwargs):
+            result = original_accept(*args, **kwargs)
+            accepted.append({"response": args[2], "published": result is not None})
+            return result
+
+        with patch.object(panel.core, "prepare_geometry_check", side_effect=prepare), \
+                patch.object(panel.core, "accept_geometry_check", side_effect=accept):
+            parent_checks = panel.core.geometry.stats["computed"]["check"]
+            first, worker = start_check()
+            check("Check geometry returns with a real child pending and no wait cursor",
+                  panel.geometry_check_timer.isActive() and "Checking geometry" in panel.message.text()
+                  and QtWidgets.QApplication.overrideCursor() is None)
+            check("Real child completes within the bounded GUI wait", until(lambda: panel._geometry_check_job is None), critical=True)
+            report["first_child"] = {"pid": worker.process.pid, "snapshot_reused": first["bundle"]["snapshot_reused"],
+                                     "accepted": accepted[-1] if accepted else None}
+            check("Real child verdict reaches the current document and Messages",
+                  panel.state.get("geometry_check") == "valid" and accepted and accepted[-1]["published"]
+                  and accepted[-1]["response"]["ok"] and "geometry valid" in panel.messages.toPlainText())
+            check("Parent does not synchronously repeat the detached native check",
+                  panel.core.geometry.stats["computed"]["check"] == parent_checks)
+            check("Snapshot preparation suppresses nested check and poll callbacks", all(preparation_reentry))
+            check("Completed worker exits and releases its owned archive", until(worker.cleanup_complete.is_set), critical=True)
+            count = len(workers)
+            cached = panel.check_geometry()
+            check("A fully cached repeat uses the synchronous cached result without a child",
+                  cached and cached["geometry_check_report"]["status"] == "valid"
+                  and panel._geometry_check_job is None and len(workers) == count
+                  and panel.core.geometry.stats["computed"]["check"] == parent_checks)
+
+            original_dispatch = panel.core.dispatch
+            replacement_states = []
+            def replace_cached_read(request):
+                response = original_dispatch(request)
+                if request["op"] == "check_geometry" and not replacement_states:
+                    replacement_states.append(None)
+                    panel.check_geometry()
+                    replacement_states[0] = panel.state
+                    panel.notify("Replacement cached check feedback")
+                return response
+            with patch.object(panel.core, "dispatch", side_effect=replace_cached_read):
+                abandoned = panel.check_geometry()
+            check("Reentrant cached fallback preserves the newer check state and feedback",
+                  abandoned is None and panel.state is replacement_states[0]
+                  and panel.message.text() == "Replacement cached check feedback")
+
+            def switch_cached_read(request):
+                response = original_dispatch(request)
+                if request["op"] == "check_geometry":
+                    activate(other)
+                    panel.notify("Destination document feedback")
+                return response
+            with patch.object(panel.core, "dispatch", side_effect=switch_cached_read):
+                abandoned = panel.check_geometry()
+            check("Cached fallback cannot publish into a document selected during dispatch",
+                  abandoned is None and panel.state["document_id"] == panel.core.identifier(other)
+                  and panel.message.text() == "Destination document feedback")
+            activate(doc)
+
+            # A suspended old poll can return or raise after a newer real job
+            # has started. Neither outcome owns the replacement's timer/status.
+            for value, raise_after in ((9, False), (10, True)):
+                call("set_parameter", feature="Pad", parameter="Length", value=value)
+                previous, old_worker = start_check()
+                def replace_during_poll():
+                    panel.check_geometry()
+                    if raise_after:
+                        raise RuntimeError("Injected stale poll failure")
+                    return None
+                with patch.object(old_worker, "poll", side_effect=replace_during_poll):
+                    panel._poll_geometry_check()
+                replacement = panel._geometry_check_job
+                check("Stale poll " + ("error" if raise_after else "return") + " preserves the newer real job",
+                      replacement is not None and replacement is not previous and old_worker.closed
+                      and panel.geometry_check_timer.isActive() and "Checking geometry" in panel.message.text())
+                check("Replacement publishes its own valid native verdict", until(lambda: panel._geometry_check_job is None)
+                      and panel.state.get("geometry_check") == "valid", critical=True)
+                check("Superseded child cleanup confirms exit", until(old_worker.cleanup_complete.is_set), critical=True)
+
+            call("set_parameter", feature="Pad", parameter="Length", value=11)
+            def switch_after_capture(*args, **kwargs):
+                bundle = prepare(*args, **kwargs)
+                activate(other)
+                return bundle
+            with patch.object(panel.core, "prepare_geometry_check", side_effect=switch_after_capture):
+                panel.check_geometry()
+            abandoned_worker = workers[-1]
+            panel.tick()
+            check("A document switch during real capture clears its abandoned preparing status",
+                  panel._geometry_check_job is None and not panel._geometry_check_preparing
+                  and abandoned_worker.closed and abandoned_worker.process is None
+                  and "Preparing geometry check" not in panel.message.text()
+                  and panel.state["document_id"] == panel.core.identifier(other))
+            check("Abandoned capture releases its archive without launching a child",
+                  until(abandoned_worker.cleanup_complete.is_set), critical=True)
+            activate(doc)
+
+            call("set_parameter", feature="Pad", parameter="Length", value=12)
+            previous, old_worker = start_check()
+            original_document = panel.document
+            context_reentered = []
+            def replace_during_context_read():
+                if not context_reentered:
+                    context_reentered.append(True)
+                    panel.check_geometry()
+                return original_document()
+            with patch.object(panel, "document", side_effect=replace_during_context_read):
+                panel._poll_geometry_check()
+            check("Reentry during native context validation preserves the replacement job",
+                  panel._geometry_check_job is not None and panel._geometry_check_job is not previous
+                  and old_worker.closed and panel.geometry_check_timer.isActive()
+                  and "Checking geometry" in panel.message.text())
+            check("Context replacement publishes its own native verdict", until(lambda: panel._geometry_check_job is None)
+                  and panel.state.get("geometry_check") == "valid", critical=True)
+
+            call("set_parameter", feature="Pad", parameter="Length", value=13)
+            accepted_then_changed = []
+            def mutate_after_accept(*args, **kwargs):
+                state = accept(*args, **kwargs)
+                generation = panel._geometry_check_generation
+                doc.Pad.Length = 14
+                doc.recompute()
+                accepted_then_changed.append((state, generation == panel._geometry_check_generation))
+                return state
+            with patch.object(panel.core, "accept_geometry_check", side_effect=mutate_after_accept):
+                _, worker = start_check()
+                check("Changed native model completes the pending UI callback", until(lambda: panel._geometry_check_job is None), critical=True)
+            check("Native mutation after real acceptance cannot publish the old UI state",
+                  accepted_then_changed and accepted_then_changed[0][0] is not None
+                  and accepted_then_changed[0][1] and panel.state is not accepted_then_changed[0][0]
+                  and "discarded because the project changed" in panel.message.text())
+            check("Post-acceptance stale child exits", until(worker.cleanup_complete.is_set), critical=True)
+
+            call("set_parameter", feature="Pad", parameter="Length", value=15)
+            original_refresh = panel.refresh
+            refresh_mutations = []
+            messages_before = panel.messages.toPlainText().count(": geometry valid")
+            def mutate_after_refresh():
+                original_refresh()
+                if not refresh_mutations and (panel.state or {}).get("geometry_check_report"):
+                    refresh_mutations.append(panel._geometry_check_generation)
+                    doc.Pad.Length = 16
+                    doc.recompute()
+            with patch.object(panel, "refresh", side_effect=mutate_after_refresh):
+                _, worker = start_check()
+                check("Native change after real refresh completes the UI callback", until(lambda: panel._geometry_check_job is None), critical=True)
+            check("Native mutation after refresh cannot publish an old verdict message",
+                  refresh_mutations and panel._geometry_check_generation == refresh_mutations[0]
+                  and panel.messages.toPlainText().count(": geometry valid") == messages_before
+                  and "discarded because the project changed" in panel.message.text())
+            check("Post-refresh stale child exits", until(worker.cleanup_complete.is_set), critical=True)
+
+            call("set_parameter", feature="Pad", parameter="Length", value=17)
+            _, worker = start_check()
+            activate(other)
+            check("Document switching cancels the source job without publishing into the destination",
+                  panel._geometry_check_job is None and worker.closed
+                  and panel.state["document_id"] == panel.core.identifier(other)
+                  and panel.state.get("geometry_check") != "valid")
+            check("Switched-away child exits", until(worker.cleanup_complete.is_set), critical=True)
+
+            activate(doc)
+            _, worker = start_check()
+            check("Escape action cancels the current geometry job", panel.cancel_task()
+                  and panel._geometry_check_job is None and "Geometry check canceled" in panel.message.text())
+            check("Canceled child exits without publishing a verdict", until(worker.cleanup_complete.is_set)
+                  and panel.core.geometry.check(doc.Body, compute=False) is None, critical=True)
+
+            _, worker = start_check()
+            with patch.object(worker, "poll", side_effect=TimeoutError("Injected geometry check timeout")):
+                panel._poll_geometry_check()
+            check("A current worker error ends pending status and reports the error",
+                  panel._geometry_check_job is None and not panel.geometry_check_timer.isActive()
+                  and "Injected geometry check timeout" in panel.message.text())
+            check("Errored child exits", until(worker.cleanup_complete.is_set), critical=True)
+
+            _, worker = start_check()
+            App.closeDocument(doc.Name)
+            panel.tick()
+            check("Closing the source document invalidates its current job",
+                  panel._geometry_check_job is None and worker.closed)
+            check("Closed-document child exits", until(worker.cleanup_complete.is_set), critical=True)
+
+            activate(other)
+            call("sketch_rectangle", id="ClosingProfile", width=12, height=8)
+            call("pad", id="ClosingPad", profile="ClosingProfile", length=4)
+            _, worker = start_check()
+            panel.shutdown()
+            shutdown_done = True
+            check("Panel shutdown invalidates its job and stops polling",
+                  panel._geometry_check_closed and panel._geometry_check_job is None
+                  and not panel.geometry_check_timer.isActive() and worker.closed)
+            check("Panel shutdown child exits and releases its archive", until(worker.cleanup_complete.is_set), critical=True)
+
+        check("Every owned child has confirmed cleanup", until(lambda: all(worker.cleanup_complete.is_set() for worker in workers)), critical=True)
+        report["worker_pids"] = [worker.process.pid for worker in workers if worker.process is not None]
+        check("Geometry check sources remain frozen during GUI validation", source_hashes() == startup_hashes)
+        report["check_count"] = len(report["checks"])
+        report["passed"] = not report["failed_checks"]
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        report["check_count"] = len(report["checks"])
+        report["assertion_count"] = len(report["assertions"])
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned, shutdown_done
+    if cleaned:
+        return
+    cleaned = True
+    if panel and not shutdown_done:
+        panel.shutdown()
+        shutdown_done = True
+    for worker in workers:
+        worker.close()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["passed"] = False
+    report["error"] = "Geometry check lifecycle GUI validation exceeded 90 seconds"
+    save()
+    cleanup()
+
+
+QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(1200, run)

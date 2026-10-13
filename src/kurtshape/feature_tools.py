@@ -57,13 +57,13 @@ def _tool(key, label, command, tip, category, workbench='PartDesignWorkbench', i
 
 
 MODEL_TOOLS = (
-    _tool('pad', 'Extrude', 'PartDesign_Pad', 'Extrude a closed sketch to create a solid or add material to the selected part.', 'Add material'),
-    _tool('revolve', 'Revolve', 'PartDesign_Revolution', 'Revolve a closed sketch around an axis to create or add material.', 'Add material'),
+    _tool('pad', 'Extrude', 'PartDesign_Pad', 'Extrude a closed sketch or flat face to create a solid or add material to the selected part.', 'Add material'),
+    _tool('revolve', 'Revolve', 'PartDesign_Revolution', 'Revolve a closed sketch around a selected line or custom axis to create or add material.', 'Add material'),
     _tool('sweep', 'Sweep', 'PartDesign_AdditivePipe', 'Sweep a sketch profile along a path to create or add material.', 'Add material'),
     _tool('loft', 'Loft', 'PartDesign_AdditiveLoft', 'Connect two or more sketch sections to create or add material.', 'Add material'),
     _tool('additive_helix', 'Helical sweep', 'PartDesign_AdditiveHelix', 'Native Additive Helix: sweep a sketch along a parametric helix.', 'Add material'),
     _tool('additive_primitive', 'Additive primitives', 'PartDesign_CompPrimitiveAdditive', 'Native additive primitive controls: create a primitive feature in the active Body.', 'Add material', icon='PartDesign_AdditiveBox'),
-    _tool('pocket', 'Extrude remove', 'PartDesign_Pocket', 'Extrude a closed sketch to remove material from the selected part.', 'Remove material'),
+    _tool('pocket', 'Extrude remove', 'PartDesign_Pocket', 'Extrude a closed sketch or flat face to remove material from the selected part.', 'Remove material'),
     _tool('groove', 'Revolve remove', 'PartDesign_Groove', 'Revolve a closed sketch around an axis to remove material.', 'Remove material'),
     _tool('subtractive_sweep', 'Sweep remove', 'PartDesign_SubtractivePipe', 'Sweep a sketch profile along a path to remove material.', 'Remove material'),
     _tool('subtractive_loft', 'Loft remove', 'PartDesign_SubtractiveLoft', 'Remove material between two or more sketch sections.', 'Remove material'),
@@ -74,12 +74,13 @@ MODEL_TOOLS = (
     _tool('chamfer', 'Chamfer', 'PartDesign_Chamfer', 'Bevel selected edges of a part.', 'Modify'),
     _tool('shell', 'Shell', 'PartDesign_Thickness', 'Remove selected faces and hollow a part with a specified wall thickness.', 'Modify'),
     _tool('draft', 'Draft', 'PartDesign_Draft', 'Taper selected faces relative to a neutral plane and pull direction.', 'Modify'),
+    _tool('move_face', 'Move face', 'PartDesign_Pad', 'Move a selected flat face by adding or removing material along its normal.', 'Modify'),
     _tool('boolean', 'Boolean', 'PartDesign_Boolean', 'Combine parts by adding, subtracting or intersecting their solids.', 'Modify'),
-    _tool('mirror', 'Mirror', 'PartDesign_Mirrored', 'Mirror selected features across a plane within the selected part.', 'Pattern'),
+    _tool('mirror', 'Mirror', 'PartDesign_Mirrored', 'Mirror selected parts across an existing plane or planar face.', 'Pattern'),
     _tool('linear_pattern', 'Linear pattern', 'PartDesign_LinearPattern', 'Repeat selected features along a direction within the selected part.', 'Pattern'),
     _tool('circular_pattern', 'Circular pattern', 'PartDesign_PolarPattern', 'Repeat selected features around an axis within the selected part.', 'Pattern'),
     _tool('multi_transform', 'Multiple transforms', 'PartDesign_MultiTransform', 'Native MultiTransform: combine mirror, linear and polar transforms of Body features.', 'Pattern'),
-    _tool('datum_plane', 'Plane', 'PartDesign_Plane', 'Create an attached, offset or angled sketch plane in the selected part.', 'Reference'),
+    _tool('datum_plane', 'Plane', 'PartDesign_Plane', 'Create a reference plane from an origin plane or selected planar surface, with an editable offset.', 'Reference'),
     _tool('datum_line', 'Axis', 'PartDesign_Line', 'Native datum line: create an attached reference axis in the active Body.', 'Reference'),
     _tool('datum_point', 'Point', 'PartDesign_Point', 'Native datum point: create an attached reference point in the active Body.', 'Reference'),
     _tool('datum_coordinates', 'Coordinate system', 'PartDesign_CoordinateSystem', 'Native datum coordinate system: define an attached reference frame.', 'Reference'),
@@ -159,7 +160,7 @@ SKETCH_TOOLS = (
     _sketch('sk_fillet', 'Sketch fillet', 'Sketcher_CreateFillet', 'Create a native fillet between sketch elements.', 'Edit'),
     _sketch('sk_chamfer', 'Sketch chamfer', 'Sketcher_CreateChamfer', 'Create a native chamfer between sketch elements.', 'Edit'),
     _sketch('sk_join', 'Join curves', 'Sketcher_JoinCurves', 'Use native curve-join editing on selected sketch geometry.', 'Edit'),
-    _sketch('sk_projection', 'Project external geometry', 'Sketcher_Projection', 'Project geometry from another native object into the active sketch.', 'Edit'),
+    _sketch('sk_projection', 'Use', 'Sketcher_Projection', 'Highlight or select an edge, then U to create linked sketch geometry. U with no edge starts repeated picking; Esc ends Use.', 'Edit'),
     _sketch('sk_intersection', 'Intersect external geometry', 'Sketcher_Intersection', 'Reference the native intersection of another object with the sketch plane.', 'Edit'),
     _sketch('sk_carbon_copy', 'Carbon copy', 'Sketcher_CarbonCopy', 'Copy geometry from another native sketch with the native dependency behavior.', 'Edit'),
     _sketch('sk_mirror', 'Mirror geometry', 'Sketcher_Symmetry', 'Create symmetric geometry using native sketch symmetry.', 'Edit'),
@@ -174,7 +175,7 @@ ALL_TOOLS = MODEL_TOOLS + SKETCH_TOOLS
 BY_KEY = {tool.key: tool for tool in ALL_TOOLS}
 PRIMARY_TOOLS = tuple(BY_KEY[key] for key in
                       ('revolve', 'sweep', 'loft', 'fillet', 'chamfer',
-                       'shell', 'draft', 'linear_pattern', 'circular_pattern', 'mirror', 'boolean', 'datum_plane'))
+                       'shell', 'draft', 'move_face', 'linear_pattern', 'circular_pattern', 'mirror', 'boolean', 'datum_plane'))
 TOOL_GROUPS = tuple((category, tuple(tool for tool in MODEL_TOOLS if tool.category == category))
                     for category in ('Add material', 'Remove material', 'Modify', 'Pattern', 'Reference', 'Part tools'))
 SKETCH_GROUPS = tuple((category, tuple(tool for tool in SKETCH_TOOLS if tool.category == category))

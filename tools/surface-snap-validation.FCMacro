@@ -1,0 +1,426 @@
+"""Native drawing at converted face-edge endpoints in a private GUI process."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import shutil
+import sys
+import time
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui, sketch_tools
+from kurtshape_evidence import evidence_dir
+if os.environ.get("SURFACE_SNAP_BASELINE_REFS"):
+    import importlib.util
+    baseline_path = Path(os.environ["SURFACE_SNAP_BASELINE_REFS"])
+    spec = importlib.util.spec_from_file_location("kurtshape.surface_snap_baseline", baseline_path)
+    baseline_refs = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(baseline_refs)
+    ui.SketchReferences = baseline_refs.SketchReferences
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("surface-snap")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "cases": [], "pid": os.getpid(), "engine": App.Version(),
+          "source_sha256": {name: hashlib.sha256((root / "src/kurtshape" / name).read_bytes()).hexdigest()
+                            for name in ("ui.py", "sketch_snapping.py", "sketch_tools.py", "sketch_references.py", "shortcuts.py")},
+          "method": "Production selected pad face and U conversion, native Line/Circle, real Qt pointer and clicks at external endpoint; isolated hidden GUI."}
+panel = None
+cleaned = False
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+def wait(ms=80): QtTest.QTest.qWait(ms)
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(widget for widget in active.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible() and widget.width() > 300)
+
+def pixel(world):
+    point = Gui.activeDocument().activeView().getPointOnViewport(world)
+    gl = viewport()
+    ratio = gl.devicePixelRatioF()
+    return QtCore.QPoint(round(point[0]/ratio), gl.height()-1-round(point[1]/ratio))
+
+def move(point, timings=None):
+    gl = viewport()
+    assert gl.rect().contains(point), (point, gl.size())
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point),
+                             QtCore.QPointF(gl.mapToGlobal(point)), QtCore.Qt.NoButton,
+                             QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+    started = time.perf_counter()
+    app.sendEvent(gl, event)
+    elapsed = (time.perf_counter()-started)*1000
+    if timings is not None:
+        selection = Gui.Selection.getPreselection()
+        timings.append({"pixel": [point.x(), point.y()], "dispatch_ms": round(elapsed, 3),
+                        "preselection": [getattr(selection, "ObjectName", ""), list(getattr(selection, "SubElementNames", []))]})
+    wait(30)
+
+def click(point, timings=None):
+    move(point, timings)
+    started = time.perf_counter()
+    QtTest.QTest.mouseClick(viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+    elapsed = (time.perf_counter()-started)*1000
+    if timings is not None: timings.append({"click_ms": round(elapsed, 3)})
+    wait()
+
+def call(op, **arguments):
+    result = panel.operation(op, **arguments)
+    assert result, panel.message.text()
+    wait()
+    return panel.document()
+
+def constraints(sketch):
+    return [[c.Type, c.First, c.FirstPos, c.Second, c.SecondPos] for c in sketch.Constraints]
+
+def setup(mode, variant="top"):
+    if variant.startswith("recovery"):
+        source = Path(os.environ["SURFACE_SNAP_RECOVERY"])
+        copied = output / (mode+"-"+variant+"-recovery-copy.FCStd")
+        shutil.copy2(source, copied)
+        doc = call("open", path=str(copied))
+        report.setdefault("recovery_inputs", []).append({"source": str(source), "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+            "objects": [{"name": obj.Name, "type": obj.TypeId, "geometry": [str(g) for g in obj.Geometry],
+                         "external": [str(g) for g in obj.ExternalGeo], "placement": str(obj.Placement)}
+                         for obj in doc.Objects if obj.TypeId == "Sketcher::SketchObject"]})
+        save()
+        sketch = doc.getObject("Sketch3" if variant.endswith("side") else "Sketch2")
+        panel.select_feature(sketch.Name)
+        panel.edit_sketch()
+        wait()
+        check(mode+" recovery sketch enters edit", panel.active_sketch() == sketch)
+        if len(sketch.ExternalGeo) < 3:
+            call("project_geometry", sketch=sketch.Name, references=[{"feature": "Extrude", "subelement": "Edge7"}])
+        if variant.endswith("normal"):
+            panel.normal()
+        elif variant.endswith("iso") or variant.endswith("side"):
+            panel.isometric()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(70)
+        Gui.Selection.clearSelection()
+        wait()
+        return doc, sketch
+    call("new", name="Surface snap " + mode + " " + variant)
+    doc = (call("sketch_circle", id="BaseProfile", x=20, y=15, diameter=30) if variant.startswith("circle") else
+           call("sketch_rectangle", id="BaseProfile", width=40, height=30))
+    call("pad", id="Base", profile="BaseProfile", length=8)
+    Gui.activeDocument().activeView().viewAxonometric()
+    panel.fit()
+    wait()
+    top = max(enumerate(doc.Base.Shape.Faces, 1), key=lambda pair: pair[1].CenterOfMass.x if variant == "side" else pair[1].CenterOfMass.z)
+    Gui.Selection.clearSelection()
+    click(pixel(top[1].CenterOfMass))
+    check(mode + " viewport selects actual solid face", any(entry.Object == doc.Base and "Face" + str(top[0]) in entry.SubElementNames for entry in Gui.Selection.getSelectionEx()))
+    panel.start_sketch()
+    wait()
+    sketch = panel.active_sketch()
+    check(mode + " sketch is supported by selected solid face", bool(sketch) and
+          (abs(sketch.Placement.Base.x-40) < 1e-7 if variant == "side" else abs(sketch.Placement.Base.z-8) < 1e-7))
+    if variant not in ("isometric", "circle_isometric"):
+        panel.normal()
+    Gui.activeDocument().activeView().getCameraNode().height.setValue(70)
+    wait()
+    horizontal = next(("Edge"+str(i), edge) for i, edge in enumerate(doc.Base.Shape.Edges, 1)
+                      if (abs(edge.CenterOfMass.z-8) < 1e-6 and edge.Length > 80 if variant.startswith("circle") else
+                          abs(edge.CenterOfMass.x-40) < 1e-6 and abs(edge.CenterOfMass.z-8) < 1e-6 if variant == "side" else
+                          abs(edge.CenterOfMass.z-(0 if variant == "projected" else 8)) < 1e-6 and abs(edge.CenterOfMass.y) < 1e-6))
+    Gui.Selection.clearSelection()
+    if variant == "projected":
+        call("project_geometry", sketch=sketch.Name, references=[{"feature": "Base", "subelement": horizontal[0]}])
+    else:
+        click(pixel(horizontal[1].valueAt(horizontal[1].FirstParameter+0.5) if variant.startswith("circle") else horizontal[1].CenterOfMass))
+        QtTest.QTest.keyClick(viewport(), QtCore.Qt.Key_U)
+    wait()
+    check(mode + " actual U converts solid edge", len(sketch_tools.external_links(sketch)) == 1 and len(sketch.Shape.Edges) == 1)
+    Gui.Selection.clearSelection()
+    return doc, sketch
+
+def exercise(mode, variant="top"):
+    doc, sketch = setup(mode, variant)
+    snapping = panel.sketch_snapping
+    production_begin = snapping.begin
+    production_before = snapping.before_native
+    production_sync = snapping.sync_tool
+    prefs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher/Snap")
+    if mode == "native":
+        snapping.restore()
+        snapping.begin = lambda *args: None
+        snapping.before_native = lambda *args: None
+        snapping.sync_tool = lambda *args: None
+    elif mode == "no_snap":
+        prefs.SetBool("Snap", False)
+        prefs.SetBool("SnapToObjects", False)
+    elif mode == "no_origin":
+        snapping.before_native = lambda *args: None
+    elif mode == "no_avoid_redundant":
+        sketch.ViewObject.AvoidRedundant = False
+    if variant == "oblique":
+        Gui.activeDocument().activeView().setCameraOrientation(App.Rotation(App.Vector(1,0,0),35).Q)
+        wait()
+    entry = {"mode": mode, "variant": variant, "snap_preferences": prefs.GetContents(), "external_geometry": [str(g) for g in sketch.ExternalGeo],
+             "placement": str(sketch.Placement), "camera": Gui.activeDocument().activeView().getCameraOrientation().Q,
+             "avoid_redundant": sketch.ViewObject.AvoidRedundant, "tools": []}
+    report["cases"].append(entry)
+    save()
+    try:
+        for tool in ("Line", "Circle"):
+            panel.native_command("Sketcher_Create"+tool)
+            wait()
+            point_priority = priority_points() if mode == "point_priority" else []
+            sample = {"tool": tool, "moves": [], "before_count": sketch.GeometryCount}
+            entry["tools"].append(sample)
+            native_target = sketch.ExternalGeo[2].Center if variant.startswith("circle") else sketch.ExternalGeo[2].EndPoint
+            native_start = native_target+App.Vector(-8,7,0) if variant.startswith("circle") else (sketch.ExternalGeo[2].StartPoint+native_target)*0.5+App.Vector(0,8,0)
+            start = sketch.Placement.multVec(native_start)
+            target = sketch.Placement.multVec(native_target)
+            target_pixel = pixel(target)
+            if tool == "Line": click(pixel(start), sample["moves"])
+            for offset in [(20,12),(12,8),(8,4),(5,2),(2,1),(0,0),(-2,-1),(-5,-2),(0,0),(4,2),(0,0)]:
+                move(target_pixel+QtCore.QPoint(*offset), sample["moves"])
+                save()
+            offset = int(os.environ.get("SURFACE_SNAP_CLICK_OFFSET", "4"))
+            click(target_pixel+QtCore.QPoint(offset, offset//2), sample["moves"])
+            if tool == "Circle": click(pixel(sketch.Placement.multVec(native_target+App.Vector(-6,6,0))), sample["moves"])
+            panel.native_command("Sketcher_StopOperation")
+            wait()
+            sample.update({"geometry_count": sketch.GeometryCount, "geometry": [str(g) for g in sketch.Geometry],
+                           "constraints": constraints(sketch), "solve": sketch.solve()})
+            if sketch.GeometryCount > sample["before_count"]:
+                geometry = sketch.Geometry[sample["before_count"]]
+                point = geometry.EndPoint if tool == "Line" else geometry.Center
+                sample["target_error_mm"] = (point-native_target).Length
+            sample["max_dispatch_ms"] = max(item.get("dispatch_ms", 0) for item in sample["moves"])
+            if mode == "production":
+                label = variant+" "+tool
+                check(label+" completes exactly one native geometry", sketch.GeometryCount == sample["before_count"]+1)
+                check(label+" snaps to the exact external point", sample.get("target_error_mm", 1) < 1e-7)
+                check(label+" preserves a native external coincidence", any(c.Type == "Coincident" and
+                      ((c.First == sample["before_count"] and c.Second == -3) or
+                       (c.Second == sample["before_count"] and c.First == -3)) for c in sketch.Constraints))
+                check(label+" solves successfully", sample["solve"] == 0)
+                check(label+" pointer processing remains responsive", sample["max_dispatch_ms"] < 250)
+                check(label+" Stop restores native point picking", not panel.sketch_snapping._points and panel.sketch_snapping._origin is None)
+            main.grab().save(str(output / (mode+"-"+variant+"-"+tool.lower()+".png")))
+            save()
+            restore_priority(point_priority)
+            for index in reversed(range(sample["before_count"], sketch.GeometryCount)):
+                sketch.delGeometry(index)
+            doc.recompute()
+            wait()
+    finally:
+        snapping.begin = production_begin
+        snapping.before_native = production_before
+        snapping.sync_tool = production_sync
+        panel.finish_sketch(cancel=True)
+        wait()
+        if mode == "production":
+            check(variant+" leaving sketch restores native point picking", not panel.sketch_snapping._points and panel.sketch_snapping._origin is None)
+        if variant.startswith("recovery"):
+            doc.setClosable(True)
+            App.closeDocument(doc.Name)
+            wait()
+    return entry
+
+def priority_points():
+    from pivy import coin
+    search = coin.SoSearchAction()
+    search.setType(coin.SoMarkerSet.getClassTypeId())
+    search.setInterest(coin.SoSearchAction.ALL)
+    search.apply(Gui.activeDocument().activeView().getSceneGraph())
+    paths = search.getPaths()
+    targets = []
+    for index in range(paths.getLength()):
+        path = paths[index]
+        marker = path.getTail()
+        if not str(marker.getName()).startswith("PointSet"):
+            continue
+        targets.append((path.getNode(path.getLength()-2), marker))
+    wrappers = []
+    for parent, marker in targets:
+        wrapper = coin.SoSeparator()
+        wrapper.setName("SurfaceSnapValidationPointPriority")
+        style = coin.SoPickStyle()
+        style.style = coin.SoPickStyle.SHAPE_ON_TOP
+        wrapper.addChild(style)
+        wrapper.addChild(marker)
+        for node in (parent, marker, wrapper): node.ref()
+        parent.replaceChild(marker, wrapper)
+        wrappers.append((parent, marker, wrapper))
+    report.setdefault("priority_marker_counts", []).append(len(wrappers))
+    return wrappers
+
+def restore_priority(wrappers):
+    for parent, marker, wrapper in wrappers:
+        if parent.findChild(wrapper) >= 0:
+            parent.replaceChild(wrapper, marker)
+        for node in (wrapper, marker, parent): node.unref()
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        wait(150)
+        if os.environ.get("SURFACE_SNAP_CONTINUOUS"):
+            continuous()
+            report["check_count"] = len(report["checks"])
+            report["passed"] = True
+            return
+        App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher").SetBool("ContinuousCreationMode", True)
+        modes = os.environ.get("SURFACE_SNAP_MODES", "production").split(",")
+        variants = os.environ.get("SURFACE_SNAP_VARIANTS", "top,isometric,side,projected,circle,circle_isometric").split(",")
+        for variant in variants:
+            for mode in modes: exercise(mode, variant)
+        if not os.environ.get("SURFACE_SNAP_MODES") and not os.environ.get("SURFACE_SNAP_VARIANTS"):
+            continuous()
+        report["check_count"] = len(report["checks"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        main.grab().save(str(output / "failed-surface-snap.png"))
+    finally:
+        save()
+        cleanup()
+
+def continuous():
+    App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher").SetBool("ContinuousCreationMode", True)
+    baseline = bool(os.environ.get("SURFACE_SNAP_BASELINE_REFS"))
+    report["lifecycle_baseline"] = baseline
+    if baseline:
+        report["baseline_source_sha256"] = hashlib.sha256(Path(os.environ["SURFACE_SNAP_BASELINE_REFS"]).read_bytes()).hexdigest()
+    for tool, committed in (("Circle", False), ("Polyline", False), ("Polyline", True)):
+        for target_name in ("converted_endpoint", "unconverted_edge"):
+            variant = "recovery_normal" if os.environ.get("SURFACE_SNAP_RECOVERY") else "top"
+            label = "continuous_"+tool+"_"+str(committed)+"_"+target_name
+            doc, sketch = setup(label, variant)
+            endpoint = sketch.ExternalGeo[2].EndPoint
+            native_start = (sketch.ExternalGeo[2].StartPoint+endpoint)*0.5+App.Vector(0,8,0)
+            native_target = endpoint if target_name == "converted_endpoint" else endpoint+App.Vector(0,10,0)
+            refs = panel.sketch_references
+            original_hit = refs.hit
+            hit_calls = []
+            def observed_hit(*args, **kwargs):
+                before = time.perf_counter()
+                result = original_hit(*args, **kwargs)
+                hit_calls.append({"native_tool": refs.native_tool, "elapsed_ms": (time.perf_counter()-before)*1000,
+                                  "source": str(result)})
+                return result
+            refs.hit = observed_hit
+            sample = {"tool": tool, "committed": committed, "target": target_name, "moves": [], "hit_calls": hit_calls, "states": []}
+            report["cases"].append(sample)
+            def state(stage):
+                sample["states"].append({"stage": stage, "native_tool": refs.native_tool, "geometry_count": sketch.GeometryCount,
+                                         "geometry": [str(g) for g in sketch.Geometry], "cursor": str(viewport().cursor().shape()),
+                                         "priority_points": len(getattr(panel.sketch_snapping, "_points", [])),
+                                         "origin_priority": panel.sketch_snapping._origin is not None})
+                save()
+            panel.native_command("Sketcher_Create"+tool)
+            click(pixel(sketch.Placement.multVec(native_start)), sample["moves"])
+            if committed: click(pixel(sketch.Placement.multVec(native_start+App.Vector(3,-5,0))), sample["moves"])
+            state("first_point")
+            retained_count = sketch.GeometryCount
+            QtTest.QTest.mouseClick(viewport(), QtCore.Qt.RightButton)
+            wait(200)
+            state("after_right_click")
+            target = pixel(sketch.Placement.multVec(native_target))
+            for offset in [(20,10),(12,5),(6,3),(0,0),(4,2),(0,0)]:
+                move(target+QtCore.QPoint(*offset), sample["moves"])
+            click(target, sample["moves"])
+            state("target_point_click")
+            click(pixel(sketch.Placement.multVec(native_target+App.Vector(-6,6,0))), sample["moves"])
+            state("finish_click")
+            if not baseline:
+                check(label+" right-click completely leaves drawing", sample["states"][1]["native_tool"] is None
+                      and sample["states"][1]["cursor"] == str(QtCore.Qt.ArrowCursor))
+                check(label+" subsequent selection clicks never continue drawing", sketch.GeometryCount == retained_count)
+                check(label+" right-click restores native point picking", not panel.sketch_snapping._points and panel.sketch_snapping._origin is None)
+            restart_count = sketch.GeometryCount
+            panel.native_command("Sketcher_Create"+tool)
+            hits_before = len(hit_calls)
+            if tool == "Circle":
+                click(target, sample["moves"])
+                click(pixel(sketch.Placement.multVec(native_target+App.Vector(-6,6,0))), sample["moves"])
+            else:
+                click(pixel(sketch.Placement.multVec(native_start+App.Vector(-2,1,0))), sample["moves"])
+                click(target, sample["moves"])
+            state("restart_and_complete")
+            check(label+" restarted tool receives all clicks", len(hit_calls) == hits_before)
+            check(label+" restarted tool creates one geometry", sketch.GeometryCount == restart_count+1)
+            if target_name == "converted_endpoint":
+                geometry = sketch.Geometry[-1]
+                point = geometry.Center if tool == "Circle" else geometry.EndPoint
+                check(label+" restarted tool snaps exactly to external endpoint", (point-endpoint).Length < 1e-7)
+                check(label+" snap is a native coincidence", any(c.Type == "Coincident" and c.First == sketch.GeometryCount-1 for c in sketch.Constraints))
+            sample["max_dispatch_ms"] = max(item.get("dispatch_ms", 0) for item in sample["moves"])
+            check(label+" hover remains within responsiveness bound", sample["max_dispatch_ms"] < 250)
+            main.grab().save(str(output / (label+".png")))
+            QtTest.QTest.keyClick(viewport(), QtCore.Qt.Key_Escape)
+            wait(600)
+            if not baseline:
+                check(label+" Escape restores native point picking", not panel.sketch_snapping._points and panel.sketch_snapping._origin is None)
+            refs.hit = original_hit
+            panel.finish_sketch(cancel=True)
+            if not baseline:
+                check(label+" leaving sketch restores native point picking", not panel.sketch_snapping._points and panel.sketch_snapping._origin is None)
+            if variant.startswith("recovery"):
+                doc.setClosable(True)
+                App.closeDocument(doc.Name)
+            wait()
+
+def cleanup():
+    global cleaned
+    if cleaned: return
+    cleaned = True
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction: doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    if panel: panel.shutdown()
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+def timeout():
+    report["error"] = "Surface snapping validation exceeded 180 seconds"
+    save()
+    cleanup()
+
+QtCore.QTimer.singleShot(180000, timeout)
+QtCore.QTimer.singleShot(1200, run)

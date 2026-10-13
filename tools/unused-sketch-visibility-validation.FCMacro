@@ -1,0 +1,240 @@
+"""Accepted unused native sketches remain selectable, including empty Bodies."""
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui, studio, sketch_tools
+from kurtshape_evidence import evidence_dir
+from preview_validation import wait_for_exact
+
+
+class NoTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("unused-sketch-visibility")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "selections": [], "screens": [], "pid": os.getpid(), "engine": App.Version(),
+          "method": "Production Panel Finish/Cancel and actual Qt viewport clicks in an isolated hidden native GUI."}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=150):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+
+def call(op, **arguments):
+    assert panel.operation(op, **arguments), panel.message.text()
+    wait(80)
+    return panel.document()
+
+
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(widget for widget in active.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible() and widget.width() > 300)
+
+
+def select_curve(sketch, local, label):
+    view = Gui.activeDocument().activeView()
+    view.viewTop()
+    view.fitAll()
+    view.redraw()
+    wait(200)
+    widget = viewport()
+    pos = view.getPointOnViewport(sketch.Placement.multVec(App.Vector(*local)))
+    ratio = widget.devicePixelRatioF()
+    point = QtCore.QPoint(round(pos[0] / ratio), widget.height() - 1 - round(pos[1] / ratio))
+    Gui.Selection.clearSelection()
+    Gui.Selection.clearPreselection()
+    QtTest.QTest.mouseClick(widget, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+    wait()
+    selected = Gui.Selection.getSelectionEx()
+    report["selections"].append({"label": label, "target": sketch.Name, "pixel": [point.x(), point.y()],
+                               "objects": [{"name": item.Object.Name, "elements": list(item.SubElementNames)} for item in selected]})
+    check(label, any(item.Object == sketch and item.SubElementNames for item in selected))
+    Gui.Selection.clearSelection()
+    Gui.Selection.clearPreselection()
+
+
+def finish_circle(name, x, body="Body"):
+    doc = call("create_sketch", id=name, plane="XY", body=body)
+    sketch = doc.getObject(name)
+    sketch.ViewObject.Visibility = False
+    panel.select_feature(name)
+    check(name + " enters native managed editing", bool(panel.edit_sketch()))
+    call("add_circle", sketch=name, x=x, y=0, diameter=8)
+    check(name + " accepts native Finish", bool(panel.finish_sketch()))
+    wait(300)
+    check(name + " is visible and selectable after Finish", sketch.ViewObject.Visibility and sketch.ViewObject.Selectable)
+    return sketch
+
+
+def capture(name):
+    wait()
+    main.grab().save(str(output / (name + ".png")))
+    report["screens"].append(name + ".png")
+    save()
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        doc = call("new", name="Accepted unused sketch visibility")
+        empty = finish_circle("EmptyBodySketch", 0)
+        check("Empty native Body container is visible after Finish", doc.Body.ViewObject.Visibility)
+        select_curve(empty, (2.828427, 2.828427, 0), "Actual viewport click selects accepted sketch in an empty Body")
+        call("rebuild")
+        check("Unused sketch remains visible after explicit rebuild", empty.ViewObject.Visibility and doc.Body.ViewObject.Visibility)
+        empty.ViewObject.Visibility = False
+        call("rebuild")
+        check("Explicitly hidden sketch stays hidden during rebuild", not empty.ViewObject.Visibility)
+        panel.select_feature(empty.Name)
+        check("Explicitly hidden sketch reopens for cancellation", bool(panel.edit_sketch()))
+        check("Cancel preserves explicit sketch hiding", panel.finish_sketch(cancel=True) and not empty.ViewObject.Visibility)
+        panel.select_feature(empty.Name)
+        check("Explicitly hidden sketch reopens for acceptance", bool(panel.edit_sketch()))
+        check("Finish explicitly reveals the accepted unused sketch", panel.finish_sketch() and empty.ViewObject.Visibility)
+        panel.select_feature(empty.Name)
+        panel.extrude()
+        panel.depth.setValue(6)
+        wait_for_exact(panel.extrusion_preview)
+        check("Native extrusion accepts through the production feature editor", bool(panel.accept_task()))
+        check("Pad consumes its native sketch profile", empty not in sketch_tools.unconsumed_sketches(doc))
+        check("Accepting extrusion hides the consumed profile", not empty.ViewObject.Visibility)
+        tip = doc.Body.Tip
+        beside = finish_circle("BesideSolid", 25)
+        check("Finish retains the existing native solid Tip", doc.Body.Tip == tip and tip.ViewObject.Visibility)
+        check("Consumed earlier profile remains hidden", not empty.ViewObject.Visibility and not sketch_tools.show_unconsumed_sketch(empty))
+        select_curve(beside, (27.828427, 2.828427, 0), "Actual viewport click selects accepted sketch beside an existing solid")
+        call("pad", id="SecondSolid", profile=empty.Name, length=6, operation="new")
+        check("Studio source Body retains a visible unconsumed sketch", studio.enabled(doc) and beside.ViewObject.Visibility and doc.Body.ViewObject.Visibility)
+        call("create_body", id="EmptyStudio")
+        tipless = finish_circle("TiplessSketch", 65, body="EmptyStudio")
+        check("Studio recompute keeps an empty Body Tip empty after Finish", doc.EmptyStudio.Tip is None and doc.EmptyStudio.ViewObject.Visibility)
+        select_curve(tipless, (67.828427, 2.828427, 0), "Actual viewport click selects unused sketch in a studio Body with no Tip")
+        future = finish_circle("FutureSketch", 45)
+        before = {obj.Name: bool(obj.ViewObject.Visibility) for obj in doc.Objects if obj.ViewObject and "Visibility" in obj.ViewObject.PropertiesList}
+        panel.select_feature(beside.Name)
+        check("Earlier unused sketch reopens with historical isolation", bool(panel.edit_sketch()))
+        check("Earlier visible unused sketch Body stays available while later sketch is hidden", doc.Body.ViewObject.Visibility and not future.ViewObject.Visibility)
+        check("Cancel restores historical visibility exactly", panel.finish_sketch(cancel=True) and before == {
+            obj.Name: bool(obj.ViewObject.Visibility) for obj in doc.Objects if obj.ViewObject and "Visibility" in obj.ViewObject.PropertiesList})
+        panel.select_feature(future.Name)
+        check("Later sketch editing retains prior visible sketches in empty Bodies", bool(panel.edit_sketch())
+              and doc.EmptyStudio.ViewObject.Visibility and tipless.ViewObject.Visibility)
+        check("Cancel preserves prior empty-Body sketch visibility", panel.finish_sketch(cancel=True) and doc.EmptyStudio.ViewObject.Visibility)
+        call("create_sketch", id="ReferenceOnly", body="Body", plane="XY")
+        call("project_geometry", sketch="ReferenceOnly", references=[{"feature": beside.Name, "subelement": "Edge1"}], defining=False)
+        check("Another sketch using an edge does not consume the original sketch", beside in sketch_tools.unconsumed_sketches(doc))
+        select_curve(beside, (27.828427, 2.828427, 0), "Referenced unused sketch remains selectable outside sketch edit mode")
+        standalone = doc.addObject("Sketcher::SketchObject", "Standalone")
+        standalone.addGeometry(Part.Circle(App.Vector(85, 0, 0), App.Vector(0, 0, 1), 4), False)
+        standalone.ViewObject.Visibility = False
+        call("rebuild")
+        check("Reveal helper supports existing standalone native sketches", sketch_tools.show_unconsumed_sketch(standalone))
+        check("Standalone native sketch is visible and selectable after Finish", standalone.ViewObject.Visibility and standalone.ViewObject.Selectable)
+        select_curve(standalone, (87.828427, 2.828427, 0), "Actual viewport click selects an accepted standalone native sketch")
+        future.ViewObject.Visibility = False
+        call("rebuild")
+        check("Explicit hidden later sketch is retained by studio rebuild", not future.ViewObject.Visibility and beside.ViewObject.Visibility)
+        project = output / "accepted-unused-sketches.FCStd"
+        panel.core.settings.grant_destination(str(project))
+        call("save", path=str(project))
+        App.closeDocument(doc.Name)
+        call("open", path=str(project))
+        doc = panel.document()
+        beside = doc.BesideSolid
+        check("Saved unused sketch reopens visible and selectable", beside.ViewObject.Visibility and beside.ViewObject.Selectable and doc.Body.ViewObject.Visibility)
+        check("Saved explicit sketch hide survives reopen", not doc.FutureSketch.ViewObject.Visibility)
+        select_curve(beside, (27.828427, 2.828427, 0), "Actual viewport click selects an unused sketch after save and reopen")
+        check("Missing sketch helper is a harmless no-op", not sketch_tools.show_unconsumed_sketch(None))
+        capture("accepted-unused-sketches")
+        report["project"] = str(project)
+        report["check_count"] = len(report["checks"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        capture("failed-unused-sketch-visibility")
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    if panel:
+        panel.shutdown()
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["error"] = "Unused sketch visibility validation exceeded 90 seconds"
+    save()
+    cleanup()
+
+
+QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(1200, run)

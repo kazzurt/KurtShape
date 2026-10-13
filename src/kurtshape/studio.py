@@ -5,19 +5,20 @@ identity; neutral Part tools and native PartDesign Booleans carry geometry.
 The properties below describe operation order, not a second editable graph.
 """
 from __future__ import annotations
+from collections import OrderedDict
 import json
 import math
 
 import FreeCAD as App
 import Part
-from . import geometry
+from . import document_index, geometry
 
 OPS = {"revolve", "sweep", "loft", "boolean_parts", "split_part",
        "transform_part", "delete_part", "linear_pattern_parts", "circular_pattern_parts",
        "mirror_parts", "rollback", "set_part_appearance"}
 RESULT_FIELDS = {"operation", "merge_scope", "name"}
 ARGS = {
-    "pad": RESULT_FIELDS, "pocket": RESULT_FIELDS,
+    "pad": RESULT_FIELDS | {"face"}, "pocket": RESULT_FIELDS | {"face"},
     "revolve": {"id", "name", "profile", "axis", "angle", "operation", "merge_scope", "body"},
     "sweep": {"id", "name", "profile", "path", "operation", "merge_scope", "body", "frenet"},
     "loft": {"id", "name", "sections", "operation", "merge_scope", "body", "ruled", "closed"},
@@ -27,12 +28,13 @@ ARGS = {
     "delete_part": {"id", "name", "part"},
     "linear_pattern_parts": {"id", "name", "parts", "direction", "spacing", "count", "operation", "merge_scope"},
     "circular_pattern_parts": {"id", "name", "parts", "axis", "angle", "count", "operation", "merge_scope"},
-    "mirror_parts": {"id", "name", "parts", "origin", "normal", "operation", "merge_scope"},
+    "mirror_parts": {"id", "name", "parts", "plane", "origin", "normal", "operation", "merge_scope"},
     "rollback": {"index"},
     "set_part_appearance": {"part", "name", "visible", "color"},
 }
 META = "KurtShapeProject"
 _AUTO_SCOPE_CACHE = {}
+_SCOPE_MEMBERSHIP_LIMIT = 64
 
 
 def native_recomputed(doc):
@@ -96,6 +98,16 @@ def _bool(req, name, default=False):
 
 
 def _prop(obj, kind, name, value=None):
+    if name in obj.PropertiesList and obj.getTypeIdOfProperty(name) != kind:
+        # Metadata links intentionally span Body containers. Older documents
+        # used local-scope links, which produced native scope warnings on every
+        # recompute. Retain their exact objects when changing the dynamic type.
+        prior = getattr(obj, name)
+        editor_mode = obj.getEditorMode(name)
+        obj.removeProperty(name)
+        obj.addProperty(kind, name, "KurtShape studio")
+        setattr(obj, name, prior)
+        obj.setEditorMode(name, editor_mode)
     if name not in obj.PropertiesList:
         obj.addProperty(kind, name, "KurtShape studio")
     if value is not None and getattr(obj, name) != value:
@@ -113,11 +125,38 @@ def _meta(doc, create=False):
         from .core import metadata
         meta = metadata(doc)
         _prop(meta, "App::PropertyBool", "KurtShapeStudioEnabled", True)
-        _prop(meta, "App::PropertyLinkList", "KurtShapeFeatureOrder")
+        _prop(meta, "App::PropertyLinkListGlobal", "KurtShapeFeatureOrder")
         _prop(meta, "App::PropertyInteger", "KurtShapeRollbackIndex")
         # Unhashed native names retain all composite merge ancestors.
         doc.UseHasher = False
     return meta
+
+
+def migrate_link_scopes(doc):
+    """Upgrade adapter-owned document-wide links without altering geometry."""
+    changed = False
+    for obj in doc.Objects:
+        for name, kind in (("KurtShapeFeatureOrder", "App::PropertyLinkListGlobal"),
+                           ("KurtShapeInputSnapshots", "App::PropertyLinkListGlobal"),
+                           ("KurtShapeInputBinder", "App::PropertyLinkGlobal"),
+                           ("KurtShapeGeometryBinder", "App::PropertyLinkGlobal"),
+                           ("KurtShapeTool", "App::PropertyLinkGlobal"),
+                           ("KurtShapeNeutralToolBody", "App::PropertyLinkGlobal"),
+                           ("KurtShapeScopeBounds", "App::PropertyLinkGlobal")):
+            if name in obj.PropertiesList and obj.getTypeIdOfProperty(name) != kind:
+                _prop(obj, kind, name)
+    changed = _migrate_up_to_face_scopes(doc) or changed
+    for obj in list(doc.Objects):
+        if obj.TypeId == "PartDesign::Body" and (getattr(obj, "KurtShapeInternal", False)
+                                                or getattr(obj, "KurtShapeOutputGeneration", False)) and obj.BaseFeature:
+            geometry_binder = getattr(obj, "KurtShapeGeometryBinder", None)
+            source = geometry_binder.Support[0][0] if geometry_binder and geometry_binder.Support else obj.BaseFeature
+            if source.TypeId != "PartDesign::Body" and _body_owner(source):
+                parent = next((_body_owner(user) for user in obj.InList if user.TypeId == "PartDesign::Boolean" and obj in user.Group), None)
+                output = getattr(obj, "KurtShapeOutputGeneration", False) and source.TypeId == "PartDesign::Pad"
+                changed = (_set_boolean_body_input(obj, source) if parent or output else _set_body_input(obj, source)) or changed
+    from .modeling_geometry import migrate_axis_scopes
+    return migrate_axis_scopes(doc) or changed
 
 
 def _body_owner(obj):
@@ -143,14 +182,54 @@ def _eligible(obj):
 
 
 def order(doc):
+    index = document_index.get(doc)
+    if index is not None and "order" in index.derived:
+        return list(index.derived["order"])
+    meta = _meta(doc)
     if enabled(doc):
-        return list(_meta(doc).KurtShapeFeatureOrder)
-    return [obj for obj in doc.Objects if _eligible(obj)]
+        result = list(meta.KurtShapeFeatureOrder)
+    else:
+        objects = index.objects() if index is not None else doc.Objects
+        discovered = [obj for obj in objects if _eligible(obj)]
+        if meta and "KurtShapeFeatureOrder" in meta.PropertiesList:
+            prior = list(meta.KurtShapeFeatureOrder)
+            result = prior + [obj for obj in discovered if obj not in prior]
+        else:
+            result = discovered
+    if index is not None:
+        index.derived["order"] = tuple(result)
+        index.derived["positions"] = {obj.Name: position for position, obj in enumerate(result)}
+    return result
+
+
+def _positions(doc):
+    index = document_index.get(doc)
+    if index is not None:
+        if "positions" not in index.derived:
+            order(doc)
+        return index.derived["positions"]
+    return {obj.Name: position for position, obj in enumerate(order(doc))}
+
+
+def record_legacy_order(doc):
+    """Keep native chronological links without enabling multi-part semantics.
+
+    Document.Objects reflects native allocation order, which changes when Undo
+    recreates a deletion. Establish this property before feature transactions
+    so Undo restores the accepted links rather than reconstructing chronology.
+    """
+    meta = _meta(doc)
+    if meta is None or enabled(doc):
+        return
+    sequence = order(doc)
+    _prop(meta, "App::PropertyLinkListGlobal", "KurtShapeFeatureOrder", sequence)
 
 
 def reconcile(doc):
     if not enabled(doc):
+        record_legacy_order(doc)
         return
+    migrate_link_scopes(doc)
     meta = _meta(doc)
     prior = list(meta.KurtShapeFeatureOrder)
     discovered = [obj for obj in doc.Objects if _eligible(obj) and obj not in prior]
@@ -177,12 +256,13 @@ def _cutoff(doc, before=None):
     features = order(doc)
     if before is not None:
         name = before.Name if hasattr(before, "Name") else before
-        index = next((i for i, obj in enumerate(features) if obj.Name == name), None)
+        positions = _positions(doc)
+        index = positions.get(name)
         if index is not None:
             return index
         # Auxiliary consumer belongs to its operation or the native Body order.
         operation = getattr(doc.getObject(name), "KurtShapeOperationOwner", "")
-        index = next((i for i, obj in enumerate(features) if obj.Name == operation), None)
+        index = positions.get(operation)
         if index is not None:
             return index
     return min(max(0, _meta(doc).KurtShapeRollbackIndex), len(features)) if enabled(doc) else len(features)
@@ -190,8 +270,17 @@ def _cutoff(doc, before=None):
 
 def _state(doc, cutoff):
     """Read current logical parts directly from native ordered operation metadata."""
-    state = {}
-    for obj in order(doc)[:cutoff]:
+    features = order(doc)[:cutoff]
+    cutoff = len(features)
+    cache = document_index.get(doc)
+    states = cache.derived.setdefault("part_states", {0: {}}) if cache is not None else {0: {}}
+    if cutoff in states:
+        return dict(states[cutoff])
+    start = max(position for position in states if position <= cutoff)
+    state = dict(states[start])
+    for obj in features[start:]:
+        if cache is not None:
+            cache.counts["history_steps"] += 1
         if getattr(obj, "KurtShapeStudioOperation", ""):
             for key in getattr(obj, "KurtShapeConsumedParts", []):
                 state.pop(key, None)
@@ -206,6 +295,8 @@ def _state(doc, cutoff):
             body = _body_owner(obj)
             if body and not getattr(body, "KurtShapeInternal", False) and not obj.Shape.isNull() and obj.Shape.Solids:
                 state[part_id(body)] = (body, obj)
+    if cache is not None:
+        states[cutoff] = dict(state)
     return state
 
 
@@ -252,11 +343,74 @@ def is_active(obj):
         return False
     op = getattr(obj, "KurtShapeOperationOwner", "")
     target = doc.getObject(op) if op else obj
-    if target in order(doc):
-        return order(doc).index(target) < _cutoff(doc)
+    position = _positions(doc).get(target.Name) if target else None
+    if position is not None:
+        return position < _cutoff(doc)
     if obj.TypeId == "PartDesign::Body" and not getattr(obj, "KurtShapeInternal", False):
         return any(entry[0] == obj for entry in _state(doc, _cutoff(doc)).values())
     return True
+
+
+def _set_body_input(body, source):
+    """A root SubShapeBinder preserves maps across native Body link scopes."""
+    changed = False
+    if source.TypeId != "PartDesign::Body" and _body_owner(source):
+        binder = getattr(body, "KurtShapeGeometryBinder", None)
+        if binder is None:
+            binder = body.Document.addObject("PartDesign::SubShapeBinder", body.Name + "Geometry")
+            _prop(binder, "App::PropertyBool", "KurtShapeInternal", True)
+            _prop(body, "App::PropertyLinkGlobal", "KurtShapeGeometryBinder", binder)
+            changed = True
+        if not binder.Relative:
+            # Native relative binding also preserves transformations embedded
+            # in generated Compound/Link geometry; root context stays local.
+            binder.Relative = True
+            changed = True
+        if binder.Support != [(source, ("",))] and binder.Support != [(source, [""])]:
+            binder.Support = [(source, [""])]
+            changed = True
+        operation = getattr(body, "KurtShapeOperationOwner", "")
+        if operation:
+            _prop(binder, "App::PropertyString", "KurtShapeOperationOwner", operation)
+        source = binder
+    if body.BaseFeature != source:
+        body.BaseFeature = source
+        changed = True
+    return changed
+
+
+def _set_boolean_body_input(body, source):
+    """Keep a private Boolean Body's scoped input empty; its native base is global.
+
+    Boolean.Group moves tool Bodies into its own native coordinate scope. A
+    manually authored FeatureBase has the supported global input scope and
+    carries the authoritative source Tip's full geometry and element map.
+    """
+    changed = False
+    if body.BaseFeature:
+        body.BaseFeature = None
+        changed = True
+    base = next((obj for obj in body.Group if obj.TypeId == "PartDesign::FeatureBase"), None)
+    if base is None:
+        base = body.newObject("PartDesign::FeatureBase", body.Name + "Base")
+        changed = True
+    if base.BaseFeature != source:
+        base.BaseFeature = source
+        changed = True
+    _prop(base, "App::PropertyBool", "KurtShapeInternal", True)
+    operation = getattr(body, "KurtShapeOperationOwner", "")
+    if operation:
+        _prop(base, "App::PropertyString", "KurtShapeOperationOwner", operation)
+    binder = getattr(body, "KurtShapeGeometryBinder", None)
+    if binder:
+        body.removeProperty("KurtShapeGeometryBinder")
+        if getattr(binder, "KurtShapeInternal", False) and not binder.InList:
+            body.Document.removeObject(binder.Name)
+        changed = True
+    if body.Tip != base:
+        body.Tip = base
+        changed = True
+    return changed
 
 
 def _snapshot(doc, body, feature, name):
@@ -266,11 +420,11 @@ def _snapshot(doc, body, feature, name):
     binder.Support = [(feature, [""])]
     binder.TraceSupport = True
     _prop(binder, "App::PropertyBool", "KurtShapeInternal", True)
-    # The traced binder supplies pose only. Its copied Shape has no native
-    # element map; geometry must come directly from the authoritative Tip.
-    snap.BaseFeature = feature
+    # ShapeBinder supplies pose; SubShapeBinder preserves the source's native
+    # element map while allowing the Body's root-scope BaseFeature link.
+    _set_body_input(snap, feature)
     snap.setExpression("Placement", binder.Name + ".Placement")
-    _prop(snap, "App::PropertyLink", "KurtShapeInputBinder", binder)
+    _prop(snap, "App::PropertyLinkGlobal", "KurtShapeInputBinder", binder)
     if App.GuiUp:
         snap.ViewObject.Visibility = False
     return snap
@@ -279,7 +433,12 @@ def _snapshot(doc, body, feature, name):
 def _output(doc, source, name, key=None, label=None):
     previous = next((obj for obj in current_parts(doc) if part_id(obj) == key), None) if key else None
     body = doc.addObject("PartDesign::Body", name)
-    body.BaseFeature = source
+    if source.TypeId != "PartDesign::Body" and _body_owner(source):
+        # Native carrier features retain their local Shape/Placement contract
+        # through a global FeatureBase, without a scoped Body input link.
+        _set_boolean_body_input(body, source)
+    else:
+        body.BaseFeature = source
     body.setExpression("Placement", source.Name + ".Placement")
     _prop(body, "App::PropertyString", "KurtShapePartId", key or body.Name)
     _prop(body, "App::PropertyBool", "KurtShapeOutputGeneration", True)
@@ -313,7 +472,7 @@ def _record(doc, representative, req, outputs, consumed=(), snapshots=()):
     _prop(representative, "App::PropertyStringList", "KurtShapeOutputParts", [obj.Name for obj in outputs])
     _prop(representative, "App::PropertyStringList", "KurtShapeOutputTips", [obj.Tip.Name for obj in outputs])
     _prop(representative, "App::PropertyStringList", "KurtShapeConsumedParts", list(consumed))
-    _prop(representative, "App::PropertyLinkList", "KurtShapeInputSnapshots", [x[1] for x in snapshots])
+    _prop(representative, "App::PropertyLinkListGlobal", "KurtShapeInputSnapshots", [x[1] for x in snapshots])
     _prop(representative, "App::PropertyStringList", "KurtShapeInputPartIds", [x[0] for x in snapshots])
     all_existing = set(order(doc))
     # Established source containers remain inputs when traversing auxiliaries.
@@ -364,27 +523,31 @@ def prepare_recompute(doc):
                 body, tip = entry
                 if "KurtShapeInputBinder" in snapshot.PropertiesList:
                     binder = snapshot.KurtShapeInputBinder
-                    if snapshot.BaseFeature != tip:
-                        snapshot.BaseFeature = tip
+                    _set_body_input(snapshot, tip)
                     if binder.Support != [(tip, ("",))] and binder.Support != [(tip, [""])]:
                         binder.Support = [(tip, [""])]
                 else:
-                    if snapshot.BaseFeature != tip:
-                        snapshot.BaseFeature = tip
+                    _set_body_input(snapshot, tip)
                     if snapshot.Placement != body.Placement:
                         snapshot.Placement = body.Placement
     visible_state = _state(doc, bar)
+    sketch_bodies = set()
+    if App.GuiUp:
+        from .sketch_tools import unconsumed_sketches
+        sketch_bodies = {_body_owner(sketch) for sketch in unconsumed_sketches(doc)
+                         if sketch.ViewObject and sketch.ViewObject.Visibility}
     for body in [obj for obj in doc.Objects if obj.TypeId == "PartDesign::Body"]:
         selected_tip = next((entry[1] for entry in visible_state.values() if entry[0] == body), None)
         if selected_tip and body.Tip != selected_tip:
             body.Tip = selected_tip
         elif not selected_tip and not getattr(body, "KurtShapeInternal", False):
-            own_active = [obj for obj in features[:bar] if _body_owner(obj) == body and obj.TypeId.startswith("PartDesign::")]
+            own_active = [obj for obj in features[:bar] if _body_owner(obj) == body
+                          and obj.isDerivedFrom("PartDesign::Feature") and not obj.Shape.isNull() and obj.Shape.Solids]
             tip = own_active[-1] if own_active else None
             if body.Tip != tip:
                 body.Tip = tip
         if App.GuiUp:
-            active = any(entry[0] == body for entry in visible_state.values())
+            active = body in sketch_bodies or any(entry[0] == body for entry in visible_state.values())
             desired = getattr(body, "KurtShapePartVisible", True)
             body.ViewObject.Visibility = bool(active and desired and not getattr(body, "KurtShapeInternal", False))
     hide_internal(doc)
@@ -459,7 +622,11 @@ def validation_errors(doc):
     return errors
 
 
-def _scope_parts(doc, operation, tools, before):
+def _scope_parts_full(doc, operation, tools, before):
+    """Original exact traversal, retained as the uncached membership oracle."""
+    index = document_index.get(doc)
+    if index is not None:
+        index.counts["scope_membership_full"] = index.counts.get("scope_membership_full", 0) + 1
     desired = []
     for key, (body, tip) in _state(doc, before).items():
         shape = tip.Shape.copy()
@@ -468,6 +635,80 @@ def _scope_parts(doc, operation, tools, before):
                              parameters=("history", before)) for tool in tools):
             desired.append(key)
     return desired
+
+
+def _scope_parts(doc, operation, tools, before):
+    """Memoize complete membership only while every native domain is stable."""
+    index = document_index.get(doc)
+    if (index is None or type(before) is not int or not isinstance(tools, (list, tuple))
+            or not isinstance(operation, str) or operation not in {"add", "remove", "intersect"}):
+        return _scope_parts_full(doc, operation, tools, before)
+    domains = tuple(sorted(document_index.DOMAINS))
+    token = index.token(*domains)
+    # A foreign tool can change without notifying this document's observer.
+    # Detached/unknown objects keep the original traversal and error behavior.
+    try:
+        if any(tool.Document != doc or doc.getObject(tool.Name) != tool for tool in tools):
+            return _scope_parts_full(doc, operation, tools, before)
+        identities = tuple((tool.Name, tool.ID) for tool in tools)
+    except (AttributeError, RuntimeError):
+        return _scope_parts_full(doc, operation, tools, before)
+
+    def stable():
+        return document_index.get(doc) is index and index.token(*domains) == token
+
+    def retry_full():
+        # A reentrant native read can also populate old _state/order entries.
+        # Discard those before retrying and leave this uncertain read uncached.
+        def discard():
+            index.invalidate(structure=True)
+            current = document_index.get(doc)
+            if current is not None and current is not index:
+                current.invalidate(structure=True)
+            scalars = geometry.provider(doc)
+            if scalars is not None:
+                scalars.drop_document(doc)
+        discard()
+        current = document_index.get(doc)
+        retry_token = current.token(*domains) if current is not None else None
+        try:
+            value = _scope_parts_full(doc, operation, tools, before)
+            if (document_index.get(doc) is not current or current is not None
+                    and current.token(*domains) != retry_token):
+                raise _error("scope_document_changed", "Native document changed during scope resolution; retry")
+            return value
+        finally:
+            discard()
+
+    if not stable():
+        return retry_full()
+    local = document_index.local_dependencies(index)
+    if not stable():
+        return retry_full()
+    if not local:
+        return _scope_parts_full(doc, operation, tools, before)
+    key = (token, operation, before, identities)
+    entries = index.derived.get("scope_membership")
+    if entries is not None and key in entries:
+        value = entries[key]
+        if not stable():
+            return retry_full()
+        entries.move_to_end(key)
+        index.counts["scope_membership_hits"] = index.counts.get("scope_membership_hits", 0) + 1
+        return list(value)
+    try:
+        value = _scope_parts_full(doc, operation, tools, before)
+    except Exception:
+        if not stable():
+            return retry_full()
+        raise
+    if not stable():
+        return retry_full()
+    entries = index.derived.setdefault("scope_membership", OrderedDict())
+    entries[key] = tuple(value)
+    while len(entries) > _SCOPE_MEMBERSHIP_LIMIT:
+        entries.popitem(last=False)
+    return list(value)
 
 
 def sync_auto_scopes(doc):
@@ -526,10 +767,10 @@ def sync_auto_scopes(doc):
                 snapshot = _snapshot(doc, body, tip, representative.Name + "AutoInput")
                 _prop(snapshot, "App::PropertyString", "KurtShapeOperationOwner", representative.Name)
             elif "KurtShapeInputBinder" in snapshot.PropertiesList:
-                snapshot.BaseFeature = tip
+                _set_body_input(snapshot, tip)
                 snapshot.KurtShapeInputBinder.Support = [(tip, [""])]
             elif snapshot.BaseFeature != tip:
-                snapshot.BaseFeature = tip
+                _set_body_input(snapshot, tip)
                 snapshot.Placement = body.Placement
             snapshots.append((key, snapshot))
         doc.recompute()
@@ -558,7 +799,6 @@ def sync_auto_scopes(doc):
         group = [_boolean_tool(doc, primary, body, representative.Name + "AutoTool") for body in first_tools]
         for body in group:
             _prop(body, "App::PropertyString", "KurtShapeOperationOwner", representative.Name)
-        doc.recompute()
         representative.Group = group
         _prop(primary, "App::PropertyBool", "KurtShapeObsolete", False)
         _prop(primary, "App::PropertyBool", "KurtShapeInternal", False)
@@ -646,13 +886,12 @@ def _native_boolean(doc, source, tools, name, key, label, kind):
     result = _output(doc, source, name + "Part", key, label)
     doc.recompute()
     tip = result.Tip
-    boolean = result.newObject("PartDesign::Boolean", name)
-    boolean.BaseFeature = tip
-    boolean.Type = {"union": 0, "subtract": 1, "intersect": 2}[kind]
     # Boolean.Group claims its tool Bodies in a GeoFeatureGroup. Every Boolean
     # therefore owns private native wrappers around a shared tool's native Tip.
     private_tools = [_boolean_tool(doc, result, tool, name + "BooleanTool") for tool in tools]
-    doc.recompute()
+    boolean = result.newObject("PartDesign::Boolean", name)
+    boolean.BaseFeature = tip
+    boolean.Type = {"union": 0, "subtract": 1, "intersect": 2}[kind]
     boolean.Group = private_tools
     boolean.Refine = True
     doc.recompute()
@@ -666,10 +905,9 @@ def _boolean_tool(doc, result, tool, name):
     binder.TraceSupport = True
     _prop(binder, "App::PropertyBool", "KurtShapeInternal", True)
     private = doc.addObject("PartDesign::Body", name)
-    private.BaseFeature = tool.Tip
+    _set_boolean_body_input(private, tool.Tip)
     private.setExpression("Placement", binder.Name + ".Placement")
     _prop(private, "App::PropertyBool", "KurtShapeInternal", True)
-    doc.recompute()
     return private
 
 
@@ -694,8 +932,52 @@ def _world_profile(doc, profile, name):
     return native
 
 
+def _carrier_binder(carrier, source, elements, name, operation=""):
+    binder = carrier.newObject("PartDesign::ShapeBinder", name)
+    binder.Support = [(source, elements)]
+    binder.TraceSupport = True
+    _prop(binder, "App::PropertyBool", "KurtShapeInternal", True)
+    if operation:
+        _prop(binder, "App::PropertyString", "KurtShapeOperationOwner", operation)
+    return binder
+
+
+def _migrate_up_to_face_scopes(doc):
+    """Keep native Pad inputs in their carrier; binder Support spans source Bodies."""
+    from . import selectors
+    changed = False
+    for tool in list(doc.Objects):
+        carrier = _body_owner(tool)
+        if tool.TypeId != "PartDesign::Pad" or tool.Type != "UpToFace" or not carrier or not getattr(carrier, "KurtShapeInternal", False):
+            continue
+        operation = getattr(tool, "KurtShapeOperationOwner", "") or tool.Name
+        profile = tool.Profile[0] if tool.Profile else None
+        if profile and _body_owner(profile) != carrier:
+            if profile.TypeId == "PartDesign::ShapeBinder" and getattr(profile, "KurtShapeInternal", False):
+                parent = profile.getParentGeoFeatureGroup()
+                if parent:
+                    parent.removeObject(profile)
+                carrier.addObject(profile)
+            else:
+                profile = _carrier_binder(carrier, profile, [""], tool.Name + "Profile", operation)
+                tool.Profile = profile
+            changed = True
+        stop, elements = tool.UpToFace if tool.UpToFace else (None, [])
+        if stop and _body_owner(stop) != carrier:
+            stop = _carrier_binder(carrier, stop, list(elements), tool.Name + "Stop", operation)
+            tool.UpToFace = (stop, ["Face1"])
+            selectors.move_binding(tool, stop, "up_to_face", "Support", "linksublist")
+            changed = True
+    return changed
+
+
 def _tool(controller, doc, req, name):
     op = req["op"]
+    if op in {"pad", "pocket"} and "face" in req:
+        if "profile" in req:
+            raise _error("invalid_argument", "Choose one face or one sketch profile")
+        from .modeling_geometry import make_face_tool
+        return make_face_tool(controller, doc, req, name)
     if op in {"pad", "pocket", "revolve", "sweep"}:
         profile = controller._profile(doc, req.get("profile"))
         if not profile.Shape.Wires:
@@ -710,20 +992,24 @@ def _tool(controller, doc, req, name):
             target = doc.getObject(reference["feature"])
             aux = doc.addObject("PartDesign::Body", name + "Carrier")
             _prop(aux, "App::PropertyBool", "KurtShapeInternal", True)
+            source = _carrier_binder(aux, profile, [""], name + "Profile")
+            stop = _carrier_binder(aux, target, [reference["subelement"]], name + "Stop")
+            if reference_tools.is_selector(req["up_to_face"]):
+                selectors.bind(stop, "up_to_face", reference_tools.selector_value(req["up_to_face"]), native_property="Support", mode="linksublist")
+            doc.recompute()
             tool = aux.newObject("PartDesign::Pad", name)
-            tool.Profile = _world_profile(doc, profile, name + "Profile")
+            tool.Profile = source
             tool.Type = "UpToFace"
-            tool.UpToFace = (target, [reference["subelement"]])
+            tool.UpToFace = (stop, ["Face1"])
             tool.Reversed = _bool(req, "reversed", False)
             _prop(tool, "App::PropertyBool", "KurtShapeInternal", True)
-            if reference_tools.is_selector(req["up_to_face"]):
-                selectors.bind(tool, "up_to_face", reference_tools.selector_value(req["up_to_face"]), native_property="UpToFace")
             doc.recompute()
             if tool.Shape.isNull() or _native_failed(tool):
                 raise _error("build_failed", "The up-to-face tool did not produce valid geometry", status=tool.getStatusString())
             return tool
+        source = _world_profile(doc, profile, name + "Profile")
         tool = doc.addObject("Part::Extrusion", name)
-        tool.Base = _world_profile(doc, profile, name + "Profile")
+        tool.Base = source
         tool.DirMode = "Normal"
         tool.Solid = True
         through = end_type == "through_all" or op == "pocket" and _bool(req, "through_all", True)
@@ -737,10 +1023,14 @@ def _tool(controller, doc, req, name):
             tool.LengthFwd = depth
             tool.Reversed = _bool(req, "reversed", op == "pocket")
     elif op == "revolve":
-        origin, direction = _axis(req)
+        source = _world_profile(doc, profile, name + "Profile")
         tool = doc.addObject("Part::Revolution", name)
-        tool.Source = _world_profile(doc, profile, name + "Profile")
-        tool.Base, tool.Axis = origin, direction
+        tool.Source = source
+        from .modeling_geometry import bind_revolve_axis, is_reference
+        if is_reference(req.get("axis")):
+            bind_revolve_axis(doc, tool, req["axis"])
+        else:
+            tool.Base, tool.Axis = _axis(req)
         tool.Angle = math.degrees(_number(req.get("angle", "360 deg"), "angle", True, "rad"))
         tool.Solid = True
     elif op == "sweep":
@@ -765,8 +1055,9 @@ def _tool(controller, doc, req, name):
             doc.recompute()
         else:
             spine = _world_profile(doc, path, name + "Path")
+        source = _world_profile(doc, profile, name + "Profile")
         tool = doc.addObject("Part::Sweep", name)
-        tool.Sections = [_world_profile(doc, profile, name + "Profile")]
+        tool.Sections = [source]
         tool.Spine = (spine, [])
         tool.Solid = True
         tool.Frenet = _bool(req, "frenet", False)
@@ -775,8 +1066,9 @@ def _tool(controller, doc, req, name):
         if not isinstance(sections, list) or len(sections) < 2:
             raise _error("invalid_argument", "Loft needs at least two sketch sections")
         profiles = [controller._profile(doc, item) for item in sections]
+        sources = [_world_profile(doc, profile, name + "Section") for profile in profiles]
         tool = doc.addObject("Part::Loft", name)
-        tool.Sections = [_world_profile(doc, profile, name + "Section") for profile in profiles]
+        tool.Sections = sources
         tool.Solid = True
         tool.Ruled, tool.Closed = _bool(req, "ruled"), _bool(req, "closed")
     else:
@@ -859,10 +1151,10 @@ def _result_operation(controller, doc, req, name):
     if operation == "remove" and not any(geometry.scalar(result.Shape, "volume") < geometry.scalar(source.Shape, "volume") - 1e-7
                                           for result, (key, source) in zip(outputs, snapshots)):
         raise _error("empty_cut", "Remove did not remove material from the selected scope")
-    _prop(reps[0], "App::PropertyLink", "KurtShapeTool", tool)
-    _prop(reps[0], "App::PropertyLink", "KurtShapeNeutralToolBody", tool_body)
+    _prop(reps[0], "App::PropertyLinkGlobal", "KurtShapeTool", tool)
+    _prop(reps[0], "App::PropertyLinkGlobal", "KurtShapeNeutralToolBody", tool_body)
     if through and tool.TypeId == "Part::Extrusion":
-        _prop(reps[0], "App::PropertyLink", "KurtShapeScopeBounds", bounds)
+        _prop(reps[0], "App::PropertyLinkGlobal", "KurtShapeScopeBounds", bounds)
     _prop(reps[0], "App::PropertyStringList", "KurtShapeMergePartIds", chosen)
     return _record(doc, reps[0], req, outputs, chosen, snapshots)
 
@@ -890,7 +1182,11 @@ def _copy_result(doc, snapshot, placement, name, key=None, mirror=None):
     if mirror:
         shape = doc.addObject("Part::Mirroring", name)
         shape.Source = snapshot
-        shape.Base, shape.Normal = mirror
+        if isinstance(mirror, (dict, str)):
+            from .modeling_geometry import bind_mirror_plane
+            bind_mirror_plane(doc, shape, mirror)
+        else:
+            shape.Base, shape.Normal = mirror
     else:
         link = doc.addObject("App::Link", name + "Link")
         link.setLink(snapshot)
@@ -1087,8 +1383,13 @@ def handle(controller, doc, req):
             step = angle / count if abs(angle - 2 * math.pi) < 1e-8 else angle / (count - 1)
             placements = [App.Placement(App.Vector(), App.Rotation(axis, math.degrees(step * i)), origin) for i in range(1, count)]
         else:
-            mirror = (_vector(req.get("origin"), "origin", [0, 0, 0]),
-                      _vector(req.get("normal"), "normal", [1, 0, 0], True))
+            if "plane" in req:
+                if "origin" in req or "normal" in req:
+                    raise _error("invalid_argument", "Choose one mirror plane or an origin and normal")
+                mirror = req["plane"]
+            else:
+                mirror = (_vector(req.get("origin"), "origin", [0, 0, 0]),
+                          _vector(req.get("normal"), "normal", [1, 0, 0], True))
             placements = [App.Placement()]
         outputs, reps = [], []
         for key, source in snapshots:

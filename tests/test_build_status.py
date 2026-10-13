@@ -101,6 +101,58 @@ def recompute_observations():
 
 
 class BuildStatusTests(unittest.TestCase):
+    def test_native_ownership_index_tracks_move_undo_and_deletion(self):
+        from kurtshape import bodies, document_index
+        doc = self.core.documents[self.state["document_id"]]
+        first = doc.getObject("Body")
+        second = doc.addObject("PartDesign::Body", "Second")
+        feature = first.newObject("PartDesign::Feature", "NativeFeature")
+        feature.Shape = Part.makeBox(2, 3, 4)
+        doc.recompute()
+        index = document_index.get(doc)
+        self.assertEqual(bodies.owner(doc, feature), first)
+        self.assertEqual(bodies.owner(doc, first.Origin.OriginFeatures[0]), first)
+        before = dict(index.counts)
+        for _ in range(5):
+            self.assertEqual(bodies.owner(doc, feature), first)
+            self.assertEqual(bodies.bodies(doc), [first, second])
+        self.assertEqual(index.counts, before)
+        doc.openTransaction("Move native feature")
+        first.removeObject(feature)
+        second.addObject(feature)
+        doc.commitTransaction()
+        self.assertEqual(bodies.owner(doc, feature), second)
+        doc.undo()
+        self.assertEqual(bodies.owner(doc, doc.NativeFeature), first)
+        doc.redo()
+        self.assertEqual(bodies.owner(doc, doc.NativeFeature), second)
+        doc.removeObject("NativeFeature")
+        replacement = first.newObject("PartDesign::Feature", "NativeFeature")
+        self.assertEqual(bodies.owner(doc, replacement), first)
+
+    def test_document_index_released_when_observer_closes_and_name_reused(self):
+        from kurtshape import bodies, document_index
+        doc = self.core.documents[self.state["document_id"]]
+        name = doc.Name
+        index = document_index.get(doc)
+        self.assertTrue(bodies.bodies(doc))
+        App.closeDocument(name)
+        replacement = App.newDocument(name)
+        body = replacement.addObject("PartDesign::Body", "DifferentBody")
+        self.assertEqual(bodies.bodies(replacement), [body])
+        replacement_index = document_index.get(replacement)
+        self.assertIsNotNone(replacement_index)
+        self.assertIsNot(replacement_index, index)
+        # Delayed cleanup must tolerate a deleted wrapper and retain a new
+        # document registered under the same native name.
+        document_index.unbind(index)
+        self.assertIs(document_index.get(replacement), replacement_index)
+        self.core.observer.close()
+        self.assertIsNone(document_index.get(replacement))
+        # Restore an observer for the ordinary fixture cleanup.
+        from kurtshape.document_state import DocumentState
+        self.core.observer = DocumentState(self.core)
+
     def setUp(self):
         self.folder = support.isolated_session(self, prefix="build-status-native-")
         self.names = set(App.listDocuments())

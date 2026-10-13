@@ -1,0 +1,322 @@
+"""Production side-panel picking and native feature acceptance in an isolated GUI."""
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "tools"))
+sys.path.insert(0, str(root / "src"))
+from kurtshape_evidence import evidence_dir
+from preview_validation import wait_for_exact
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+
+
+class NoTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoTransport
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+output = evidence_dir("onshape-workflows")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "screens": [],
+          "method": "Production feature docks, Qt button and viewport clicks, native geometry; private hidden FreeCAD process."}
+panel = None
+
+
+def wait(ms=100):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+
+
+def call(op, **args):
+    result = panel.operation(op, **args)
+    assert result, panel.message.text()
+    wait(60)
+    return panel.document()
+
+
+def capture(label):
+    wait(150)
+    main.grab().save(str(output / (label + ".png")))
+    report["screens"].append(label + ".png")
+
+
+def valid(dock):
+    result = wait_for_exact(dock.preview)
+    assert result and result.valid, result.error if result else "Preview did not finish"
+    return result
+
+
+def confirm(dock):
+    valid(dock)
+    button = dock.confirm
+    check("Valid preview enables Confirm", button.isEnabled())
+    QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
+    wait(120)
+    check("Confirm closes accepted feature dock", panel.studio_dialog is None)
+
+
+def pick(obj, element=""):
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(obj, element) if element else Gui.Selection.addSelection(obj)
+    wait(120)
+
+
+def viewport_click(point, modifiers=QtCore.Qt.NoModifier):
+    view = Gui.activeDocument().activeView()
+    gl = viewport_widget()
+    pixel = view.getPointOnViewport(point)
+    ratio = gl.devicePixelRatioF()
+    position = QtCore.QPoint(int(pixel[0] / ratio), gl.height() - 1 - int(pixel[1] / ratio))
+    QtTest.QTest.mouseClick(gl, QtCore.Qt.LeftButton, modifiers, position)
+    wait(160)
+
+
+def viewport_widget():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(w for w in active.findChildren(QtWidgets.QWidget)
+              if w.metaObject().className() == "QOpenGLWidget" and w.isVisible() and w.width() > 300)
+
+
+def top_face(feature):
+    return "Face" + str(max(range(len(feature.Shape.Faces)), key=lambda i: feature.Shape.Faces[i].CenterOfMass.z) + 1)
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.start()
+        panel.timer.stop()
+        panel.recovery_timer.stop()
+        call("new", name="Blank studio plane fixture")
+        blank_plane = panel.studio_tool("create_plane")
+        wait(120)
+        confirm(blank_plane)
+        check("Plane can be created in a blank studio", any(o.TypeId == "PartDesign::Plane" for o in panel.document().Objects))
+        call("undo")
+        check("Undo removes a blank studio plane", not any(o.TypeId == "PartDesign::Plane" for o in panel.document().Objects))
+        call("new", name="Two part plane fixture")
+        doc = call("sketch_rectangle", id="FirstPlaneProfile", width=10, height=10)
+        call("pad", id="FirstPlanePart", profile="FirstPlaneProfile", length=5)
+        call("create_body", id="SecondPlaneBody")
+        call("sketch_rectangle", id="SecondPlaneProfile", body="SecondPlaneBody", x=20, width=10, height=10)
+        call("pad", id="SecondPlanePart", body="SecondPlaneBody", profile="SecondPlaneProfile", length=5)
+        two_part_plane = panel.studio_tool("create_plane")
+        wait(100)
+        confirm(two_part_plane)
+        from kurtshape.bodies import owner
+        plane = next(obj for obj in doc.Objects if obj.TypeId == "PartDesign::Plane")
+        check("Plane in a two part studio uses the active sketch owner", owner(doc, plane).Name == "SecondPlaneBody")
+        call("new", name="Feature workflow fixture")
+        doc = call("sketch_rectangle", id="Profile", width=30, height=20)
+        call("pad", id="Base", profile="Profile", length=8)
+        Gui.activeDocument().activeView().viewAxonometric()
+        panel.fit()
+        wait(200)
+
+        Gui.Selection.clearSelection()
+        dock = panel.studio_tool("fillet")
+        wait(150)
+        check("Fillet opens with zero selected edges", dock.fields["edges"].value() == [])
+        check("Feature editor is a modeless dock", isinstance(dock, QtWidgets.QDockWidget))
+        edge = next(("Edge" + str(i + 1), e) for i, e in enumerate(doc.Base.Shape.Edges)
+                    if abs(e.CenterOfMass.z - 8) < 1e-6 and abs(e.CenterOfMass.y) < 1e-6)
+        viewport_click(edge[1].CenterOfMass)
+        check("Viewport click after starting Fillet collects an edge", len(dock.fields["edges"].value()) == 1)
+        valid(dock)
+        before = doc.UndoCount
+        capture("fillet-pick-after-command")
+        dock.fields["edges"].items.setCurrentRow(0)
+        removed_reference = dock.fields["edges"].value()[0]
+        QtTest.QTest.mouseClick(dock.fields["edges"].remove, QtCore.Qt.LeftButton)
+        check("Reference field removes an edge", dock.fields["edges"].value() == [])
+        dock.preview.flush()
+        wait(200)
+        other_edge = next(e for e in doc.Base.Shape.Edges
+                          if abs(e.CenterOfMass.z - 8) < 1e-6 and abs(e.CenterOfMass.y - 20) < 1e-6)
+        viewport_click(other_edge.CenterOfMass, QtCore.Qt.ControlModifier)
+        check("Ctrl adding an edge after preview retains the explicit removal",
+              len(dock.fields["edges"].value()) == 1 and removed_reference not in dock.fields["edges"].value())
+        pick(doc.Base, edge[0])
+        confirm(dock)
+        check("Fillet adds one native undo step", doc.UndoCount == before + 1 and doc.Body.Tip.TypeId == "PartDesign::Fillet")
+        call("undo")
+        stale = panel.studio_tool("fillet")
+        wait(100)
+        pick(doc.Base, "Edge1")
+        valid(stale)
+        call("undo")
+        panel.tick()
+        wait(100)
+        check("Undo invalidates and closes the staged feature panel", panel.studio_dialog is None)
+        call("redo")
+
+        Gui.Selection.clearSelection()
+        plane_dock = panel.studio_tool("create_plane")
+        wait(120)
+        plane_dock.fields["offset"].lineEdit().setText("12 mm")
+        capture("plane-editor")
+        confirm(plane_dock)
+        plane = next(o for o in doc.Objects if o.TypeId == "PartDesign::Plane")
+        check("New reference plane appears in history", plane.Name in panel.items)
+        check("Plane has offset native attachment", abs(plane.Placement.Base.z - 12) < 1e-6)
+
+        pick(doc.Body)
+        mirror = panel.studio_tool("mirror_parts")
+        wait(120)
+        item = panel.items[plane.Name]
+        QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier,
+                               panel.features.visualItemRect(item).center())
+        wait(120)
+        check("Mirror accepts an existing plane from history", mirror.fields["plane"].value() == {"feature": plane.Name})
+        capture("mirror-existing-plane")
+        confirm(mirror)
+        check("Mirror creates a second semantic part", len(panel.studio_parts()) == 2)
+        call("undo")
+
+        pick(doc.Body.Tip, top_face(doc.Body.Tip))
+        panel.extrude(cut=True)
+        check("Face Remove depth can be edited", panel.depth.isEnabled())
+        panel.end_type.setCurrentIndex(0)
+        panel.depth.lineEdit().selectAll()
+        QtTest.QTest.keyClicks(panel.depth.lineEdit(), "2 mm")
+        removed = wait_for_exact(panel.extrusion_preview)
+        check("Extrude Remove from a flat face previews", removed and removed.valid)
+        capture("remove-from-planar-face")
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        wait(100)
+        check("Face Extrude Remove offsets inward", abs(panel.document().getObject(panel.studio_parts()[0]["body"]).Shape.BoundBox.ZMax - 6) < 1e-6)
+        call("undo")
+
+        pick(doc.Body.Tip, top_face(doc.Body.Tip))
+        panel.extrude()
+        panel.depth.lineEdit().setText("3 mm")
+        result = wait_for_exact(panel.extrusion_preview)
+        check("Extrude directly from a planar face previews", result and result.valid)
+        capture("extrude-planar-face")
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        wait(100)
+        check("Face extrusion changes solid height", abs(panel.document().getObject(panel.studio_parts()[0]["body"]).Shape.BoundBox.ZMax - 11) < 1e-6)
+        call("undo")
+
+        source = doc.getObject(panel.studio_parts()[0]["body"])
+        pick(source.Tip, top_face(source.Tip))
+        move = panel.studio_tool("move_face")
+        wait(150)
+        move.fields["distance"].lineEdit().setText("-2 mm")
+        capture("move-face-inward")
+        confirm(move)
+        result_body = doc.getObject(panel.studio_parts()[0]["body"])
+        check("Move face offsets inward", abs(result_body.Shape.BoundBox.ZMax - 6) < 1e-6)
+        call("undo")
+
+        call("new", name="Revolve axis fixture")
+        doc = call("sketch_rectangle", id="RevolveProfile", width=4, height=8, x=3, y=0)
+        call("add_line", sketch="RevolveProfile", x1=0, y1=0, x2=0, y2=15, construction=True)
+        panel.select_feature("RevolveProfile")
+        Gui.Selection.clearSelection()
+        dock = panel.studio_tool("revolve")
+        wait(100)
+        pick(doc.RevolveProfile, "Edge5")
+        check("Revolve receives a line from its own profile", dock.fields["axis_reference"].value() is not None)
+        dock.fields["operation"].setCurrentIndex(dock.fields["operation"].findData("new"))
+        valid(dock)
+        panel.fit()
+        capture("revolve-profile-line-axis")
+        confirm(dock)
+        check("Selected-axis revolve creates valid solid", len(panel.studio_parts()) == 1)
+
+        call("new", name="Associated Use shortcut fixture")
+        doc = call("sketch_rectangle", id="UseSourceProfile", width=16, height=10)
+        call("pad", id="UseSource", profile="UseSourceProfile", length=5)
+        call("create_body", id="UseBody")
+        call("create_sketch", id="UsedProfile", body="UseBody")
+        panel.select_feature("UsedProfile")
+        panel.edit_sketch()
+        wait(200)
+        check("Use shortcut starts in actual native Sketcher edit", panel.active_sketch() == doc.UsedProfile)
+        source = doc.UseSource
+        edges = [("Edge" + str(i + 1), edge) for i, edge in enumerate(source.Shape.Edges)
+                 if abs(edge.BoundBox.ZLength) < 1e-7 and abs(edge.BoundBox.ZMin - 5) < 1e-7]
+        check("Use fixture has four source profile edges", len(edges) == 4)
+        Gui.Selection.clearSelection()
+        for name, edge in edges:
+            Gui.Selection.addSelection(source, name)
+        wait(100)
+        check("Model edges can be selected during native sketch edit",
+              len(panel.geometry_references("Edge")) == 4)
+        gl = viewport_widget()
+        gl.setFocus()
+        wait(100)
+        check("Viewport focus keeps the active sketch for U", panel.active_sketch() == doc.UsedProfile and panel.context() == "sketch")
+        QtTest.QTest.keyClick(gl, QtCore.Qt.Key_U)
+        wait(250)
+        panel.fit()
+        wait(100)
+        report["use_diagnostics"] = {"message": panel.message.text(),
+             "context": panel.context(), "references": panel.geometry_references("Edge"),
+             "external": [(source.Name if source else None, list(elements)) for source, elements in doc.UsedProfile.ExternalGeometry],
+             "geometry_count": doc.UsedProfile.GeometryCount, "external_geo_count": len(doc.UsedProfile.ExternalGeo),
+             "shape_edges": len(doc.UsedProfile.Shape.Edges), "shape_wires": len(doc.UsedProfile.Shape.Wires),
+             "state": list(doc.UsedProfile.State), "u_action": panel.router.resolve("U")}
+        capture("use-shortcut-diagnostics")
+        check("U projects selected model edges as an associated closed sketch",
+              len(doc.UsedProfile.ExternalGeometry) == 4 and len(doc.UsedProfile.Shape.Edges) == 4
+              and doc.UsedProfile.Shape.Wires[0].isClosed())
+        capture("use-shortcut-associated-edges")
+        panel.finish_sketch()
+        wait(150)
+        check("Finish commits the projected sketch", panel.active_sketch() is None)
+        call("pad", id="UsedExtrude", body="UseBody", profile="UsedProfile", length=2, operation="new")
+        result_body = doc.getObject(next(part["body"] for part in panel.studio_parts() if part["id"] == "UseBody"))
+        check("Used edges can create a solid extrusion", abs(result_body.Shape.Volume - 320) < 1e-6)
+        call("set_parameter", feature="UseSourceProfile", parameter="Width", value=18)
+        check("Used sketch and extrusion update with source edges", abs(result_body.Shape.Volume - 360) < 1e-6)
+
+        main.resize(1200, 800)
+        wait(200)
+        panel.isometric()
+        panel.fit()
+        wait(150)
+        capture("compact-workspace")
+        check("Compact workspace retains usable viewport", any(w.width() > 300 for w in main.findChildren(QtWidgets.QWidget)
+                                                              if w.metaObject().className() == "QOpenGLWidget" and w.isVisible()))
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        if panel:
+            if panel.studio_dialog:
+                panel.studio_dialog.reject()
+            panel.shutdown()
+            main.destroyed.disconnect(panel.shutdown)
+        for name in list(App.listDocuments()):
+            App.closeDocument(name)
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        QtCore.QTimer.singleShot(100, main.close)
+        QtCore.QTimer.singleShot(300, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(800, validate)

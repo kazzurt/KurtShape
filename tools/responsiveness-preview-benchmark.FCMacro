@@ -1,0 +1,221 @@
+"""Measure actual asynchronous preview integration on a native Plate60 fixture.
+
+PREVIEW_BENCH_SOURCE optionally selects an immutable prepared benchmark FCStd.
+Without it, build the standing native plate fixture in this isolated process.
+"""
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import re
+import sys
+import time
+import traceback
+
+ROOT = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path[:0] = [str(ROOT / "tools"), str(ROOT / "tools" / "perf"), str(ROOT / "src")]
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest
+from bench_core import Benchmark, summary
+from kurtshape.core import Controller, intent_signature
+from kurtshape.extrusion_preview import DebouncedExtrusionPreview
+from kurtshape_evidence import evidence_dir
+from preview_validation import wait_for_exact
+
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+output = evidence_dir("responsiveness-preview")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "timings": {}, "trials": [],
+          "method": "Hidden isolated native FreeCAD GUI; actual async preview adapter and Coin rendering",
+          "limits": ["Three trials are not reliable percentile estimates.",
+                     "Schedule/redraw timings are not physical-display input-to-present latency.",
+                     "Initial native snapshot and accepted commit still use the GUI thread.",
+                     "The standalone adapter excludes the full application's other timers and UI work.",
+                     "Image captures are outside the timed first-preview and depth-update trials."]}
+core = adapter = heartbeat = benchmark = None
+
+
+def source_hashes():
+    return {str(path.relative_to(ROOT)).replace("\\", "/"): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted((ROOT / "src").rglob("*.py"))}
+
+
+report["source_before"] = source_hashes()
+
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label)
+    report["checks"].append(label)
+
+
+def invariant(doc):
+    view = Gui.getDocument(doc.Name).activeView()
+    return (intent_signature(doc), core._meta(doc).Revision, doc.UndoCount, doc.RedoCount,
+            doc.HasPendingTransaction, doc.FileName, Gui.getDocument(doc.Name).Modified,
+            tuple(obj.Name for obj in doc.Objects),
+            tuple((obj.Name, obj.ViewObject.Visibility) for obj in doc.Objects if obj.ViewObject),
+            tuple((item.ObjectName, tuple(item.SubElementNames)) for item in Gui.Selection.getSelectionEx()),
+            re.sub(r"^\s*(?:nearDistance|farDistance)\s+.*$", "", view.getCamera(), flags=re.MULTILINE),
+            float(doc.Body.Shape.Volume), tuple(App.listDocuments()))
+
+
+def validate():
+    global core, adapter, heartbeat, benchmark
+    source = None
+    beats = []
+    try:
+        repeats = int(os.environ.get("BENCH_REPEAT", "3"))
+        holes = int(os.environ.get("BENCH_HOLES", "60"))
+        raw = os.environ.get("PREVIEW_BENCH_SOURCE")
+        if raw:
+            source = Path(raw).resolve()
+            report["source"] = {"path": str(source), "sha256": hashlib.sha256(source.read_bytes()).hexdigest()}
+            core = Controller()
+            doc = App.openDocument(str(source))
+            core.attach(doc)
+        else:
+            scratch = Path(os.environ["KURTSHAPE_SESSION_DIR"]) / "preview-benchmark-fixtures"
+            scratch.mkdir(parents=True, exist_ok=True)
+            benchmark = Benchmark(scratch, "plate", holes, repeats, measure=False)
+            benchmark.build()
+            core, doc = benchmark.core, benchmark.doc
+        if doc.getObject("BenchPreviewProfile") is None:
+            state = core.inspect(doc, measure=False)
+            result = core.dispatch(dict(op="sketch_circle", document_id=state["document_id"],
+                                        expected_revision=state["revision"], id="BenchPreviewProfile",
+                                        x=300 / (math.ceil(math.sqrt(holes)) + 1),
+                                        y=300 / (math.ceil(math.sqrt(holes)) + 1), diameter=20, measure=False))
+            check("A bounded native preview profile was created", result["ok"])
+        actual_holes = sum(obj.TypeId == "PartDesign::Pocket" for obj in doc.Objects)
+        check("Fixture has the requested native hole history", actual_holes == holes)
+        doc.Body.ViewObject.Visibility = True
+        for obj in doc.Body.Group:
+            if obj.ViewObject and obj.TypeId.startswith(("Sketcher::", "PartDesign::")):
+                obj.ViewObject.Visibility = obj == doc.Body.Tip or obj.Name == "BenchPreviewProfile"
+        view = Gui.getDocument(doc.Name).activeView()
+        view.viewAxonometric()
+        view.fitAll()
+        core.sync(doc)
+        QtTest.QTest.qWait(300)
+        baseline = invariant(doc)
+        report["fixture"] = {"holes": actual_holes, "objects": len(doc.Objects),
+                             "faces": len(doc.Body.Shape.Faces), "volume_mm3": doc.Body.Shape.Volume}
+        report["engine"] = {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}
+        report["repeat"] = repeats
+        events = []
+        adapter = DebouncedExtrusionPreview(core, main, status=events.append, allowed=lambda: True)
+        heartbeat = QtCore.QTimer(main)
+        heartbeat.setInterval(10)
+        heartbeat.timeout.connect(lambda: beats.append((time.perf_counter(), bool(adapter.evaluating), bool(adapter.snapshotting))))
+        heartbeat.start()
+        first, updates, exact_first, exact_update = [], [], [], []
+        for trial in range(repeats):
+            adapter.begin(doc, core._meta(doc).Revision)
+            proposal = dict(op="pad", profile="BenchPreviewProfile", body="Body", length=25 + trial)
+            began = time.perf_counter()
+            adapter.schedule(proposal)
+            view.redraw()
+            first.append((time.perf_counter() - began) * 1000)
+            check("Trial " + str(trial) + " first visible proxy precedes native snapshot",
+                  adapter.result is not None and adapter.result.provisional and adapter.overlay.node is not None
+                  and adapter.worker is None and adapter.current_result() is None)
+            exact = wait_for_exact(adapter, timeout_ms=120000)
+            exact_first.append((time.perf_counter() - began) * 1000)
+            report["last_exact"] = {"trial": trial, "valid": exact.valid, "error": exact.error,
+                                    "proposal": exact.proposal, "milliseconds": exact.milliseconds}
+            check("Trial " + str(trial) + " exact first result matches proposal", exact.valid and exact.proposal["length"] == proposal["length"])
+            began = time.perf_counter()
+            node = None
+            for change in range(3):
+                proposal = dict(proposal, length=33 + trial + change)
+                update_began = time.perf_counter()
+                adapter.schedule(proposal)
+                view.redraw()
+                updates.append((time.perf_counter() - update_began) * 1000)
+                if node is not None:
+                    check("Trial " + str(trial) + " depth-only update reuses Coin mesh " + str(change), adapter.overlay.node is node)
+                node = adapter.overlay.node
+            exact = wait_for_exact(adapter, timeout_ms=120000)
+            exact_update.append((time.perf_counter() - began) * 1000)
+            check("Trial " + str(trial) + " latest depth receives exact verdict", exact.valid and exact.proposal["length"] == proposal["length"])
+            check("Trial " + str(trial) + " retains all source/native/GUI invariants", invariant(doc) == baseline)
+            report["trials"].append({"trial": trial, "exact_measurements": exact.measurements,
+                                      "source_invariants_unchanged": True})
+        # Supersede a request after the process has actually started evaluating it.
+        # This is separate from the three debounced depth changes in each trial.
+        adapter.schedule(dict(proposal, length=45))
+        adapter.flush()
+        deadline = time.monotonic() + 10
+        while not adapter.evaluating and time.monotonic() < deadline:
+            QtTest.QTest.qWait(5)
+        check("Latest-wins fixture has a genuinely in-flight request", adapter.evaluating)
+        event_start = len(events)
+        adapter.schedule(dict(proposal, length=46))
+        adapter.schedule(dict(proposal, length=47))
+        exact = wait_for_exact(adapter, timeout_ms=120000)
+        check("In-flight replacement returns only the latest exact verdict",
+              exact.valid and exact.proposal["length"] == 47
+              and all(not event.valid or event.proposal["length"] == 47 for event in events[event_start:] if event is not None))
+        view.saveImage(str(output / "plate-exact.png"), 1200, 800, "White")
+        # Exercise cancellation with a genuinely in-flight native request.
+        adapter.schedule(dict(proposal, length=49))
+        view.saveImage(str(output / "plate-provisional.png"), 1200, 800, "White")
+        adapter.flush()
+        deadline = time.monotonic() + 10
+        while not adapter.evaluating and time.monotonic() < deadline:
+            QtTest.QTest.qWait(5)
+        check("Cancellation fixture has an in-flight native process", adapter.evaluating and adapter.worker is not None)
+        process = adapter.worker.process
+        began = time.perf_counter()
+        adapter.clear()
+        report["cancel_gui_ms"] = (time.perf_counter() - began) * 1000
+        deadline = time.monotonic() + 5
+        while process.poll() is None and time.monotonic() < deadline:
+            QtTest.QTest.qWait(10)
+        check("Cancel terminates only its owned exact worker", process.poll() is not None and adapter.worker is None)
+        check("Canceled process never publishes another visible verdict", adapter.result is None and adapter.overlay.node is None)
+        check("Cancellation preserves the source", invariant(doc) == baseline)
+        heartbeat.stop()
+        worker_gaps = [(b[0]-a[0])*1000 for a, b in zip(beats, beats[1:]) if a[1] and b[1] and not a[2] and not b[2]]
+        all_gaps = [(b[0]-a[0])*1000 for a, b in zip(beats, beats[1:])]
+        report["timings"] = {"first_proxy_schedule_redraw_ms": summary(first),
+                             "depth_proxy_schedule_redraw_ms": summary(updates),
+                             "first_exact_end_to_end_ms": summary(exact_first),
+                             "depth_exact_end_to_end_ms": summary(exact_update),
+                             "worker_interval_heartbeat_gap_ms": summary(worker_gaps),
+                             "whole_run_heartbeat_gap_ms": summary(all_gaps)}
+        report["heartbeat_count"] = len(beats)
+        report["controller_timings"] = core.timings.report()
+        if source:
+            check("Prepared source file bytes remain unchanged", hashlib.sha256(source.read_bytes()).hexdigest() == report["source"]["sha256"])
+        report["source_after"] = source_hashes()
+        check("Preview benchmark uses unchanged final production source", report["source_before"] == report["source_after"])
+        check("Qt kept processing heartbeats during exact evaluation", len(worker_gaps) > 5)
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        report["source_after"] = source_hashes()
+        if heartbeat:
+            heartbeat.stop()
+        if adapter:
+            adapter.close()
+        if core:
+            core.close()
+        for name in list(App.listDocuments()):
+            App.closeDocument(name)
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2, allow_nan=False), encoding="utf-8")
+        QtCore.QTimer.singleShot(250, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

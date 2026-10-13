@@ -1,0 +1,661 @@
+"""Native correctness and no-work checks for cached presentation adapters."""
+import json
+import hashlib
+import os
+from pathlib import Path
+import queue
+import sys
+import time
+import traceback
+from unittest.mock import patch
+from contextlib import ExitStack, nullcontext
+from types import SimpleNamespace
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+import Sketcher
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui, hover_outline
+from kurtshape_evidence import evidence_dir
+
+source_files = ("sketch_colors.py", "sketch_regions.py", "sketch_references.py", "tool_session.py", "shortcuts.py", "sketch_history.py", "hover_outline.py", "ui.py", "recovery.py")
+def source_hashes():
+    return {name: hashlib.sha256((root / "src/kurtshape" / name).read_bytes()).hexdigest() for name in source_files}
+startup_hashes = source_hashes()
+
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("presentation-scheduling")
+report = {"passed": False, "checks": [], "pid": os.getpid(), "engine": App.Version(),
+          "source_sha256": startup_hashes,
+          "method": "Private hidden native GUI. Work counters and geometry/render state assertions; no timing benchmark."}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+
+def wait(ms=180): QtTest.QTest.qWait(ms)
+
+
+def until(predicate, milliseconds=2500):
+    deadline = time.perf_counter() + milliseconds / 1000
+    while not predicate() and time.perf_counter() < deadline:
+        wait(20)
+    return predicate()
+
+
+def call(op, **args):
+    assert panel.operation(op, **args), panel.message.text()
+    wait()
+    return panel.document()
+
+
+def counters():
+    colors, regions, history = panel.sketch_colors, panel.sketch_regions, panel.sketch_history
+    return dict(mapping=colors.mapping_reads, searches=colors.scene_searches, colors=colors.color_passes,
+                membership=regions.membership_scans, presentation=regions.presentation_passes,
+                history=history.presentation_passes, meshes=regions.builds, writes=colors.writes)
+
+
+def recovery_turn_bound():
+    # Deterministically interleave completion of an older publisher with the
+    # next native capture. A global pending-count comparison misses this case.
+    for fail in (False, True):
+        store = SimpleNamespace(pending={"older": object()}, snapshot_count=0, poll=lambda: None)
+        snapshots, errors = [], []
+        def checkpoint(doc, background):
+            store.pending.pop("older", None)
+            store.snapshot_count += 1
+            snapshots.append(doc)
+            if fail:
+                raise RuntimeError("Injected native snapshot failure")
+            store.pending[doc] = object()
+        core = SimpleNamespace(recovery=store, busy=False, documents={"a": "a", "b": "b"},
+                               _is_open=lambda doc: True, checkpoint=checkpoint,
+                               timings=SimpleNamespace(measure=lambda name, fn, *args, **kwargs: fn(*args, **kwargs)))
+        proxy = SimpleNamespace(core=core, native_feature_task_active=lambda: False,
+                                active_sketch=lambda: True,
+                                responsiveness=SimpleNamespace(is_idle=lambda: True),
+                                sketch_references=SimpleNamespace(native_tool=None),
+                                task=None, studio_dialog=None, placement_document=None,
+                                history_controller=SimpleNamespace(suspend_planes=nullcontext),
+                                notify=lambda *args: errors.append(args))
+        proxy.sketch_references.native_tool = "Sketcher_CreatePolyline"
+        ui.Panel.checkpoint_projects(proxy)
+        check("A paused native drawing tool defers recovery snapshot work", not snapshots)
+        proxy.sketch_references.native_tool = None
+        with patch.object(QtGui.QApplication, "mouseButtons", return_value=QtCore.Qt.LeftButton):
+            ui.Panel.checkpoint_projects(proxy)
+        check("A held sketch drag defers recovery snapshot work", not snapshots)
+        ui.Panel.checkpoint_projects(proxy)
+        check("Idle turn stops after one failed native snapshot" if fail else
+              "Completing an older publisher cannot allow a second native snapshot in one idle turn",
+              snapshots == ["a"] and len(errors) == int(fail))
+
+
+def sketch_hover_scheduling(sketch):
+    refs = panel.sketch_references
+    window = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    viewport = next(widget for widget in window.findChildren(QtWidgets.QWidget)
+                    if widget.metaObject().className() == "QOpenGLWidget"
+                    and widget.isVisible() and widget.width() > 300)
+    refs.clear_hover()
+    emitted, samples = [], []
+    producer = QtCore.QTimer(panel)
+    producer.setTimerType(QtCore.Qt.PreciseTimer)
+    producer.setInterval(4)
+
+    def send(kind, point, button=QtCore.Qt.NoButton, buttons=QtCore.Qt.NoButton):
+        app.sendEvent(viewport, QtGui.QMouseEvent(kind, QtCore.QPointF(point),
+            QtCore.QPointF(viewport.mapToGlobal(point)), button, buttons, QtCore.Qt.NoModifier))
+
+    def move():
+        point = QtCore.QPoint(90 + len(emitted), 90)
+        emitted.append(point.x())
+        send(QtCore.QEvent.MouseMove, point)
+        if len(emitted) == 40:
+            producer.stop()
+
+    def pick(watched, event=None, point=None):
+        current = point if point is not None else event.position()
+        samples.append((current.x(), emitted[-1], len(emitted)))
+        return None
+
+    producer.timeout.connect(move)
+    try:
+        with patch.object(refs, "native_preselection", return_value=False), patch.object(refs, "hit", side_effect=pick):
+            producer.start()
+            check("Continuous sketch motion completes", until(lambda: not producer.isActive(), 1500))
+            check("Sketch hover picks occur during continuous motion", sum(count < 40 for _, _, count in samples) >= 2)
+            wait(30)
+            check("Sketch hover always uses the latest queued position", bool(samples) and all(x == latest for x, latest, _ in samples))
+            check("Sketch hover timer releases pending work", refs.hover_timer.isSingleShot() and refs.hover_pending is None and not refs.hover_timer.isActive())
+            report["sketch_hover_schedule"] = {"moves": len(emitted), "picks": len(samples),
+                "picks_before_end": sum(count < 40 for _, _, count in samples),
+                "method": "Real Qt events with instrumented native hit boundary"}
+            before = len(samples)
+            refs.queue_hover(viewport, QtCore.QPointF(100, 100), sketch)
+            refs.cancel_hover()
+            refs.flush_hover()
+            refs.queue_hover(viewport, QtCore.QPointF(100, 100), sketch)
+            with patch.object(panel, "active_sketch", return_value=None):
+                refs.flush_hover()
+            from shiboken6 import delete
+            temporary = QtWidgets.QWidget(window)
+            refs.queue_hover(temporary, QtCore.QPointF(100, 100), sketch)
+            delete(temporary)
+            refs.flush_hover()
+            check("Canceled, inactive and deleted sketch views discard queued picks", len(samples) == before)
+        clicks, selections = [], []
+        def click_pick(watched, event=None, point=None):
+            actual = point if point is not None else event.position()
+            clicks.append((actual.x(), actual.y()))
+            return sketch.Document.Plate, "Edge1"
+        with patch.object(refs, "native_preselection", return_value=False), patch.object(refs, "hit", side_effect=click_pick), patch.object(refs, "select_source", side_effect=lambda *args: selections.append(args)):
+            refs.queue_hover(viewport, QtCore.QPointF(95, 95), sketch)
+            send(QtCore.QEvent.MouseButtonPress, QtCore.QPoint(155, 105), QtCore.Qt.LeftButton, QtCore.Qt.LeftButton)
+            send(QtCore.QEvent.MouseButtonRelease, QtCore.QPoint(155, 105), QtCore.Qt.LeftButton)
+            refs.flush_hover()
+            check("Sketch click uses its own coordinates and cancels older hover", clicks == [(155, 105)] and len(selections) == 1 and refs.hover_pending is None and not refs.hover_timer.isActive())
+    finally:
+        producer.stop()
+        producer.deleteLater()
+        refs.clear_hover()
+
+
+def tool_session_lifetime(sketch):
+    refs = panel.sketch_references
+    target = sketch.Document.Name, sketch.Name
+    before = sketch.GeometryCount, sketch.ConstraintCount
+    Gui.Selection.clearSelection()
+    Gui.Selection.clearPreselection()
+    check("Native circle starts through the production tool path", panel.native_command("Sketcher_CreateCircle"))
+    command, token = refs.native_tool, refs.tools.generation
+    with patch.object(panel, "active_sketch", return_value=None), patch.object(Gui, "runCommand", wraps=Gui.runCommand) as native:
+        refs.sync_context()
+        check("Temporary view loss retains the native tool owner", refs.native_tool == command and refs.tools.active)
+        check("Temporary view loss does not cancel the native handler", not any(call.args and call.args[0] == "Sketcher_StopOperation" for call in native.call_args_list))
+    refs.sync_context()
+    check("Original view return restores owned native presentation", refs.native_command_for_context() == command and panel.sketch_snapping._sketch == sketch and not refs._native_presentation_suspended)
+    check("Context turnover invalidates old callbacks", not refs.tools.current(token))
+    panel.router._native_context = panel.router._last_native = None
+    check("Matching shortcut handles a toolbar-started circle", panel.router.dispatch("C", "sketch"))
+    check("Toolbar-to-shortcut toggle ends tracked native tool", refs.native_tool is None and not refs.tools.active)
+    refs.dimension_picking = target
+    refs.dimension_refs = ["Vertex1"]
+    calls = []
+    with patch.object(refs, "dimension_selection", side_effect=lambda model_edge=False: calls.append(model_edge)):
+        refs.queue_dimension_selection(model_edge=True)
+        refs.stop()
+        wait(25)
+        check("Tool exit cancels queued dimension callback", not calls and refs.dimension_selection_pending is None and not refs.dimension_selection_timer.isActive())
+        refs.dimension_picking = target
+        refs.queue_dimension_selection(model_edge=True)
+        refs.queue_dimension_selection(model_edge=False)
+        wait(25)
+        check("Dimension callbacks coalesce without losing edge intent", calls == [True])
+    refs.dimension_refs = ["Vertex1"]
+    owner_state = refs.tools.state
+    with patch.object(panel, "active_sketch", return_value=None):
+        refs.sync_context()
+    refs.sync_context()
+    check("Temporary context loss preserves partial dimension selection", refs.tools.state is owner_state and refs.dimension_refs == ["Vertex1"])
+    cursor_calls = []
+    with patch.object(refs, "show_dimension_cursor", side_effect=lambda *args: cursor_calls.append(True)):
+        refs.queue_dimension_cursor()
+        refs.end_tool()
+        wait(25)
+    check("Tool exit cancels deferred cursor restoration", not cursor_calls and refs.cursor_refresh_pending is None and not refs.cursor_refresh_timer.isActive())
+    check("Tool cleanup preserves sketch draft geometry", (sketch.GeometryCount, sketch.ConstraintCount) == before and panel.active_sketch() == sketch)
+
+
+def sketch_callback_ownership(sketch):
+    """Interleave native cursor/pick/geometry callbacks with ownership changes."""
+    from PySide6.QtOpenGLWidgets import QOpenGLWidget
+    refs = panel.sketch_references
+    window = refs.mdi.activeSubWindow()
+    viewport = next(widget for widget in window.findChildren(QtWidgets.QWidget)
+                    if widget.metaObject().className() == "QOpenGLWidget"
+                    and widget.isVisible() and widget.width() > 300)
+    foreign_window = QtWidgets.QMdiSubWindow()
+    foreign_window.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+    foreign = QOpenGLWidget(foreign_window)
+    target = sketch.Document.Name, sketch.Name
+    draft = sketch.GeometryCount, sketch.ConstraintCount
+    first, second = (sketch.Document.Plate, "Edge1"), (sketch.Document.Plate, "Edge2")
+    scene = Gui.activeDocument().activeView().getSceneGraph()
+
+    def mouse(kind, button=QtCore.Qt.NoButton, buttons=QtCore.Qt.NoButton):
+        point = QtCore.QPointF(120, 110)
+        return QtGui.QMouseEvent(kind, point, point, button, buttons, QtCore.Qt.NoModifier)
+
+    def selection():
+        return [(item.Object, tuple(item.SubElementNames)) for item in Gui.Selection.getSelectionEx()]
+
+    def quiet():
+        return (refs.hover_pending is None and refs.cursor_refresh_pending is None
+                and refs.dimension_selection_pending is None and not refs.dimension_cursor_pending
+                and not any(timer.isActive() for timer in
+                            (refs.hover_timer, refs.cursor_refresh_timer, refs.dimension_selection_timer)))
+
+    def replacement_survives(label, baseline):
+        check(label, refs.hover_source == second and refs.hover_node is not None
+              and refs.hover_scene == scene and scene.findChild(refs.hover_node) >= 0
+              and scene.getNumChildren() == baseline + 1)
+
+    reentries = []
+    class CursorReentry(QtCore.QObject):
+        def eventFilter(self, watched, event):
+            if event.type() == QtCore.QEvent.CursorChange and refs._changing_tool and not reentries:
+                reentries.append(True)
+                # Force a different context so an unguarded sync cannot pass
+                # merely because the previous and current views compare equal.
+                with patch.object(panel, "active_sketch", return_value=None):
+                    refs.sync_context()
+                refs.queue_hover(viewport, QtCore.QPointF(100, 100), sketch)
+                refs.queue_dimension_cursor()
+                refs.queue_dimension_selection(model_edge=True)
+                for nested in (mouse(QtCore.QEvent.MouseMove),
+                               mouse(QtCore.QEvent.MouseButtonPress, QtCore.Qt.LeftButton, QtCore.Qt.LeftButton),
+                               mouse(QtCore.QEvent.MouseButtonPress, QtCore.Qt.RightButton, QtCore.Qt.RightButton),
+                               QtCore.QEvent(QtCore.QEvent.CursorChange)):
+                    refs.event(viewport, nested)
+            return False
+
+    cursor_filter = CursorReentry(viewport)
+    try:
+        refs.dimension_picking = target
+        refs.dimension_refs = ["Vertex1"]
+        refs.suppress_release = (viewport, QtCore.Qt.LeftButton)
+        refs.show_dimension_cursor(viewport)
+        owner, context, generation = refs.tools.state, refs._last_context, refs.tools.generation
+        selected = selection()
+        viewport.installEventFilter(cursor_filter)
+        with ExitStack() as patches:
+            starts = [patches.enter_context(patch.object(timer, "start", wraps=timer.start)) for timer in
+                      (refs.hover_timer, refs.cursor_refresh_timer, refs.dimension_selection_timer)]
+            effects = [patches.enter_context(patch.object(refs, name)) for name in
+                       ("hit", "select_source", "project", "dimension_selection")]
+            commands = patches.enter_context(patch.object(Gui, "runCommand"))
+            refs._cancel_deferred()
+            check("Native cursor restoration actually reenters sketch callbacks", reentries == [True])
+            check("Cleanup reentry cannot restart hover, cursor or selection timers", quiet() and not any(mock.called for mock in starts))
+            check("Cleanup reentry preserves tool owner, context, partial references and selection",
+                  refs.tools.state is owner and refs.tools.generation == generation + 1
+                  and refs._last_context == context and refs.dimension_refs == ["Vertex1"]
+                  and refs.suppress_release == (viewport, QtCore.Qt.LeftButton)
+                  and selection() == selected and not commands.called and not any(mock.called for mock in effects))
+        viewport.removeEventFilter(cursor_filter)
+        refs.end_tool()
+
+        # Call the reference adapter directly: other application filters have
+        # separate contracts. These are real Qt GL widgets and input events.
+        for mode in ("dimension", "native"):
+            if mode == "dimension":
+                refs.dimension_picking = target
+            else:
+                refs.native_tool = "Sketcher_CreateCircle"
+            owner, generation, selected = refs.tools.state, refs.tools.generation, selection()
+            refs.suppress_release = (foreign, QtCore.Qt.LeftButton)
+            with ExitStack() as patches:
+                effects = [patches.enter_context(patch.object(refs, name, wraps=getattr(refs, name)))
+                           for name in ("sync_context", "hit", "select_source", "project", "show_dimension_cursor",
+                                        "queue_hover", "queue_dimension_cursor", "queue_dimension_selection", "clear_hover", "cancel_hover")]
+                commands = patches.enter_context(patch.object(Gui, "runCommand"))
+                outcomes = [refs.event(foreign, event) for event in (
+                    mouse(QtCore.QEvent.MouseMove), QtCore.QEvent(QtCore.QEvent.CursorChange),
+                    mouse(QtCore.QEvent.MouseButtonPress, QtCore.Qt.LeftButton, QtCore.Qt.LeftButton),
+                    mouse(QtCore.QEvent.MouseButtonPress, QtCore.Qt.RightButton, QtCore.Qt.RightButton),
+                    mouse(QtCore.QEvent.MouseButtonRelease, QtCore.Qt.LeftButton))]
+                check("Foreign viewport input has no reference-adapter effects for " + mode,
+                      outcomes == [False] * 5 and not any(mock.called for mock in effects)
+                      and not commands.called and refs.tools.state is owner and refs.tools.generation == generation
+                      and refs.suppress_release == (foreign, QtCore.Qt.LeftButton)
+                      and selection() == selected and quiet())
+                # A release without a suppression marker must not queue the
+                # dimension callback either.
+                refs.suppress_release = None
+                check("Foreign viewport release cannot queue " + mode + " selection",
+                      refs.event(foreign, mouse(QtCore.QEvent.MouseButtonRelease, QtCore.Qt.LeftButton)) is False
+                      and not any(mock.called for mock in effects) and quiet())
+            refs.end_tool()
+
+        refs.picking = target
+        owner = refs.tools.state
+        popup = QtWidgets.QMenu(main)
+        escape = QtGui.QKeyEvent(QtCore.QEvent.KeyPress, QtCore.Qt.Key_Escape, QtCore.Qt.NoModifier)
+        with patch.object(QtGui.QApplication, "activePopupWidget", return_value=popup):
+            check("Escape remains owned by an active popup", refs.event(main, escape) is False and refs.tools.state is owner)
+        refs.queue_hover(viewport, QtCore.QPointF(100, 100), sketch)
+        refs.queue_dimension_selection()
+        check("Ancestor deactivation cancels deferred work without replacing the tool",
+              refs.event(main, QtCore.QEvent(QtCore.QEvent.WindowDeactivate)) is False
+              and quiet() and refs.tools.state is owner)
+        with patch.object(QtGui.QApplication, "activePopupWidget", return_value=None), patch.object(QtGui.QApplication, "focusWidget", return_value=None):
+            check("Escape outside the viewport still ends reference picking", refs.event(main, escape) is True and not refs.tools.active)
+        popup.deleteLater()
+
+        refs.clear_hover()
+        baseline = scene.getNumChildren()
+        refs.show_hover(first)
+        first_node = refs.hover_node
+        check("A valid native edge publishes a real Coin highlight", refs.hover_source == first
+              and first_node is not None and scene.findChild(first_node) >= 0 and scene.getNumChildren() == baseline + 1)
+        with patch.object(refs, "native_preselection", return_value=False), patch.object(refs, "hit", return_value=second):
+            refs.queue_hover(viewport, QtCore.QPointF(100, 100), sketch)
+            refs.flush_hover()
+        replacement_survives("Current hover replaces its old Coin node without invalidating itself", baseline)
+        check("Replacing a hover removes its previous Coin node", scene.findChild(first_node) < 0)
+        refs.clear_hover()
+
+        for change in ("generation", "view"):
+            active = [window]
+            def invalidate_pick(watched, event=None, point=None):
+                if change == "generation":
+                    refs.tools.invalidate_callbacks()
+                else:
+                    active[0] = foreign_window
+                return first
+            with patch.object(refs.mdi, "activeSubWindow", side_effect=lambda: active[0]), patch.object(refs, "native_preselection", return_value=False), patch.object(refs, "hit", side_effect=invalidate_pick):
+                refs.queue_hover(viewport, QtCore.QPointF(100, 100), sketch)
+                refs.flush_hover()
+                check("A " + change + " change during native picking rejects old highlight publication",
+                      refs.hover_source is None and refs.hover_node is None and scene.getNumChildren() == baseline)
+            refs.clear_hover()
+
+        # Delegate edge operations to an actual native shape, injecting the
+        # reentrant callback precisely inside its discretization boundary.
+        class NativeEdge:
+            def __init__(self, shape, callback): self.shape, self.callback = shape, callback
+            def copy(self): return NativeEdge(self.shape.copy(), self.callback)
+            @property
+            def Placement(self): return self.shape.Placement
+            @Placement.setter
+            def Placement(self, value): self.shape.Placement = value
+            @property
+            def BoundBox(self): return self.shape.BoundBox
+            def discretize(self, **kwargs):
+                points = self.shape.discretize(**kwargs)
+                self.callback()
+                return points
+
+        class NativeSource:
+            Placement = first[0].Placement
+            def __init__(self, callback): self.callback = callback
+            def getGlobalPlacement(self): return first[0].getGlobalPlacement()
+            def getSubObject(self, edge): return NativeEdge(first[0].getSubObject(edge), self.callback)
+
+        for boundary in ("pick", "tessellation"):
+            for fail in (False, True):
+                replacements = []
+                def replace():
+                    refs.show_hover(second)
+                    replacements.append(refs.hover_node)
+                    if fail:
+                        raise RuntimeError("Injected stale " + boundary + " failure")
+                source = (NativeSource(replace), "Edge1") if boundary == "tessellation" else first
+                def replacing_pick(watched, event=None, point=None):
+                    if boundary == "pick":
+                        replace()
+                    return source
+                with patch.object(refs, "native_preselection", return_value=False), patch.object(refs, "hit", side_effect=replacing_pick):
+                    refs.queue_hover(viewport, QtCore.QPointF(100, 100), sketch)
+                    refs.flush_hover()
+                check("Reentrant " + boundary + " publishes its newer replacement before returning" + (" an error" if fail else ""),
+                      len(replacements) == 1 and replacements[0] is not None and refs.hover_node == replacements[0])
+                replacement_survives("Stale " + boundary + (" exception" if fail else " result") + " cannot remove or overwrite the newer Coin highlight", baseline)
+                refs.clear_hover()
+        check("Ownership and stale-callback checks preserve native draft geometry",
+              (sketch.GeometryCount, sketch.ConstraintCount) == draft and panel.active_sketch() == sketch)
+    finally:
+        viewport.removeEventFilter(cursor_filter)
+        refs.end_tool()
+        refs.clear_hover()
+        foreign_window.deleteLater()
+
+
+def region_turn_bound(doc, sketch):
+    from kurtshape import sketch_regions as region_module
+    regions = panel.sketch_regions
+    extras = []
+    try:
+        for number in range(2):
+            obj = doc.addObject("Sketcher::SketchObject", "RegionScheduling" + str(number))
+            extras.append(obj.Name)
+            obj.addGeometry(Part.Circle(App.Vector(60 + 15 * number, 0, 0), App.Vector(0, 0, 1), 3), False)
+            obj.ViewObject.Visibility = True
+        doc.recompute()
+        regions.apply()
+        keys = [(doc.Name, name) for name in [sketch.Name] + extras]
+        check("Region scheduling fixtures become current", until(lambda: all(key in regions.entries and not regions.entries[key]["dirty"] for key in keys)))
+        for key in keys:
+            regions._mark_dirty(regions.entries[key])
+        regions.timer.stop()
+        before = regions.builds
+        with patch.object(panel, "active_sketch", return_value=sketch):
+            regions._rebuild()
+        check("A region turn builds one sketch and prioritizes the active sketch", regions.builds == before + 1 and not regions.entries[keys[0]]["dirty"] and all(regions.entries[key]["dirty"] for key in keys[1:]))
+        check("Remaining region work yields to a later event-loop turn", regions.timer.isActive() and until(lambda: all(not regions.entries[key]["dirty"] for key in keys)))
+        entry = regions.entries[keys[0]]
+        old_mesh = entry["mesh"]
+        regions._mark_dirty(entry)
+        regions.timer.stop()
+        before, discarded = regions.builds, regions.discarded_builds
+        native_faces = region_module.region_faces
+        changed = []
+        def mutate_during_build(obj):
+            faces = native_faces(obj)
+            if obj == sketch and not changed:
+                changed.append(True)
+                sketch.addGeometry(Part.Circle(App.Vector(24, 0, 0), App.Vector(0, 0, 1), 1), False)
+                doc.recompute()
+            return faces
+        with patch.object(panel, "active_sketch", return_value=sketch), patch.object(region_module, "region_faces", side_effect=mutate_during_build):
+            regions._rebuild()
+        check("A changed sketch cannot publish stale region geometry", changed and regions.builds == before and regions.discarded_builds == discarded + 1 and entry["dirty"] and entry["mesh"] is old_mesh and not entry["shown"])
+        check("A discarded region rebuild retries the current geometry", until(lambda: not entry["dirty"] and entry["region_count"] == 3))
+        report["region_scheduling"] = {"builds": regions.builds, "attempts": regions.build_attempts, "discarded": regions.discarded_builds}
+    finally:
+        for name in extras:
+            if doc.getObject(name):
+                doc.removeObject(name)
+        regions.apply()
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        doc = call("new", name="Presentation scheduling")
+        call("sketch_rectangle", id="Support", width=40, height=30)
+        call("pad", id="Plate", profile="Support", length=8)
+        call("create_sketch", id="ColorSketch", plane="XY")
+        sketch = doc.ColorSketch
+        sketch.addGeometry(Part.Circle(App.Vector(0, 0, 0), App.Vector(0, 0, 1), 4), False)
+        sketch.addConstraint(Sketcher.Constraint("Block", 0))
+        doc.recompute()
+        panel.select_feature(sketch.Name)
+        check("Production native sketch editor opens", bool(panel.edit_sketch()))
+        panel.normal()
+        panel.fit()
+        Gui.Selection.clearSelection()
+        Gui.Selection.clearPreselection()
+        wait(650)
+        sketch_hover_scheduling(sketch)
+        tool_session_lifetime(sketch)
+        sketch_callback_ownership(sketch)
+        colors, regions, history = panel.sketch_colors, panel.sketch_regions, panel.sketch_history
+        with patch("time.monotonic", return_value=time.monotonic()):
+            for adapter in (colors, regions, history): adapter.apply()
+            before = counters()
+            for _ in range(100):
+                for adapter in (colors, regions, history): adapter.apply()
+            after = counters()
+        report["idle_before"], report["idle_after"] = before, after
+        check("One hundred unchanged adapter passes perform no mapping, scene, membership, mesh or color work", before == after)
+
+        point_node = colors.nodes["PointsMaterials_0"]
+        check("Existing Block center proof remains black", tuple(point_node.diffuseColor[0].getValue()) == (0, 0, 0))
+        point_node.diffuseColor.set1Value(0, (0, 0, 1))
+        baseline_mapping = colors.mapping_reads
+        colors.apply()
+        check("Native material replacement is corrected without rereading sketch mapping",
+              tuple(point_node.diffuseColor[0].getValue()) == (0, 0, 0) and colors.mapping_reads == baseline_mapping)
+        previous_meshes = regions.builds
+        sketch.addGeometry(Part.Circle(App.Vector(12, 0, 0), App.Vector(0, 0, 1), 2), False)
+        doc.recompute()
+        entry = regions.entries[(doc.Name, sketch.Name)]
+        check("Geometry change rebuilds closed regions", until(lambda: regions.builds > previous_meshes and entry["region_count"] == 2))
+        check("Geometry change refreshes native color mapping", colors.nodes["PointsMaterials_0"].diffuseColor.getNum() >= 2)
+
+        target = next(doc.getObject(name) for name in history.desired if name == "Support")
+        desired = history.desired[target.Name]
+        target.ViewObject.Visibility = not desired
+        history.apply()
+        check("Native visibility notification restores historical edit context immediately", target.ViewObject.Visibility == desired)
+        with patch("kurtshape.ui.run_sketch_command", side_effect=RuntimeError("Injected drawing command failure")):
+            check("A failed native drawing command releases recovery deferral",
+                  not panel.native_command("Sketcher_CreateLine")
+                  and panel.sketch_references.native_tool is None and panel.active_sketch() == sketch)
+        check("Native sketch finishes", bool(panel.finish_sketch()))
+        wait()
+        sketch.ViewObject.Visibility = False
+        regions.apply()
+        check("Explicit hide updates region visibility without geometry rebuild", not entry["shown"])
+        sketch.ViewObject.Visibility = True
+        regions.apply()
+        check("Explicit show restores cached region mesh", entry["shown"])
+        region_turn_bound(doc, sketch)
+
+        controller = hover_outline.install_hover_outline()
+        outline = controller.outline
+        fixture = doc.addObject("PartDesign::Feature", "HoverFixture")
+        fixture.Shape = Part.makeBox(10, 8, 6)
+        doc.recompute()
+        initial = outline.boundary_builds
+        first = outline._boundary(doc, fixture, "Face1")
+        outline._boundary(doc, fixture, "Face2")
+        reused = outline._boundary(doc, fixture, "Face1")
+        check("Revisiting a native face reuses its boundary tessellation", first is reused and outline.boundary_builds == initial + 2)
+        fixture.Placement = App.Placement(App.Vector(11, 0, 0), App.Rotation())
+        moved = outline._boundary(doc, fixture, "Face1")
+        check("Placement change invalidates cached hover geometry", moved is not first and moved[0][0] != first[0][0])
+        fixture.Shape = Part.makeBox(20, 8, 6)
+        replaced = outline._boundary(doc, fixture, "Face1")
+        check("Native Shape change invalidates cached hover geometry", replaced is not moved)
+        doc.removeObject(fixture.Name)
+        check("Deleting a face source removes its cached native references", not outline.boundaries)
+
+        active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+        viewport = next(widget for widget in active.findChildren(QtWidgets.QWidget)
+                        if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible()
+                        and widget.parentWidget().metaObject().className() == "Gui::View3DInventorViewer")
+        controller.clear()
+        picked = outline.pick_count
+        report["hover_view"] = {"tracking": viewport.hasMouseTracking(), "edit": str(Gui.activeDocument().getInEdit())}
+        for x in range(100, 150):
+            point = QtCore.QPointF(x, 100)
+            event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, point, QtCore.QPointF(viewport.mapToGlobal(point.toPoint())),
+                                     QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+            app.sendEvent(viewport, event)
+        report["hover_burst"] = {"before": picked, "after": outline.pick_count,
+                                  "pending": controller.pending is not None, "timer": controller.timer.isActive(),
+                                  "viewport_size": [viewport.width(), viewport.height()]}
+        check("Rapid mouse moves enqueue one latest-position native pick", outline.pick_count == picked and controller.timer.isActive())
+        controller.flush()
+        check("Coalesced mouse moves perform exactly one native pick", outline.pick_count == picked + 1)
+        from kurtshape.quantity_field import QuantityField
+        probe = QuantityField("mm")
+        probe.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        probe.setRange(0, 100)
+        probe.setValue(3)
+        probe.show()
+        probe.native.setFocus()
+        wait(20)
+        quantity_events = []
+        probe.lineEdit().textChanged.connect(quantity_events.append)
+        probe.setValue(2)
+        report["native_quantity_events"] = {"set_value": list(quantity_events)}
+        check("Native quantity property changes publish the visible depth text",
+              bool(quantity_events) and probe.value() == 2)
+        quantity_events.clear()
+        QtTest.QTest.keyClick(probe.native, QtCore.Qt.Key_Up)
+        report["native_quantity_events"]["arrow_step"] = list(quantity_events)
+        check("Native quantity arrow steps publish the visible depth text",
+              bool(quantity_events) and probe.value() > 2)
+        probe.close()
+        probe.deleteLater()
+        recovery_turn_bound()
+        check("Presentation sources remain frozen during native validation", source_hashes() == startup_hashes)
+        report["check_count"] = len(report["checks"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned: return
+    cleaned = True
+    if panel: panel.shutdown()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit(): gui.resetEdit()
+        if doc.HasPendingTransaction: doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["error"] = "Presentation scheduling validation exceeded 90 seconds"
+    save()
+    cleanup()
+
+
+QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(1200, run)

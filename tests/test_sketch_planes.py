@@ -12,7 +12,8 @@ sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
 import Part
 import Sketcher
-from kurtshape.core import Controller, intent_signature
+from kurtshape.core import Controller, OperationError, intent_signature
+from kurtshape import studio
 
 
 class SketchPlaneTests(unittest.TestCase):
@@ -547,6 +548,207 @@ class SketchPlaneTests(unittest.TestCase):
         self.rejected("unsupported_dependency", "delete_feature", feature="Pad", cascade=True)
         self.assertIsNotNone(self.doc.getObject("Pad"))
         self.assertIsNotNone(self.doc.getObject("ScriptOwned"))
+
+    def test_change_support_preserves_local_intent_draft_history_finish_and_reopen(self):
+        self.plate()
+        self.call("sketch_circle", id="Editable", support={"feature": "Pad", "subelement": self.top_face()}, x=2, y=3, diameter=4)
+        self.call("set_expression", feature="Editable", parameter="Diameter", expression="Plate.Constraints.Height / 3")
+        sketch = self.doc.Editable
+        initial_support = sketch.AttachmentSupport
+        initial_frame = tuple(sketch.Placement.Base) + tuple(sketch.Placement.Rotation.Q)
+        local = (tuple(sketch.Geometry[0].Center), sketch.Geometry[0].Radius)
+        constraints = [(c.Type, c.Name, c.Value, c.First, c.FirstPos) for c in sketch.Constraints]
+        expressions = list(sketch.ExpressionEngine)
+        undo_before = self.doc.UndoCount
+        self.call("begin_sketch_edit", feature="Editable")
+        self.call("set_sketch_support", sketch="Editable", plane="XZ")
+        self.assertEqual(sketch.AttachmentSupport[0][0], self.doc.XZ_Plane)
+        self.assertAlmostEqual(abs(sketch.Placement.Rotation.multVec(App.Vector(0, 0, 1)).y), 1)
+        self.assertEqual((tuple(sketch.Geometry[0].Center), sketch.Geometry[0].Radius), local)
+        self.assertEqual([(c.Type, c.Name, c.Value, c.First, c.FirstPos) for c in sketch.Constraints], constraints)
+        self.assertEqual(list(sketch.ExpressionEngine), expressions)
+        self.call("undo")
+        self.assertEqual(sketch.AttachmentSupport, initial_support)
+        self.assertEqual(tuple(sketch.Placement.Base) + tuple(sketch.Placement.Rotation.Q), initial_frame)
+        self.call("redo")
+        self.assertEqual(sketch.AttachmentSupport[0][0], self.doc.XZ_Plane)
+        # Native resetEdit/Dimension can commit without ending the managed lease.
+        self.doc.commitTransaction()
+        side = "Face" + str(next(i + 1 for i, face in enumerate(self.doc.Pad.Shape.Faces)
+                                 if abs(face.normalAt(0, 0).x) > .9))
+        self.call("set_sketch_support", sketch="Editable", support={"feature": "Pad", "subelement": side})
+        self.call("finish_sketch_edit")
+        self.assertEqual(self.doc.UndoCount, undo_before + 1)
+        self.assertAlmostEqual(abs(sketch.Placement.Rotation.multVec(App.Vector(0, 0, 1)).x), 1)
+        final_frame = tuple(sketch.Placement.Base) + tuple(sketch.Placement.Rotation.Q)
+        self.call("undo")
+        self.assertEqual(sketch.AttachmentSupport, initial_support)
+        self.call("redo")
+        self.assertEqual(tuple(sketch.Placement.Base) + tuple(sketch.Placement.Rotation.Q), final_frame)
+        path = self.folder / "changed-support.FCStd"
+        self.call("save", path=str(path))
+        App.closeDocument(self.doc.Name)
+        self.call("open", path=str(path))
+        self.assertEqual(self.doc.Editable.AttachmentSupport[0][0], self.doc.Pad)
+        self.assertEqual(tuple(self.doc.Editable.Placement.Base) + tuple(self.doc.Editable.Placement.Rotation.Q), final_frame)
+        self.assertEqual((tuple(self.doc.Editable.Geometry[0].Center), self.doc.Editable.Geometry[0].Radius), local)
+        self.assertEqual(list(self.doc.Editable.ExpressionEngine), expressions)
+
+    def test_change_support_cancel_and_invalid_targets_restore_accepted_sketch(self):
+        self.plate()
+        self.call("create_sketch", id="Editable")
+        initial = self.doc.Editable.AttachmentSupport
+        self.call("create_sketch", id="OtherSketch")
+        self.call("add_line", sketch="OtherSketch", x1=0, y1=2, x2=5, y2=2)
+        late = self.doc.Body.newObject("PartDesign::Plane", "LaterDatum")
+        late.AttachmentSupport = (self.doc.XY_Plane, [""])
+        late.MapMode = "FlatFace"
+        self.doc.recompute()
+        other = self.doc.addObject("PartDesign::Body", "OtherBody")
+        foreign = other.newObject("PartDesign::Plane", "ForeignDatum")
+        foreign.AttachmentSupport = (other.Origin.OriginFeatures[3], [""])
+        foreign.MapMode = "FlatFace"
+        self.doc.recompute()
+        self.call("inspect")
+        self.call("begin_sketch_edit", feature="Editable")
+        for code, args in [
+            ("invalid_argument", {}),
+            ("invalid_argument", {"plane": "XY", "support": {"feature": "Pad", "subelement": self.top_face()}}),
+            ("unsupported_plane", {"plane": "ZX"}),
+            ("cyclic_reference", {"support": {"feature": "Editable"}}),
+            ("future_reference", {"support": {"feature": "LaterDatum"}}),
+            ("future_reference", {"support": {"feature": "ForeignDatum"}}),
+            ("missing_reference", {"support": {"feature": "Absent"}}),
+        ]:
+            self.rejected(code, "set_sketch_support", sketch="Editable", **args)
+            self.call("inspect")
+            self.assertEqual(self.doc.Editable.AttachmentSupport, initial)
+            self.assertIsNotNone(self.state["active_sketch_edit"])
+        self.rejected("managed_sketch_mismatch", "set_sketch_support", sketch="OtherSketch", plane="XZ")
+        self.rejected("future_reference", "project_geometry", sketch="Editable",
+                      references=[{"feature": "OtherSketch", "subelement": "Edge1"}])
+        self.call("inspect")
+        self.assertEqual(self.doc.Editable.AttachmentSupport, initial)
+        self.call("set_sketch_support", sketch="Editable", plane="YZ")
+        self.doc.commitTransaction()
+        self.call("finish_sketch_edit", cancel=True)
+        self.assertEqual(self.doc.Editable.AttachmentSupport, initial)
+        self.rejected("empty_history", "redo")
+        self.assertEqual(self.doc.Editable.AttachmentSupport, initial)
+
+    def test_replacing_selector_support_keeps_draft_binding_undo_and_redo_consistent(self):
+        self.plate()
+        self.call("create_sketch", id="Editable", support={"kind": "created_by", "feature": "Pad", "cap": "end"})
+        self.assertIn("QueryInputs", self.doc.Editable.PropertiesList)
+        initial = self.doc.Editable.AttachmentSupport
+        self.call("begin_sketch_edit", feature="Editable")
+        self.call("set_sketch_support", sketch="Editable", plane="XZ")
+        self.assertNotIn("QueryInputs", self.doc.Editable.PropertiesList)
+        self.call("undo")
+        self.assertEqual(self.doc.Editable.AttachmentSupport, initial)
+        self.assertIn("QueryInputs", self.doc.Editable.PropertiesList)
+        self.call("redo")
+        self.assertEqual(self.doc.Editable.AttachmentSupport[0][0], self.doc.XZ_Plane)
+        self.assertNotIn("QueryInputs", self.doc.Editable.PropertiesList)
+        self.call("set_sketch_support", sketch="Editable", support={"kind": "created_by", "feature": "Pad", "cap": "start"})
+        self.assertIn("QueryInputs", self.doc.Editable.PropertiesList)
+        self.call("finish_sketch_edit", cancel=True)
+        self.assertEqual(self.doc.Editable.AttachmentSupport, initial)
+        self.assertIn("QueryInputs", self.doc.Editable.PropertiesList)
+
+    def test_multi_delete_selection_closure_is_atomic_and_one_undo_step(self):
+        self.plate()
+        self.call("sketch_circle", id="Hole", support={"feature": "Pad", "subelement": self.top_face()}, x=5, y=5, diameter=2)
+        self.call("pocket", id="Pocket", profile="Hole")
+        accepted = intent_signature(self.doc)
+        volume = self.doc.Body.Shape.Volume
+        count = self.doc.UndoCount
+        chronology = [obj.Name for obj in studio.order(self.doc)]
+        revision = self.state["revision"]
+        plan = self.core.delete_features_plan(self.doc, ["Hole", "Plate"])
+        self.assertEqual(plan, {"selected": ["Plate", "Hole"], "dependents": ["Pad", "Pocket"],
+                                "removed": ["Plate", "Pad", "Hole", "Pocket"]})
+        self.assertEqual(intent_signature(self.doc), accepted)
+        self.assertEqual(self.doc.UndoCount, count)
+        self.rejected("dependent_features", "delete_features", features=["Hole", "Plate"])
+        self.rejected("missing_reference", "delete_features", features=["Pocket", "Absent"])
+        self.rejected("invalid_argument", "delete_features", features=["Pocket", "Pocket"])
+        self.call("inspect")
+        self.assertEqual(intent_signature(self.doc), accepted)
+        self.assertEqual(self.state["revision"], revision)
+        self.assertEqual(self.doc.UndoCount, count)
+        self.call("delete_features", features=["Pocket", "Hole"])
+        self.assertIsNone(self.doc.getObject("Pocket"))
+        self.assertIsNone(self.doc.getObject("Hole"))
+        self.assertEqual(self.doc.Body.Tip, self.doc.Pad)
+        self.assertEqual(self.doc.UndoCount, count + 1)
+        self.call("undo")
+        self.assertFalse(studio.enabled(self.doc))
+        self.assertEqual([obj.Name for obj in studio.order(self.doc)], chronology)
+        self.assertEqual(self.state["studio"]["feature_order"], chronology)
+        self.assertEqual(self.doc.Pocket.Profile[0], self.doc.Hole)
+        self.assertEqual(self.doc.Hole.AttachmentSupport[0][0], self.doc.Pad)
+        self.assertAlmostEqual(self.doc.Body.Shape.Volume, volume)
+        self.call("redo")
+        self.assertIsNone(self.doc.getObject("Hole"))
+        self.call("delete_features", features=["Plate"], cascade=True)
+        self.assertIsNone(self.doc.getObject("Plate"))
+        self.assertIsNone(self.doc.getObject("Pad"))
+        self.assertIsNone(self.doc.Body.Tip)
+        self.call("undo")
+        self.assertEqual(self.doc.Pad.Profile[0], self.doc.Plate)
+
+    def test_multi_delete_prevalidates_external_consumers_and_independent_bodies(self):
+        self.plate()
+        self.call("create_body", id="OtherBody")
+        self.call("sketch_rectangle", id="OtherProfile", body="OtherBody", width=3, height=4)
+        self.call("pad", id="OtherPad", profile="OtherProfile", body="OtherBody", length=5)
+        external = self.doc.addObject("App::FeaturePython", "ExternalConsumer")
+        external.addProperty("App::PropertyLink", "Source")
+        external.Source = self.doc.Pad
+        self.doc.recompute()
+        self.call("inspect")
+        accepted = intent_signature(self.doc)
+        count = self.doc.UndoCount
+        with self.assertRaises(OperationError) as caught:
+            self.core.delete_features_plan(self.doc, ["OtherPad", "Pad"])
+        self.assertEqual(caught.exception.code, "external_dependency")
+        self.rejected("external_dependency", "delete_features", features=["OtherPad", "Pad"], cascade=True)
+        self.assertEqual(intent_signature(self.doc), accepted)
+        self.assertIsNotNone(self.doc.getObject("OtherPad"))
+        self.assertEqual(self.doc.UndoCount, count)
+        self.doc.removeObject(external.Name)
+        self.call("inspect")
+        self.call("delete_features", features=["OtherPad", "Pad"])
+        self.assertIsNone(self.doc.Body.Tip)
+        self.assertIsNone(self.doc.OtherBody.Tip)
+        self.call("undo")
+        self.assertEqual(self.doc.Body.Tip, self.doc.Pad)
+        self.assertEqual(self.doc.OtherBody.Tip, self.doc.OtherPad)
+
+    def test_direct_managed_attach_records_legacy_order_before_first_deletion(self):
+        native = App.newDocument("NativeLegacyAttachment")
+        body = native.addObject("PartDesign::Body", "Body")
+        sketch = body.newObject("Sketcher::SketchObject", "Profile")
+        corners = [(0, 0), (20, 0), (20, 12), (0, 12)]
+        sketch.addGeometry([Part.LineSegment(App.Vector(*point, 0), App.Vector(*corners[(i + 1) % 4], 0))
+                            for i, point in enumerate(corners)], False)
+        pad = body.newObject("PartDesign::Pad", "Extrude")
+        pad.Profile = sketch
+        pad.Length = 6
+        native.recompute()
+        self.assertIsNone(native.getObject("KurtShapeProject"))
+        self.core.attach(native, managed=True)
+        self.state = self.core.inspect(native)
+        self.assertIn("KurtShapeFeatureOrder", native.KurtShapeProject.PropertiesList)
+        self.assertEqual(native.KurtShapeProject.getTypeIdOfProperty("KurtShapeFeatureOrder"), "App::PropertyLinkListGlobal")
+        self.assertFalse(studio.enabled(native))
+        self.assertEqual(self.state["studio"]["feature_order"], ["Profile", "Extrude"])
+        self.call("delete_features", features=["Profile", "Extrude"])
+        self.call("undo")
+        self.assertEqual(self.state["studio"]["feature_order"], ["Profile", "Extrude"])
+        self.assertEqual(native.Extrude.Profile[0], native.Profile)
+        self.assertAlmostEqual(native.Body.Shape.Volume, 20 * 12 * 6)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,359 @@
+"""Real history ranges, atomic delete and native plane graphics in a hidden GUI."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import shutil
+import socket
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "tools"))
+from kurtshape_evidence import evidence_dir
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.path.insert(0, str(root / "src"))
+source_files = ["ui.py", "history_selection.py", "rollback_history.py", "core.py", "studio.py", "theme.py"]
+
+
+def source_hashes():
+    return {name: hashlib.sha256((root / "src" / "kurtshape" / name).read_bytes()).hexdigest() for name in source_files}
+
+
+startup_hashes = source_hashes()
+
+
+def deny_network(*args, **kwargs):
+    raise RuntimeError("Python networking denied for history GUI validation")
+
+
+socket.socket.connect = deny_network
+socket.socket.connect_ex = deny_network
+socket.socket.sendto = deny_network
+socket.create_connection = deny_network
+socket.getaddrinfo = deny_network
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+from kurtshape.core import native_intent
+
+
+class NoSocketTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopupFilter(app)
+app.installEventFilter(hidden)
+output = evidence_dir("history-selection")
+report = {"passed": False, "checks": [], "screens": [], "source_sha256": startup_hashes,
+          "method": "Production history tree, native document, actual Qt Shift/Ctrl/Delete and confirmation events; fresh hidden native process/profile.",
+          "limits": "Synthetic small offline fixtures. Python networking denied; C++ networking is not intercepted.",
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}, "runtime_profile": str(session.relative_to(root))}
+panel = None
+cleaned = False
+started = time.perf_counter()
+
+
+def save_report():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=70):
+    QtTest.QTest.qWait(ms)
+    if report.get("aborted"):
+        raise RuntimeError("History GUI validation exceeded its time bound")
+
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label + ": " + (panel.message.text() if panel else "startup"))
+    report["checks"].append(label)
+    save_report()
+
+
+def call(op, **args):
+    result = panel.operation(op, **args)
+    if not result:
+        raise AssertionError(op + ": " + panel.message.text())
+    wait()
+    return result
+
+
+def click(name, modifiers=QtCore.Qt.NoModifier):
+    panel.features.scrollToItem(panel.items[name])
+    wait(35)
+    point = panel.features.visualItemRect(panel.items[name]).center()
+    trace = name == "origin" or name.startswith("plane:") or name == "OffsetPlane" or bool(panel.history_controller.planes.saved)
+    def graphics_stage(stage):
+        doc = panel.document()
+        state = panel.core.observer.state(doc)
+        report.setdefault("graphics_stages", []).append({"row": name, "stage": stage,
+            "modified": Gui.getDocument(doc.Name).Modified, "token": panel.history_controller.planes.model_token(doc),
+            "saved": dict(panel.history_controller.planes.modified),
+            "intent_dirty": state["intent_dirty"], "generation": state["generation"], "version_clock": state["version_clock"]})
+    if trace:
+        graphics_stage("before")
+    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, modifiers, point)
+    if trace:
+        graphics_stage("immediate")
+    wait()
+    if trace:
+        graphics_stage("after_wait")
+
+
+def selected():
+    return set(panel.history_controller.selected_ids())
+
+
+def snapshot():
+    doc = panel.document()
+    panel.core.sync(doc)
+    return {"intent": native_intent(doc), "revision": panel.core._meta(doc).Revision,
+            "undo": doc.UndoCount, "redo": doc.RedoCount, "objects": [obj.Name for obj in doc.Objects]}
+
+
+def presentation(objects):
+    return {obj.Name: {name: getattr(obj.ViewObject, name) for name in
+            ["Visibility", "ShapeColor", "LineColor", "PlaneColor", "Transparency"] if name in obj.ViewObject.PropertiesList} for obj in objects}
+
+
+def capture(label):
+    wait(120)
+    for name, widget in [(label + ".png", main), (label + "-history.png", panel)]:
+        pixmap = widget.grab()
+        check(name + ": nonempty rendered UI", not pixmap.isNull())
+        pixmap.save(str(output / name))
+        report["screens"].append(name)
+
+
+def delete_confirmation(answer):
+    observed = {}
+    def answer_box():
+        box = next((widget for widget in app.topLevelWidgets() if isinstance(widget, QtWidgets.QMessageBox) and widget.isVisible()), None)
+        if box:
+            observed["text"] = box.text()
+            QtTest.QTest.mouseClick(box.button(answer), QtCore.Qt.LeftButton)
+    QtCore.QTimer.singleShot(100, answer_box)
+    def dismiss_stuck():
+        for widget in app.topLevelWidgets():
+            if isinstance(widget, QtWidgets.QMessageBox) and widget.isVisible():
+                widget.reject()
+    QtCore.QTimer.singleShot(1500, dismiss_stuck)
+    QtTest.QTest.keyClick(panel.features, QtCore.Qt.Key_Delete)
+    wait(120)
+    check("Actual dependency confirmation lists unselected consumers", "HoleSketch" in observed.get("text", "") and "HoleCut" in observed.get("text", ""))
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        call("new", name="History selection validation")
+        call("sketch_rectangle", id="Outline", width=20, height=12, body="Body")
+        call("pad", id="Extrude", profile="Outline", length=8, body="Body")
+        pad = panel.document().Extrude
+        top = "Face" + str(next(i + 1 for i, face in enumerate(pad.Shape.Faces) if abs(face.CenterOfMass.z - 8) < 1e-7))
+        call("sketch_circle", id="HoleSketch", x=10, y=6, diameter=4, support={"feature": pad.Name, "subelement": top}, body="Body")
+        call("pocket", id="HoleCut", profile="HoleSketch", length=8, through_all=True, body="Body")
+        call("sketch_circle", id="ExtraCircle", x=30, y=0, diameter=4, body="Body")
+        call("sketch_rectangle", id="ExtraRectangle", x=30, y=10, width=5, height=5, body="Body")
+        call("create_plane", id="OffsetPlane", base_plane="XY", offset=12, body="Body")
+        doc = panel.document()
+        initial_order = panel.state["studio"]["feature_order"][:]
+        panel.isometric()
+        panel.fit()
+        click("Outline")
+        click("HoleCut", QtCore.Qt.ShiftModifier)
+        check("Shift range includes both endpoints and intervening features", selected() == {"Outline", "Extrude", "HoleSketch", "HoleCut"})
+        click("ExtraRectangle", QtCore.Qt.ControlModifier)
+        check("Ctrl adds an independent row without selecting the gap", selected() == {"Outline", "Extrude", "HoleSketch", "HoleCut", "ExtraRectangle"})
+        click("HoleSketch", QtCore.Qt.ControlModifier)
+        check("Ctrl toggles one row without changing the others", selected() == {"Outline", "Extrude", "HoleCut", "ExtraRectangle"})
+        baseline_selection = selected()
+        panel.refresh()
+        wait()
+        check("Tree refresh preserves the selected set", selected() == baseline_selection)
+        check("Multiple selected features stay selected natively", {obj.Name for obj in Gui.Selection.getSelection()} == baseline_selection)
+        capture("range-and-independent-selection")
+        click("ExtraCircle")
+        click("ExtraRectangle", QtCore.Qt.ControlModifier)
+        before = snapshot()
+        QtTest.QTest.keyClick(panel.features, QtCore.Qt.Key_Delete)
+        wait(140)
+        check("Delete removes the entire selected independent set atomically", doc.getObject("ExtraCircle") is None and doc.getObject("ExtraRectangle") is None and doc.getObject("Extrude") is not None)
+        check("Selected-set deletion creates one native Undo step", doc.UndoCount == before["undo"] + 1)
+        call("undo")
+        check("One Undo restores both selected features", doc.getObject("ExtraCircle") is not None and doc.getObject("ExtraRectangle") is not None)
+        check("Undo preserves the original chronological feature order", panel.state["studio"]["feature_order"] == initial_order)
+        click("Outline")
+        click("Extrude", QtCore.Qt.ControlModifier)
+        before = snapshot()
+        delete_confirmation(QtWidgets.QMessageBox.No)
+        check("Declining dependency deletion preserves native state and Undo", snapshot() == before)
+        delete_confirmation(QtWidgets.QMessageBox.Yes)
+        check("Confirm removes selected features and their native dependents", all(doc.getObject(name) is None for name in ["Outline", "Extrude", "HoleSketch", "HoleCut"]) and doc.getObject("ExtraCircle") is not None)
+        check("Confirmed dependent-set deletion still creates one Undo step", doc.UndoCount == before["undo"] + 1)
+        call("undo")
+        check("One Undo restores the complete dependency chain", all(doc.getObject(name) is not None for name in ["Outline", "Extrude", "HoleSketch", "HoleCut"]))
+        check("Dependency Undo also preserves chronological history order", panel.state["studio"]["feature_order"] == initial_order)
+        call("rollback", index=2)
+        order = panel.state["studio"]["feature_order"]
+        check("Rolled-back rows are gray and italic with unchanged feature names", all(panel.items[name].font(0).italic() and panel.items[name].foreground(0).color().name() == ui.COLORS["disabled_ink"] and panel.items[name].text(0) == doc.getObject(name).Label for name in order[2:]))
+        sample = panel.items[order[2]]
+        rect = panel.features.visualItemRect(sample)
+        rendered = panel.features.viewport().grab().toImage()
+        scale = rendered.devicePixelRatio()
+        text_rect = QtCore.QRect(int((rect.left() + 52) * scale), int(rect.top() * scale), int((rect.width() - 56) * scale), int(rect.height() * scale))
+        expected = QtGui.QColor(ui.COLORS["disabled_ink"])
+        gray_pixels = sum(rendered.pixelColor(x, y).rgb() == expected.rgb() for x in range(text_rect.left(), text_rect.right()) for y in range(text_rect.top(), text_rect.bottom()))
+        check("Actual rendered rollback text contains the inactive gray ink", gray_pixels > 5)
+        capture("gray-italic-rollback")
+        click("Outline")
+        click("HoleSketch", QtCore.Qt.ControlModifier)
+        before = snapshot()
+        QtTest.QTest.keyClick(panel.features, QtCore.Qt.Key_Delete)
+        wait()
+        check("A held row prevents deleting any part of the selected set", snapshot() == before)
+        call("rollback", index=len(order))
+        call("save", path=str(output / "history-selection.FCStd"))
+        panel.editor.hide()
+        origin = doc.Body.Origin
+        planes = [panel.plane(doc, name) for name in ["XY", "XZ", "YZ"]]
+        datum = doc.OffsetPlane
+        for obj in [origin, *planes, datum]:
+            obj.ViewObject.Visibility = False
+        original = presentation([origin, *planes, datum])
+        before = snapshot()
+        Gui.getDocument(doc.Name).Modified = False
+        modified_before = Gui.getDocument(doc.Name).Modified
+        click("origin")
+        check("Selecting Origin reveals all three native plane graphics", origin.ViewObject.Visibility and all(obj.ViewObject.Visibility for obj in planes))
+        check("Temporary Origin graphics do not dirty a clean document", Gui.getDocument(doc.Name).Modified is False)
+        capture("origin-plane-graphics")
+        click("Outline")
+        check("Deselecting Origin restores the original native presentation", presentation([origin, *planes, datum]) == original)
+        check("Restoring Origin graphics preserves the clean document flag", Gui.getDocument(doc.Name).Modified is False)
+        click("plane:XY")
+        check("Selecting Top reveals and selects its normally hidden plane", planes[0].ViewObject.Visibility and origin.ViewObject.Visibility and not planes[1].ViewObject.Visibility and planes[0] in Gui.Selection.getSelection())
+        capture("top-plane-highlight")
+        preview_path = output / "saved-with-plane-selected.FCStd"
+        call("save", path=str(preview_path))
+        check("Saving retains the selected plane highlight without a dirty flag", planes[0].ViewObject.Visibility and Gui.getDocument(doc.Name).Modified is False)
+        click("Outline")
+        check("Deselecting Top restores plane visibility and colors", presentation([origin, *planes, datum]) == original)
+        click("OffsetPlane")
+        check("Selecting a native datum plane reveals it", datum.ViewObject.Visibility and datum in Gui.Selection.getSelection())
+        capture("datum-plane-highlight")
+        datum_preview_path = output / "saved-with-datum-selected.FCStd"
+        call("save", path=str(datum_preview_path))
+        check("Saving retains the selected datum highlight", datum.ViewObject.Visibility)
+        click("Outline")
+        check("Deselecting the datum restores its original presentation", presentation([origin, *planes, datum]) == original)
+        check("Plane highlighting leaves native intent revision and Undo unchanged", snapshot() == before)
+        report["plane_graphics_modified_flag"] = {"before": modified_before, "after": Gui.getDocument(doc.Name).Modified}
+        check("Native datum presentation dirtiness is conservatively preserved", Gui.getDocument(doc.Name).Modified is True)
+        report["native_datum_presentation_limit"] = "FreeCAD 1.1.4 datum ViewObject changes briefly report intent_dirty before native sync confirms unchanged model intent. Its Modified flag is preserved to avoid clearing any intervening edit. Saved files contain the original presentation."
+        call("save", path=str(output / "datum-presentation-restored.FCStd"))
+        check("Saving after datum deselection establishes a clean edit baseline", Gui.getDocument(doc.Name).Modified is False)
+        click("plane:XY")
+        doc.Extrude.Length = 9
+        check("An intervening native model edit raises the dirty flag", Gui.getDocument(doc.Name).Modified is True)
+        click("Outline")
+        check("Deselecting a plane never clears an intervening model edit", Gui.getDocument(doc.Name).Modified is True and doc.Extrude.Length.Value == 9)
+        # Load the saved copy after clean-flag checks: opening another native
+        # document can itself change GUI presentation and its Modified flag.
+        panel.timer.stop()
+        reopened = None
+        try:
+            for selected_kind, saved_path in [("origin-plane", preview_path), ("datum-plane", datum_preview_path)]:
+                reopen_path = output / ("reopened-" + selected_kind + "-presentation.FCStd")
+                shutil.copy2(saved_path, reopen_path)
+                reopened = App.openDocument(str(reopen_path))
+                reloaded = [reopened.getObject(obj.Name) for obj in [origin, *planes, datum]]
+                check("Save while " + selected_kind + " selected persists original plane presentation", presentation(reloaded) == original)
+                App.closeDocument(reopened.Name)
+                reopened = None
+        finally:
+            if reopened:
+                App.closeDocument(reopened.Name)
+            App.setActiveDocument(doc.Name)
+            Gui.ActiveDocument = Gui.getDocument(doc.Name)
+            panel.timer.start(25)
+        click("OffsetPlane")
+        call("new", name="Plane highlight document switch")
+        check("Changing documents restores the previous document's plane graphics", presentation([origin, *planes, datum]) == original)
+        report["fixture"] = str((output / "history-selection.FCStd").relative_to(root))
+        report["source_unchanged"] = source_hashes() == startup_hashes
+        assert report["source_unchanged"], "Source changed during isolated GUI acceptance; rerun after production freeze"
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        report["seconds"] = time.perf_counter() - started
+        report["check_count"] = len(report["checks"])
+        save_report()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    finally:
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    if not report.get("seconds"):
+        report["aborted"] = True
+        report["error"] = "History GUI validation exceeded 90 seconds"
+        save_report()
+        cleanup()
+
+
+QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(1500, validate)

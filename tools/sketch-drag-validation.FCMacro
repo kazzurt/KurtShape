@@ -1,0 +1,245 @@
+"""Native pointer drag and rubber-band regression for sketch presentation."""
+import cProfile
+import io
+import json
+import math
+import os
+from pathlib import Path
+import pstats
+import queue
+import sys
+import time
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+
+class NoTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("sketch-drag")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "pid": os.getpid(), "engine": App.Version(),
+          "method": "Independent hidden production Panel; native mouse drag and Line second-point motion, real Coin meshes and event-loop timing."}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=240):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(widget for widget in active.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible() and widget.width() > 300)
+
+
+def position(sketch, xyz):
+    widget = viewport()
+    point = Gui.activeDocument().activeView().getPointOnViewport(sketch.getGlobalPlacement().multVec(App.Vector(*xyz)))
+    ratio = widget.devicePixelRatioF()
+    return QtCore.QPoint(round(point[0] / ratio), widget.height() - 1 - round(point[1] / ratio))
+
+
+def move(sketch, xyz, buttons=QtCore.Qt.NoButton):
+    widget, point = viewport(), position(sketch, xyz)
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point), QtCore.QPointF(widget.mapToGlobal(point)),
+                            QtCore.Qt.NoButton, buttons, QtCore.Qt.NoModifier)
+    started = time.perf_counter()
+    app.sendEvent(widget, event)
+    return (time.perf_counter() - started) * 1000
+
+
+def mesh_state(sketch):
+    entry = panel.sketch_regions.entries[(sketch.Document.Name, sketch.Name)]
+    vertices = entry.get("mesh", ([], []))[0]
+    return {"shown": entry.get("shown"), "dirty": entry["dirty"], "builds": panel.sketch_regions.builds,
+            "bounds": [[min(p[i] for p in vertices), max(p[i] for p in vertices)] for i in range(3)] if vertices else [],
+            "center": list(sketch.Geometry[0].Center), "geometry_count": sketch.GeometryCount}
+
+
+def pixels(sketch, xyz):
+    widget = viewport()
+    Gui.activeDocument().activeView().redraw()
+    frame = widget.grab().toImage()
+    point = position(sketch, xyz)
+    ratio = widget.devicePixelRatioF()
+    x, y = round(point.x() * ratio), round(point.y() * ratio)
+    return [frame.pixelColor(i, j).getRgb()[:3] for i in range(x - 3, x + 4) for j in range(y - 3, y + 4)]
+
+
+def assert_old_circle_absent(sketch, stage):
+    boundary, interior = pixels(sketch, (12, 6, 0)), pixels(sketch, (8, 7, 0))
+    report[stage + "_old_pixels"] = {"boundary": sorted(set(boundary)), "interior": sorted(set(interior))}
+    check(stage + ": old circle outline and region are absent from the framebuffer",
+          all(min(color) >= 250 for color in boundary + interior))
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        check("Create native sketch", bool(panel.operation("create_sketch", id="DragCircle", plane="XY")))
+        doc, sketch = panel.document(), panel.document().DragCircle
+        sketch.addGeometry(Part.Circle(App.Vector(8, 6, 0), App.Vector(0, 0, 1), 4), False)
+        doc.recompute()
+        panel.select_feature(sketch.Name)
+        check("Edit native sketch", bool(panel.edit_sketch()))
+        panel.normal()
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(80)
+        wait(600)
+        check("Native edit hides the ordinary Shape provider", not sketch.ViewObject.Visibility)
+        report["before_drag"] = mesh_state(sketch)
+        move(sketch, (8, 6, 0))
+        wait(120)
+        widget = viewport()
+        QtTest.QTest.mousePress(widget, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, position(sketch, (8, 6, 0)))
+        wait(80)
+        for index in range(1, 11):
+            move(sketch, (8, 6 - 2 * index, 0), QtCore.Qt.LeftButton)
+            wait(35)
+        report["during_drag"] = mesh_state(sketch)
+        check("Live native drag suppresses the stale committed region", not report["during_drag"]["shown"])
+        assert_old_circle_absent(sketch, "During drag")
+        main.grab().save(str(output / "during-circle-drag.png"))
+        QtTest.QTest.mouseRelease(widget, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, position(sketch, (8, -14, 0)))
+        wait(600)
+        report["after_drag"] = mesh_state(sketch)
+        check("Moving a center leaves exactly one circle", sketch.GeometryCount == 1 and abs(sketch.Geometry[0].Center.y + 14) < .2)
+        check("Release rebuilds fill at the committed circle position", report["after_drag"]["shown"]
+              and abs(sum(report["after_drag"]["bounds"][1]) / 2 - sketch.Geometry[0].Center.y) < .01)
+        assert_old_circle_absent(sketch, "After drag")
+        main.grab().save(str(output / "after-circle-drag.png"))
+        save()
+        Gui.Selection.clearSelection()
+        Gui.Selection.clearPreselection()
+        # Exercise presentation caches with a less trivial native sketch too.
+        sketch.addGeometry([Part.Circle(App.Vector(-35 + (index % 10) * 7, -32 + (index // 10) * 8, 0),
+                                       App.Vector(0, 0, 1), 1.5) for index in range(60)], False)
+        doc.recompute()
+        wait(600)
+        count_before_line = sketch.GeometryCount
+        action = next(action for action in panel.sketch_bar.actions() if action.text() == "Line")
+        QtTest.QTest.mouseClick(panel.sketch_bar.widgetForAction(action), QtCore.Qt.LeftButton)
+        wait(120)
+        move(sketch, (-15, -10, 0))
+        wait(80)
+        QtTest.QTest.mouseClick(widget, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, position(sketch, (-15, -10, 0)))
+        wait(80)
+        profiler = cProfile.Profile()
+        profiler.enable()
+        durations, gaps = [], []
+        before_builds = panel.sketch_regions.builds
+        started = last = time.perf_counter()
+        for index in range(150):
+            durations.append(move(sketch, (5 + 22 * math.cos(index / 9), 3 + 22 * math.sin(index / 9), 0)))
+            wait(25)
+            now = time.perf_counter()
+            gaps.append((now - last) * 1000)
+            last = now
+        # A paused pending endpoint must not trigger native snapshots either.
+        panel.core.recovery.poll()
+        panel.core.recovery.last.clear()
+        snapshots_before = panel.core.recovery.snapshot_count
+        wait(2600)
+        panel.checkpoint_projects()
+        snapshots_after = panel.core.recovery.snapshot_count
+        profiler.disable()
+        stream = io.StringIO()
+        pstats.Stats(profiler, stream=stream).sort_stats("cumulative").print_stats(45)
+        (output / "line-second-point-profile.txt").write_text(stream.getvalue(), encoding="utf-8")
+        report["line_motion"] = {"events": len(durations), "elapsed_s": time.perf_counter() - started,
+                                 "dispatch_ms": durations, "loop_gaps_ms": gaps,
+                                 "snapshots_before_pause": snapshots_before, "snapshots_after_pause": snapshots_after,
+                                 "mapping_reads": panel.sketch_colors.mapping_reads, "region_builds": panel.sketch_regions.builds}
+        check("Line preview motion leaves native geometry unchanged", sketch.GeometryCount == count_before_line)
+        check("Line preview motion performs no closed-region rebuilds", panel.sketch_regions.builds == before_builds)
+        check("A paused pending endpoint performs no native recovery snapshots", snapshots_after == snapshots_before)
+        check("Line second-point motion has no half-second input or event-loop stalls", max(durations + gaps) < 500)
+        move(sketch, (10, 12, 0))
+        QtTest.QTest.mouseClick(widget, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, position(sketch, (10, 12, 0)))
+        wait(250)
+        check("Second endpoint commits one native line", sketch.GeometryCount == count_before_line + 1
+              and sketch.Geometry[-1].TypeId == "Part::GeomLineSegment")
+        Gui.runCommand("Sketcher_StopOperation")
+        check("Sketch finishes after the native drawing gesture", bool(panel.finish_sketch()))
+        wait(400)
+        check("Finished sketch restores its ordinary display and fill", sketch.ViewObject.Visibility
+              and panel.sketch_regions.entries[(doc.Name, sketch.Name)]["shown"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    if panel:
+        panel.sketch_regions.close()
+    for name in list(App.listDocuments()):
+        doc, gui = App.getDocument(name), Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    if panel:
+        panel.shutdown()
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+QtCore.QTimer.singleShot(90000, cleanup)
+QtCore.QTimer.singleShot(1200, run)
