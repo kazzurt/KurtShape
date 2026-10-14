@@ -10,7 +10,6 @@ from __future__ import annotations
 import json
 import re
 
-import FreeCAD as App
 
 EXPRESSION_PATTERN = r"[A-Za-z0-9_ .+*/()\[\]-]+"
 END_TYPES = ("blind", "through_all", "up_to_face")
