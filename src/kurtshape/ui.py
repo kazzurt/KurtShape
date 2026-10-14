@@ -10,6 +10,7 @@ import FreeCADGui as Gui
 from PySide import QtCore, QtGui
 from .core import Controller, ROOT, METADATA, OperationError, number
 from . import extrusion_edit
+from . import tool_search
 from .bridge import Bridge
 from . import navigation
 from . import geometry
@@ -204,6 +205,7 @@ class Panel(QtGui.QDockWidget):
                                      self.notify, native_runner=self.native_command,
                                      native_state=self.sketch_references.native_command_for_context)
         self.router.install()
+        self.router.search_provider = lambda parent=None: self.show_tool_search()
         session_dir = Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime")))
         session_dir.mkdir(parents=True, exist_ok=True)
         self.bridge = Bridge(controller, session_dir)
@@ -322,9 +324,11 @@ class Panel(QtGui.QDockWidget):
         self.end_type.addItems(["Blind", "Through all", "Up to face"])
         self.end_type.currentIndexChanged.connect(lambda: self.depth.setEnabled(self.end_type.currentIndex() == 0))
         self.reverse = QtGui.QCheckBox("Reverse direction")
+        self.reverse_user_set = False
+        self.reverse.clicked.connect(lambda *args: setattr(self, "reverse_user_set", True))
         self.result_operation = QtGui.QComboBox()
         self.result_operation.setObjectName("KurtShapeResultOperation")
-        for label, value in (("New", "new"), ("Add", "add"), ("Remove", "remove"), ("Intersect", "intersect")):
+        for label, value in (("New", "new"), ("Add", "add"), ("Cut", "remove"), ("Intersect", "intersect")):
             self.result_operation.addItem(label, value)
         self.merge_scope = QtGui.QComboBox()
         self.merge_scope.setObjectName("KurtShapeMergeScope")
@@ -417,6 +421,8 @@ class Panel(QtGui.QDockWidget):
     def tool(self, bar, text, callback, tip="", icon=None, modeling=False, command=None):
         action = QtGui.QAction(self.tool_icon(icon, command, text), text, self)
         action.setObjectName("KurtShapeTool_" + text.replace(" ", "_"))
+        if command:
+            action.setData(command)
         action.setToolTip(tip or text)
         action.setStatusTip(tip or text)
         action.triggered.connect(lambda checked=False: callback())
@@ -523,15 +529,16 @@ class Panel(QtGui.QDockWidget):
         self.model_bar.setMovable(False)
         self.model_bar.setIconSize(QtCore.QSize(20, 20))
         self.model_bar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
+        # Undo/Redo keep their (overridable) shortcuts, the Document menu and
+        # search; the toolbars no longer carry arrow buttons.
         self.history_actions = []
+        self.document_menu.addSeparator()
         for name, op, tip in [("Undo", "undo", "Undo · Ctrl+Z"), ("Redo", "redo", "Redo · Ctrl+Y")]:
-            self.history_actions.append(self.tool(self.model_bar, name, lambda kind=op: self.history_move(kind), tip))
-        self.model_bar.addSeparator()
+            self.history_actions.append(self.tool(self.document_menu, name, lambda kind=op: self.history_move(kind), tip))
         self.tool(self.model_bar, "New part", self.new_part, "Start a separate solid part. New sketches and features belong to the selected part.", modeling=True)
         for name, callback, tip, icon in [
             ("Sketch", self.start_sketch, "Create sketch · Shift+S", "Sketcher_NewSketch"),
-            ("Extrude", lambda: self.extrude(False), "Extrude sketch · Shift+E", "PartDesign_Pad"),
-            ("Remove", lambda: self.extrude(True), "Remove material with a sketch", "PartDesign_Pocket")]:
+            ("Extrude", lambda: self.extrude(False), "Extrude · New, Add, Cut or Intersect · Shift+E", "PartDesign_Pad")]:
             self.tool(self.model_bar, name, callback, tip, ":/icons/" + icon + ".svg", modeling=True, command=icon)
         self.model_bar.addSeparator()
         for native in self.catalog["primary"]:
@@ -557,7 +564,7 @@ class Panel(QtGui.QDockWidget):
             action = self.tool(self.model_bar, name, callback, tip, icon, modeling=name in {"Rebuild", "Check geometry"}, command=icon)
             if name == "Check geometry":
                 action.setProperty("kurtshapeHelp", "Optional solid validity check.\nExport checks automatically.")
-        self.model_bar.addWidget(SearchField(lambda: self.router.show_search(self.main)))
+        self.model_bar.addWidget(SearchField(self.show_tool_search))
         self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.model_bar)
         self.assembly_actions = []
         self.assembly_bar = QtGui.QToolBar("Assembly", self.main)
@@ -565,10 +572,6 @@ class Panel(QtGui.QDockWidget):
         self.assembly_bar.setMovable(False)
         self.assembly_bar.setIconSize(QtCore.QSize(20, 20))
         self.assembly_bar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
-        for action in self.history_actions:
-            self.assembly_bar.addAction(action)
-            self.toolbar_labels.register(self.assembly_bar.widgetForAction(action), action.text())
-        self.assembly_bar.addSeparator()
         for label, callback, tip in [
             ("Create Assembly", self.create_assembly, "Create one assembly in this project"),
             ("Insert", self.insert_assembly_part, "Insert a part from FCStd or STEP / STP · I"),
@@ -584,7 +587,7 @@ class Panel(QtGui.QDockWidget):
         self.tool(self.assembly_bar, "Joints", self.toggle_assembly_joints, "Show or hide joints · J / H")
         self.tool(self.assembly_bar, "Fit", self.fit, "Fit · F", "Std_ViewFitAll", command="Std_ViewFitAll")
         self.tool(self.assembly_bar, "3D", self.isometric, "Isometric · Shift+7", "Std_ViewIsometric", command="Std_ViewIsometric")
-        self.assembly_bar.addWidget(SearchField(lambda: self.router.show_search(self.main)))
+        self.assembly_bar.addWidget(SearchField(self.show_tool_search))
         self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.assembly_bar)
         self.assembly_bar.hide()
         self.sketch_bar = QtGui.QToolBar("Sketch", self.main)
@@ -592,10 +595,6 @@ class Panel(QtGui.QDockWidget):
         self.sketch_bar.setMovable(False)
         self.sketch_bar.setIconSize(QtCore.QSize(20, 20))
         self.sketch_bar.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
-        for action in self.history_actions:
-            self.sketch_bar.addAction(action)
-            self.toolbar_labels.register(self.sketch_bar.widgetForAction(action), action.text())
-        self.sketch_bar.addSeparator()
         for name, command, key in [("Line", "Sketcher_CreatePolyline", "L"), ("Rectangle", "Sketcher_CreateRectangle", "G"), ("Circle", "Sketcher_CreateCircle", "C"), ("Arc", "Sketcher_Create3PointArc", "A"), ("Spline", "Sketcher_CreateBSpline", ""), ("Point", "Sketcher_CreatePoint", "Shift+S"), ("Dimension", "Sketcher_Dimension", "D"), ("Trim", "Sketcher_Trimming", "M"), ("Construction", "Sketcher_ToggleConstruction", "Q")]:
             self.tool(self.sketch_bar, name, lambda c=command: self.native_command(c), name + (" · " + key if key else ""), ":/icons/" + command + ".svg", command=command)
         self.tool(self.sketch_bar, "Use", self.project_selected_geometry,
@@ -613,7 +612,7 @@ class Panel(QtGui.QDockWidget):
         self.tool(self.sketch_bar, "3D", self.isometric, "Sketch in 3D · Shift+7")
         finish = self.tool(self.sketch_bar, "Finish sketch", self.finish_sketch, "Commit changes", ":/icons/dialog-ok.svg")
         self.sketch_cancel_action = self.tool(self.sketch_bar, "Cancel sketch", lambda: self.finish_sketch(cancel=True), "Discard this edit session", ":/icons/dialog-cancel.svg")
-        self.sketch_bar.addWidget(SearchField(lambda: self.router.show_search(self.main)))
+        self.sketch_bar.addWidget(SearchField(self.show_tool_search))
         self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.sketch_bar)
         self.sketch_bar.hide()
         for bar in (self.document_bar, self.model_bar, self.assembly_bar, self.sketch_bar):
@@ -1988,10 +1987,18 @@ class Panel(QtGui.QDockWidget):
         return "auto" if choice.currentData() == "auto" else self.checked_parts(parts)
 
     def result_operation_changed(self, *args):
-        if self.task in {"pad", "pocket"}:
-            self.studio_operation_explicit = True
-            if isinstance(self.task_profile, dict):
-                self.reverse.setChecked(self.result_operation.currentData() == "remove")
+        if self.task in {"pad", "pocket"} and self.task_edit is None:
+            mode = self.result_operation.currentData()
+            # Add and Cut map to native Pad and Pocket. New and Intersect,
+            # an explicit scope or an enabled studio use studio operations.
+            self.task = "pocket" if mode == "remove" else "pad"
+            self.studio_operation_explicit = mode in {"new", "intersect"} or self.merge_scope.currentData() == "explicit"
+            if isinstance(self.task_profile, dict) and not self.reverse_user_set:
+                # A face's mode default: Extrude outward, Cut inward.
+                blocked = self.reverse.blockSignals(True)
+                self.reverse.setChecked(mode == "remove")
+                self.reverse.blockSignals(blocked)
+            self.editor_title.setText("Extrude · " + self.result_operation.currentText())
             self.configure_editor("extrude")
             self.schedule_preview()
 
@@ -2642,6 +2649,89 @@ class Panel(QtGui.QDockWidget):
                         + ", ".join(report["removed_groups"]) + " · Ctrl+Z restores them")
         return result
 
+    def tool_search_actions(self):
+        """Every visible tool action, with the bar/menu it lives in."""
+        found = []
+        def walk(actions, group, context):
+            for action in actions:
+                menu = action.menu()
+                if menu is not None:
+                    walk(menu.actions(), menu.title(), context)
+                    continue
+                if action.isSeparator() or not action.text() or isinstance(action, QtGui.QWidgetAction):
+                    continue
+                found.append({"label": action.text(), "command": action.data() if isinstance(action.data(), str) else None,
+                              "group": group, "context": context, "tip": action.toolTip(),
+                              "enabled": action.isEnabled(), "trigger": action.trigger})
+        walk(self.model_bar.actions(), "Part Studio", "model")
+        walk(self.sketch_bar.actions(), "Sketch", "sketch")
+        walk(self.assembly_bar.actions(), "Assembly", "assembly")
+        walk(self.document_menu.actions(), "Document", "general")
+        return found
+
+    def show_tool_search(self):
+        """One searchable list of toolbar, menu and shortcut tools."""
+        previous = getattr(self, "tool_search_dialog", None)
+        if previous is not None and previous.isVisible():
+            previous.activateWindow()
+            return previous
+        entries = tool_search.build_entries(self.tool_search_actions(), self.router.available_actions())
+        dialog = QtGui.QDialog(self.main)
+        dialog.setObjectName("KurtShapeToolSearchDialog")
+        dialog.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        dialog.setWindowTitle("Search tools")
+        dialog.resize(720, 520)
+        layout = QtGui.QVBoxLayout(dialog)
+        field = QtGui.QLineEdit()
+        field.setObjectName("KurtShapeToolSearchQuery")
+        field.setPlaceholderText("Type a tool name, alias or shortcut — e.g. cut, fillet, Shift+E")
+        layout.addWidget(field)
+        table = QtGui.QTreeWidget()
+        table.setObjectName("KurtShapeToolSearchResults")
+        table.setHeaderLabels(["Tool", "Shortcut", "Where", "Availability"])
+        table.setRootIsDecorated(False)
+        for column, width in enumerate((230, 100, 190)):
+            table.setColumnWidth(column, width)
+        layout.addWidget(table)
+        sketching = bool(self.active_sketch())
+        def fill(query=""):
+            table.clear()
+            for entry in tool_search.search(entries, query):
+                reason = tool_search.availability(entry, sketching, self.workspace_mode)
+                item = QtGui.QTreeWidgetItem([entry["label"], entry["shortcut"], " · ".join(entry["groups"]),
+                                              reason or "Available"])
+                item.setToolTip(0, entry["tip"] + ("\nAlso: " + ", ".join(entry["aliases"]) if entry["aliases"] else ""))
+                item.setData(0, QtCore.Qt.UserRole, entries.index(entry))
+                if reason:
+                    item.setForeground(3, QtGui.QBrush(QtGui.QColor(COLORS.get("disabled_ink", "#777777"))))
+                table.addTopLevelItem(item)
+            if table.topLevelItemCount():
+                table.setCurrentItem(table.topLevelItem(0))
+        def activate(item=None, *args):
+            item = item or table.currentItem()
+            if item is None:
+                return
+            entry = entries[item.data(0, QtCore.Qt.UserRole)]
+            reason = tool_search.availability(entry, bool(self.active_sketch()), self.workspace_mode)
+            dialog.close()
+            if reason and ("Switch to" in reason or "Not available" in reason):
+                self.notify(entry["label"] + ": " + reason)
+                return
+            # Same behavior as the toolbar: its own action, or the shortcut.
+            if entry["trigger"] is not None:
+                entry["trigger"]()
+            elif entry["shortcut_id"]:
+                self.router.invoke(entry["shortcut_id"])
+        field.textChanged.connect(fill)
+        field.returnPressed.connect(activate)
+        table.itemActivated.connect(activate)
+        fill()
+        self.tool_search_dialog = dialog
+        self.tool_search_entries = entries
+        dialog.show()
+        field.setFocus()
+        return dialog
+
     def fill_recovery(self, menu):
         menu.clear()
         records = self.core.recovery.available()
@@ -3211,7 +3301,8 @@ class Panel(QtGui.QDockWidget):
         self.result_operation.blockSignals(False)
         self.merge_scope.setCurrentIndex(0)
         self.fill_merge_parts(self.merge_parts, [entry["id"] for entry in self.studio_parts() if entry["body"] == (profile_owner.Name if profile_owner else "")])
-        self.editor_title.setText("Remove material" if cut else "Extrude")
+        self.editor_title.setText("Extrude · Cut" if cut else "Extrude")
+        self.reverse_user_set = False
         self.editor_help.setText("Selected face" if isinstance(self.task_profile, dict) else obj.Label + " · " + ("Remove material" if cut else "Extrude") if self.task_profile else "Select a closed sketch or a planar face.")
         self.end_type.setCurrentIndex(1 if cut else 0)
         self.end_type.model().item(1).setEnabled(True)

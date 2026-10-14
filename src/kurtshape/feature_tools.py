@@ -63,7 +63,7 @@ MODEL_TOOLS = (
     _tool('loft', 'Loft', 'PartDesign_AdditiveLoft', 'Connect two or more sketch sections to create or add material.', 'Add material'),
     _tool('additive_helix', 'Helical sweep', 'PartDesign_AdditiveHelix', 'Native Additive Helix: sweep a sketch along a parametric helix.', 'Add material'),
     _tool('additive_primitive', 'Additive primitives', 'PartDesign_CompPrimitiveAdditive', 'Native additive primitive controls: create a primitive feature in the active Body.', 'Add material', icon='PartDesign_AdditiveBox'),
-    _tool('pocket', 'Extrude remove', 'PartDesign_Pocket', 'Extrude a closed sketch or flat face to remove material from the selected part.', 'Remove material'),
+    _tool('pocket', 'Extrude · Cut', 'PartDesign_Pocket', 'Extrude in Cut mode: remove material with a closed sketch or flat face.', 'Remove material'),
     _tool('groove', 'Revolve remove', 'PartDesign_Groove', 'Revolve a closed sketch around an axis to remove material.', 'Remove material'),
     _tool('subtractive_sweep', 'Sweep remove', 'PartDesign_SubtractivePipe', 'Sweep a sketch profile along a path to remove material.', 'Remove material'),
     _tool('subtractive_loft', 'Loft remove', 'PartDesign_SubtractiveLoft', 'Remove material between two or more sketch sections.', 'Remove material'),

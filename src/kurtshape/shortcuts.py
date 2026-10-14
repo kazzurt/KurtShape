@@ -311,6 +311,9 @@ class ShortcutRouter:
             self.invoke(actions[chosen])
 
     def show_search(self, parent=None):
+        provider = getattr(self, "search_provider", None)
+        if provider is not None:
+            return provider(parent)
         self._show_command_dialog("search", parent)
 
     def _show_command_dialog(self, mode, parent):

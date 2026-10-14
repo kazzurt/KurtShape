@@ -90,7 +90,11 @@ def sample(sketch, label, xyz, expected):
     point = view.getPointOnViewport(sketch.getGlobalPlacement().multVec(App.Vector(*xyz)))
     x, y = round(point[0]), frame.height() - 1 - round(point[1])
     colors = [frame.pixelColor(i, j).getRgb()[:3] for i in range(x - 2, x + 3) for j in range(y - 2, y + 3)]
-    matching = sum(max(abs(a-b) for a, b in zip(color, expected)) < 5 for color in colors)
+    if callable(expected):
+        matching = sum(bool(expected(color)) for color in colors)
+        expected = getattr(expected, "description", "predicate")
+    else:
+        matching = sum(max(abs(a-b) for a, b in zip(color, expected)) < 5 for color in colors)
     report["samples"].append({"name": label, "point": xyz, "pixel": [x, y], "expected": expected, "matching": matching, "colors": sorted(set(colors))})
     check(label, matching >= 2)
 
@@ -182,7 +186,10 @@ def run():
         panel.normal()
         Gui.activeDocument().activeView().getCameraNode().height.setValue(100)
         wait(500)
-        gray = tuple(round(channel * 255) for channel in panel.sketch_regions.COLOR)
+        # A translucent blue tint over the background (blend mode is native).
+        def gray(color):
+            return color[2] - color[0] >= 15 and color[2] >= 180 and color != (255, 255, 255)
+        gray.description = "translucent blue tint"
         from kurtshape.sketch_regions import _prune_open_tails, region_faces
         edges = [edge for index, geometry in enumerate(sketch.Geometry) if not sketch.getConstruction(index) for edge in geometry.toShape().Edges]
         report["topology_probe"] = {"regions": entry(sketch)["region_count"], "area": entry(sketch)["area"],
@@ -192,10 +199,10 @@ def run():
         save()
         check("Native planar face builder finds four closed regions", entry(sketch)["region_count"] == 4)
         check("Nested holes and islands have correct native face area", abs(entry(sketch)["area"] - (900 + 47 * math.pi)) < 1e-5)
-        sample(sketch, "Closed rectangle interior is light gray", (-30, 0, 0), gray)
+        sample(sketch, "Closed rectangle interior is tinted", (-30, 0, 0), gray)
         sample(sketch, "A nested hole stays white", (-17, 5, 0), (255, 255, 255))
-        sample(sketch, "A nested closed island is light gray", (-19, 6, 0), gray)
-        sample(sketch, "A disjoint circle on the supporting face is light gray", (10, 12, 0), gray)
+        sample(sketch, "A nested closed island is tinted", (-19, 6, 0), gray)
+        sample(sketch, "A disjoint circle on the supporting face is tinted", (10, 12, 0), gray)
         sample(sketch, "An arc and diameter enclose a shaded region", (25, -6, 0), gray)
         sample(sketch, "Open polyline geometry has no interior fill", (-30, -25, 0), (255, 255, 255))
         sample(sketch, "Construction-only loops have no interior fill", (10, -30, 0), (255, 255, 255))

@@ -4,6 +4,8 @@ KurtShape uses portable FreeCAD 1.1.4, native Sketcher/PartDesign, and OCCT 7.8.
 
 **Edit existing features:** double-click an Extrude or Remove material row (or right-click → Edit) to reopen it in the same dialog with its current depth, formula, direction and end condition, an exact preview, and Confirm/Cancel. [Walkthrough, supported cases and limits](docs/EXTRUSION_EDIT.md).
 
+**Everyday modeling UI:** Alt+C searches every toolbar, menu and shortcut tool (with aliases such as *remove material*); one **Extrude** tool offers New / Add / Cut / Intersect; Undo/Redo moved from the toolbar to shortcuts, the Document menu and search; closed sketch regions render as a translucent tint on the surface. [Details, evidence and limits](docs/EVERYDAY_UI.md).
+
 **History lifecycle:** a finished new sketch is one Undo step; deleting a Part Studio operation removes its helpers; leftover helpers in older files are reported and repaired only on request; rolled-back modeling ignores future parts; rollback needs a deliberate marker drag. [Details and limits](docs/HISTORY_LIFECYCLE.md).
 
 **M1 remains in progress. Neither supplied Onshape design has been converted.** Source migration and edited-reference acceptance remain separate from this local modeling implementation. See [project continuity](docs/M1_PROGRESS.md) and [conversion coverage](docs/CONVERSION_COVERAGE.md).
