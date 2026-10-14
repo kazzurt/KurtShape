@@ -315,13 +315,8 @@ def current_part(doc, part, before=None):
     return match[0]
 
 
-def held_bodies(doc):
-    """Bodies whose part exists only beyond the rollback bar.
-
-    A held part has no solid at the bar, so it looks like an empty original
-    Body. New work there would model against, or reuse the identity of,
-    future history. Parts current at the bar are never held.
-    """
+def held_part_ids(doc):
+    """Logical part IDs that exist only beyond the rollback bar."""
     if not enabled(doc):
         return set()
     features = order(doc)
@@ -338,8 +333,19 @@ def held_bodies(doc):
             output = doc.getObject(name)
             if output is not None:
                 held_ids.add(part_id(output))
-    held_ids -= current
-    return {body.Name for body in doc.Objects if body.TypeId == "PartDesign::Body" and part_id(body) in held_ids}
+    return held_ids - current
+
+
+def held_bodies(doc):
+    """Generated result Bodies of parts that exist only beyond the bar.
+
+    New work there would model against future results. Original authoring
+    Bodies remain valid sketch containers (including before the first solid);
+    held_part_ids still keeps new results from adopting a future identity.
+    """
+    ids = held_part_ids(doc)
+    return {body.Name for body in doc.Objects if body.TypeId == "PartDesign::Body" and part_id(body) in ids
+            and (getattr(body, "KurtShapeOutputGeneration", False) or getattr(body, "KurtShapeInternal", False))}
 
 
 def current_body(doc, part, before=None):
@@ -564,6 +570,22 @@ def _owned_elsewhere(obj, owner_name):
     return bool(other) and other != owner_name
 
 
+def native_closure(doc, names):
+    """Everything FreeCAD removes with these objects.
+
+    Removing a Body also removes its Origin with the origin axes and planes;
+    those implicit children must count for consumers and impact reports.
+    """
+    result = set(names)
+    for name in list(result):
+        obj = doc.getObject(name)
+        origin = getattr(obj, "Origin", None) if obj is not None and obj.TypeId == "PartDesign::Body" else None
+        if origin is not None:
+            result.add(origin.Name)
+            result.update(feature.Name for feature in getattr(origin, "OriginFeatures", []))
+    return result
+
+
 def closure_report(doc, members):
     """Consumers outside a removal set, and the shared inputs it only reads."""
     names = {obj.Name for obj in members}
@@ -591,8 +613,11 @@ def orphan_groups(doc):
             groups.setdefault(owner_name, []).append(obj)
     report = []
     for owner_name, members in sorted(groups.items()):
-        consumers, inputs = closure_report(doc, members)
-        report.append({"owner": owner_name, "objects": sorted(obj.Name for obj in members),
+        members = [obj for obj in members if not _owned_elsewhere(obj, owner_name)]
+        removed = native_closure(doc, {obj.Name for obj in members})
+        consumers, inputs = closure_report(doc, [doc.getObject(name) for name in removed])
+        report.append({"owner": owner_name, "objects": sorted(removed),
+                       "tagged_objects": sorted(obj.Name for obj in members),
                        "consumers": consumers, "inputs": inputs, "repairable": not consumers})
     return report
 
@@ -1214,7 +1239,7 @@ def _result_operation(controller, doc, req, name):
         profile = doc.getObject(req.get("profile", "") or (req.get("sections", [""])[0] if req.get("sections") else ""))
         source_owner = _body_owner(profile) if profile else None
         if (source_owner and part_id(source_owner) not in _state(doc, _cutoff(doc))
-                and source_owner.Name not in held_bodies(doc)):
+                and part_id(source_owner) not in held_part_ids(doc)):
             tool_body.KurtShapePartId = part_id(source_owner)
             label = req.get("name", getattr(source_owner, "KurtShapePartName", source_owner.Label))
         else:

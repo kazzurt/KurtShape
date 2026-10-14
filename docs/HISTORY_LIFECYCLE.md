@@ -46,10 +46,10 @@ Fixes:
 - The previews themselves were already bar-aware, because current parts, results and auto scope all use the rollback cutoff.
 
 Fixes:
-- `studio.held_bodies(doc)` identifies held parts.
+- `studio.held_part_ids(doc)` identifies parts that exist only beyond the bar. `studio.held_bodies(doc)` is limited to their *generated* result Bodies. Original authoring Bodies remain valid sketch containers, including at the start of history before the first solid.
 - The controller rejects new sketches in them (`held_part`).
 - New results never adopt a held part's identity.
-- The GUI part chooser excludes held parts.
+- The GUI part chooser never offers generated future results. It still offers original Bodies; rolled back to index 0, the original Body is offered and a sketch can start there.
 
 Tested end to end:
 - The in-process exact preview and the worker-process exact preview both model only the active state.
@@ -89,8 +89,8 @@ Use a disposable copy of any model.
    - Confirm, then delete `Sketch3`; it succeeds.
    - **Ctrl+Z** twice restores the sketch and the helpers.
 7. Create two parts. Drag the blue rollback marker above the second part.
-   - The part chooser no longer offers the held part.
-   - A new sketch overlapping both parts extrudes as **Add** to the first part, and the preview ignores the held part.
+   - Choose the first part in the part chooser. A new sketch overlapping both parts extrudes as **Add** to it, and the preview ignores the held part.
+   - Drag the marker to the very top (before the first solid). The original Body is offered, a sketch can start, and its result never takes a later part's identity.
    - Cancel keeps the marker in place. Confirm inserts the extrusion there. Dragging the marker to the end rebuilds both parts.
 8. Click between rows, click and double-click rows, scroll the history, and nudge the marker by 1–2 px: none of these rolls back. Start a marker drag and press **Escape**: the marker returns and nothing is committed.
 9. Run the automated checks:
@@ -121,3 +121,24 @@ Use a disposable copy of any model.
 - `test_part_studio.test_use_sketch_edit_groups_helper_creation_and_restores_undo_redo`.
 
 One deletion-plan assertion gained the new `helpers` key.
+
+### Correction pass (2026-10-14, cloud): native deletion closure and zero-solid rollback
+
+Windows review of `52b50b8` found two gaps. Codex reported 500 regression tests passing, plus `history-lifecycle` 26/26, `rollback-history` 45/45 and `extrusion-edit` 43/43.
+
+1. **Deleting a Body also removes its Origin, axes and planes.**
+   - Repair and operation deletion now compute this full native closure before checking consumers and reporting impact.
+   - `objects` lists everything that disappears, and `tagged_objects` lists only the owner-tagged objects. `kept_inputs` never names a removed object.
+   - A surviving consumer of an implicit child, such as a `PropertyLinkGlobal` to an origin plane, now blocks repair (`orphan_has_consumers`) and deletion (`external_dependency`). Nothing changes when it blocks.
+2. **Rolling back before the first solid.** `held_bodies()` had treated the original authoring Body as a future result. Now:
+   - Only generated result Bodies are held.
+   - Typed `create_sketch(body="Body")` at index 0 and `begin_sketch_edit(feature="Base", body="Body")` at index 1 succeed again, and the GUI offers the original Body.
+   - Lineage protection is kept: a New result created before a later part never adopts that part's identity, and rolling forward rebuilds both parts.
+
+| Check (fresh, cloud) | Result |
+|---|---|
+| `test_history_lifecycle` | 13/13 pass. The 4 new cases fail on `52b50b8`. |
+| `history-lifecycle` GUI recipe | 29/29, adding the index-0 sketch through the real panel |
+| Full runner | native 442 pass, 7 skip, 5 environmental `test_native_files` Windows-path failures; bridge 19/19; shortcuts 29/29; workflows 6/6 (415 checks) |
+
+**The original saved-file verification remains pending on Windows.**

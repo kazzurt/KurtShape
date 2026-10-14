@@ -162,7 +162,9 @@ class HistoryLifecycleTests(unittest.TestCase):
 
     def test_deleting_studio_operation_removes_its_helpers_and_undo_restores_them(self):
         self.studio_cut()
-        helpers = {obj.Name for obj in studio.operation_members(self.doc, "Cut")}
+        tagged = {obj.Name for obj in studio.operation_members(self.doc, "Cut")}
+        helpers = studio.native_closure(self.doc, tagged)  # with generated Bodies' origins
+        self.assertGreater(len(helpers), len(tagged))
         self.assertIn("CutToolProfile", helpers)
         self.assertNotIn("BaseFeature", helpers)  # Plate's own FeatureBase is a shared input
         plan = self.core.delete_features_plan(self.doc, ["Cut"])
@@ -241,6 +243,90 @@ class HistoryLifecycleTests(unittest.TestCase):
         self.assertEqual(error["owners"], ["Cut"])
         self.reject("no_orphans", "repair_orphan_helpers")
 
+    def legacy_orphan_with_origin_consumer(self):
+        self.studio_cut()
+        plane = self.doc.CutPart.Origin.OriginFeatures[3]  # implicit child of a generated Body
+        self.doc.openTransaction("legacy representative-only delete")
+        self.doc.removeObject("Cut")
+        survivor = self.doc.addObject("Part::Feature", "Survivor")
+        survivor.Shape = __import__("Part").makeBox(1, 1, 1)
+        survivor.addProperty("App::PropertyLinkGlobal", "Source")
+        survivor.Source = plane
+        self.doc.commitTransaction()
+        self.normalize()
+        return plane.Name
+
+    def test_repair_counts_native_body_children_and_keeps_their_consumers(self):
+        self.studio_cut()
+        self.doc.openTransaction("legacy representative-only delete")
+        self.doc.removeObject("Cut")
+        self.doc.commitTransaction()
+        self.normalize()
+        group = self.orphans()[0]
+        origins = {self.doc.CutPart.Origin.Name, *(f.Name for f in self.doc.CutPart.Origin.OriginFeatures)}
+        self.assertTrue(origins <= set(group["objects"]))
+        self.assertFalse(origins & set(group["inputs"]))
+        before = {obj.Name for obj in self.doc.Objects}
+        report = self.call("repair_orphan_helpers")["repair_report"]
+        vanished = before - {obj.Name for obj in self.doc.Objects}
+        self.assertEqual(vanished, set(group["objects"]))
+        self.assertFalse(vanished & set(report["kept_inputs"]))
+
+    def test_surviving_consumer_of_an_implicit_child_blocks_repair_and_deletion(self):
+        plane = self.legacy_orphan_with_origin_consumer()
+        group = self.orphans()[0]
+        self.assertFalse(group["repairable"])
+        self.assertEqual(group["consumers"], ["Survivor"])
+        self.reject("orphan_has_consumers", "repair_orphan_helpers", owners=["Cut"])
+        self.reject("no_orphans", "repair_orphan_helpers")
+        self.assertEqual(self.doc.Survivor.Source.Name, plane)
+        # Ordinary operation deletion counts the same implicit children.
+        self.call("new")
+        self.studio_cut()
+        self.doc.openTransaction("survivor")
+        survivor = self.doc.addObject("Part::Feature", "Survivor")
+        survivor.Shape = __import__("Part").makeBox(1, 1, 1)
+        survivor.addProperty("App::PropertyLinkGlobal", "Source")
+        survivor.Source = self.doc.CutPart.Origin.OriginFeatures[3]
+        self.doc.commitTransaction()
+        self.normalize()
+        error = self.reject("external_dependency", "delete_features", features=["Cut"])
+        self.assertEqual(error["feature"], "Survivor")
+        self.assertIsNotNone(self.doc.Survivor.Source)
+
+    def test_zero_current_solid_history_allows_original_body_sketches(self):
+        # Legacy native Pad in the original Body, rolled back before it.
+        self.call("sketch_rectangle", id="Base", width=20, height=10)
+        self.call("pad", id="Plate", profile="Base", length=6)
+        self.call("rollback", index=0)
+        self.assertEqual(studio.held_bodies(self.doc), set())
+        self.call("create_sketch", id="Inserted", body="Body", plane="XY")
+        self.assertEqual(self.state["studio"]["feature_order"][0], "Inserted")
+        self.call("rollback", index=self.state["studio"]["feature_order"].index("Base") + 1)
+        self.call("begin_sketch_edit", feature="Base", body="Body")
+        self.call("finish_sketch_edit", cancel=True)
+        self.call("rollback", index=len(self.state["studio"]["feature_order"]))
+        self.assertEqual(self.state["build_status"], "valid")
+        self.assertAlmostEqual(self.doc.Body.Shape.Volume, 1200)
+
+    def test_zero_current_solid_studio_insertion_keeps_future_identity(self):
+        self.call("sketch_rectangle", id="Base", width=20, height=10)
+        self.call("pad", id="Plate", profile="Base", length=6, operation="new")
+        plate_part = studio.part_id(self.doc.getObject(self.doc.Plate.KurtShapeOutputParts[0]))
+        self.call("rollback", index=0)
+        self.assertIn(plate_part, studio.held_part_ids(self.doc))
+        self.call("create_sketch", id="Inserted", body="Body", plane="XY")
+        self.call("add_rectangle", sketch="Inserted", width=5, height=5, x=40, y=0)
+        self.call("pad", id="Early", profile="Inserted", length=2, operation="new")
+        early_part = studio.part_id(self.doc.getObject(self.doc.Early.KurtShapeOutputParts[0]))
+        self.assertNotEqual(early_part, plate_part)
+        order = self.state["studio"]["feature_order"]
+        self.assertLess(order.index("Early"), order.index("Base"))
+        self.call("rollback", index=len(order))
+        self.assertEqual(self.state["build_status"], "valid")
+        parts = {studio.part_id(body): round(body.Shape.Volume, 6) for body in studio.current_parts(self.doc)}
+        self.assertEqual(parts, {early_part: 50.0, plate_part: 1200.0})
+
     # 3. Rolled-back modeling --------------------------------------------
 
     def rolled_back(self):
@@ -251,7 +337,8 @@ class HistoryLifecycleTests(unittest.TestCase):
         self.call("pad", id="Far", profile="FarProfile", length=6, operation="new")
         order = self.state["studio"]["feature_order"]
         self.call("rollback", index=order.index("FarProfile"))
-        self.assertEqual(studio.held_bodies(self.doc), {"FarBody", "FarToolBody"})
+        # Only the generated future result is held; FarBody stays an authoring Body.
+        self.assertEqual(studio.held_bodies(self.doc), {"FarToolBody"})
 
     def bridge(self):
         self.call("create_sketch", id="Bridge", plane="XY")
@@ -260,7 +347,7 @@ class HistoryLifecycleTests(unittest.TestCase):
 
     def test_held_future_parts_reject_new_work_and_lineage(self):
         self.rolled_back()
-        self.reject("held_part", "create_sketch", id="Inside", body="FarBody", plane="XY")
+        self.reject("held_part", "create_sketch", id="Inside", body="FarToolBody", plane="XY")
         # A New result from the current part never adopts a held part's identity.
         self.bridge()
         self.call("pad", id="Bridged", profile="Bridge", length=3, operation="new")

@@ -189,8 +189,10 @@ def validate():
         check("Keyboard returns the boundary", index() == rolled)
 
         # 3. Extrude while rolled back models only the active state.
-        check("The held future part is not offered for new work",
-              "FarBody" not in [panel.body_choice.itemData(i) for i in range(panel.body_choice.count())])
+        offered = [panel.body_choice.itemData(i) for i in range(panel.body_choice.count())]
+        check("No generated future result is offered for new work", not set(offered) & studio.held_bodies(doc()))
+        current = panel.state["studio"]["parts"][0]["body"]
+        panel.body_choice.setCurrentIndex(panel.body_choice.findData(current))
         panel.start_sketch()
         bridge = panel.begin_sketch(plane="XY")
         check("A new sketch goes to a current part, not the held one",
@@ -229,6 +231,17 @@ def validate():
         wait(200)
         check("Rolling forward rebuilds every part", panel.state["build_status"] == "valid"
               and len(studio.current_parts(doc())) == 2)
+        panel.rollback_to(0)
+        wait(200)
+        offered = [panel.body_choice.itemData(i) for i in range(panel.body_choice.count())]
+        check("Before the first solid, the original Body is offered", "Body" in offered and index() == 0)
+        panel.body_choice.setCurrentIndex(panel.body_choice.findData("Body"))
+        panel.start_sketch()
+        early = panel.begin_sketch(plane="XY")
+        check("A sketch can start at the beginning of history", early is not None and panel.active_sketch() is not None)
+        panel.finish_sketch(cancel=True)
+        check("Its insertion point is the start of history",
+              panel.state["studio"]["feature_order"][0] == early.Name and index() == 1)
         report.update(passed=True, engine={"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION})
     except Exception:
         report["error"] = traceback.format_exc()

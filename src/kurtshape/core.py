@@ -2170,7 +2170,9 @@ class Controller:
         helpers = set()
         for target in targets:
             if getattr(target, "KurtShapeStudioOperation", ""):
-                helpers.update(obj.Name for obj in studio.operation_members(doc, target.Name) if obj.Name not in selected)
+                members = {obj.Name for obj in studio.operation_members(doc, target.Name)}
+                # Include what native removal of generated Bodies takes with it.
+                helpers.update(name for name in studio.native_closure(doc, members) if name not in selected)
         for name in sorted(helpers):
             for dependent in doc.getObject(name).InList:
                 if dependent.Name not in removed | helpers and dependent.Name != METADATA:
@@ -2226,7 +2228,9 @@ class Controller:
         for name in plan["removed"]:
             upstream(doc.getObject(name))
         for name in reversed(ordered):
-            doc.removeObject(name)
+            # A removed Body takes its Origin, axes and planes with it.
+            if doc.getObject(name) is not None:
+                doc.removeObject(name)
         from .sketch_tools import prune_use_sources
         for name in ordered:
             prune_use_sources(doc, name)
