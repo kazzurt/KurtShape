@@ -302,6 +302,51 @@ class ExtrusionEditTests(unittest.TestCase):
         self.call("pad", profile="OpenProfile", length=2)
         self.assertAlmostEqual(self.doc.Body.Shape.Volume, 10 * 5 / 2 * 2)
 
+    def test_near_closed_and_transformed_open_profiles_report_sketch_coordinates(self):
+        self.call("create_sketch", id="AlmostClosed")
+        for x1, y1, x2, y2 in ((0, 0, 10, 0), (10, 0, 10, 5), (10, 5, 0, 5), (0, 5, 0, 0.0000004)):
+            self.call("add_line", sketch="AlmostClosed", x1=x1, y1=y1, x2=x2, y2=y2)
+        self.assertFalse(any(wire.isClosed() for wire in self.doc.AlmostClosed.Shape.Wires))
+        before = self.invariant()
+        response = self.request("pad", profile="AlmostClosed", length=2)
+        self.assertEqual(response["error"]["code"], "open_profile", response)
+        points = sorted(gap["point_mm"] for gap in response["error"]["open_endpoints"])
+        self.assertEqual(len(points), 2)
+        self.assertAlmostEqual(points[0][1], 0)
+        self.assertAlmostEqual(points[1][1], 0.0000004)
+        self.assertEqual(self.invariant(), before)
+
+        self.call("create_body", id="Moved")
+        self.doc.Moved.Placement = App.Placement(App.Vector(100, 200, 30), App.Rotation(App.Vector(0, 0, 1), 90))
+        self.doc.recompute()
+        self.call("inspect")
+        self.call("create_sketch", body="Moved", id="MovedOpen", plane="XY")
+        self.call("add_line", sketch="MovedOpen", x1=1, y1=2, x2=3, y2=4)
+        before = self.invariant()
+        response = self.request("pad", body="Moved", profile="MovedOpen", length=2)
+        self.assertEqual(response["error"]["code"], "open_profile", response)
+        self.assertEqual(sorted(gap["point_mm"] for gap in response["error"]["open_endpoints"]), [[1.0, 2.0], [3.0, 4.0]])
+        self.assertIn("(1, 2)", response["error"]["message"])
+        self.assertEqual(self.invariant(), before)
+
+    def test_signed_formula_depth_reports_actual_direction_and_is_kept(self):
+        self.call("sketch_rectangle", id="BaseProfile", width=20, height=10)
+        self.call("pad", id="Plate", profile="BaseProfile", length=3, operation="new")
+        self.assertEqual(self.describe("Plate")["direction"], "along")
+        self.call("edit_extrusion", feature="Plate", expression="-2 mm")
+        part = studio.current_parts(self.doc)[0]
+        self.assertAlmostEqual(part.Shape.BoundBox.ZMin, -2)
+        self.assertAlmostEqual(part.Shape.BoundBox.ZMax, 0)
+        info = self.describe("Plate")
+        self.assertEqual(info["direction"], "against")
+        self.assertEqual(info["length"]["expression"], "-2 mm")
+        self.assertTrue(any("negative" in item for item in info["limitations"]))
+        # A direction-only edit leaves the signed formula untouched.
+        self.call("edit_extrusion", feature="Plate", reversed=True)
+        self.assertEqual(self.describe("Plate")["length"]["expression"], "-2 mm")
+        self.assertAlmostEqual(studio.current_parts(self.doc)[0].Shape.BoundBox.ZMax, 2)
+        self.assertEqual(self.describe("Plate")["direction"], "along")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -21,7 +21,7 @@ main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
 main.resize(1440, 920)
 main.show()
 from kurtshape.ui import start
-from kurtshape.core import intent_signature
+from kurtshape.core import intent_signature, number
 from preview_validation import wait_for_exact
 panel = start()
 output = evidence_dir("extrusion-edit")
@@ -62,7 +62,10 @@ def double_click(key):
 def type_into(widget, text):
     widget.setFocus()
     widget.selectAll()
-    QtTest.QTest.keyClicks(widget, text)
+    if text:
+        QtTest.QTest.keyClicks(widget, text)
+    else:
+        QtTest.QTest.keyClick(widget, QtCore.Qt.Key_Backspace)
     QtTest.QTest.qWait(30)
 
 
@@ -189,16 +192,85 @@ def validate():
         panel.core.settings.grant_destination(project)  # as the human Save dialog does
         response = panel.core.dispatch({"op": "save", "document_id": panel.state["document_id"],
                                         "expected_revision": panel.state["revision"], "path": str(project)})
-        if response["ok"]:
-            App.closeDocument(document.Name)
-            call("open", path=str(project))
-            panel.refresh()
-            double_click("Pad")
-            check("Save/reopen keeps the formula visible in the reopened dialog",
-                  panel.formula.text() == "BaseProfile.Constraints.Width / 4")
-            panel.cancel_task()
-        else:
-            report["save_reopen_skipped"] = response["error"]
+        report["save_response_error"] = None if response["ok"] else response["error"]
+        check("Save of the edited project succeeds (required for save/reopen)", response["ok"])
+        App.closeDocument(document.Name)
+        call("open", path=str(project))
+        panel.refresh()
+        double_click("Pad")
+        check("Save/reopen keeps the formula visible in the reopened dialog",
+              panel.formula.text() == "BaseProfile.Constraints.Width / 4")
+        panel.cancel_task()
+
+        # Untouched fields never overwrite authoritative native values, even
+        # when the widget rounds, clamps or would retain stale text.
+        call("new")
+        call("sketch_rectangle", id="PreciseProfile", width=20, height=10)
+        call("pad", id="Precise", profile="PreciseProfile", length=6.123456)
+        call("create_body", id="TinyBody")
+        call("sketch_rectangle", body="TinyBody", id="TinyProfile", width=4, height=4, x=40, y=0)
+        call("pad", body="TinyBody", id="Tiny", profile="TinyProfile", length=0.005)
+        precise_doc = doc()
+        panel.refresh()
+        before = model(precise_doc)
+        double_click("Precise")
+        QtTest.QTest.qWait(300)
+        check("Untouched reopen reports no changes", panel.confirm.isEnabled() and "No changes" in panel.editor.verdict.text())
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Untouched Confirm keeps 6.123456 mm, revision and Undo history",
+              model(precise_doc) == before and abs(precise_doc.Precise.Length.Value - 6.123456) < 1e-12)
+        double_click("Tiny")
+        QtTest.QTest.qWait(300)
+        report["tiny_depth_display"] = {"field": panel.depth.lineEdit().text(), "help": panel.editor_help.text(),
+                                        "tooltip": panel.depth.toolTip()}
+        shown = number(panel.depth.lineEdit().text(), "Depth")
+        check("Reopening a 0.005 mm depth replaces the prior text with the native value, or states it exactly",
+              (abs(shown - 0.005) < 1e-12 or "0.005" in panel.editor_help.text() + panel.depth.toolTip())
+              and "6.12" not in panel.depth.lineEdit().text() and "No changes" in panel.editor.verdict.text())
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Untouched Confirm keeps 0.005 mm", model(precise_doc) == before
+              and abs(precise_doc.Tiny.Length.Value - 0.005) < 1e-12)
+
+        double_click("Precise")
+        panel.reverse.setChecked(True)
+        result = exact()
+        check("Direction-only proposal carries no depth", result.valid and "length" not in result.proposal)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Direction-only edit keeps the exact depth", precise_doc.Precise.Reversed
+              and abs(precise_doc.Precise.Length.Value - 6.123456) < 1e-12 and precise_doc.UndoCount == before[2] + 1)
+
+        call("set_expression", feature="Precise", parameter="Length", expression="PreciseProfile.Constraints.Width / 3")
+        double_click("Precise")
+        type_into(panel.formula, "")
+        result = exact()
+        check("Clearing a formula with untouched depth sends only the clear", result.valid
+              and result.proposal.get("expression", "missing") is None and "length" not in result.proposal)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Cleared formula keeps its exact evaluated depth", "Length" not in dict(precise_doc.Precise.ExpressionEngine)
+              and abs(precise_doc.Precise.Length.Value - 20 / 3) < 1e-12)
+
+        before = model(precise_doc)
+        double_click("Precise")
+        type_into(panel.depth.lineEdit(), "9")
+        exact()
+        type_into(panel.depth.lineEdit(), f"{20 / 3:.15g}")
+        QtTest.QTest.qWait(300)
+        check("Returning an in-flight edit to the native value reports no changes",
+              "No changes" in panel.editor.verdict.text() and panel.extrusion_preview.overlay.node is None)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Confirm after returning to the native value changes nothing", model(precise_doc) == before)
+        double_click("Precise")
+        type_into(panel.depth.lineEdit(), "11")
+        QtTest.QTest.mouseClick(panel.cancel, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(1500)
+        check("Cancel during an in-flight preview keeps the model and no late overlay appears",
+              model(precise_doc) == before and panel.task_edit is None
+              and panel.extrusion_preview.overlay.node is None and not panel.editor.isVisible())
 
         call("new")
         call("sketch_rectangle", id="StudioProfile", width=20, height=10)

@@ -30,40 +30,60 @@ def _label(obj):
     return obj.Label if obj is not None else None
 
 
+def _wire_endpoints(wire):
+    """Vertices used by exactly one edge, by topological identity (no rounding)."""
+    uses = []
+    for edge in wire.Edges:
+        for vertex in edge.Vertexes:
+            match = next((entry for entry in uses if entry[0].isSame(vertex)), None)
+            if match is None:
+                uses.append([vertex, 1])
+            else:
+                match[1] += 1
+    ends = [vertex for vertex, count in uses if count == 1]
+    if not ends:
+        ordered = wire.OrderedVertexes
+        ends = [ordered[0], ordered[-1]] if len(ordered) > 1 else []
+    return ends
+
+
 def profile_gaps(profile):
     """Free endpoints of open wires in a sketch's non-construction geometry.
 
-    Coordinates are sketch-local millimetres. An empty list means every wire
-    closes; it does not prove the native face maker accepts the profile.
+    Coordinates are sketch-local millimetres: the sketch Shape carries the
+    sketch Placement inside its Body, so only that placement is removed.
+    An empty list means every wire closes; it does not prove the native face
+    maker accepts the profile.
     """
     shape = getattr(profile, "Shape", None)
     if shape is None or shape.isNull():
         return []
-    inverse = profile.getGlobalPlacement().inverse() if hasattr(profile, "getGlobalPlacement") else App.Placement()
+    inverse = shape.Placement.inverse()
     gaps = []
     for index, wire in enumerate(shape.Wires):
         if wire.isClosed():
             continue
-        counts = {}
-        for edge in wire.Edges:
-            for vertex in edge.Vertexes:
-                key = tuple(round(value, 6) for value in vertex.Point)
-                counts[key] = counts.get(key, 0) + 1
-        for point, count in counts.items():
-            if count == 1:
-                local = inverse.multVec(App.Vector(*point))
-                gaps.append({"wire": index, "point_mm": [round(local.x, 4), round(local.y, 4)]})
+        for vertex in _wire_endpoints(wire):
+            local = inverse.multVec(vertex.Point)
+            gaps.append({"wire": index, "point_mm": [round(local.x, 9), round(local.y, 9)]})
     return gaps
 
 
 def open_profile_error(profile, prefix="Profile is open"):
+    """Actionable open-profile error, or None only when every wire is closed."""
+    shape = getattr(profile, "Shape", None)
+    open_wires = [wire for wire in shape.Wires if not wire.isClosed()] if shape is not None and not shape.isNull() else []
+    if not open_wires:
+        return None
     gaps = profile_gaps(profile)
     if not gaps:
-        return None
-    points = "; ".join("({:.4g}, {:.4g})".format(*gap["point_mm"]) for gap in gaps[:4])
+        return _error("open_profile", f"{prefix}: {len(open_wires)} open curve chain(s) in {profile.Label}. "
+                      "Close the gaps or mark the open curves as construction.",
+                      profile=profile.Name, open_endpoints=[])
+    points = "; ".join("({:.6g}, {:.6g})".format(*gap["point_mm"]) for gap in gaps[:4])
     more = f" and {len(gaps) - 4} more" if len(gaps) > 4 else ""
-    return _error("open_profile", f"{prefix}: {len(gaps)} free endpoint(s) in {profile.Label} at {points}{more} mm. "
-                  "Close the gaps or mark the open curves as construction.",
+    return _error("open_profile", f"{prefix}: {len(gaps)} free endpoint(s) in {profile.Label} at {points}{more} mm "
+                  "(sketch coordinates). Close the gaps or mark the open curves as construction.",
                   profile=profile.Name, open_endpoints=gaps)
 
 
@@ -119,7 +139,8 @@ def describe(doc, feature):
                            "native_feature": obj.Name, "native_property": "Length"},
                 "reversed": bool(obj.Reversed), "reverse_editable": reverse_reason is None,
                 "reverse_reason": reverse_reason, "_display_default": False,
-                "direction": "both" if getattr(obj, "Midplane", False) else ("along" if along else "against"),
+                "direction": "both" if getattr(obj, "Midplane", False) else _signed_direction(
+                    "along" if along else "against", obj.Length.Value, limitations),
                 "direction_reference": "sketch normal", "limitations": limitations}
     parts = _studio_parts(doc, obj)
     if parts is None:
@@ -163,8 +184,17 @@ def describe(doc, feature):
             "reversed": end_type != "through_all" and bool(tool.Reversed) != display_default,
             "reverse_editable": reverse_reason is None,
             "reverse_reason": reverse_reason, "_display_default": display_default,
-            "direction": "both" if end_type == "through_all" else ("against" if tool.Reversed else "along"),
+            "direction": "both" if end_type == "through_all" else _signed_direction(
+                "against" if tool.Reversed else "along", length["value"], limitations),
             "direction_reference": "face normal" if face_mode else "sketch normal", "limitations": limitations}
+
+
+def _signed_direction(direction, depth, limitations):
+    """A formula can evaluate negative; the solid then extends the other way."""
+    if depth is not None and depth < 0:
+        limitations.append("The depth formula evaluates negative, so the feature extends opposite its direction setting")
+        return "against" if direction == "along" else "along"
+    return direction
 
 
 def public(info):

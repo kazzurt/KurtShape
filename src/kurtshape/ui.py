@@ -191,6 +191,9 @@ class Panel(QtGui.QDockWidget):
         self.end_type.currentIndexChanged.connect(self.schedule_preview)
         self.reverse.toggled.connect(self.schedule_preview)
         self.formula.textChanged.connect(self.schedule_preview)
+        self.edit_depth_touched = False
+        self.depth.lineEdit().textEdited.connect(self.mark_depth_touched)
+        self.depth.native.installEventFilter(self)
         self.result_operation.currentIndexChanged.connect(self.result_operation_changed)
         self.merge_scope.currentIndexChanged.connect(self.schedule_preview)
         self.merge_parts.itemChanged.connect(self.schedule_preview)
@@ -3271,8 +3274,13 @@ class Panel(QtGui.QDockWidget):
             self.end_type.setToolTip("; ".join(info["limitations"]))
             self.end_face.setText("End face · " + (info["end_face"] or "retained"))
             self.end_face.setEnabled(False)
+            # Load the authoritative value without the creation range clamp
+            # (tiny or formula-signed depths). The widget may still round its
+            # display; an untouched field is therefore never resent.
+            self.depth.setRange(-1e6, 1e6)
             if info["length"]["value"] is not None:
                 self.depth.setValue(info["length"]["value"])
+            self.edit_depth_touched = False
             self.formula.setText(info["length"]["expression"] or "")
             self.formula.setPlaceholderText("Optional depth formula, e.g. Plate.Constraints.Width / 2")
             self.reverse.setChecked(info["reversed"])
@@ -3299,14 +3307,24 @@ class Panel(QtGui.QDockWidget):
         blind = self.end_type.currentIndex() == 0
         self.depth.setEnabled(blind and not self.formula.text().strip())
         self.formula.setEnabled(blind)
-        self.depth.setToolTip("Driven by the formula below; clear it to enter a depth"
-                              if self.formula.text().strip() else "Depth")
+        native = info["length"]["value"]
+        exact = f"{native:.12g} mm" if native is not None else None
+        rounded = False
+        if exact and not self.edit_depth_touched:
+            try:
+                rounded = abs(number(self.depth.lineEdit().text(), "Depth") - native) > 1e-12
+            except OperationError:
+                rounded = True
+        self.depth.setToolTip(("Driven by the formula below; clear it to enter a depth"
+                               if self.formula.text().strip() else "Depth")
+                              + (f" · exact value {exact} is kept unless you change it" if rounded else ""))
         direction = extrusion_edit.direction_after(info, self.reverse.isChecked())
         reference = info["direction_reference"]
         words = {"along": "along the " + reference, "against": "against the " + reference,
                  "both": "in both directions"}[direction]
         kind = "Remove material" if info["kind"] == "remove" else "Extrude"
-        self.editor_help.setText(f"{info['profile']['label'] or 'Profile'} · {kind} · {words}")
+        self.editor_help.setText(f"{info['profile']['label'] or 'Profile'} · {kind} · {words}"
+                                 + (f" · depth {exact} (shown rounded)" if rounded else ""))
 
     def extrusion_edit_proposal(self):
         """Only changed fields; unchanged formulas and directions are never resent."""
@@ -3323,16 +3341,24 @@ class Panel(QtGui.QDockWidget):
                     proposal["expression"] = formula
             else:
                 if current:
+                    # Clearing keeps the native, last evaluated depth.
                     proposal["expression"] = None
-                try:
-                    unchanged = abs(number(text, "Depth", True) - (info["length"]["value"] or 0)) < 1e-9
-                except OperationError:
-                    unchanged = False
-                if current or "end_type" in proposal or not unchanged:
-                    proposal["length"] = text
+                # Only an explicit user change sends a depth. Display text
+                # can be rounded, clamped or stale and is never authoritative.
+                if self.edit_depth_touched:
+                    try:
+                        unchanged = abs(number(text, "Depth", True) - (info["length"]["value"] or 0)) < 1e-12
+                    except OperationError:
+                        unchanged = False
+                    if not unchanged:
+                        proposal["length"] = text
         if self.reverse.isEnabled() and self.reverse.isChecked() != info["reversed"]:
             proposal["reversed"] = self.reverse.isChecked()
         return proposal
+
+    def mark_depth_touched(self, *args):
+        if self.task_edit is not None:
+            self.edit_depth_touched = True
 
     def edit_unchanged(self):
         return self.task_edit is not None and set(self.extrusion_edit_proposal()) == {"op", "feature"}
@@ -3367,6 +3393,8 @@ class Panel(QtGui.QDockWidget):
     def reset_edit_controls(self):
         """Return shared Extrude controls to their creation-time behavior."""
         self.task_edit = None
+        self.edit_depth_touched = False
+        self.depth.setRange(0.01, 100000)
         self.result_operation.setEnabled(True)
         self.result_operation.setToolTip("")
         self.reverse.setEnabled(True)
@@ -3909,6 +3937,11 @@ class Panel(QtGui.QDockWidget):
         if event.type() == QtCore.QEvent.MouseButtonRelease and self.active_sketch():
             self.core.record_edit_boundary(self.document())
             self.core.observer.state(self.document())["refresh"] = True
+        if self.task_edit is not None and (
+                watched is self.depth.native and event.type() in {QtCore.QEvent.MouseButtonPress, QtCore.QEvent.Wheel}
+                or watched in {self.depth.native, self.depth.lineEdit()} and event.type() == QtCore.QEvent.KeyPress
+                and event.key() in {QtCore.Qt.Key_Up, QtCore.Qt.Key_Down, QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown}):
+            self.mark_depth_touched()
         if event.type() == QtCore.QEvent.KeyPress and event.key() in {QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter}:
             if watched is self.depth.lineEdit() and self.task:
                 if event.modifiers() & QtCore.Qt.ShiftModifier:

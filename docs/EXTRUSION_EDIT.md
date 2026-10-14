@@ -14,7 +14,8 @@ Milestone 1 of the focused improvement plan: existing Extrude and Remove materia
 - **Preview:** the exact preview runs the same `edit_extrusion` operation on a disposable clone in the existing preview worker. It shows the changed region at the edited feature's own history step, drawn through the live model, which stays unchanged. The status line reports the resulting part-volume change. Confirm is enabled only for a current, valid exact result; acceptance behavior is unchanged.
 - **Confirm / Enter:** commits one undo step. The feature name, history position, attached sketches and downstream features are preserved, and later features rebuild. With no changes, Confirm closes without touching the model.
 - **Cancel / Escape:** closes with the accepted model, revision and history untouched. A failed preview or failed commit leaves the dialog open with the error, and the model unchanged.
-- **Open profiles:** a profile without any closed loop now fails immediately with `open_profile`, and the message lists free endpoints in sketch coordinates, for example `(0, 0); (10, 5) mm`. A profile that mixes closed and open curves keeps native behavior. When the native build fails on it, the same endpoint diagnostic replaces the generic error.
+- **Untouched values are never resent:** the dialog sends a depth only after you change the field by typing, arrow keys, spin buttons or the mouse wheel. Displayed text is never treated as authoritative. A depth the widget must round, such as 6.123456 mm, is kept exactly; the dialog's context line and the depth tooltip state the exact value. Direction-only edits and clearing a formula leave the native depth unchanged. Clearing keeps the formula's last evaluated value.
+- **Open profiles:** a profile without any closed loop now fails immediately with `open_profile`, and the message lists free endpoints in sketch coordinates, for example `(0, 0); (10, 5) mm`. Coordinates are local to the sketch, even inside a moved or rotated Body. Endpoints are found topologically, so a near-miss closure such as `(0, 0.0000004)` is still reported. A profile that mixes closed and open curves keeps native behavior. When the native build fails on it, the same endpoint diagnostic replaces the generic error.
 - **Studio Remove direction fix:** in a Part Studio, **Reverse direction** on a Blind Remove material previously had no effect, because both states cut into the material. Unchecked now cuts into the material and checked cuts the opposite way, matching legacy Remove.
 
 ## Supported features
@@ -35,6 +36,8 @@ A native Midplane (symmetric) extrusion edits its depth with direction locked. F
 - No end-condition change for Part Studio features. Studio Through all is a two-sided extrusion sized from scope bounds, and Up to face uses a separate carrier body, so switching requires rebuilding the feature graph. The dialog shows the end condition read-only with that reason, and the controller rejects the change with `unsupported_transition`.
 - No switch to **Up to face** while editing, and no change of result operation, merge scope or profile.
 - **Reverse direction** means "opposite this feature's default direction", where the default is what creation does when Reverse is unchecked. A legacy Remove that was created unchecked but automatically flipped to find material reopens as reversed; the direction line states the actual direction. A Studio Remove created through the API with `reversed:false` also reopens as reversed.
+- **Signed depth formulas** are kept as written. A formula that evaluates negative, such as `-2 mm` on a Part Studio extrusion, makes the solid extend opposite its direction setting. The dialog's direction line reports the actual direction and the end-condition tooltip explains why. The numeric depth field still accepts only positive values.
+- **Up to face in a transformed Body:** the provisional/exact creation preview can be inaccurate for Up to face in a moved or rotated Body. This was observed in an ordinary creation-preview control during review; it is not specific to editing. The broader investigation is deferred.
 - The general **Apply dimension** panel still lists a Studio Through all's computed length as a formula-driven "Length". Use the Edit dialog for these features.
 
 ## Controller operation
@@ -80,7 +83,7 @@ Automated checks:
 
 ```powershell
 .\run-checks.ps1                                    # all native/bridge/shortcut/workflow suites
-.\tools\run_gui_recipe.ps1 -Recipe extrusion-edit   # hidden GUI: real dialog, 31 checks
+.\tools\run_gui_recipe.ps1 -Recipe extrusion-edit   # hidden GUI: real dialog, 43 checks
 ```
 
 `tests/test_extrusion_edit.py` covers:
@@ -113,3 +116,21 @@ Linux-only harness accommodations, none of them in the repository:
 - A `python.exe` symlink.
 - `PYTHONPATH` for worker processes.
 - A guard on two GUI observers that read a view provider's `Object` before FreeCAD binds it. On the Linux build that read segfaults at startup, on unchanged baseline code too.
+
+### Correction pass (2026-10-14, cloud session, same Linux engine)
+
+These fixes follow Codex's Windows review of `7d1c56a`. Codex reported 489 tests passing with 4 opt-in performance skips, and 31/31 GUI checks.
+- Untouched depths are never resent.
+- Open-profile endpoints are found without rounding and reported in sketch coordinates.
+- Signed formula depths report their actual direction.
+- The GUI recipe now fails if the required Save fails.
+
+| Check (fresh, cloud) | Result |
+|---|---|
+| `test_extrusion_edit` | 11/11 pass. The 2 new cases (near-closed and transformed-Body open profiles; signed formula direction) fail on `7d1c56a`. |
+| Native suite (runner) | 429 pass, 7 skip, 5 fail. The failures are the same environmental `test_native_files` Windows-path assertions as before. |
+| Bridge / shortcuts / workflows | 19/19, 29/29, 6/6 (415 workflow checks) |
+| `extrusion-edit` GUI recipe | 43/43 pass. Against `7d1c56a`'s `ui.py` it fails at "Untouched reopen reports no changes" (6.123456 mm). |
+| Lint (`ruff 0.16.10`) | the 16 pre-existing findings are unchanged; no new ones |
+
+**Windows GUI acceptance of this correction pass has not been run.**
