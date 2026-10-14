@@ -133,10 +133,16 @@ def gap(position):
 
 
 def click_gap(position):
+    """Drag the marker itself to a named gap; plain gap clicks no longer roll back."""
     point = gap(position)
-    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+    marker = panel.rollback_bar
+    if marker.value() != position:
+        check("Current marker is visible before dragging", marker.isVisible())
+        QtTest.QTest.mousePress(marker, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, QtCore.QPoint(12, 5))
+        QtTest.QTest.mouseMove(marker, marker.mapFromParent(point), 40)
+        QtTest.QTest.mouseRelease(marker, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, marker.mapFromParent(point))
     wait(120)
-    check("Physical gap click commits its native boundary", index() == position and panel.rollback_bar.value() == position)
+    check("Physical marker drag commits its native boundary", index() == position and panel.rollback_bar.value() == position)
 
 
 def menu_feature(name, choose=None):
@@ -239,8 +245,10 @@ def validate():
         panel.features.setMaximumHeight(150)
         wait(120)
         check("Short feature viewport exposes a native scrollbar", panel.features.verticalScrollBar().maximum() > 0)
-        click_gap(0)
-        click_gap(4)
+        panel.rollback_to(0)
+        wait(120)
+        panel.rollback_to(4)
+        wait(120)
         check("Scrolled tree keeps the committed boundary visible at its named gap", marker.isVisible() and marker.gap_point(4).y() == marker.geometry().top() + 5)
         panel.features.setMaximumHeight(previous_height)
         wait(120)

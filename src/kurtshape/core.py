@@ -37,6 +37,10 @@ ROOT = Path(__file__).resolve().parents[2]
 WRITE_ROOT = ROOT.parent.resolve()
 METADATA = "KurtShapeProject"
 SKETCH_CANCEL_BOUNDARY = "KurtShape: cancelled sketch edit"
+SKETCH_CREATE = "KurtShape: create_sketch"
+# Content committed by the first Finish of a newly created sketch. Controller
+# Undo/Redo pairs it with the preceding creation, so the sketch is one step.
+SKETCH_CREATE_CONTENT = "KurtShape: new sketch contents"
 
 
 class OperationError(Exception):
@@ -228,11 +232,11 @@ def measurements(shape):
 
 
 class Controller:
-    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry"}
+    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
                     "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}
     MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line",
-                 "pad", "pocket", "edit_extrusion", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS
+                 "pad", "pocket", "edit_extrusion", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "repair_orphan_helpers", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS
     EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "set_parameter", "set_expression", "set_sketch_support", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
     CREATE_OPS = {"new", "open", "recover", "import_step"}
     OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
@@ -251,6 +255,7 @@ class Controller:
         "edit_extrusion": {"feature", "length", "expression", "reversed", "end_type"},
         "rename_feature": {"feature", "name"}, "delete_feature": {"feature", "cascade"},
         "delete_features": {"features", "cascade"},
+        "orphan_helpers": set(), "repair_orphan_helpers": {"owners"},
         "set_parameter": {"feature","parameter","value"}, "rebuild": set(), "undo": set(), "redo": set(),
         "set_expression": {"feature", "parameter", "expression"},
         "duplicate_feature": {"feature", "fingerprint"},
@@ -286,6 +291,7 @@ class Controller:
         self.signatures = {}
         self.last_failures = {}
         self.sketch_edits = {}
+        self.created_sketches = {}
         self.busy = False
         self.settings = Settings(ROOT)
         self.geometry = geometry.GeometryCache(shape_of=native_assembly.global_shape,
@@ -1146,7 +1152,8 @@ class Controller:
             doc.commitTransaction()
         if doc.UndoCount < editing["undo_before"]:
             raise OperationError("sketch_history_changed", "Native document history changed outside the managed sketch lease")
-        if doc.UndoCount > editing["undo_before"] + 1:
+        created = editing.get("created") and doc.UndoCount > editing["undo_before"]
+        if doc.UndoCount > editing["undo_before"] + 1 or created:
             sketch = doc.getObject(editing["feature"])
             final = bytes(sketch.dumpContent())
             label = sketch.Label
@@ -1158,7 +1165,7 @@ class Controller:
             sketch = doc.getObject(editing["feature"])
             if sketch is None:
                 raise OperationError("sketch_history_changed", "The accepted sketch no longer exists in native history")
-            doc.openTransaction(f"KurtShape: edit {label}")
+            doc.openTransaction(f"{SKETCH_CREATE_CONTENT} {label}" if created else f"KurtShape: edit {label}")
             restore_use_sources(doc, editing["use_sources"])
             restore_sketch_content(sketch, final)
             prune_use_sources(doc, editing["feature"])
@@ -1200,7 +1207,13 @@ class Controller:
             self._new_revision(doc)
         if not getattr(doc, names):
             raise OperationError("empty_history", f"No {op} available")
+        step = getattr(doc, names)[0]
         getattr(doc, op)()
+        # A newly created sketch and its first finished contents are one step.
+        if op == "undo" and step.startswith(SKETCH_CREATE_CONTENT) and doc.UndoNames and doc.UndoNames[0] == SKETCH_CREATE:
+            doc.undo()
+        if op == "redo" and step == SKETCH_CREATE and doc.RedoNames and doc.RedoNames[0].startswith(SKETCH_CREATE_CONTENT):
+            doc.redo()
         if op == "redo":
             while doc.RedoNames and doc.RedoNames[0] == SKETCH_CANCEL_BOUNDARY:
                 doc.redo()
@@ -1517,6 +1530,8 @@ class Controller:
             else:
                 doc = self._doc(request)
                 check_report = None
+                if op == "orphan_helpers":
+                    return {"ok": True, "result": {"groups": studio.orphan_groups(doc)}}
                 if op == "resolve_selector":
                     return {"ok": True, "result": {"matches": native_selectors.resolve(doc, request.get("selector"))}}
                 if op == "preview":
@@ -1574,11 +1589,16 @@ class Controller:
                         raise OperationError("unmanaged_transaction", "Finish the existing native transaction before starting sketch editing")
                     undo_before = doc.UndoCount
                     initial = bytes(sketch.dumpContent())
+                    # The lease directly follows this sketch's own creation
+                    # (same revision, same native undo depth, no redo).
+                    created = self.created_sketches.pop(self._meta(doc).DocumentId, None)
+                    created = bool(created and created == (sketch.Name, undo_before, self._meta(doc).Revision)
+                                   and doc.UndoNames and doc.UndoNames[0] == SKETCH_CREATE and not doc.RedoCount)
                     doc.openTransaction(f"KurtShape: edit {sketch.Label}")
                     self.sketch_edits[self._meta(doc).DocumentId] = {
                         "feature": sketch.Name, "signature": self._sketch_edit_signature(doc, sketch.Name),
                         "initial": initial, "undo_before": undo_before,
-                        "undo": [initial], "redo": []}
+                        "undo": [initial], "redo": [], "created": created}
                     self._new_revision(doc)
                 elif op == "finish_sketch_edit":
                     editing = self.sketch_edits.get(self._meta(doc).DocumentId)
@@ -1663,6 +1683,10 @@ class Controller:
                             App.closeActiveTransaction()
                     transaction = False
                     self._new_revision(doc)
+                    created_name = self.__dict__.pop("_new_sketch_name", None)
+                    if op == "create_sketch" and not editing and created_name:
+                        self.created_sketches[self._meta(doc).DocumentId] = (
+                            created_name, doc.UndoCount, self._meta(doc).Revision)
                 elif op in {"undo", "redo"}:
                     editing = self.sketch_edits.get(self._meta(doc).DocumentId)
                     if editing:
@@ -1693,6 +1717,8 @@ class Controller:
                 result["geometry_check_report"] = check_report
             if created_feature:
                 result["created_feature"] = created_feature
+            if op == "repair_orphan_helpers":
+                result["repair_report"] = self.__dict__.pop("_repair_report", None)
             if op in {"save", "open"} and getattr(App, "GuiUp", False):
                 import FreeCADGui as Gui
                 # saveCopy intentionally preserves the GUI dirty flag; open
@@ -2019,6 +2045,9 @@ class Controller:
     def _new_sketch(self, doc, req, fallback):
         target = doc.getObject(req.get("support", {}).get("feature", ""))
         body = self._body(doc, req, target)
+        if body.Name in studio.held_bodies(doc):
+            raise OperationError("held_part", "This part is created later in the rolled-back history; roll forward to add features to it",
+                                 body=body.Name)
         support, element = self._sketch_support(doc, req, body)
         sk = doc.addObject("Sketcher::SketchObject", self._id(doc, req, fallback))
         body.addObject(sk)
@@ -2136,13 +2165,29 @@ class Controller:
         pending = list(targets)
         selected = {target.Name for target in targets}
         removed = set(selected)
+        # A studio operation owns generated helpers (tool, binders, snapshot and
+        # result Bodies). They go with their representative, never alone.
+        helpers = set()
+        for target in targets:
+            if getattr(target, "KurtShapeStudioOperation", ""):
+                helpers.update(obj.Name for obj in studio.operation_members(doc, target.Name) if obj.Name not in selected)
+        for name in sorted(helpers):
+            for dependent in doc.getObject(name).InList:
+                if dependent.Name not in removed | helpers and dependent.Name != METADATA:
+                    raise OperationError("external_dependency", "A later feature depends on this operation's result",
+                                         feature=dependent.Name)
+        removed |= helpers
         while pending:
             obj = pending.pop()
             selected_body = owners[obj.Name]
             for dependent in obj.InList:
-                if dependent == selected_body or dependent.Name == METADATA:
+                if dependent == selected_body or dependent.Name == METADATA or dependent.Name in helpers:
                     continue
                 if dependent not in selected_body.Group:
+                    leftover = getattr(dependent, "KurtShapeOperationOwner", "")
+                    if leftover and doc.getObject(leftover) is None:
+                        raise OperationError("orphan_helpers", f"Leftover helpers from the removed operation {leftover} still reference this feature. "
+                                             "Use Repair leftover helpers, then delete again.", feature=dependent.Name, owner=leftover)
                     raise OperationError("external_dependency", "A feature outside this Body depends on the deletion", feature=dependent.Name)
                 if not self._deletable_feature(dependent, selected_body):
                     raise OperationError("unsupported_dependency", "A script-owned or unsupported feature depends on this deletion", feature=dependent.Name)
@@ -2154,7 +2199,8 @@ class Controller:
         ordered = [obj.Name for obj in studio.order(doc) if obj.Name in removed]
         ordered.extend(obj.Name for obj in doc.Objects if obj.Name in removed and obj.Name not in ordered)
         return {"selected": [name for name in ordered if name in selected],
-                "dependents": [name for name in ordered if name not in selected], "removed": ordered}
+                "dependents": [name for name in ordered if name not in selected and name not in helpers],
+                "helpers": [name for name in ordered if name in helpers], "removed": ordered}
 
     def _delete_features(self, doc, req):
         cascade = req.get("cascade", False)
@@ -2164,7 +2210,8 @@ class Controller:
         if plan["dependents"] and not cascade:
             raise OperationError("dependent_features", "Deletion requires explicit cascade because unselected native features depend on it", dependents=plan["dependents"])
         removed = set(plan["removed"])
-        affected = {owner(doc, doc.getObject(name)).Name for name in removed}
+        affected = {body.Name for body in (owner(doc, doc.getObject(name)) for name in removed)
+                    if body is not None and body.Name not in removed}
         # Native dependencies establish removal order even if a user reordered
         # Body.Group. Consumers must go before their supporting features.
         ordered, visiting = [], set()
@@ -2192,6 +2239,31 @@ class Controller:
         mapping = json.loads(meta.SourceMapping)
         meta.SourceMapping = json.dumps({key:value for key,value in mapping.items() if value not in removed}, sort_keys=True)
 
+    def _repair_orphan_helpers(self, doc, req):
+        groups = studio.orphan_groups(doc)
+        requested = req.get("owners")
+        if requested is not None and (not isinstance(requested, list) or not requested
+                                      or any(not isinstance(name, str) for name in requested)):
+            raise OperationError("invalid_argument", "owners must be a nonempty list of missing operation IDs")
+        by_owner = {group["owner"]: group for group in groups}
+        if requested is not None:
+            unknown = [name for name in requested if name not in by_owner]
+            if unknown:
+                raise OperationError("missing_reference", "No leftover helpers for these operation IDs", owners=unknown)
+            chosen = [by_owner[name] for name in requested]
+            blocked = [group["owner"] for group in chosen if not group["repairable"]]
+            if blocked:
+                raise OperationError("orphan_has_consumers", "Surviving features still use these helpers; they were kept",
+                                     owners=blocked, consumers={group["owner"]: group["consumers"] for group in chosen if not group["repairable"]})
+        else:
+            chosen = [group for group in groups if group["repairable"]]
+        if not chosen:
+            raise OperationError("no_orphans", "No repairable leftover helpers were found")
+        removed = studio.remove_objects(doc, [name for group in chosen for name in group["objects"]])
+        self._repair_report = {"removed_groups": [group["owner"] for group in chosen], "removed_objects": removed,
+                               "kept_inputs": sorted({name for group in chosen for name in group["inputs"]} - set(removed)),
+                               "skipped_groups": [group for group in groups if group not in chosen]}
+
     def _delete_feature(self, doc, req):
         self._delete_features(doc, dict(req, features=[req["feature"]]))
 
@@ -2202,6 +2274,9 @@ class Controller:
             return None
         if op == "edit_extrusion":
             extrusion_edit.apply(self, doc, req)
+            return None
+        if op == "repair_orphan_helpers":
+            self._repair_orphan_helpers(doc, req)
             return None
         if op in modeling_geometry.OPS:
             created = modeling_geometry.handle(self, doc, req)
@@ -2249,6 +2324,7 @@ class Controller:
             return None
         if op == "create_sketch":
             sk = self._new_sketch(doc, req, "Sketch")
+            self._new_sketch_name = sk.Name
         elif op == "sketch_rectangle":
             sk = self._new_sketch(doc, req, "Rectangle")
             self._add_rectangle(sk, req)

@@ -771,9 +771,11 @@ class PartStudioTests(unittest.TestCase):
         self.assertEqual(len(self.doc.UsedProfile.Shape.Edges), 4)
         helpers = [obj.Name for obj in self.doc.Objects if getattr(obj, "KurtShapeUseOwner", "") == "UsedProfile"]
         self.assertEqual(len(helpers), 4)
+        # The first Finish of a new sketch is one step with its creation.
         self.call("undo")
-        self.assertEqual(len(self.doc.UsedProfile.ExternalGeometry), 0)
+        self.assertIsNone(self.doc.getObject("UsedProfile"))
         self.assertTrue(all(self.doc.getObject(name) is None for name in helpers))
+        self.assertEqual(self.doc.UndoCount, before - 1)
         self.call("redo")
         self.assertEqual(len(self.doc.UsedProfile.Shape.Edges), 4)
         self.assertTrue(all(self.doc.getObject(name) is not None for name in helpers))

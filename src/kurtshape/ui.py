@@ -495,6 +495,8 @@ class Panel(QtGui.QDockWidget):
         document_menu.addMenu(recovery_menu)
         document_menu.addSeparator()
         self.tool(document_menu, "Adopt copy", self.adopt, "Create an editable copy of the inspected file")
+        self.tool(document_menu, "Repair leftover helpers", self.repair_orphan_helpers,
+                  "Review and remove helper objects left by operations that no longer exist · undoable")
         self.document_menu = document_menu
         self.document_name = DocumentLabel()
         self.document_name.setObjectName("KurtShapeDocumentIdentity")
@@ -1126,7 +1128,11 @@ class Panel(QtGui.QDockWidget):
         if not studio.get("enabled"):
             return originals
         current = [doc.getObject(entry["body"]) for entry in studio.get("parts", [])]
-        empty_owners = [body for body in originals if body.Shape.isNull() or not body.Shape.Solids]
+        # A Body held beyond the rollback bar also has no solid; it is future
+        # history, not an empty part for new work.
+        from .studio import held_bodies
+        held = held_bodies(doc)
+        empty_owners = [body for body in originals if (body.Shape.isNull() or not body.Shape.Solids) and body.Name not in held]
         return list(dict.fromkeys(body for body in current + empty_owners if body is not None))
 
     def plane(self, doc, plane):
@@ -1303,7 +1309,7 @@ class Panel(QtGui.QDockWidget):
                 self.notify("Assembly command canceled because its source project is no longer active.", "error")
                 return None
             args.update(document_id=self.state["document_id"], expected_revision=staged_revision or self.state["revision"])
-            if op in self.core.MODEL_OPS - {"create_body", "rebuild", "delete_features", "edit_extrusion"} and "body" not in args:
+            if op in self.core.MODEL_OPS - {"create_body", "rebuild", "delete_features", "edit_extrusion", "repair_orphan_helpers"} and "body" not in args:
                 target = doc.getObject(args.get("feature") or args.get("profile") or args.get("sketch") or args.get("support", {}).get("feature") or "")
                 body = owner(doc, target) or self.active_body()
                 if body:
@@ -1336,6 +1342,11 @@ class Panel(QtGui.QDockWidget):
         navigation.apply_navigation()
         action_name = {"pad": "Extrude", "pocket": "Remove material", "create_body": "New part", "edit_extrusion": "Feature update"}.get(op, op.replace("_", " ").capitalize())
         self.notify(action_name + " complete")
+        if op in {"open", "recover"}:
+            groups = self.orphan_report()
+            if groups:
+                self.notify(f"{sum(len(group['objects']) for group in groups)} leftover helper objects from removed operations "
+                            + ", ".join(group["owner"] for group in groups) + " · Menu → Repair leftover helpers")
         if op in {"open", "recover"} and self.state.get("rebuild_reason"):
             self.notify("Rebuild required · " + self.rebuild_reason_text(self.state))
         if op == "import_step":
@@ -2595,6 +2606,41 @@ class Panel(QtGui.QDockWidget):
                 action.triggered.connect(lambda checked=False, p=path: self.open_path(p))
         if not menu.actions():
             menu.addAction("No recent projects").setEnabled(False)
+
+    def orphan_report(self):
+        doc = self.document()
+        if not doc or not self.state:
+            return []
+        response = self.core.dispatch({"op": "orphan_helpers", "document_id": self.state["document_id"]})
+        return response["result"]["groups"] if response["ok"] else []
+
+    def repair_orphan_helpers(self):
+        """Explicit, undoable repair with an impact report; never automatic."""
+        groups = self.orphan_report()
+        if not groups:
+            self.notify("No leftover helpers found.")
+            return None
+        repairable = [group for group in groups if group["repairable"]]
+        lines = [f"{group['owner']}: {len(group['objects'])} helper objects"
+                 + (f" · reads {', '.join(group['inputs'][:4])} (kept)" if group["inputs"] else "")
+                 + ("" if group["repairable"] else f" · KEPT, still used by {', '.join(group['consumers'][:4])}")
+                 for group in groups]
+        if not repairable:
+            self.notify("Leftover helpers are still used by surviving features and were kept:\n" + "\n".join(lines), "error")
+            return None
+        answer = QtGui.QMessageBox.question(
+            self.main, "Repair leftover helpers",
+            "These operations no longer exist, but their helper objects remain:\n\n" + "\n".join(lines)
+            + "\n\nRemove the unused helpers? Inputs and surviving features are kept. Undo restores them.",
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel, QtGui.QMessageBox.Cancel)
+        if answer != QtGui.QMessageBox.Yes:
+            return None
+        result = self.operation("repair_orphan_helpers", owners=[group["owner"] for group in repairable])
+        if result:
+            report = result["repair_report"]
+            self.notify(f"Removed {len(report['removed_objects'])} leftover helpers from "
+                        + ", ".join(report["removed_groups"]) + " · Ctrl+Z restores them")
+        return result
 
     def fill_recovery(self, menu):
         menu.clear()

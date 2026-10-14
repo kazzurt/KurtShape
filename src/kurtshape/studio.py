@@ -315,11 +315,41 @@ def current_part(doc, part, before=None):
     return match[0]
 
 
+def held_bodies(doc):
+    """Bodies whose part exists only beyond the rollback bar.
+
+    A held part has no solid at the bar, so it looks like an empty original
+    Body. New work there would model against, or reuse the identity of,
+    future history. Parts current at the bar are never held.
+    """
+    if not enabled(doc):
+        return set()
+    features = order(doc)
+    bar = _cutoff(doc)
+    if bar >= len(features):
+        return set()
+    current = {part_id(entry[0]) for entry in _state(doc, bar).values()}
+    held_ids = set()
+    for obj in features[bar:]:
+        body = _body_owner(obj)
+        if body is not None:
+            held_ids.add(part_id(body))
+        for name in getattr(obj, "KurtShapeOutputParts", []):
+            output = doc.getObject(name)
+            if output is not None:
+                held_ids.add(part_id(output))
+    held_ids -= current
+    return {body.Name for body in doc.Objects if body.TypeId == "PartDesign::Body" and part_id(body) in held_ids}
+
+
 def current_body(doc, part, before=None):
     try:
         return current_part(doc, part, before)
     except Exception:
         obj = doc.getObject(part) if isinstance(part, str) else None
+        if obj is not None and obj.Name in held_bodies(doc):
+            raise _error("held_part", "This part is created later in the rolled-back history; roll forward to add features to it",
+                         part=part)
         if (obj and obj.TypeId == "PartDesign::Body" and not getattr(obj, "KurtShapeInternal", False)
                 and not getattr(obj, "KurtShapeOutputGeneration", False) and obj.Shape.isNull()):
             return obj
@@ -486,6 +516,14 @@ def _record(doc, representative, req, outputs, consumed=(), snapshots=()):
     def visit(obj):
         if obj in seen or obj in all_existing:
             return
+        existing = getattr(obj, "KurtShapeOperationOwner", "")
+        claimed = doc.getObject(existing) if existing and existing != representative.Name else None
+        # Intermediate owners (e.g. this operation's own tool) are retagged;
+        # objects owned by another studio operation never are.
+        if (claimed is not None and getattr(claimed, "KurtShapeStudioOperation", "")) or (
+                obj not in outputs and _owned_elsewhere(obj, representative.Name)):
+            # A shared input that belongs to an earlier operation's part.
+            return
         seen.add(obj)
         if obj != representative and obj not in outputs:
             _prop(obj, "App::PropertyBool", "KurtShapeInternal", True)
@@ -504,6 +542,81 @@ def _record(doc, representative, req, outputs, consumed=(), snapshots=()):
         meta.KurtShapeFeatureOrder = sequence
         meta.KurtShapeRollbackIndex = bar + 1
     return representative.Name
+
+
+def operation_members(doc, owner_name):
+    """Objects created for one studio operation, by their recorded owner tag.
+
+    Earlier releases also re-tagged shared inputs reached through
+    dependencies, such as a prior part's FeatureBase. An object inside a Body
+    owned by a different operation is that operation's input and is kept.
+    Helpers placed in an untagged user Body (such as an axis datum) remain.
+    """
+    tagged = [obj for obj in doc.Objects if getattr(obj, "KurtShapeOperationOwner", "") == owner_name]
+    return [obj for obj in tagged if not _owned_elsewhere(obj, owner_name)]
+
+
+def _owned_elsewhere(obj, owner_name):
+    container = _body_owner(obj) if obj.TypeId != "PartDesign::Body" else None
+    if container is None:
+        return False
+    other = getattr(container, "KurtShapeOperationOwner", "")
+    return bool(other) and other != owner_name
+
+
+def closure_report(doc, members):
+    """Consumers outside a removal set, and the shared inputs it only reads."""
+    names = {obj.Name for obj in members}
+    consumers, inputs = set(), set()
+    for obj in members:
+        for dependent in obj.InList:
+            if dependent.Name not in names and dependent.Name != META:
+                consumers.add(dependent.Name)
+        for source in obj.OutList:
+            if source.Name not in names:
+                inputs.add(source.Name)
+    return sorted(consumers), sorted(inputs)
+
+
+def orphan_groups(doc):
+    """Read-only: helpers whose owning operation no longer exists.
+
+    A group is repairable only when nothing outside it still depends on it.
+    Its inputs (profiles, source parts) are reported and always kept.
+    """
+    groups = {}
+    for obj in doc.Objects:
+        owner_name = getattr(obj, "KurtShapeOperationOwner", "")
+        if owner_name and doc.getObject(owner_name) is None:
+            groups.setdefault(owner_name, []).append(obj)
+    report = []
+    for owner_name, members in sorted(groups.items()):
+        consumers, inputs = closure_report(doc, members)
+        report.append({"owner": owner_name, "objects": sorted(obj.Name for obj in members),
+                       "consumers": consumers, "inputs": inputs, "repairable": not consumers})
+    return report
+
+
+def remove_objects(doc, names):
+    """Remove a dependency-closed set, consumers before their sources."""
+    names = set(names)
+    ordered, visiting = [], set()
+    def upstream(obj):
+        if obj.Name in visiting:
+            return
+        visiting.add(obj.Name)
+        for source in obj.OutList:
+            if source.Name in names:
+                upstream(source)
+        ordered.append(obj.Name)
+    for name in sorted(names):
+        obj = doc.getObject(name)
+        if obj is not None:
+            upstream(obj)
+    for name in reversed(ordered):
+        if doc.getObject(name) is not None:
+            doc.removeObject(name)
+    return ordered
 
 
 def prepare_recompute(doc):
@@ -1100,7 +1213,8 @@ def _result_operation(controller, doc, req, name):
         _prop(tool_body, "App::PropertyBool", "KurtShapeInternal", False)
         profile = doc.getObject(req.get("profile", "") or (req.get("sections", [""])[0] if req.get("sections") else ""))
         source_owner = _body_owner(profile) if profile else None
-        if source_owner and part_id(source_owner) not in _state(doc, _cutoff(doc)):
+        if (source_owner and part_id(source_owner) not in _state(doc, _cutoff(doc))
+                and source_owner.Name not in held_bodies(doc)):
             tool_body.KurtShapePartId = part_id(source_owner)
             label = req.get("name", getattr(source_owner, "KurtShapePartName", source_owner.Label))
         else:
