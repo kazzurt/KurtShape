@@ -2299,10 +2299,8 @@ class Panel(QtGui.QDockWidget):
                     fields["part"].setCurrentIndex(part_index)
                 fields["part"].setEnabled(False)
                 edit_base = doc.getObject(edit["base"])
-                Gui.Selection.clearSelection()
                 for entry in edit["edges"]:
                     fields["edges"].add(entry["reference"], entry["label"], (edit_base, entry["subelement"]))
-                    Gui.Selection.addSelection(edit_base, entry["subelement"])
                 amount = fields[edit["key"]]
                 # Load the authoritative value without the creation clamp; an
                 # untouched (possibly display-rounded) field is never resent.
@@ -2556,6 +2554,11 @@ class Panel(QtGui.QDockWidget):
                 return
             if edit:
                 self.dress_up_history.enter(doc.getObject(edit["feature"]), hide_self=True)
+                # Highlight the current edges once their input is visible.
+                Gui.Selection.clearSelection()
+                for native in fields["edges"].native_inputs:
+                    if native:
+                        Gui.Selection.addSelection(native[0], native[1])
             if operation in {"fillet", "chamfer"}:
                 self.edge_picking.start(doc, eligible, label.lower(), feedback=lambda reason: self.notify(reason))
             adapter.begin(doc, tokens["_expected_revision"])
