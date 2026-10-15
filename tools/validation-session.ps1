@@ -74,6 +74,8 @@ function Invoke-KurtShapeValidationPython {
     $stderr = Join-Path $processFolder ($Name + '-' + $stamp + '-stderr.txt')
     $quoted = @($Arguments | ForEach-Object { '"' + $_ + '"' })
     $process = Start-Process -FilePath $Executable -ArgumentList $quoted -WorkingDirectory $env:KURTSHAPE_ROOT -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+    # Windows PowerShell reports a null ExitCode unless the handle is opened while running.
+    $null = $process.Handle
     $ownershipTransferred = $false
     try {
         Register-KurtShapeValidationProcess -Process $process -Executable $Executable -Arguments $quoted

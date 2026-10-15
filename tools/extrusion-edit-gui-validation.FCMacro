@@ -1,0 +1,339 @@
+"""Hidden GUI checks: reopen existing Extrude/Remove features in the feature dialog."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+from kurtshape.ui import start
+from kurtshape.core import intent_signature, number
+from preview_validation import wait_for_exact
+panel = start()
+output = evidence_dir("extrusion-edit")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "method": "Separate hidden native GUI; actual history double-click, typed fields, Confirm/Cancel/Enter"}
+
+
+def check(label, condition):
+    assert condition, label + ": " + panel.message.text() + " | " + panel.editor.verdict.text()
+    report["checks"].append(label)
+
+
+def call(op, **args):
+    state = panel.operation(op, **args)
+    assert state, panel.message.text()
+    return state
+
+
+def doc():
+    return App.activeDocument()
+
+
+def model(document):
+    return (intent_signature(document), panel.core._meta(document).Revision, document.UndoCount, document.RedoCount)
+
+
+def double_click(key):
+    item = panel.items[key]
+    panel.features.scrollToItem(item)
+    rect = panel.features.visualItemRect(item)
+    # A real double-click delivers press/release before the double-click event;
+    # Qt 6 QTest.mouseDClick sends only the latter, which item views ignore.
+    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, rect.center())
+    QtTest.QTest.mouseDClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, rect.center())
+    QtTest.QTest.qWait(50)
+
+
+def type_into(widget, text):
+    widget.setFocus()
+    widget.selectAll()
+    if text:
+        QtTest.QTest.keyClicks(widget, text)
+    else:
+        QtTest.QTest.keyClick(widget, QtCore.Qt.Key_Backspace)
+    QtTest.QTest.qWait(30)
+
+
+def exact():
+    result = wait_for_exact(panel.extrusion_preview)
+    QtTest.QTest.qWait(30)
+    return result
+
+
+def top(feature, z):
+    shape = doc().getObject(feature).Shape
+    return "Face" + str(next(index + 1 for index, face in enumerate(shape.Faces)
+                             if abs(face.CenterOfMass.z - z) < 1e-7 and face.normalAt(0, 0).z > 0.999))
+
+
+def validate():
+    try:
+        call("sketch_rectangle", id="BaseProfile", width=20, height=10)
+        call("pad", id="Pad", profile="BaseProfile", length=6)
+        call("sketch_circle", id="Bore", x=10, y=5, diameter=4, support={"feature": "Pad", "subelement": top("Pad", 6)})
+        call("pocket", id="Cut", profile="Bore", through_all=True)
+        document = doc()
+        panel.refresh()
+
+        double_click("Pad")
+        check("Double-click reopens Extrude in the feature dialog", panel.editor.isVisible() and panel.task_edit is not None
+              and panel.editor_title.text() == "Pad" and panel.confirm.isVisible())
+        check("Dialog shows current native depth, end condition and direction",
+              abs(panel.depth.value() - 6) < 1e-9 and panel.end_type.currentText() == "Blind"
+              and not panel.reverse.isChecked() and panel.formula.text() == "" and panel.formula.isVisible())
+        check("Existing feature keeps its operation and offers only supported end conditions",
+              not panel.result_operation.isEnabled() and not panel.end_type.model().item(1).isEnabled())
+        check("Unchanged settings allow Confirm without a model change", panel.confirm.isEnabled()
+              and "No changes" in panel.editor.verdict.text())
+        before = model(document)
+        type_into(panel.depth.lineEdit(), "10 mm")
+        result = exact()
+        check("Edited depth produces an exact valid preview", result.valid and result.proposal.get("length") == 10)
+        check("Preview overlay is shown while the live model is unchanged",
+              panel.extrusion_preview.overlay.node is not None and model(document) == before
+              and abs(document.Pad.Length.Value - 6) < 1e-9)
+        check("Exact preview enables Confirm", panel.confirm.isEnabled())
+        main.grab().save(str(output / "edit-preview.png"))
+        panel.editor.grab().save(str(output / "edit-dialog.png"))
+        QtTest.QTest.keyClick(panel.depth.lineEdit(), QtCore.Qt.Key_Return)
+        QtTest.QTest.qWait(50)
+        check("Enter commits the edit as one undo step with the same feature identity",
+              abs(document.Pad.Length.Value - 10) < 1e-9 and document.UndoCount == before[2] + 1
+              and not panel.editor.isVisible() and panel.task_edit is None and panel.selected() == "Pad")
+        check("Downstream attached sketch follows the edited face",
+              abs(document.Bore.getGlobalPlacement().Base.z - 10) < 1e-7 and panel.state["build_status"] == "valid")
+
+        double_click("Pad")
+        check("Reopened dialog shows the accepted depth", abs(panel.depth.value() - 10) < 1e-9)
+        type_into(panel.formula, "BaseProfile.Constraints.Width / 4")
+        check("A depth formula disables the numeric depth field", not panel.depth.isEnabled())
+        result = exact()
+        check("Formula edit previews exactly", result.valid and result.proposal.get("expression") == "BaseProfile.Constraints.Width / 4")
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Confirm stores the native formula", dict(document.Pad.ExpressionEngine).get("Length") == "BaseProfile.Constraints.Width / 4"
+              and abs(document.Pad.Length.Value - 5) < 1e-9)
+
+        double_click("Pad")
+        check("Reopened dialog shows the formula, not a stored creation value",
+              panel.formula.text() == "BaseProfile.Constraints.Width / 4" and not panel.depth.isEnabled()
+              and abs(panel.depth.value() - 5) < 1e-9)
+        before = model(document)
+        panel.reverse.setChecked(True)
+        exact()
+        QtTest.QTest.mouseClick(panel.cancel, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Cancel closes the dialog and leaves the accepted model intact",
+              not panel.editor.isVisible() and panel.task_edit is None and model(document) == before
+              and not document.Pad.Reversed and panel.extrusion_preview.overlay.node is None)
+
+        double_click("Cut")
+        check("Remove material reopens with its Through all end condition",
+              panel.task == "pocket" and panel.end_type.currentText() == "Through all"
+              and panel.end_type.model().item(0).isEnabled() and not panel.depth.isEnabled())
+        panel.end_type.setCurrentIndex(0)
+        type_into(panel.depth.lineEdit(), "2")
+        result = exact()
+        check("Blind transition previews removed material", result.valid and result.proposal.get("end_type") == "blind"
+              and result.measurements.get("edit_removal"))
+        QtTest.QTest.keyClick(panel.depth.lineEdit(), QtCore.Qt.Key_Return)
+        QtTest.QTest.qWait(50)
+        check("Native Pocket switches to Blind in place", str(document.Cut.Type) == "Length"
+              and abs(document.Cut.Length.Value - 2) < 1e-9)
+
+        double_click("Cut")
+        before = model(document)
+        panel.reverse.setChecked(True)
+        result = exact()
+        check("A cut that removes nothing is rejected in preview", not result.valid and result.error["code"] == "empty_cut"
+              and not panel.confirm.isEnabled())
+        QtTest.QTest.keyClick(panel.depth.lineEdit(), QtCore.Qt.Key_Return)
+        QtTest.QTest.qWait(50)
+        check("Enter on an invalid edit keeps the dialog open and the model unchanged",
+              panel.editor.isVisible() and model(document) == before)
+        panel.cancel_task()
+        check("Cancel after a failed preview leaves the accepted model intact", model(document) == before)
+
+        call("undo")
+        check("Undo restores the prior end condition in one step", str(document.Cut.Type) == "ThroughAll")
+        call("redo")
+        check("Redo reapplies the edit", str(document.Cut.Type) == "Length")
+
+        menu_actions = []
+        original_exec = QtGui.QMenu.exec_
+        def capture(menu, *args):
+            menu_actions.extend(action.text() for action in menu.actions())
+            return None
+        QtGui.QMenu.exec_ = capture
+        try:
+            panel.features.setCurrentItem(panel.items["Cut"])
+            panel.history_menu(panel.features.visualItemRect(panel.items["Cut"]).center())
+        finally:
+            QtGui.QMenu.exec_ = original_exec
+        check("Context menu offers the feature dialog instead of the hidden native task",
+              "Edit Remove material" in menu_actions and "Edit feature" not in menu_actions)
+
+        project = Path(os.environ["KURTSHAPE_SESSION_DIR"]) / "edited-extrusion.FCStd"
+        panel.core.settings.grant_destination(project)  # as the human Save dialog does
+        response = panel.core.dispatch({"op": "save", "document_id": panel.state["document_id"],
+                                        "expected_revision": panel.state["revision"], "path": str(project)})
+        report["save_response_error"] = None if response["ok"] else response["error"]
+        check("Save of the edited project succeeds (required for save/reopen)", response["ok"])
+        App.closeDocument(document.Name)
+        call("open", path=str(project))
+        panel.refresh()
+        double_click("Pad")
+        check("Save/reopen keeps the formula visible in the reopened dialog",
+              panel.formula.text() == "BaseProfile.Constraints.Width / 4")
+        panel.cancel_task()
+
+        # Untouched fields never overwrite authoritative native values, even
+        # when the widget rounds, clamps or would retain stale text.
+        call("new")
+        call("sketch_rectangle", id="PreciseProfile", width=20, height=10)
+        call("pad", id="Precise", profile="PreciseProfile", length=6.123456)
+        call("create_body", id="TinyBody")
+        call("sketch_rectangle", body="TinyBody", id="TinyProfile", width=4, height=4, x=40, y=0)
+        call("pad", body="TinyBody", id="Tiny", profile="TinyProfile", length=0.005)
+        precise_doc = doc()
+        panel.refresh()
+        before = model(precise_doc)
+        double_click("Precise")
+        QtTest.QTest.qWait(300)
+        check("Untouched reopen reports no changes", panel.confirm.isEnabled() and "No changes" in panel.editor.verdict.text())
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Untouched Confirm keeps 6.123456 mm, revision and Undo history",
+              model(precise_doc) == before and abs(precise_doc.Precise.Length.Value - 6.123456) < 1e-12)
+        double_click("Tiny")
+        QtTest.QTest.qWait(300)
+        report["tiny_depth_display"] = {"field": panel.depth.lineEdit().text(), "help": panel.editor_help.text(),
+                                        "tooltip": panel.depth.toolTip()}
+        shown = number(panel.depth.lineEdit().text(), "Depth")
+        check("Reopening a 0.005 mm depth replaces the prior text with the native value, or states it exactly",
+              (abs(shown - 0.005) < 1e-12 or "0.005" in panel.editor_help.text() + panel.depth.toolTip())
+              and "6.12" not in panel.depth.lineEdit().text() and "No changes" in panel.editor.verdict.text())
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Untouched Confirm keeps 0.005 mm", model(precise_doc) == before
+              and abs(precise_doc.Tiny.Length.Value - 0.005) < 1e-12)
+
+        double_click("Precise")
+        panel.reverse.setChecked(True)
+        result = exact()
+        check("Direction-only proposal carries no depth", result.valid and "length" not in result.proposal)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Direction-only edit keeps the exact depth", precise_doc.Precise.Reversed
+              and abs(precise_doc.Precise.Length.Value - 6.123456) < 1e-12 and precise_doc.UndoCount == before[2] + 1)
+
+        call("set_expression", feature="Precise", parameter="Length", expression="PreciseProfile.Constraints.Width / 3")
+        double_click("Precise")
+        type_into(panel.formula, "")
+        result = exact()
+        check("Clearing a formula with untouched depth sends only the clear", result.valid
+              and result.proposal.get("expression", "missing") is None and "length" not in result.proposal)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Cleared formula keeps its exact evaluated depth", "Length" not in dict(precise_doc.Precise.ExpressionEngine)
+              and abs(precise_doc.Precise.Length.Value - 20 / 3) < 1e-12)
+
+        before = model(precise_doc)
+        double_click("Precise")
+        type_into(panel.depth.lineEdit(), "9")
+        exact()
+        type_into(panel.depth.lineEdit(), f"{20 / 3:.15g}")
+        QtTest.QTest.qWait(300)
+        check("Returning an in-flight edit to the native value reports no changes",
+              "No changes" in panel.editor.verdict.text() and panel.extrusion_preview.overlay.node is None)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Confirm after returning to the native value changes nothing", model(precise_doc) == before)
+        double_click("Precise")
+        type_into(panel.depth.lineEdit(), "11")
+        QtTest.QTest.mouseClick(panel.cancel, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(1500)
+        check("Cancel during an in-flight preview keeps the model and no late overlay appears",
+              model(precise_doc) == before and panel.task_edit is None
+              and panel.extrusion_preview.overlay.node is None and not panel.editor.isVisible())
+
+        call("new")
+        call("sketch_rectangle", id="StudioProfile", width=20, height=10)
+        call("pad", id="Plate", profile="StudioProfile", length=6, operation="new")
+        call("sketch_circle", id="HoleProfile", x=15, y=5, diameter=2, plane="XY")
+        call("pocket", id="StudioCut", profile="HoleProfile", length=2, through_all=False, reversed=False, operation="remove")
+        call("sketch_circle", id="ThruProfile", x=5, y=5, diameter=2, plane="XY")
+        call("pocket", id="StudioThru", profile="ThruProfile", through_all=True, operation="remove")
+        studio_doc = doc()
+        panel.refresh()
+        double_click("StudioCut")
+        check("Studio Remove reopens with native depth and direction", panel.task_edit is not None
+              and abs(panel.depth.value() - 2) < 1e-9 and panel.reverse.isChecked()
+              and "along the sketch normal" in panel.editor_help.text())
+        type_into(panel.depth.lineEdit(), "4")
+        result = exact()
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        QtTest.QTest.qWait(50)
+        check("Studio Remove depth edit commits on its native tool", result.valid
+              and abs(studio_doc.StudioCutTool.LengthFwd.Value - 4) < 1e-9)
+        double_click("StudioThru")
+        check("Studio Through all locks direction and end condition with a reason",
+              not panel.reverse.isEnabled() and not panel.end_type.model().item(0).isEnabled()
+              and "both directions" in panel.reverse.toolTip())
+        panel.cancel_task()
+
+        call("sketch_circle", id="NewCut", x=3, y=3, diameter=1, plane="XY")
+        panel.select_feature("NewCut")
+        panel.extrude(True)
+        panel.end_type.setCurrentIndex(0)  # Blind; Through all has no single direction
+        proposal = panel.extrusion_proposal()
+        check("Studio Remove default proposal cuts into the material", proposal.get("reversed") is True)
+        panel.reverse.setChecked(True)
+        check("Studio Remove Reverse direction now flips the cut", panel.extrusion_proposal().get("reversed") is False)
+        panel.cancel_task()
+
+        call("create_sketch", id="OpenProfile", plane="XY")
+        call("add_line", sketch="OpenProfile", x1=30, y1=0, x2=40, y2=0)
+        panel.select_feature("OpenProfile")
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc().OpenProfile)
+        panel.extrude(False)
+        result = exact()
+        check("Open profile preview names free endpoints", not result.valid and result.error["code"] == "open_profile"
+              and "free endpoint" in panel.editor.verdict.text())
+        panel.cancel_task()
+        report.update(passed=True, engine={"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION})
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        try:
+            main.grab().save(str(output / "final.png"))
+        except Exception:
+            pass
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

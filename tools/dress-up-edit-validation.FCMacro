@@ -1,0 +1,423 @@
+"""Hidden GUI checks: Fillet/Chamfer edge-only picking, reopen and in-place edit.
+
+Real viewport mouse events drive hover and picking; rendered viewport images
+confirm that hovering a surface draws nothing while edges are being picked.
+"""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+from kurtshape.ui import start
+from kurtshape.core import intent_signature
+from kurtshape import hover_outline
+from preview_validation import wait_for_exact
+panel = start()
+output = evidence_dir("dress-up-edit")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "samples": {},
+          "method": "Separate hidden native GUI; real viewport mouse events, feature dialog, history rows and rendered pixels"}
+
+
+def check(label, condition):
+    assert condition, label + ": " + panel.message.text()
+    report["checks"].append(label)
+
+
+def call(op, **args):
+    state = panel.operation(op, **args)
+    assert state, panel.message.text()
+    return state
+
+
+def wait(ms=80):
+    QtTest.QTest.qWait(ms)
+
+
+def doc():
+    return App.activeDocument()
+
+
+def view():
+    return Gui.activeDocument().activeView()
+
+
+def viewport():
+    # A hidden main window does not always report an active subwindow.
+    windows = [window for area in main.findChildren(QtWidgets.QMdiArea)
+               for window in ([area.activeSubWindow()] if area.activeSubWindow() else area.subWindowList())]
+    window = next(window for window in windows if doc().Label in window.windowTitle() or len(windows) == 1)
+    return next(widget for widget in window.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget")
+
+
+def qt_point(vector):
+    gl = viewport()
+    pixel = view().getPointOnViewport(vector)
+    ratio = gl.devicePixelRatioF()
+    return QtCore.QPoint(int(pixel[0] / ratio), gl.height() - 1 - int(pixel[1] / ratio)), pixel
+
+
+def hover(vector):
+    gl = viewport()
+    point, _ = qt_point(vector)
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point), QtCore.QPointF(gl.mapToGlobal(point)),
+                              QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+    QtGui.QApplication.sendEvent(gl, event)
+    wait(150)
+
+
+def click(vector):
+    hover(vector)
+    point, _ = qt_point(vector)
+    QtTest.QTest.mouseClick(viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+    wait(250)
+
+
+def away():
+    gl = viewport()
+    point = QtCore.QPoint(8, 8)
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point), QtCore.QPointF(gl.mapToGlobal(point)),
+                              QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+    QtGui.QApplication.sendEvent(gl, event)
+    wait(150)
+
+
+def frame():
+    view().redraw()
+    wait(250)
+    return viewport().grab().toImage()
+
+
+def changed_pixels(first, second):
+    count = 0
+    for y in range(0, min(first.height(), second.height()), 2):
+        for x in range(0, min(first.width(), second.width()), 2):
+            a, b = first.pixelColor(x, y), second.pixelColor(x, y)
+            if abs(a.red() - b.red()) + abs(a.green() - b.green()) + abs(a.blue() - b.blue()) > 24:
+                count += 1
+    return count
+
+
+def hit(vector):
+    _, pixel = qt_point(vector)
+    return view().getObjectInfo((int(pixel[0]), int(pixel[1]))) or {}
+
+
+def element(info):
+    return (info.get("Component") or "").split(".")[-1]
+
+
+def preselected():
+    current = Gui.Selection.getPreselection()
+    if not current or not current.ObjectName:
+        return []
+    # A Body reports its feature path, e.g. ("Body", "Pad.Edge4").
+    return [tuple(([current.ObjectName] + name.split("."))[-2:]) for name in current.SubElementNames]
+
+
+def edge_named(feature, test):
+    shape = doc().getObject(feature).Shape
+    return next("Edge%d" % (i + 1) for i, edge in enumerate(shape.Edges) if test(edge.BoundBox))
+
+
+def pickable_point(feature, name):
+    """A point on the edge whose viewport pick reports exactly that edge."""
+    edge = doc().getObject(feature).Shape.getElement(name)
+    for t in (0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8):
+        point = edge.valueAt(edge.FirstParameter + t * (edge.LastParameter - edge.FirstParameter))
+        info = hit(point)
+        if element(info) == name:
+            return point
+    raise AssertionError("Edge %s.%s is not pickable in this view" % (feature, name))
+
+
+def picker(dialog):
+    return dialog.fields["edges"]
+
+
+def history_item(name):
+    item = panel.items[name]
+    panel.features.scrollToItem(item)
+    return item
+
+
+def state():
+    return intent_signature(doc()), doc().UndoCount
+
+
+def validate():
+    try:
+        call("sketch_rectangle", id="Plate", width=20, height=12)
+        call("pad", id="Pad", profile="Plate", length=6)
+        panel.isometric()
+        view().fitAll()
+        wait(500)
+        front_top = edge_named("Pad", lambda b: b.XLength > 19 and b.YMax < 1e-6 and b.ZMin > 6 - 1e-6)
+        right_top = edge_named("Pad", lambda b: b.YLength > 11 and b.XMin > 20 - 1e-6 and b.ZMin > 6 - 1e-6)
+        top_center, front_center = App.Vector(10, 6, 6), App.Vector(10, 0, 3)
+        check("Viewport picks the top face center", element(hit(top_center)).startswith("Face"))
+
+        # Control: ordinary hover outlines a surface, so the pixel check below is sensitive.
+        away()
+        quiet = frame()
+        hover(top_center)
+        outlined = frame()
+        report["samples"]["ordinary_face_hover_changed_pixels"] = changed_pixels(quiet, outlined)
+        check("Ordinary picking outlines a hovered surface", hover_outline._controller.outline.node is not None
+              and report["samples"]["ordinary_face_hover_changed_pixels"] > 20)
+        away()
+
+        # Create a Fillet through the real dialog with edge-only picking.
+        Gui.Selection.clearSelection()
+        dialog = panel.studio_tool("fillet")
+        wait(200)
+        check("Fillet opens with edge-only picking", panel.edge_picking.active and hover_outline.faces_suppressed())
+        first = frame()
+        wait(1000)
+        quiet = frame()
+        report["samples"]["idle_changed_pixels"] = changed_pixels(first, quiet)
+        first.save(str(output / "gated-first.png"))
+        for label, point in (("top", top_center), ("front", front_center)):
+            hover(point)
+            check("Hovering the %s surface preselects nothing" % label, not preselected())
+            check("Hovering the %s surface draws no hover overlay" % label, hover_outline._controller.outline.node is None)
+            hovered = frame()
+            quiet.save(str(output / ("gated-%s-quiet.png" % label)))
+            hovered.save(str(output / ("gated-%s-hover.png" % label)))
+            report["samples"]["gated_%s_face_hover_changed_pixels" % label] = changed_pixels(quiet, hovered)
+            check("Hovering the %s surface renders no highlight" % label,
+                  report["samples"]["gated_%s_face_hover_changed_pixels" % label] <= 4)
+        viewport().grab().save(str(output / "fillet-face-hover-gated.png"))
+        point = pickable_point("Pad", front_top)
+        hover(point)
+        report["samples"]["edge_hover"] = {"preselected": preselected(), "gate": panel.edge_picking.gate.reason,
+                                           "checks": panel.edge_picking.gate.checks,
+                                           "hit": {k: str(v) for k, v in hit(point).items()}}
+        check("Hovering an eligible edge preselects that edge", ("Pad", front_top) in preselected())
+        click(top_center)
+        check("Clicking a surface selects nothing", not picker(dialog).value() and not Gui.Selection.getSelectionEx())
+        check("Clicking a surface explains why", "Only edges" in panel.message.text())
+        click(point)
+        check("Clicking an edge adds it", len(picker(dialog).value()) == 1)
+        radius = dialog.findChild(QtWidgets.QWidget, "KurtShapeStudio_radius")
+        radius.lineEdit().selectAll()
+        QtTest.QTest.keyClicks(radius.lineEdit(), "1.2345678 mm")
+        before = state()
+        result = wait_for_exact(dialog.preview)
+        check("Fillet preview is valid and leaves the model unchanged", result.valid and state() == before)
+        QtTest.QTest.mouseClick(dialog.confirm, QtCore.Qt.LeftButton)
+        wait(400)
+        fillet = next(o for o in doc().Objects if o.TypeId == "PartDesign::Fillet")
+        check("Confirm creates one Fillet in one Undo step", doc().UndoCount == before[1] + 1 and list(fillet.Base[1]) == [front_top])
+        check("Ordinary picking returns after Confirm", not panel.edge_picking.active and not hover_outline.faces_suppressed())
+        away()
+        hover(top_center)
+        check("Surface hover outline is back after Confirm", hover_outline._controller.outline.node is not None)
+        away()
+        filleted = doc().Body.Shape.Volume
+        exact = fillet.Radius.Value
+        report["samples"]["created_radius"] = exact
+
+        # Reopen by double-clicking the history row.
+        name = fillet.Name
+        panel.history_double_click(history_item(name))
+        wait(400)
+        dialog = panel.studio_dialog
+        check("Double-click reopens the Fillet editor", dialog is not None and dialog.title_label.text() == "Edit " + fillet.Label)
+        check("Reopened editor lists the current edge", [label.split(" · ")[-1] for label in
+                                                        [picker(dialog).items.item(i).text() for i in range(picker(dialog).items.count())]] == [front_top])
+        report["samples"]["reopened_radius_text"] = dialog.fields["radius"].lineEdit().text()
+        check("Reopened editor shows the radius and its exact value", abs(dialog.fields["radius"].value() - 1.2345678) < 0.01
+              and "1.2345678" in dialog.fields["radius"].toolTip())
+        check("Editing shows the input and hides the completed feature",
+              doc().Pad.ViewObject.Visibility and not fillet.ViewObject.Visibility)
+        check("Editing uses edge-only picking", panel.edge_picking.active)
+        selected = [(s.Object.Name, name) for s in Gui.Selection.getSelectionEx() for name in s.SubElementNames]
+        check("The current edge is highlighted on the input", ("Pad", front_top) in selected)
+        away()
+        reopened = frame()
+        reopened.save(str(output / "fillet-reopened.png"))
+        report["samples"]["visible_while_editing"] = sorted(o.Name for o in doc().Objects
+                                                            if o.ViewObject and o.ViewObject.Visibility)
+        point = pickable_point("Pad", front_top)
+        hover(point)
+        check("The rounded-away edge is pickable again", ("Pad", front_top) in preselected())
+        hover(top_center)
+        check("Hovering a surface while editing preselects nothing", not preselected()
+              and hover_outline._controller.outline.node is None)
+        before = state()
+        click(pickable_point("Pad", right_top))
+        check("Clicking another edge adds it", len(picker(dialog).value()) == 2)
+        result = wait_for_exact(dialog.preview)
+        check("Edit preview is valid and leaves the model unchanged", result.valid and state() == before)
+        viewport().grab().save(str(output / "fillet-edit-preview.png"))
+        QtTest.QTest.mouseClick(dialog.confirm, QtCore.Qt.LeftButton)
+        wait(400)
+        fillet = doc().getObject(name)
+        check("Confirm edits the same Fillet in one Undo step", fillet is not None and doc().UndoCount == before[1] + 1
+              and set(fillet.Base[1]) == {front_top, right_top} and doc().Body.Tip == fillet)
+        check("Untouched exact radius is kept", fillet.Radius.Value == exact)
+        check("Picking and visibility are restored after the edit", not panel.edge_picking.active
+              and fillet.ViewObject.Visibility and not doc().Pad.ViewObject.Visibility)
+        two = doc().Body.Shape.Volume
+        check("The second edge removes material", two < filleted - 1e-6)
+        call("undo")
+        check("Undo restores the previous edge set", list(doc().getObject(name).Base[1]) == [front_top]
+              and abs(doc().Body.Shape.Volume - filleted) < 1e-6)
+        call("redo")
+        check("Redo restores the edit", set(doc().getObject(name).Base[1]) == {front_top, right_top})
+
+        # Remove an edge with its row button, then Cancel: nothing changes.
+        panel.history_double_click(history_item(name))
+        wait(400)
+        dialog = panel.studio_dialog
+        before = state()
+        rows = dialog.findChildren(QtWidgets.QToolButton, "KurtShapeReferenceRowRemove")
+        QtTest.QTest.mouseClick(rows[0], QtCore.Qt.LeftButton)
+        wait(100)
+        check("A row button removes an edge", len(picker(dialog).value()) == 1)
+        result = wait_for_exact(dialog.preview)
+        check("Removing an edge previews validly", result.valid and state() == before)
+        dialog.reject()
+        wait(200)
+        check("Cancel leaves the model unchanged and restores picking", state() == before and not panel.edge_picking.active
+              and doc().getObject(name).ViewObject.Visibility and not hover_outline.faces_suppressed())
+
+        # Clear all edges: the editor explains and Confirm stays disabled.
+        panel.history_double_click(history_item(name))
+        wait(400)
+        dialog = panel.studio_dialog
+        picker(dialog).clear_all()
+        cleared = wait_for_exact(dialog.preview)
+        wait(100)
+        report["samples"]["cleared"] = {"valid": cleared.valid, "verdict": dialog.verdict.text(), "confirm": dialog.confirm.isEnabled()}
+        check("Clearing every edge disables Confirm with guidance", not dialog.confirm.isEnabled()
+              and "edges" in dialog.verdict.text())
+        # Too large a radius is reported and cannot be confirmed.
+        click(pickable_point("Pad", front_top))
+        field = dialog.fields["radius"]
+        field.lineEdit().selectAll()
+        QtTest.QTest.keyClicks(field.lineEdit(), "40 mm")
+        result = wait_for_exact(dialog.preview)
+        report["samples"]["oversize_message"] = dialog.verdict.text()
+        check("An impossible radius is reported and blocks Confirm", not result.valid and not dialog.confirm.isEnabled()
+              and dialog.verdict.text())
+        # A document change cancels the editor and restores ordinary picking.
+        original = doc().Name
+        call("new")
+        wait(300)
+        check("A document change closes the editor and restores picking", panel.studio_dialog is None
+              and not panel.edge_picking.active and not hover_outline.faces_suppressed())
+        check("The edited document keeps its committed Fillet", set(App.getDocument(original).getObject(name).Base[1])
+              == {front_top, right_top})
+        App.closeDocument(doc().Name)
+        App.setActiveDocument(original)
+        Gui.setActiveDocument(original)
+        wait(300)
+        call("inspect")
+
+        # Chamfer: reopen it, change its size, confirm in one Undo step.
+        bottom_front = edge_named(name, lambda b: b.XLength > 19 and b.YMax < 1e-6 and b.ZMax < 1e-6)
+        call("chamfer", id="Bevel", edges=[{"feature": name, "subelement": bottom_front}], size=0.5)
+        panel.select_feature("Bevel")
+        panel.edit_dress_up("Bevel")
+        wait(400)
+        dialog = panel.studio_dialog
+        check("Chamfer reopens with its size", dialog is not None and abs(float(dialog.fields["size"].value()) - 0.5) < 1e-9)
+        field = dialog.fields["size"]
+        field.lineEdit().selectAll()
+        QtTest.QTest.keyClicks(field.lineEdit(), "0.8 mm")
+        result = wait_for_exact(dialog.preview)
+        check("Chamfer size preview is valid", result.valid)
+        undo = doc().UndoCount
+        QtTest.QTest.mouseClick(dialog.confirm, QtCore.Qt.LeftButton)
+        wait(400)
+        check("Chamfer edit commits in one Undo step", abs(doc().Bevel.Size.Value - 0.8) < 1e-9 and doc().UndoCount == undo + 1)
+        check("Picking is ordinary after the Chamfer edit", not panel.edge_picking.active and not hover_outline.faces_suppressed())
+
+        # Studio part (the default for a new Extrude): create, reopen, edit.
+        call("new")
+        call("sketch_rectangle", id="SPlate", width=20, height=12)
+        call("pad", id="SPad", profile="SPlate", length=6, operation="new")
+        panel.isometric()
+        view().fitAll()
+        wait(500)
+        tip = doc().getObject(doc().SPad.KurtShapeOutputTips[0])
+        s_front = edge_named(tip.Name, lambda b: b.XLength > 19 and b.YMax < 1e-6 and b.ZMin > 6 - 1e-6)
+        s_right = edge_named(tip.Name, lambda b: b.YLength > 11 and b.XMin > 20 - 1e-6 and b.ZMin > 6 - 1e-6)
+        Gui.Selection.clearSelection()
+        dialog = panel.studio_tool("fillet")
+        wait(300)
+        click(pickable_point(tip.Name, s_front))
+        check("Studio: clicking an edge adds it", len(picker(dialog).value()) == 1)
+        click(top_center)
+        check("Studio: clicking a surface adds nothing", len(picker(dialog).value()) == 1)
+        before = state()
+        result = wait_for_exact(dialog.preview)
+        check("Studio: Fillet preview is valid", result.valid and state() == before)
+        QtTest.QTest.mouseClick(dialog.confirm, QtCore.Qt.LeftButton)
+        wait(400)
+        studio_fillet = next(o for o in doc().Objects if o.TypeId == "PartDesign::Fillet")
+        check("Studio: Fillet created in one Undo step", doc().UndoCount == before[1] + 1)
+        one = studio_fillet.Shape.Volume
+        panel.history_double_click(history_item(studio_fillet.Name))
+        wait(400)
+        dialog = panel.studio_dialog
+        check("Studio: reopened with its edge", dialog is not None and len(picker(dialog).value()) == 1)
+        base = studio_fillet.Base[0]
+        check("Studio: input shown, Fillet hidden", base.ViewObject.Visibility and not studio_fillet.ViewObject.Visibility)
+        hover(pickable_point(base.Name, s_front))
+        check("Studio: rounded-away edge is pickable", (base.Name, s_front) in preselected())
+        before = state()
+        click(pickable_point(base.Name, s_right))
+        check("Studio: another edge is added", len(picker(dialog).value()) == 2)
+        result = wait_for_exact(dialog.preview)
+        check("Studio: edit preview is valid and disposable", result.valid and state() == before)
+        QtTest.QTest.mouseClick(dialog.confirm, QtCore.Qt.LeftButton)
+        wait(400)
+        edited = doc().getObject(studio_fillet.Name)
+        check("Studio: same Fillet edited in one Undo step", len(edited.Base[1]) == 2
+              and doc().UndoCount == before[1] + 1 and edited.Shape.Volume < one - 1e-6)
+        check("Studio: picking and visibility restored", not panel.edge_picking.active
+              and edited.ViewObject.Visibility and not hover_outline.faces_suppressed())
+        call("undo")
+        check("Studio: Undo restores one edge", len(doc().getObject(studio_fillet.Name).Base[1]) == 1)
+        call("redo")
+        check("Studio: Redo restores two edges", len(doc().getObject(studio_fillet.Name).Base[1]) == 2)
+        report.update(passed=True, engine={"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION})
+    except Exception:
+        report["error"] = traceback.format_exc()
+        try:
+            viewport().grab().save(str(output / "failure-viewport.png"))
+        except Exception:
+            pass
+    finally:
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

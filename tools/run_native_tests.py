@@ -32,6 +32,9 @@ SUITES = {
         "test_sketch_cursor.SketchCursorTests",
         "test_review_followup.ReviewFollowupTests", "test_step_import.StepImportTests",
         "test_assembly.AssemblyWorkflowTests", "test_extrusion_preview.ExtrusionPreviewTests",
+        "test_extrusion_edit.ExtrusionEditTests", "test_history_lifecycle.HistoryLifecycleTests",
+        "test_everyday_modeling.EverydayModelingDirectionTests",
+        "test_dress_up_edit.DressUpEditTests",
         "test_borrowed_preview.BorrowedPreviewTests",
         "test_preview_worker_leases.PreviewWorkerLeaseTests",
         "test_step_export_jobs.StepExportJobTests", "test_step_export_jobs.StepExportWorkerLifetimeTests",
@@ -53,7 +56,8 @@ SUITES = {
         "test_responsiveness.RecoverySchedulingTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge_native.NativeBridgeStatusTests"),
-    "shortcuts": ("test_shortcuts.RouterTests", "test_shortcuts.QtRoutingTests", "test_tool_session.ToolSessionTests"),
+    "shortcuts": ("test_shortcuts.RouterTests", "test_shortcuts.QtRoutingTests", "test_tool_session.ToolSessionTests",
+                  "test_tool_search.ToolSearchTests"),
     "workflows": (),
 }
 EXTERNAL_SKIP_PREFIX = "external fixture:"

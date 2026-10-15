@@ -1,0 +1,264 @@
+"""Hidden GUI checks: sketch Undo steps, rollback gestures and rolled-back Extrude."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+from kurtshape.ui import start
+from kurtshape import studio
+from kurtshape.core import intent_signature
+from preview_validation import wait_for_exact
+panel = start()
+output = evidence_dir("history-lifecycle")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "method": "Separate hidden native GUI; real keys, mouse gestures and buttons"}
+
+
+def check(label, condition):
+    assert condition, label + ": " + panel.message.text()
+    report["checks"].append(label)
+
+
+def call(op, **args):
+    state = panel.operation(op, **args)
+    assert state, panel.message.text()
+    return state
+
+
+def wait(ms=80):
+    QtTest.QTest.qWait(ms)
+
+
+def doc():
+    return App.activeDocument()
+
+
+def model():
+    return (intent_signature(doc()), panel.core._meta(doc()).Revision, doc().UndoCount, doc().RedoCount)
+
+
+def viewport():
+    area = next(area for area in main.findChildren(QtWidgets.QMdiArea) if area.activeSubWindow())
+    return next(widget for widget in area.activeSubWindow().findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget")
+
+
+def key(code, modifiers=QtCore.Qt.NoModifier):
+    gl = viewport()
+    gl.setFocus()
+    QtTest.QTest.keyClick(gl, code, modifiers)
+    wait(120)
+
+
+def index():
+    return panel.state["studio"]["rollback_index"]
+
+
+def row_point(name):
+    panel.features.scrollToItem(panel.items[name])
+    return panel.features.visualItemRect(panel.items[name]).center()
+
+
+def validate():
+    try:
+        # 1. Sketch Undo/Redo through real shortcuts.
+        call("sketch_rectangle", id="Base", width=20, height=10)
+        call("pad", id="Plate", profile="Base", length=6, operation="new")
+        before_sketch = doc().UndoCount
+        panel.start_sketch()
+        sketch = panel.begin_sketch(plane="XY")
+        name = sketch.Name
+        call("add_line", sketch=name, x1=30, y1=0, x2=40, y2=0)
+        call("add_line", sketch=name, x1=40, y1=0, x2=40, y2=5)
+        key(QtCore.Qt.Key_Z, QtCore.Qt.ControlModifier)
+        check("Ctrl+Z inside a sketch undoes one drawing action", panel.active_sketch() is not None and doc().getObject(name).GeometryCount == 1)
+        key(QtCore.Qt.Key_Y, QtCore.Qt.ControlModifier)
+        check("Ctrl+Y inside a sketch redoes it", doc().getObject(name).GeometryCount == 2)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        wait(150)
+        check("Confirm finishes the new sketch", panel.active_sketch() is None and doc().getObject(name).GeometryCount == 2)
+        key(QtCore.Qt.Key_Z, QtCore.Qt.ControlModifier)
+        check("One Ctrl+Z after Finish removes the whole new sketch", doc().getObject(name) is None
+              and doc().UndoCount == before_sketch and doc().getObject("Plate") is not None)
+        key(QtCore.Qt.Key_Y, QtCore.Qt.ControlModifier)
+        restored = doc().getObject(name)
+        check("One Ctrl+Y restores the sketch with its support and geometry",
+              restored is not None and restored.GeometryCount == 2 and restored.AttachmentSupport)
+        panel.select_feature(name)
+        check("The restored sketch reopens for editing", panel.edit_sketch() is not None)
+        call("add_line", sketch=name, x1=40, y1=5, x2=30, y2=0)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        wait(150)
+        key(QtCore.Qt.Key_Z, QtCore.Qt.ControlModifier)
+        check("Undo after editing an existing sketch undoes the edit only",
+              doc().getObject(name) is not None and doc().getObject(name).GeometryCount == 2)
+        key(QtCore.Qt.Key_Y, QtCore.Qt.ControlModifier)
+
+        # Implicit Finish when Extrude is invoked from an active new sketch.
+        before_profile = doc().UndoCount
+        panel.start_sketch()
+        profile = panel.begin_sketch(plane="XY").Name
+        call("add_rectangle", sketch=profile, width=4, height=4, x=2, y=2)
+        panel.extrude(False)
+        result = wait_for_exact(panel.extrusion_preview)
+        check("Extrude from an active sketch finishes it and previews", result.valid and panel.active_sketch() is None)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        wait(150)
+        created = [entry for entry in panel.state["studio"]["feature_order"] if entry not in {"Base", "Plate", name, profile}]
+        check("Extrude commits after the implicit Finish", len(created) == 1)
+        key(QtCore.Qt.Key_Z, QtCore.Qt.ControlModifier)
+        key(QtCore.Qt.Key_Z, QtCore.Qt.ControlModifier)
+        check("Two Ctrl+Z remove the extrusion, then the whole implicitly finished sketch",
+              doc().getObject(created[0]) is None and doc().getObject(profile) is None and doc().UndoCount == before_profile)
+
+        # 2. Rollback gestures.
+        call("create_body", id="FarBody")
+        call("sketch_rectangle", body="FarBody", id="FarProfile", width=10, height=10, x=40, y=0, plane="XY")
+        call("pad", id="Far", profile="FarProfile", length=6, operation="new")
+        panel.refresh()
+        wait(150)
+        marker = panel.rollback_bar
+        order = panel.state["studio"]["feature_order"]
+        end = len(order)
+        check("Marker starts at the end of history", index() == end and marker.value() == end)
+        stable = model()
+        viewport_widget = panel.features.viewport()
+        gap = marker.gap_point(order.index("Far"))
+        QtTest.QTest.mouseClick(viewport_widget, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, gap)
+        wait(150)
+        check("Clicking a row gap does not roll history back", index() == end and model() == stable)
+        point = row_point("Plate")
+        QtTest.QTest.mouseClick(viewport_widget, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+        QtTest.QTest.mouseDClick(viewport_widget, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+        wait(150)
+        panel.cancel_task()
+        panel.editor.hide()
+        check("Selecting and double-clicking a row does not roll history back", index() == end and model() == stable)
+        wheel = QtGui.QWheelEvent(QtCore.QPointF(point), QtCore.QPointF(viewport_widget.mapToGlobal(point)),
+                                  QtCore.QPoint(0, 0), QtCore.QPoint(0, -120), QtCore.Qt.NoButton,
+                                  QtCore.Qt.NoModifier, QtCore.Qt.NoScrollPhase, False)
+        QtWidgets.QApplication.sendEvent(viewport_widget, wheel)
+        wait(100)
+        check("Scrolling the history does not roll back", index() == end and model() == stable)
+        marker.reveal()
+        wait(60)
+        handle = QtCore.QPoint(12, 5)
+        QtTest.QTest.mousePress(marker, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, handle)
+        QtTest.QTest.mouseMove(marker, handle + QtCore.QPoint(0, 2), 30)
+        QtTest.QTest.mouseRelease(marker, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, handle + QtCore.QPoint(0, 2))
+        wait(150)
+        check("A tiny marker movement below the drag threshold does nothing", index() == end and marker.value() == end and model() == stable)
+        target = marker.gap_point(order.index("FarProfile"))
+        QtTest.QTest.mousePress(marker, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, handle)
+        QtTest.QTest.mouseMove(marker, marker.mapFromParent(target), 40)
+        wait(60)
+        check("Dragging previews the boundary without rebuilding", marker.value() == order.index("FarProfile") and index() == end)
+        QtTest.QTest.keyClick(marker, QtCore.Qt.Key_Escape)
+        QtTest.QTest.mouseRelease(marker, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, marker.mapFromParent(target))
+        wait(150)
+        check("Escape cancels the drag and its release commits nothing", marker.value() == end and index() == end and model() == stable)
+        target = marker.gap_point(order.index("FarProfile"))
+        QtTest.QTest.mousePress(marker, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, handle)
+        QtTest.QTest.mouseMove(marker, marker.mapFromParent(target), 40)
+        QtTest.QTest.mouseRelease(marker, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, marker.mapFromParent(target))
+        wait(200)
+        rolled = order.index("FarProfile")
+        check("Dragging the marker past the threshold rolls history back", index() == rolled and marker.value() == rolled)
+        marker.setFocus()
+        QtTest.QTest.keyClick(marker, QtCore.Qt.Key_Down)
+        wait(150)
+        check("A focused marker still moves with the keyboard", index() == rolled + 1)
+        QtTest.QTest.keyClick(marker, QtCore.Qt.Key_Up)
+        wait(150)
+        check("Keyboard returns the boundary", index() == rolled)
+
+        # 3. Extrude while rolled back models only the active state.
+        offered = [panel.body_choice.itemData(i) for i in range(panel.body_choice.count())]
+        check("No generated future result is offered for new work", not set(offered) & studio.held_bodies(doc()))
+        current = panel.state["studio"]["parts"][0]["body"]
+        panel.body_choice.setCurrentIndex(panel.body_choice.findData(current))
+        panel.start_sketch()
+        bridge = panel.begin_sketch(plane="XY")
+        check("A new sketch goes to a current part, not the held one",
+              studio._body_owner(bridge).Name not in studio.held_bodies(doc()))
+        call("add_rectangle", sketch=bridge.Name, width=30, height=4, x=15, y=3)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        wait(150)
+        panel.select_feature(bridge.Name)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc().getObject(bridge.Name))
+        boundary = index()
+        panel.extrude(False)
+        result = wait_for_exact(panel.extrusion_preview)
+        report["rolled_back_preview"] = {"valid": result.valid, "proposal": result.proposal, "measurements": result.measurements}
+        # Plate plus the bridge overhang (x 20..45). The held part at x 40..50
+        # would raise the volume and widen the box if it were modeled.
+        check("Rolled-back preview defaults to Add and excludes the held part",
+              result.valid and result.proposal.get("operation") == "add"
+              and abs(result.measurements["volume_mm3"] - (20 * 10 * 6 + 25 * 4 * 6)) < 1e-6
+              and result.measurements["bbox_mm"]["max"][0] <= 45 + 1e-7)
+        QtTest.QTest.mouseClick(panel.cancel, QtCore.Qt.LeftButton)
+        wait(120)
+        check("Cancel preserves the rollback boundary", index() == boundary)
+        panel.select_feature(bridge.Name)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc().getObject(bridge.Name))
+        panel.extrude(False)
+        wait_for_exact(panel.extrusion_preview)
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        wait(200)
+        order = panel.state["studio"]["feature_order"]
+        added = order[boundary]
+        check("Confirm inserts the extrusion at the boundary, before held history",
+              order.index(added) < order.index("FarProfile") and index() == boundary + 1)
+        panel.rollback_to(len(order))
+        wait(200)
+        check("Rolling forward rebuilds every part", panel.state["build_status"] == "valid"
+              and len(studio.current_parts(doc())) == 2)
+        panel.rollback_to(0)
+        wait(200)
+        offered = [panel.body_choice.itemData(i) for i in range(panel.body_choice.count())]
+        check("Before the first solid, the original Body is offered", "Body" in offered and index() == 0)
+        panel.body_choice.setCurrentIndex(panel.body_choice.findData("Body"))
+        panel.start_sketch()
+        early = panel.begin_sketch(plane="XY")
+        check("A sketch can start at the beginning of history", early is not None and panel.active_sketch() is not None)
+        panel.finish_sketch(cancel=True)
+        check("Its insertion point is the start of history",
+              panel.state["studio"]["feature_order"][0] == early.Name and index() == 1)
+        report.update(passed=True, engine={"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION})
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        try:
+            main.grab().save(str(output / "final.png"))
+        except Exception:
+            pass
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

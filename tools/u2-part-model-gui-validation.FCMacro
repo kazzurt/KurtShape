@@ -253,7 +253,7 @@ def validate():
         panel.depth.lineEdit().setText("irrelevant depth")
         through_baseline = snapshot()
         through = preview()
-        check("Unified Extrude Remove supports Through all without depth", through.valid and through.proposal["end_type"] == "through_all" and "length" not in through.proposal)
+        check("Unified Extrude Remove supports Through all without depth", through.valid and (through.proposal.get("end_type") == "through_all" or through.proposal.get("through_all") is True) and "length" not in through.proposal)
         check("Through all removes only the chosen part material", abs(through.measurements["volume_mm3"] - 2752) < 1e-6)
         check("Through all preview retains native intent/revision/undo", snapshot() == through_baseline)
         capture("unified-through-all-remove-preview")

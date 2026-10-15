@@ -96,7 +96,8 @@ def _visible(sketch, panel):
 
 
 class SketchRegionFill:
-    COLOR = (0.92, 0.92, 0.92)
+    COLOR = (0.55, 0.72, 0.95)
+    TRANSPARENCY = 0.65
 
     def __init__(self, panel):
         self.panel = panel
@@ -246,8 +247,14 @@ class SketchRegionFill:
         group.addChild(pick)
         depth = coin.SoDepthBuffer()
         depth.getField("write").setValue(False)
-        depth.getField("function").setValue(coin.SoDepthBuffer.LESS)
+        # Solids still occlude the fill; LEQUAL plus a small pull toward the
+        # viewer lets it sit on a coplanar face instead of z-fighting with it.
+        depth.getField("function").setValue(coin.SoDepthBuffer.LEQUAL)
         group.addChild(depth)
+        offset = coin.SoPolygonOffset()
+        offset.factor = -1.0
+        offset.units = -4.0
+        group.addChild(offset)
         transform = coin.SoMatrixTransform()
         group.addChild(transform)
         light = coin.SoLightModel()
@@ -255,6 +262,9 @@ class SketchRegionFill:
         group.addChild(light)
         material = coin.SoMaterial()
         material.diffuseColor.setValue(*self.COLOR)
+        # Translucent: the part shows through, so a region reads as sketched
+        # on the surface rather than as a hole. Outlines stay native/opaque.
+        material.transparency = self.TRANSPARENCY
         group.addChild(material)
         hints = coin.SoShapeHints()
         hints.vertexOrdering = coin.SoShapeHints.COUNTERCLOCKWISE

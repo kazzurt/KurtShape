@@ -24,7 +24,8 @@ from .bodies import results as native_results
 
 PREVIEW_OPS = {"pad", "pocket", "revolve", "sweep", "loft", "boolean_parts",
                "split_part", "transform_part", "linear_pattern_parts", "circular_pattern_parts",
-               "mirror_parts", "fillet", "chamfer", "shell", "extrude_face", "create_plane", "move_face"}
+               "mirror_parts", "fillet", "chamfer", "shell", "extrude_face", "create_plane", "move_face",
+               "edit_extrusion", "edit_dress_up"}
 
 
 def _aggregate_shape(document):
@@ -34,7 +35,7 @@ def _aggregate_shape(document):
 
 
 def _removal(proposal):
-    if proposal.get("op") in {"fillet", "chamfer", "shell"} or proposal.get("op") == "boolean_parts" and proposal.get("kind") in {"subtract", "intersect"}:
+    if proposal.get("op") in {"fillet", "chamfer", "shell", "edit_dress_up"} or proposal.get("op") == "boolean_parts" and proposal.get("kind") in {"subtract", "intersect"}:
         return True
     return proposal.get("operation", "remove" if proposal.get("op") == "pocket" else "add") in {"remove", "intersect"} or proposal.get("op") in {"shell"}
 
@@ -289,6 +290,10 @@ class ExtrusionEvaluator:
         if set(proposal) - permitted - {"op"}:
             raise OperationError("invalid_argument", "Unknown extrusion preview argument")
         normalized = dict(proposal)
+        if op == "edit_extrusion" and not isinstance(normalized.get("feature"), str):
+            raise OperationError("missing_reference", "Choose an existing Extrude or Remove feature")
+        if op == "edit_dress_up" and not isinstance(normalized.get("feature"), str):
+            raise OperationError("missing_reference", "Choose an existing Fillet or Chamfer feature")
         if op not in {"pad", "pocket"}:
             # Native/typed controller validation owns these operation schemas.
             # Normalize unit fields so focus-out retains equivalent intent.
@@ -390,13 +395,22 @@ class ExtrusionEvaluator:
             App.setActiveDocument(clone_name)
             body = clone.getObject(normalized.get("body", ""))
             aggregate = "operation" in normalized or normalized["op"] not in {"pad", "pocket"}
+            editing = normalized["op"] == "edit_extrusion"
             with _preview_phase(phases, "material"):
                 previous = _aggregate_shape(clone) if aggregate else _world_shape(body)
-            operation = dict(normalized, id="KurtShapePreviewExtrusion")
-            index = 2
-            while clone.getObject(operation["id"]):
-                operation["id"] = "KurtShapePreviewExtrusion" + str(index)
-                index += 1
+                if editing:
+                    from . import extrusion_edit
+                    edit_info = extrusion_edit.describe(clone, normalized["feature"])
+                    step_before = extrusion_edit.step_shape(clone, normalized["feature"])
+            if editing or normalized["op"] == "edit_dress_up":
+                # An edit changes an existing feature in place; it has no new ID.
+                operation = dict(normalized)
+            else:
+                operation = dict(normalized, id="KurtShapePreviewExtrusion")
+                index = 2
+                while clone.getObject(operation["id"]):
+                    operation["id"] = "KurtShapePreviewExtrusion" + str(index)
+                    index += 1
             self.evaluations += 1
             # The same whitelisted native operation and validation used by
             # acceptance run here; the clone is never Controller.attach'ed.
@@ -416,9 +430,38 @@ class ExtrusionEvaluator:
             acceptable_status = {"valid", "sketch_only"} if normalized["op"] == "create_plane" else {"valid"}
             if errors or self.controller._meta(clone).BuildStatus not in acceptable_status or not aggregate and len(body.Shape.Solids) != 1:
                 raise OperationError("build_failed", "Preview could not produce valid current parts", features=errors)
+            if editing and not studio.enabled(clone):
+                # Mirror the acceptance check on the edited feature's Body.
+                from .bodies import owner
+                edited_body = owner(clone, clone.getObject(normalized["feature"]))
+                if edited_body is not None and len(edited_body.Shape.Solids) != 1:
+                    raise OperationError("build_failed", "Operation must produce one valid solid")
             with _preview_phase(phases, "material"):
                 shape = _aggregate_shape(clone) if aggregate else _world_shape(body)
-            if normalized["op"] == "create_plane":
+            edit_facts = None
+            if editing:
+                # Show what changes at the edited feature's own history step,
+                # even when later features hide part of that change.
+                with _preview_phase(phases, "material"):
+                    step_after = extrusion_edit.step_shape(clone, normalized["feature"])
+                    material = extrusion_edit.change_material(step_before, step_after)
+                    if material is None:
+                        material = step_after
+                if material.isNull() or not material.Solids:
+                    raise OperationError("empty_preview", "The edited feature produces no solid material")
+                edit_facts = {"edit_removal": edit_info["kind"] == "remove",
+                              "edit_step_volume_change_mm3": geometry.scalar(step_after, "volume") - geometry.scalar(step_before, "volume")
+                              if not step_before.isNull() and not step_after.isNull() else None,
+                              "edit_volume_change_mm3": geometry.scalar(shape, "volume") - geometry.scalar(previous, "volume")
+                              if not previous.isNull() and not shape.isNull() else None}
+            elif normalized["op"] == "edit_dress_up":
+                # Removing edges adds material back; adding edges removes it.
+                # Show both changes, or the edited feature when nothing changes.
+                with _preview_phase(phases, "material"):
+                    material = previous.cut(shape).fuse(shape.cut(previous)) if not previous.isNull() else shape
+                    if material.isNull() or geometry.scalar(material, "volume") <= 1e-7:
+                        material = _world_shape(clone.getObject(normalized["feature"]))
+            elif normalized["op"] == "create_plane":
                 material = Part.makePlane(50, 50, App.Vector(-25, -25, 0))
                 material.Placement = created.getGlobalPlacement()
                 if shape.isNull():
@@ -441,11 +484,13 @@ class ExtrusionEvaluator:
             if transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == transaction_id:
                 App.closeActiveTransaction()
             transaction_id = None
+            facts = geometry.measurement_dict({"solid_count": len(shape.Solids),
+                                              "volume": geometry.scalar(shape, "volume"),
+                                              "bbox": geometry.bounding_box(shape)})
+            if edit_facts:
+                facts.update(edit_facts)
             result = ExtrusionResult(True, self.expected_revision, normalized, body.Name if body else None,
-                                     shape, material, geometry.measurement_dict({"solid_count": len(shape.Solids),
-                                                                               "volume": geometry.scalar(shape, "volume"),
-                                                                                "bbox": geometry.bounding_box(shape)}),
-                                     phase_milliseconds=phases)
+                                     shape, material, facts, phase_milliseconds=phases)
             self._cache[key] = result
             while len(self._cache) > 8:
                 self._cache.popitem(last=False)
@@ -516,7 +561,9 @@ class CoinExtrusionOverlay:
         pick = coin.SoPickStyle()
         pick.style = coin.SoPickStyle.UNPICKABLE
         node.addChild(pick)
-        if _removal(result.proposal):
+        editing = result.proposal.get("op") == "edit_extrusion"
+        removal = bool((result.measurements or {}).get("edit_removal")) if editing else _removal(result.proposal)
+        if removal or editing:
             depth = coin.SoDepthBuffer()
             # The live solid stays visible. Draw removed material through it
             # without writing depth that could occlude other scene objects.
@@ -533,7 +580,7 @@ class CoinExtrusionOverlay:
         hints.shapeType = coin.SoShapeHints.SOLID
         node.addChild(hints)
         material = coin.SoMaterial()
-        color = (0.96, 0.48, 0.20) if _removal(result.proposal) else (0.25, 0.72, 0.96)
+        color = (0.96, 0.48, 0.20) if removal else (0.25, 0.72, 0.96)
         material.diffuseColor.setValue(*color)
         material.emissiveColor.setValue(*(channel * 0.25 for channel in color))
         material.transparency = 0.72 if result.provisional else 0.38
@@ -937,6 +984,17 @@ class DebouncedExtrusionPreview:
             self.clear()
             return False
         return True
+
+    def idle(self):
+        """Drop the current proposal and its display while keeping the task.
+
+        An in-flight exact response cannot publish afterwards because the
+        sequence advances; a later identical proposal reuses the exact cache.
+        """
+        self.timer.stop()
+        self.overlay.clear()
+        self.pending = self.normalized = self.result = None
+        self.sequence += 1
 
     def clear(self):
         self.timer.stop()

@@ -175,7 +175,7 @@ class SketchPlaneTests(unittest.TestCase):
         self.assertFalse(self.doc.HasPendingTransaction)
         self.assertEqual(self.doc.Managed.GeometryCount, 5)
         self.call("undo")
-        self.assertEqual(self.doc.Managed.GeometryCount, 0)
+        self.assertIsNone(self.doc.getObject("Managed"))
         self.call("redo")
         self.assertEqual(self.doc.Managed.GeometryCount, 5)
         self.call("begin_sketch_edit", feature="Managed")
@@ -367,11 +367,13 @@ class SketchPlaneTests(unittest.TestCase):
         self.assertEqual(self.doc.UndoCount, original_undo+1)
         self.assertEqual(self.doc.Managed.GeometryCount, 5)
         self.assertEqual(self.doc.Managed.AttachmentSupport[0][0], self.doc.XZ_Plane)
+        # The first Finish of a new sketch and its creation are one step.
         self.call("undo")
-        self.assertEqual(self.doc.Managed.GeometryCount, 0)
-        self.assertEqual(self.doc.UndoCount, original_undo)
+        self.assertIsNone(self.doc.getObject("Managed"))
+        self.assertEqual(self.doc.UndoCount, original_undo-1)
         self.call("redo")
         self.assertEqual(self.doc.Managed.GeometryCount, 5)
+        self.assertEqual(self.doc.Managed.AttachmentSupport[0][0], self.doc.XZ_Plane)
         self.assertEqual(self.doc.UndoCount, original_undo+1)
 
     def test_unnamed_driving_dimensions_edit_by_native_constraint_index(self):
@@ -666,7 +668,7 @@ class SketchPlaneTests(unittest.TestCase):
         chronology = [obj.Name for obj in studio.order(self.doc)]
         revision = self.state["revision"]
         plan = self.core.delete_features_plan(self.doc, ["Hole", "Plate"])
-        self.assertEqual(plan, {"selected": ["Plate", "Hole"], "dependents": ["Pad", "Pocket"],
+        self.assertEqual(plan, {"selected": ["Plate", "Hole"], "dependents": ["Pad", "Pocket"], "helpers": [],
                                 "removed": ["Plate", "Pad", "Hole", "Pocket"]})
         self.assertEqual(intent_signature(self.doc), accepted)
         self.assertEqual(self.doc.UndoCount, count)

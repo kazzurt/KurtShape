@@ -10,7 +10,10 @@ class RollbackMarker(QtGui.QWidget):
     """Keep the build boundary in the tree, with no separate numeric slider.
 
     The small slider-compatible surface preserves the existing keyboard route.
-    Only releasing a drag/click commits a rebuild; moving previews the boundary.
+    Only a deliberate drag of the marker itself moves the boundary: the pointer
+    must travel past the platform drag distance, and only that drag's release
+    commits a rebuild. Clicks, row presses, tiny moves and scrolling never roll
+    history back; Escape cancels a drag.
     """
     sliderPressed = QtCore.Signal()
     sliderReleased = QtCore.Signal()
@@ -23,6 +26,8 @@ class RollbackMarker(QtGui.QWidget):
         self.order, self.items, self.labels = [], {}, {}
         self.available = False
         self.dragging = False
+        self.pressing = False
+        self.press_y = 0
         self.drag_start = 0
         self.drag_y = 0
         self.setObjectName("KurtShapeRollbackBar")
@@ -30,7 +35,8 @@ class RollbackMarker(QtGui.QWidget):
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.setCursor(QtCore.Qt.SizeVerCursor)
         self.setFixedHeight(10)
-        self.setToolTip("Drag this line between features, or click a gap. Up / Down moves one feature.")
+        self.setToolTip("Drag this line between features to roll history back or forward. "
+                        "When it has focus, Up / Down moves one feature and Escape cancels a drag.")
         tree.viewport().setMouseTracking(True)
         tree.viewport().installEventFilter(self)
         tree.verticalScrollBar().valueChanged.connect(self.reposition)
@@ -145,19 +151,25 @@ class RollbackMarker(QtGui.QWidget):
         self.reposition()
 
     def begin(self, y):
+        """Arm a drag on the marker; nothing moves until the drag threshold."""
         if not self.available or not self.isEnabled():
             return False
-        index = self.nearest_gap(y)
-        if index is None:
-            return False
         self.drag_start = self._value
-        self.dragging = True
-        self.drag_y = y
+        self.pressing = True
+        self.dragging = False
+        self.press_y = self.drag_y = y
         self.setFocus(QtCore.Qt.MouseFocusReason)
-        self.sliderPressed.emit()
-        self.setValue(index)
-        self.scroll_timer.start()
         return True
+
+    def move(self, y):
+        if self.pressing and not self.dragging:
+            if abs(y - self.press_y) < QtGui.QApplication.startDragDistance():
+                return
+            self.dragging = True
+            self.sliderPressed.emit()
+            self.scroll_timer.start()
+        if self.dragging:
+            self.drag(y)
 
     def drag(self, y):
         self.drag_y = y
@@ -165,8 +177,26 @@ class RollbackMarker(QtGui.QWidget):
         if index is not None:
             self.setValue(index)
 
+    def finish(self, y):
+        """Commit only a real drag; a click or tiny movement changes nothing."""
+        dragged = self.dragging
+        self.pressing = False
+        if dragged:
+            self.drag(y)
+            self.release()
+        return dragged
+
+    def cancel_drag(self):
+        if not (self.pressing or self.dragging):
+            return False
+        self.pressing = self.dragging = False
+        self.scroll_timer.stop()
+        self.setValue(self.drag_start)
+        return True
+
     def release(self):
         self.dragging = False
+        self.pressing = False
         self.scroll_timer.stop()
         # The controller rebuilds the tree. Let the originating mouse event end
         # before a refresh removes the current native tree items.
@@ -186,19 +216,8 @@ class RollbackMarker(QtGui.QWidget):
         kind = event.type()
         if kind in {QtCore.QEvent.Resize, QtCore.QEvent.Show, QtCore.QEvent.LayoutRequest}:
             QtCore.QTimer.singleShot(0, self.reposition)
-        if not self.available or not self.isEnabled():
-            return False
-        if kind == QtCore.QEvent.MouseButtonPress and event.button() == QtCore.Qt.LeftButton:
-            if self.nearest_gap(event.pos().y(), tolerance=4) is not None:
-                return self.begin(event.pos().y())
-        elif kind == QtCore.QEvent.MouseMove and self.dragging:
-            self.drag(event.pos().y())
-            return True
-        elif kind == QtCore.QEvent.MouseButtonRelease and self.dragging:
-            if event.button() == QtCore.Qt.LeftButton:
-                self.drag(event.pos().y())
-                self.release()
-                return True
+        # Row presses, double-clicks, gaps and wheel scrolling belong to the
+        # tree. Only the marker widget itself starts a rollback drag.
         return False
 
     def mousePressEvent(self, event):
@@ -209,25 +228,21 @@ class RollbackMarker(QtGui.QWidget):
             super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.dragging:
-            self.drag(self.mapToParent(event.pos()).y())
+        if self.pressing or self.dragging:
+            self.move(self.mapToParent(event.pos()).y())
             event.accept()
         else:
             super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if event.button() == QtCore.Qt.LeftButton and self.dragging:
-            self.drag(self.mapToParent(event.pos()).y())
-            self.release()
+        if event.button() == QtCore.Qt.LeftButton and (self.pressing or self.dragging):
+            self.finish(self.mapToParent(event.pos()).y())
             event.accept()
         else:
             super().mouseReleaseEvent(event)
 
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Escape and self.dragging:
-            self.dragging = False
-            self.scroll_timer.stop()
-            self.setValue(self.drag_start)
+        if event.key() == QtCore.Qt.Key_Escape and self.cancel_drag():
             event.accept()
         else:
             super().keyPressEvent(event)
