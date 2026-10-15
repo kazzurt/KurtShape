@@ -14,6 +14,19 @@ import FreeCAD as App
 
 _controller = None
 _FACE = re.compile(r"(?:^|\.)Face[1-9][0-9]*$")
+_faces_suppressed = False
+
+
+def suppress_faces(suppressed):
+    """Hide face hover while a tool picks edges only; restore afterwards."""
+    global _faces_suppressed
+    _faces_suppressed = bool(suppressed)
+    if _faces_suppressed and _controller is not None:
+        _controller.clear()
+
+
+def faces_suppressed():
+    return _faces_suppressed
 
 
 def is_face_reference(element):
@@ -157,6 +170,9 @@ class FaceHoverOutline:
     def update(self, view, position):
         import FreeCADGui as Gui
         self.pick_count += 1
+        if _faces_suppressed:
+            self.clear()
+            return
         hit = view.getObjectInfo(position)
         if not hit or not is_face_reference(hit.get("Component", "")):
             self.clear()

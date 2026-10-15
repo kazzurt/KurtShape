@@ -1674,7 +1674,7 @@ class Controller:
                         raise OperationError("build_failed", "Native feature rebuild failed", features=errors)
                     affected = doc.getObject(request.get("profile") or request.get("feature") or created_feature or "")
                     affected_body = owner(doc, affected)
-                    if not editing and affected_body and not studio.enabled(doc) and (op in {"pad", "pocket"} or op in {"set_parameter", "set_expression", "duplicate_feature", "edit_extrusion"} and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject"):
+                    if not editing and affected_body and not studio.enabled(doc) and (op in {"pad", "pocket"} or op in {"set_parameter", "set_expression", "duplicate_feature", "edit_extrusion", "edit_dress_up"} and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject"):
                         if self._meta(doc).BuildStatus != "valid" or len(affected_body.Shape.Solids) != 1:
                             raise OperationError("build_failed", "Operation must produce one valid solid")
                     if not editing:

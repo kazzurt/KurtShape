@@ -10,7 +10,9 @@ import FreeCADGui as Gui
 from PySide import QtCore, QtGui
 from .core import Controller, ROOT, METADATA, OperationError, number
 from . import extrusion_edit
+from . import reference_tools
 from . import tool_search
+from .edge_picking import EdgePicking
 from .bridge import Bridge
 from . import navigation
 from . import geometry
@@ -167,6 +169,9 @@ class Panel(QtGui.QDockWidget):
         self.main = Gui.getMainWindow()
         self.sketch_references = SketchReferences(self)
         self.sketch_history = HistoricalSketchView(self)
+        # Editing a Fillet/Chamfer shows its input instead of its result.
+        self.dress_up_history = HistoricalSketchView(self)
+        self.edge_picking = EdgePicking()
         self.sketch_colors = NativeSketchColors(self)
         self.sketch_regions = SketchRegionFill(self)
         self.sketch_snapping = SketchSnapping()
@@ -1190,6 +1195,13 @@ class Panel(QtGui.QDockWidget):
         self.sketch_snapping.sync_tool(native_command)
         self.sketch_cursor.sync(native_command)
         self.sketch_history.apply()
+        if self.studio_dialog is None:
+            # Never leave edge-only picking or an input-only view behind a
+            # dialog that is gone (Confirm, Cancel, error or document change).
+            self.edge_picking.end()
+            self.dress_up_history.leave()
+        else:
+            self.dress_up_history.apply()
         self.sketch_colors.apply()
         self.sketch_regions.apply()
         self.sketch_plane_editor.apply_visibility()
@@ -1269,7 +1281,7 @@ class Panel(QtGui.QDockWidget):
             self._cancel_step_export()
         if op not in {"inspect", "check_geometry"}:
             self._cancel_geometry_check()
-        if op in {"rename_feature", "delete_feature", "set_parameter", "set_expression", "edit_extrusion", "begin_sketch_edit",
+        if op in {"rename_feature", "delete_feature", "set_parameter", "set_expression", "edit_extrusion", "edit_dress_up", "begin_sketch_edit",
                   "add_rectangle", "add_circle", "add_line"} and self.feature_held(args.get("feature") or args.get("sketch")):
             self.notify("Roll forward through this feature before editing it.")
             return None
@@ -1874,6 +1886,8 @@ class Panel(QtGui.QDockWidget):
                 self.edit_sketch()
             elif self.editable_extrusion(key) is not None:
                 self.edit_extrusion(key)
+            elif obj and obj.TypeId in reference_tools.DRESS_UP:
+                self.edit_dress_up(key)
             else:
                 self.parameters(show=True)
 
@@ -2088,8 +2102,12 @@ class Panel(QtGui.QDockWidget):
                 self.editor_help.setText("Selected face · " + ("Remove material" if self.task == "pocket" else "Extrude"))
                 self.begin_preview()
 
-    def studio_tool(self, operation, part=None):
-        """Stage shared typed operations in a revision-bound native dialog."""
+    def studio_tool(self, operation, part=None, edit=None):
+        """Stage shared typed operations in a revision-bound native dialog.
+
+        ``edit`` (from reference_tools.describe_dress_up) reopens an existing
+        Fillet/Chamfer with its edges and size; Confirm edits it in place.
+        """
         if not self.document() or self.workspace_mode != "part_studio":
             self.notify("Create or open a Part Studio first.")
             return None
@@ -2111,9 +2129,10 @@ class Panel(QtGui.QDockWidget):
                   "mirror_parts": "Mirror parts", "fillet": "Fillet", "chamfer": "Chamfer", "shell": "Shell",
                   "create_plane": "Plane", "move_face": "Move face"}
         label = labels.get(operation, operation.replace("_", " ").capitalize())
-        dialog = FeaturePanel(label, self.main)
+        title = ("Edit " + edit["label"]) if edit else label
+        dialog = FeaturePanel(title, self.main)
         dialog.setObjectName("KurtShapeStudio_" + operation)
-        dialog.setWindowTitle(label)
+        dialog.setWindowTitle(title)
         layout = QtGui.QVBoxLayout(dialog.content)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(6)
@@ -2269,6 +2288,33 @@ class Panel(QtGui.QDockWidget):
                      "Offset distance" if operation == "move_face" else "Thickness" if operation == "shell" else ("Size" if operation == "chamfer" else "Radius"), 1)
             if operation == "move_face":
                 introduction.setText("Select planar faces to offset. Positive distance adds material; negative distance removes it.")
+            if operation in {"fillet", "chamfer"}:
+                introduction.setText("Pick edges in the model; faces are not selectable while this tool is open.")
+            if edit:
+                introduction.setText("Editing " + edit["label"] + ": add, remove, replace or clear edges. Its input, "
+                                     + edit["base_label"] + ", is shown so rounded-away edges can be picked again.")
+                edit_body = owner(doc, doc.getObject(edit["feature"]))
+                part_index = fields["part"].findData(next((entry["id"] for entry in parts if edit_body and entry["body"] == edit_body.Name), None))
+                if part_index >= 0:
+                    fields["part"].setCurrentIndex(part_index)
+                fields["part"].setEnabled(False)
+                edit_base = doc.getObject(edit["base"])
+                Gui.Selection.clearSelection()
+                for entry in edit["edges"]:
+                    fields["edges"].add(entry["reference"], entry["label"], (edit_base, entry["subelement"]))
+                    Gui.Selection.addSelection(edit_base, entry["subelement"])
+                amount = fields[edit["key"]]
+                # Load the authoritative value without the creation clamp; an
+                # untouched (possibly display-rounded) field is never resent.
+                amount.setRange(-1e6, 1e6)
+                amount.setValue(edit["value"]["value"])
+                amount.setToolTip("Exact value %.12g mm is kept unless you change it" % edit["value"]["value"])
+                edit_text = amount.lineEdit().text()
+                formula = QtGui.QLineEdit(edit["value"]["expression"] or "")
+                formula.setPlaceholderText("Optional formula, e.g. Pad.Length / 4")
+                formula.textChanged.connect(lambda text, widget=amount: widget.setEnabled(not text.strip()))
+                amount.setEnabled(not formula.text().strip())
+                field("formula", "Formula", formula, formula.text)
             if operation == "shell":
                 widget = QtGui.QCheckBox("Reverse wall direction")
                 field("reversed", "", widget, widget.isChecked)
@@ -2281,6 +2327,15 @@ class Panel(QtGui.QDockWidget):
         dialog.set_accept_enabled(False)
         self.register_editor_symbols(dialog)
         def proposal():
+            if edit:
+                request = {"op": "edit_dress_up", "feature": edit["feature"], "edges": fields["edges"].value()}
+                expression = fields["formula"].text().strip()
+                if expression != (edit["value"]["expression"] or ""):
+                    request["expression"] = expression
+                text = fields[edit["key"]].lineEdit().text()
+                if not expression and text != edit_text:
+                    request[edit["key"]] = text
+                return request
             result = {key: getter() for key, getter in values.items()}
             if scoped:
                 result["merge_scope"] = "auto" if result["merge_scope"] == "auto" else result.pop("scope_parts")
@@ -2438,6 +2493,8 @@ class Panel(QtGui.QDockWidget):
                 else:
                     prefix = "Face" if entity == "Plane" else entity
                     for element in selection.SubElementNames:
+                        if any(native and native[0] == obj and native[1] == element for native in picker.native_inputs):
+                            continue  # Already listed, e.g. an existing edge of an edited feature.
                         if element.startswith(prefix) and feature:
                             reference = ({"feature": feature.Name, "subelement": element} if entity == "Plane" or key == "axis_reference" and feature.TypeId == "Sketcher::SketchObject" else
                                          self.reference_from_geometry(feature, element, entity))
@@ -2449,6 +2506,12 @@ class Panel(QtGui.QDockWidget):
             if dialog.finished:
                 return
             dialog.finished = True
+            if operation in {"fillet", "chamfer"}:
+                try:
+                    self.edge_picking.end()
+                    self.dress_up_history.leave()
+                finally:
+                    Gui.Selection.clearSelection()
             adapter.close()
             if self.studio_dialog is dialog:
                 self.studio_dialog = None
@@ -2466,19 +2529,35 @@ class Panel(QtGui.QDockWidget):
             if not evaluated or not evaluated.valid:
                 return
             request = dict(evaluated.proposal)
-            request.pop("op")
-            request["id"] = self.unique(label.split()[0].replace("/", "") or "Feature")
+            committed_op = request.pop("op")
+            if not edit:
+                request["id"] = self.unique(label.split()[0].replace("/", "") or "Feature")
             self.studio_committing = True
             try:
-                result = self.operation(operation, **request, **tokens)
+                result = self.operation(committed_op, **request, **tokens)
             finally:
                 self.studio_committing = False
             if result:
                 cleanup()
-                self.complete_editor(result.get("created_feature", request["id"]))
+                self.complete_editor(edit["feature"] if edit else result.get("created_feature", request["id"]))
         dialog.accepted.connect(commit)
         dialog.rejected.connect(cleanup)
+        def eligible(target):
+            if edit:
+                return None if target is not None and target.Name == edit["base"] else (
+                    "Pick edges of " + edit["base_label"] + ", the input to " + edit["label"])
+            shape = getattr(target, "Shape", None)
+            if (target is None or target.TypeId == "Sketcher::SketchObject" or shape is None
+                    or shape.isNull() or not shape.Solids):
+                return "Pick edges of a solid part"
+            return None
         def begin():
+            if dialog.finished:
+                return
+            if edit:
+                self.dress_up_history.enter(doc.getObject(edit["feature"]), hide_self=True)
+            if operation in {"fillet", "chamfer"}:
+                self.edge_picking.start(doc, eligible, label.lower(), feedback=lambda reason: self.notify(reason))
             adapter.begin(doc, tokens["_expected_revision"])
             capture()
             schedule()
@@ -3843,6 +3922,9 @@ class Panel(QtGui.QDockWidget):
             if extrusion is not None:
                 menu.addAction("Edit " + ("Remove material" if extrusion["kind"] == "remove" else "Extrude"),
                                lambda: self.edit_extrusion(key)).setEnabled(not self.feature_held(key))
+            elif obj.TypeId in reference_tools.DRESS_UP:
+                menu.addAction("Edit " + reference_tools.DRESS_UP[obj.TypeId][0].capitalize(),
+                               lambda: self.edit_dress_up(key)).setEnabled(not self.feature_held(key))
             elif obj.TypeId.startswith("PartDesign::"):
                 menu.addAction("Edit feature", self.edit_native_feature).setEnabled(not self.feature_held(key))
             menu.addAction("Rename", self.rename_selected).setEnabled(not self.feature_held(key))
@@ -3937,6 +4019,26 @@ class Panel(QtGui.QDockWidget):
                 self.router._last_native = None
             self.notify(str(exc), "error")
             return False
+
+    def edit_dress_up(self, key=None):
+        """Reopen an existing Fillet/Chamfer with its current edges, size and formula."""
+        key = key or self.selected()
+        doc = self.document()
+        if not doc or not key:
+            self.notify("Select a Fillet or Chamfer feature to edit.")
+            return None
+        if self.feature_held(key):
+            self.notify("Roll forward through this feature before editing it.")
+            return None
+        try:
+            info = reference_tools.describe_dress_up(doc, key)
+        except OperationError as exc:
+            self.notify(str(exc), "error")
+            return None
+        dialog = self.studio_tool(info["kind"], edit=info)
+        for limitation in info["limitations"] if dialog else ():
+            self.notify(limitation)
+        return dialog
 
     def edit_native_feature(self):
         if self.state and not self.state.get("managed", True):

@@ -25,7 +25,7 @@ from .bodies import results as native_results
 PREVIEW_OPS = {"pad", "pocket", "revolve", "sweep", "loft", "boolean_parts",
                "split_part", "transform_part", "linear_pattern_parts", "circular_pattern_parts",
                "mirror_parts", "fillet", "chamfer", "shell", "extrude_face", "create_plane", "move_face",
-               "edit_extrusion"}
+               "edit_extrusion", "edit_dress_up"}
 
 
 def _aggregate_shape(document):
@@ -35,7 +35,7 @@ def _aggregate_shape(document):
 
 
 def _removal(proposal):
-    if proposal.get("op") in {"fillet", "chamfer", "shell"} or proposal.get("op") == "boolean_parts" and proposal.get("kind") in {"subtract", "intersect"}:
+    if proposal.get("op") in {"fillet", "chamfer", "shell", "edit_dress_up"} or proposal.get("op") == "boolean_parts" and proposal.get("kind") in {"subtract", "intersect"}:
         return True
     return proposal.get("operation", "remove" if proposal.get("op") == "pocket" else "add") in {"remove", "intersect"} or proposal.get("op") in {"shell"}
 
@@ -292,6 +292,8 @@ class ExtrusionEvaluator:
         normalized = dict(proposal)
         if op == "edit_extrusion" and not isinstance(normalized.get("feature"), str):
             raise OperationError("missing_reference", "Choose an existing Extrude or Remove feature")
+        if op == "edit_dress_up" and not isinstance(normalized.get("feature"), str):
+            raise OperationError("missing_reference", "Choose an existing Fillet or Chamfer feature")
         if op not in {"pad", "pocket"}:
             # Native/typed controller validation owns these operation schemas.
             # Normalize unit fields so focus-out retains equivalent intent.
@@ -400,7 +402,7 @@ class ExtrusionEvaluator:
                     from . import extrusion_edit
                     edit_info = extrusion_edit.describe(clone, normalized["feature"])
                     step_before = extrusion_edit.step_shape(clone, normalized["feature"])
-            if editing:
+            if editing or normalized["op"] == "edit_dress_up":
                 # An edit changes an existing feature in place; it has no new ID.
                 operation = dict(normalized)
             else:
@@ -452,6 +454,13 @@ class ExtrusionEvaluator:
                               if not step_before.isNull() and not step_after.isNull() else None,
                               "edit_volume_change_mm3": geometry.scalar(shape, "volume") - geometry.scalar(previous, "volume")
                               if not previous.isNull() and not shape.isNull() else None}
+            elif normalized["op"] == "edit_dress_up":
+                # Removing edges adds material back; adding edges removes it.
+                # Show both changes, or the edited feature when nothing changes.
+                with _preview_phase(phases, "material"):
+                    material = previous.cut(shape).fuse(shape.cut(previous)) if not previous.isNull() else shape
+                    if material.isNull() or geometry.scalar(material, "volume") <= 1e-7:
+                        material = _world_shape(clone.getObject(normalized["feature"]))
             elif normalized["op"] == "create_plane":
                 material = Part.makePlane(50, 50, App.Vector(-25, -25, 0))
                 material.Placement = created.getGlobalPlacement()

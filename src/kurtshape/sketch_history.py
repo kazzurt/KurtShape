@@ -53,7 +53,12 @@ class HistoricalSketchView:
     def document(self):
         return App.listDocuments().get(self.document_name) if self.document_name else None
 
-    def enter(self, sketch):
+    def enter(self, sketch, hide_self=False):
+        """Show results before ``sketch``; ``hide_self`` hides that feature too.
+
+        Editing a Fillet or Chamfer uses ``hide_self`` so its input edges,
+        including those the feature rounded away, are visible and pickable.
+        """
         if (self.document_name, self.sketch_name) == (sketch.Document.Name, sketch.Name):
             return
         self.leave()
@@ -97,7 +102,7 @@ class HistoricalSketchView:
             if obj.Name not in self.original:
                 continue
             if obj == sketch:
-                visible = True
+                visible = not hide_self
             elif obj.TypeId == "PartDesign::Body":
                 visible = (obj.Name in prior_shapes or obj in prior_sketch_bodies) and bool(getattr(obj, "KurtShapePartVisible", self.original[obj.Name]))
             elif hasattr(obj, "Shape"):
