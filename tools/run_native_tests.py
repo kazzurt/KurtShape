@@ -35,6 +35,7 @@ SUITES = {
         "test_extrusion_edit.ExtrusionEditTests", "test_history_lifecycle.HistoryLifecycleTests",
         "test_everyday_modeling.EverydayModelingDirectionTests",
         "test_dress_up_edit.DressUpEditTests",
+        "test_pattern_mirror_references.PatternMirrorReferenceTests",
         "test_borrowed_preview.BorrowedPreviewTests",
         "test_preview_worker_leases.PreviewWorkerLeaseTests",
         "test_step_export_jobs.StepExportJobTests", "test_step_export_jobs.StepExportWorkerLifetimeTests",
