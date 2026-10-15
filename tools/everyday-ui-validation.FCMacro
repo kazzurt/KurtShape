@@ -15,6 +15,7 @@ import FreeCADGui as Gui
 import Part
 from PySide import QtCore, QtGui
 from PySide6 import QtTest, QtWidgets
+from shiboken6 import isValid
 main = Gui.getMainWindow()
 main.hide()
 main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
@@ -102,6 +103,25 @@ def validate():
         check("Undo is searchable with its shortcut", rows and rows[0][0] == "Undo" and rows[0][1] == "Ctrl+Z")
         panel.tool_search_dialog.close()
 
+        # Reopen after the closed dialog was natively deleted, repeatedly, with
+        # each cycle searching, activating a result or closing.
+        for cycle in range(4):
+            QtCore.QCoreApplication.sendPostedEvents(None, QtCore.QEvent.DeferredDelete)
+            wait(20)
+            dialog, field, rows = search("measure" if cycle % 2 else "fit")
+            check("Search reopens after deletion (cycle %d)" % cycle, dialog.isVisible() and rows)
+            check("Opening again while visible reuses the dialog (cycle %d)" % cycle,
+                  panel.show_tool_search() is dialog)
+            if cycle % 2:
+                dialog.close()
+            else:
+                QtTest.QTest.keyClick(field, QtCore.Qt.Key_Return)
+                wait(80)
+                check("Activating a result closes search (cycle %d)" % cycle, not isValid(dialog) or not dialog.isVisible())
+        QtCore.QCoreApplication.sendPostedEvents(None, QtCore.QEvent.DeferredDelete)
+        wait(20)
+        check("Closed search dialog reference is released", panel.tool_search_dialog is None)
+
         # Search launches the same tool and mode as the toolbar.
         call("sketch_rectangle", id="Base", width=20, height=10)
         call("pad", id="Pad", profile="Base", length=6)
@@ -166,6 +186,59 @@ def validate():
         check("Seen from below, the solid occludes the fill (same as the bare bottom face)",
               max(abs(a - b) for a, b in zip(below, below_bare)) <= 4)
         Gui.Selection.clearSelection()
+
+        # Placed/rotated Body: Studio Add/Cut preview is exact and valid, the
+        # deliberate Reverse override is honored, and Confirm matches preview.
+        call("new")
+        rotation = App.Rotation(App.Vector(1, 1, 0), 50)
+        doc().Body.Placement = App.Placement(App.Vector(30, 10, 5), rotation)
+        doc().recompute()
+        call("inspect")
+        call("sketch_rectangle", id="RBase", width=20, height=10)
+        call("pad", id="RPad", profile="RBase", length=6, operation="new")
+        tip = doc().getObject(doc().RPad.KurtShapeOutputTips[0])
+        normal = rotation.multVec(App.Vector(0, 0, 1))
+        index, face = next((i, f) for i, f in enumerate(tip.Shape.Faces)
+                           if (f.normalAt(*f.Surface.parameter(f.CenterOfMass)) - normal).Length < 1e-6)
+        call("create_sketch", id="RTop", support={"feature": tip.Name, "subelement": "Face%d" % (index + 1)})
+        center = doc().RTop.Placement.inverse().multVec(face.CenterOfMass)
+        call("add_rectangle", sketch="RTop", width=2, height=2, x=center.x - 1, y=center.y - 1)
+        base_volume = tip.Shape.Volume
+        rotated = {}
+        for mode, expected in (("add", 4), ("remove", -4)):
+            Gui.Selection.clearSelection()
+            Gui.Selection.addSelection(doc().RTop)
+            before = (intent_signature(doc()), doc().UndoCount)
+            panel.extrude(cut=mode == "remove")
+            panel.result_operation.setCurrentIndex(panel.result_operation.findData(mode))
+            panel.end_type.setCurrentIndex(0)  # Cut defaults to Through all; compare a 1 mm blind cut
+            QtTest.QTest.keyClick(panel.depth.lineEdit(), QtCore.Qt.Key_A, QtCore.Qt.ControlModifier)
+            QtTest.QTest.keyClicks(panel.depth.lineEdit(), "1 mm")
+            result = wait_for_exact(panel.extrusion_preview)
+            rotated[mode] = result.measurements["volume_mm3"] if result.valid else result.error
+            check("Rotated Body Studio %s preview is exact and valid" % mode,
+                  result.valid and abs(result.measurements["volume_mm3"] - base_volume - expected) < 1e-6)
+            check("Rotated Body Studio %s Confirm is enabled" % mode, panel.confirm.isEnabled())
+            panel.reverse.click()
+            flipped = wait_for_exact(panel.extrusion_preview)
+            check("Rotated Body %s Reverse override changes the preview" % mode,
+                  not flipped.valid or abs(flipped.measurements["volume_mm3"] - result.measurements["volume_mm3"]) > 1)
+            panel.reverse.click()
+            result = wait_for_exact(panel.extrusion_preview)
+            check("Preview leaves the rotated model unchanged (%s)" % mode,
+                  (intent_signature(doc()), doc().UndoCount) == before)
+            names = {o.Name for o in doc().Objects}
+            QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+            wait(300)
+            created = [o for o in doc().Objects if o.Name not in names and "KurtShapeOutputTips" in o.PropertiesList]
+            committed = doc().getObject(created[0].KurtShapeOutputTips[0]).Shape.Volume if created else None
+            rotated[mode + "_committed"] = committed
+            check("Rotated Body %s Confirm matches its preview in one Undo step" % mode,
+                  committed is not None and abs(committed - result.measurements["volume_mm3"]) < 1e-6
+                  and doc().UndoCount == before[1] + 1)
+            call("undo")
+            check("Undo restores the rotated model (%s)" % mode, intent_signature(doc()) == before[0])
+        report["samples"]["rotated_studio"] = rotated
         report.update(passed=True, engine={"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION})
     except Exception:
         report["error"] = traceback.format_exc()

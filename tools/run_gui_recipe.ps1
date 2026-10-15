@@ -154,6 +154,8 @@ $result = [ordered]@{
 $process = $null
 try {
     $process = Start-Process -FilePath $executable -ArgumentList $arguments -WorkingDirectory $repositoryRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+    # Windows PowerShell reports a null ExitCode unless the handle is opened while running.
+    $null = $process.Handle
     $result.pid = $process.Id
     Register-KurtShapeValidationProcess -Process $process -Executable $executable -Arguments $arguments
     Write-Host ('PID: ' + $process.Id + '; report: ' + $reportPath + '; result: ' + $resultPath)

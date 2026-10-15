@@ -2671,10 +2671,14 @@ class Panel(QtGui.QDockWidget):
 
     def show_tool_search(self):
         """One searchable list of toolbar, menu and shortcut tools."""
+        from shiboken6 import isValid
         previous = getattr(self, "tool_search_dialog", None)
-        if previous is not None and previous.isVisible():
+        # The dialog deletes itself on close; never touch a deleted wrapper.
+        if previous is not None and isValid(previous) and previous.isVisible():
+            previous.raise_()
             previous.activateWindow()
             return previous
+        self.tool_search_dialog = None
         entries = tool_search.build_entries(self.tool_search_actions(), self.router.available_actions())
         dialog = QtGui.QDialog(self.main)
         dialog.setObjectName("KurtShapeToolSearchDialog")
@@ -2728,6 +2732,11 @@ class Panel(QtGui.QDockWidget):
         fill()
         self.tool_search_dialog = dialog
         self.tool_search_entries = entries
+
+        def forget(*_args, panel=self, closed=dialog):
+            if getattr(panel, "tool_search_dialog", None) is closed:
+                panel.tool_search_dialog = None
+        dialog.destroyed.connect(forget)
         dialog.show()
         field.setFocus()
         return dialog

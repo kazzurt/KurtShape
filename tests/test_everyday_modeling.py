@@ -126,17 +126,38 @@ class EverydayModelingDirectionTests(unittest.TestCase):
             {"op": "pad", "profile": name, "length": 1, "reversed": False},
             {"op": "pocket", "profile": name, "length": 1, "through_all": False}))
 
-    @unittest.expectedFailure
-    def test_placed_rotated_body_studio_preview(self):
-        """Known defect: tracing binders stay Touched in the preview clone of a
-        placed/rotated Body, so the exact preview reports needs_rebuild while
-        the committed operation succeeds. Deferred; see docs."""
-        self.plate(App.Placement(App.Vector(30, 10, 5), App.Rotation(App.Vector(1, 1, 0), 50)), studio=True)
-        self.face_sketch("Stop", FACES["top"])  # output tip of the studio Pad
-        evaluator = ExtrusionEvaluator(self.core, self.doc, self.state["revision"])
-        self.addCleanup(evaluator.close)
-        self.change(evaluator, {"op": "pad", "profile": "Stop", "length": 1, "reversed": False,
-                                "operation": "add", "merge_scope": "auto"})
+    def test_placed_rotated_body_studio_preview_matches_confirm(self):
+        """Studio output faces are global: a rotated part has no +Z top face.
+
+        The earlier expected failure searched for a global +Z face and never
+        reached the preview. Each rotated face previews validly, and Confirm
+        produces exactly the previewed solid.
+        """
+        rotation = App.Rotation(App.Vector(1, 1, 0), 50)
+        self.plate(App.Placement(App.Vector(30, 10, 5), rotation), studio=True)
+        for label, normal in FACES.items():
+            turned = rotation.multVec(App.Vector(*normal))
+            self.face_sketch("S" + label, (turned.x, turned.y, turned.z))
+        for label in FACES:
+            for operation, op, reverse, delta in (("add", "pad", False, 4), ("remove", "pocket", True, -4)):
+                proposal = {"op": op, "profile": "S" + label, "length": 1, "reversed": reverse,
+                            "operation": operation, "merge_scope": "auto"}
+                if op == "pocket":
+                    proposal["through_all"] = False
+                evaluator = ExtrusionEvaluator(self.core, self.doc, self.state["revision"])
+                try:
+                    self.assertAlmostEqual(self.change(evaluator, proposal), delta, msg=label + " " + operation)
+                    previewed = evaluator.evaluate(proposal).shape.Volume
+                finally:
+                    evaluator.close()
+                names = {obj.Name for obj in self.doc.Objects}
+                self.call(op, **{key: value for key, value in proposal.items() if key != "op"})
+                created = [obj for obj in self.doc.Objects
+                           if obj.Name not in names and "KurtShapeOutputTips" in obj.PropertiesList]
+                self.assertEqual(len(created), 1, label + " " + operation)
+                committed = self.doc.getObject(created[0].KurtShapeOutputTips[0]).Shape.Volume
+                self.assertAlmostEqual(committed, previewed, places=6, msg=label + " " + operation)
+                self.call("undo")
 
 
 if __name__ == "__main__":
