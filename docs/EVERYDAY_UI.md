@@ -59,7 +59,7 @@ Fresh cloud runs: Linux, FreeCAD 1.1.4 / OCCT 7.8.1. **Windows not run.**
 
 ## Limitations
 
-- **Reproduced, not fixed:** in a placed or rotated Body, the exact preview of a Studio Add/Remove reports `needs_rebuild`, because tracing binders stay Touched in the preview clone, so Confirm stays disabled. The committed operation itself succeeds, and native Pad/Pocket previews are fine. This belongs to the same class as the deferred transformed-Body Up-to-face preview limitation, and is recorded as an expected failure.
+- **Corrected on Windows (October 15):** the reported placed/rotated Body Studio Add/Remove preview failure was a test defect, not a product defect. The expected-failure test looked for a global +Z face. A rotated Studio part has no such face, because its output faces are global, so the test failed before it reached the preview. With rotated face normals, every face previews validly for Add and Cut, and Confirm produces exactly the previewed solid, in native tests and in the real GUI (`everyday-ui` recipe: Add 1204 = 1204 mm³, Cut 1196 = 1196 mm³, Reverse override honored). The test is now an ordinary passing regression. The transformed-Body Up-to-face limitation is separate and unchanged.
 - Translucent blending depends on the native Coin blend mode. The exact blended color is not asserted, only the tint and occlusion.
 - The search dialog lists Part Studio tools in Assembly with *Switch to Part Studio*. It does not switch workspaces automatically.
 

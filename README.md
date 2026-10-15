@@ -4,6 +4,8 @@ KurtShape uses portable FreeCAD 1.1.4, native Sketcher/PartDesign, and OCCT 7.8.
 
 **Edit existing features:** double-click an Extrude or Remove material row (or right-click → Edit) to reopen it in the same dialog with its current depth, formula, direction and end condition, an exact preview, and Confirm/Cancel. [Walkthrough, supported cases and limits](docs/EXTRUSION_EDIT.md).
 
+**Edit Fillet and Chamfer:** double-click a Fillet or Chamfer, or right-click it and choose Edit. It reopens with its current edges, Radius/Size and formula. The input solid is shown, so you can add, remove, replace or clear edges, including edges the feature rounded away. Fillet and Chamfer picking selects and highlights edges only; hovering a face highlights nothing. Preview and Cancel leave the model unchanged, and Confirm is one Undo step. [Details, evidence and limits](docs/FILLET_CHAMFER_EDIT.md).
+
 **Everyday modeling UI:** Alt+C searches every toolbar, menu and shortcut tool (with aliases such as *remove material*); one **Extrude** tool offers New / Add / Cut / Intersect; Undo/Redo moved from the toolbar to shortcuts, the Document menu and search; closed sketch regions render as a translucent tint on the surface. [Details, evidence and limits](docs/EVERYDAY_UI.md).
 
 **History lifecycle:** a finished new sketch is one Undo step; deleting a Part Studio operation removes its helpers; leftover helpers in older files are reported and repaired only on request; rolled-back modeling ignores future parts; rollback needs a deliberate marker drag. [Details and limits](docs/HISTORY_LIFECYCLE.md).

@@ -115,6 +115,8 @@ def native_boundary_rgb(sketch, xyz, direction="front"):
     point = view.getPointOnViewport(sketch.getGlobalPlacement().multVec(App.Vector(*xyz)))
     x, y = round(point[0]), frame.height() - 1 - round(point[1])
     colors = [frame.pixelColor(i, j).getRgb()[:3] for i in range(x - 2, x + 3) for j in range(y - 2, y + 3)]
+    frame.save(str(output / ("boundary-{}.png".format(direction))))
+    report.setdefault("boundary_samples", {})[direction] = {"pixel": [x, y], "colors": sorted(set(colors))}
     blue = [color for color in colors if color[2] > color[0] + 50 and color[2] > color[1] + 30]
     check("The unshaded {} finished native boundary is visible".format(direction), bool(blue))
     rgb = max(set(blue), key=blue.count)
@@ -141,6 +143,33 @@ def click(sketch, xyz):
 def rectangle(sketch, x1, y1, x2, y2, construction=False):
     points = [App.Vector(x1, y1, 0), App.Vector(x2, y1, 0), App.Vector(x2, y2, 0), App.Vector(x1, y2, 0)]
     sketch.addGeometry([Part.LineSegment(points[index], points[(index + 1) % 4]) for index in range(4)], construction)
+
+
+def front_normal(sketch):
+    """N flips when already normal; ensure the camera faces the sketch's front."""
+    panel.normal()
+    wait(100)
+    view = Gui.activeDocument().activeView()
+    normal = sketch.getGlobalPlacement().Rotation.multVec(App.Vector(0, 0, 1))
+    if view.getViewDirection().dot(normal) > 0:
+        panel.normal()
+        wait(100)
+
+
+def face_tint(sketch, bare_xyz=(35, 25, 0)):
+    """Predicate: a blue tint over the bare supporting face sampled in this frame."""
+    view = Gui.activeDocument().activeView()
+    view.redraw()
+    wait()
+    frame = viewport().grab().toImage()
+    point = view.getPointOnViewport(sketch.getGlobalPlacement().multVec(App.Vector(*bare_xyz)))
+    face = frame.pixelColor(round(point[0]), frame.height() - 1 - round(point[1])).getRgb()[:3]
+
+    def on_face(color):
+        return (max(abs(a - b) for a, b in zip(color, face)) > 8
+                and color[2] - color[0] > face[2] - face[0] and color != (255, 255, 255))
+    on_face.description = "blue tint over the bare face %s" % (face,)
+    return on_face
 
 
 def entry(sketch):
@@ -183,7 +212,7 @@ def run():
         panel.sketch_regions.apply()
         check("Historical source guard prevents fill leaking from later children", not entry(doc.FutureLoop)["shown"])
         doc.FutureLoop.ViewObject.Visibility = False
-        panel.normal()
+        front_normal(sketch)
         Gui.activeDocument().activeView().getCameraNode().height.setValue(100)
         wait(500)
         # A translucent blue tint over the background (blend mode is native).
@@ -202,7 +231,8 @@ def run():
         sample(sketch, "Closed rectangle interior is tinted", (-30, 0, 0), gray)
         sample(sketch, "A nested hole stays white", (-17, 5, 0), (255, 255, 255))
         sample(sketch, "A nested closed island is tinted", (-19, 6, 0), gray)
-        sample(sketch, "A disjoint circle on the supporting face is tinted", (10, 12, 0), gray)
+        # Over the supporting face the tint blends with the face, not white.
+        sample(sketch, "A disjoint circle on the supporting face is tinted", (10, 12, 0), face_tint(sketch))
         sample(sketch, "An arc and diameter enclose a shaded region", (25, -6, 0), gray)
         sample(sketch, "Open polyline geometry has no interior fill", (-30, -25, 0), (255, 255, 255))
         sample(sketch, "Construction-only loops have no interior fill", (10, -30, 0), (255, 255, 255))
@@ -232,7 +262,7 @@ def run():
         check("Closing the boundary restores the region", entry(sketch)["region_count"] == 4)
         sketch.AttachmentOffset = App.Placement(App.Vector(0, 0, 8), App.Rotation(App.Vector(1, 0, 0), 25))
         doc.recompute()
-        panel.normal()
+        front_normal(sketch)
         wait(500)
         sample(sketch, "Fill follows a rotated and offset sketch plane", (-30, 0, 0), gray)
         capture("rotated-offset-sketch-regions")
@@ -243,7 +273,8 @@ def run():
         Gui.activeDocument().activeView().viewTop()
         wait(500)
         check("A visible finished unconsumed sketch retains shading", sketch.ViewObject.Visibility and entry(sketch)["shown"])
-        sample(sketch, "Finished sketch fill remains visible on its supporting face", (10, 12, 0), gray)
+        sample(sketch, "Finished sketch fill remains visible on its supporting face", (10, 12, 0), face_tint(sketch))
+        Gui.Selection.clearSelection()  # Finish selects the sketch; sample its unselected color.
         baseline_rgb = native_boundary_rgb(sketch, (16, 10, 0))
         sample(sketch, "Finished shading preserves the exact native boundary color", (16, 10, 0), baseline_rgb)
         capture("finished-visible-sketch-region")
