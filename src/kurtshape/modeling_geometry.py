@@ -71,8 +71,94 @@ def named_plane_candidates(doc):
             and not (owner(doc, obj) and getattr(owner(doc, obj), "KurtShapeInternal", False))]
 
 
+def _container_chain(doc, obj):
+    """Placement expression prefix for every geometry group containing obj."""
+    chain, parent = [], obj.getParentGeoFeatureGroup()
+    while parent is not None:
+        chain.insert(0, parent.Name + ".Placement * ")
+        parent = parent.getParentGeoFeatureGroup()
+    return "".join(chain)
+
+
+def reference_driver(doc, kind, source, element, mode, name, operation, spec=None, input_name="reference"):
+    """World-frame native driver for geometry that may live inside a Body.
+
+    A root-level attached datum follows the source element in its container's
+    frame without a scoped link (attachment links are document-wide). The
+    driver composes every container placement by expression, so editing the
+    source geometry or moving/rotating its Body moves the driver. Consumers
+    link the driver, which shares their root scope.
+    """
+    datum = doc.addObject("PartDesign::Line" if kind == "line" else "PartDesign::Plane", name + "Datum")
+    datum.AttachmentSupport = [(source, [element])]
+    datum.MapMode = mode
+    if kind == "line":
+        driver = doc.addObject("Part::Line", name)
+        driver.X1 = driver.Y1 = driver.Z1 = driver.X2 = driver.Y2 = 0
+        driver.Z2 = 1
+    else:
+        # FreeCAD 1.1.4 recognizes a PartDesign datum plane by a "Plane"
+        # substring in its Name; callers include it in ``name``.
+        driver = doc.addObject("PartDesign::Plane", name)
+        driver.MapMode = "Deactivated"
+    driver.setExpression("Placement", _container_chain(doc, source) + datum.Name + ".Placement")
+    for obj in (datum, driver):
+        studio._prop(obj, "App::PropertyBool", "KurtShapeInternal", True)
+        studio._prop(obj, "App::PropertyString", "KurtShapeOperationOwner", operation)
+        if App.GuiUp:
+            obj.ViewObject.Visibility = False
+    studio._prop(driver, "App::PropertyLinkGlobal", "KurtShapeReferenceDatum", datum)
+    if reference_tools.is_selector(spec):
+        selectors.bind(datum, input_name, reference_tools.selector_value(spec),
+                       native_property="AttachmentSupport", mode="linksublist")
+    doc.recompute()
+    if datum.Shape.isNull() or {"Invalid", "Error"} & set(datum.State) or {"Invalid", "Error"} & set(driver.State):
+        raise _error("missing_reference", "The selected reference could not be attached")
+    return driver, datum
+
+
+def edge_reference(doc, spec):
+    """Resolve a straight edge/line or circle/arc reference for a pattern.
+
+    Returns (source, element, attachment mode, "line" | "circle"). Sketch
+    references may use native lowercase ``edgeN`` (construction included).
+    """
+    if isinstance(spec, dict) and set(spec) <= {"feature", "subelement"}:
+        source = doc.getObject(spec.get("feature", "") or "")
+        element = spec.get("subelement", "") or ""
+        if source is None:
+            raise _error("missing_reference", "The selected reference no longer exists")
+    else:
+        reference = _reference(doc, spec, "edge")
+        source, element = doc.getObject(reference["feature"]), reference["subelement"]
+    if not re.fullmatch(r"[Ee]dge[1-9][0-9]*", element):
+        raise _error("unsupported_reference", "Select a straight edge, sketch line, circle or arc")
+    if not studio.reference_available(source):
+        raise _error("missing_reference", "The selected reference is behind the rollback bar")
+    try:
+        edge = source.getSubObject(element) if source.TypeId == "Sketcher::SketchObject" else source.Shape.getElement(element)
+    except Exception:
+        edge = None
+    if edge is None or edge.isNull() or not hasattr(edge, "Curve"):
+        raise _error("missing_reference", "The selected edge no longer exists")
+    if isinstance(edge.Curve, (Part.Line, Part.LineSegment)) and edge.Length > 1e-9:
+        return source, element, "Tangent", "line"
+    if isinstance(edge.Curve, Part.Circle):
+        return source, element, "AxisOfCurvature", "circle"
+    raise _error("unsupported_reference", "Select a straight edge or line, or a circle or arc; "
+                 + type(edge.Curve).__name__ + " edges cannot define a pattern direction or axis")
+
+
 def bind_mirror_plane(doc, tool, spec):
     obj, element = planar_reference(doc, spec, before=tool)
+    operation = getattr(tool, "KurtShapeOperationOwner", "") or tool.Name
+    if obj.TypeId not in {"App::Plane", "PartDesign::Plane"} and obj.getParentGeoFeatureGroup() is not None:
+        # A planar face inside a Body: a direct MirrorPlane link would leave the
+        # Mirror's scope ("go out of the allowed scope"). Follow it natively.
+        driver, _ = reference_driver(doc, "plane", obj, element, "FlatFace", tool.Name + "MirrorPlane",
+                                     operation, spec, "mirror_plane")
+        tool.MirrorPlane = (driver, [""])
+        return
     if obj.TypeId in {"App::Plane", "PartDesign::Plane"}:
         # FreeCAD 1.1.4 identifies PartDesign datum planes by a "Plane"
         # substring in their internal Name (FeatureMirroring.cpp). A native
@@ -148,6 +234,33 @@ def _neutral_axis(doc, tool, source, element, spec, bind_selector=True):
     studio._prop(line, "App::PropertyLinkGlobal", "KurtShapeAxisDatum", datum)
     tool.AxisLink = (line, ["Edge1"])
     return line
+
+
+def migrate_mirror_scopes(doc):
+    """Relink saved studio mirrors whose MirrorPlane points inside a Body.
+
+    The Mirror keeps its name, Source and outputs; only MirrorPlane moves to a
+    native driver that follows the same face, so geometry is unchanged.
+    """
+    changed = False
+    for tool in list(doc.Objects):
+        if tool.TypeId != "Part::Mirroring" or not (getattr(tool, "KurtShapeStudioOperation", "")
+                                                   or getattr(tool, "KurtShapeOperationOwner", "")):
+            continue
+        source, elements = tool.MirrorPlane if tool.MirrorPlane else (None, [])
+        if (source is None or source.getParentGeoFeatureGroup() is None
+                or source.TypeId in {"App::Plane", "PartDesign::Plane"} or not elements):
+            continue
+        face = source.Shape.getElement(elements[0]) if hasattr(source, "Shape") else None
+        if face is None or not isinstance(getattr(face, "Surface", None), Part.Plane):
+            continue  # Left as is; the build status reports a broken/nonplanar plane.
+        operation = getattr(tool, "KurtShapeOperationOwner", "") or tool.Name
+        driver, datum = reference_driver(doc, "plane", source, elements[0], "FlatFace",
+                                         tool.Name + "MirrorPlane", operation)
+        tool.MirrorPlane = (driver, [""])
+        selectors.move_binding(tool, datum, "mirror_plane", "AttachmentSupport", "linksublist")
+        changed = True
+    return changed
 
 
 def migrate_axis_scopes(doc):
