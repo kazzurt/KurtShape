@@ -57,6 +57,13 @@ Fresh cloud runs: Linux, FreeCAD 1.1.4 / OCCT 7.8.1. **Windows not run.**
 | `extrusion-edit` / `history-lifecycle` GUI recipes | hidden GUI | 43/43, 29/29 |
 | `sketch-regions` GUI recipe | hidden GUI | Not run here: segfaults during setup in this harness on the baseline too. Its "light gray" pixel checks now expect a translucent tint. Needs Windows. |
 
+**Windows validation (October 15, FreeCAD 1.1.4 / OCCT 7.8.1):**
+
+- **`everyday-ui`: 46/46.** Adds repeated search open, search, activate, close and reopen after native deletion. This reproduced and now fixes *Internal C++ object already deleted*. It also adds rotated-Body Studio Add/Cut preview = Confirm.
+- **`sketch-regions`: 34/34.** The recipe now faces the sketch front, compares the on-face tint with the bare face, and samples the unselected boundary.
+- **Other GUI recipes:** `extrusion-edit` 43/43; `part-studio` 101/101; `design-surface` 408/408; `history-lifecycle` 29/29; `rollback-history` 45/45.
+- **`run-checks.ps1`:** 522 passed and 4 opt-in perf skips, with 0 failures and 0 expected failures.
+
 ## Limitations
 
 - **Corrected on Windows (October 15):** the reported placed/rotated Body Studio Add/Remove preview failure was a test defect, not a product defect. The expected-failure test looked for a global +Z face. A rotated Studio part has no such face, because its output faces are global, so the test failed before it reached the preview. With rotated face normals, every face previews validly for Add and Cut, and Confirm produces exactly the previewed solid, in native tests and in the real GUI (`everyday-ui` recipe: Add 1204 = 1204 mm³, Cut 1196 = 1196 mm³, Reverse override honored). The test is now an ordinary passing regression. The transformed-Body Up-to-face limitation is separate and unchanged.
