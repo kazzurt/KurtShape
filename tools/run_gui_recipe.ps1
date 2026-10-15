@@ -1,7 +1,7 @@
 param(
     [ValidateSet('step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
         'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline','responsiveness-preview',
-        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit')]
+        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','pattern-mirror')]
     [string]$Recipe = 'interface',
     [ValidateRange(1,7200)][int]$TimeoutSeconds = 900,
     [switch]$WriteEvidence,
@@ -25,6 +25,7 @@ $recipes = @{
     'history-lifecycle' = @('history-lifecycle-validation.FCMacro', 'history-lifecycle\gui-result.json', 0)
     'everyday-ui' = @('everyday-ui-validation.FCMacro', 'everyday-ui\gui-result.json', 0)
     'dress-up-edit' = @('dress-up-edit-validation.FCMacro', 'dress-up-edit\gui-result.json', 0)
+    'pattern-mirror' = @('pattern-mirror-validation.FCMacro', 'pattern-mirror\gui-result.json', 0)
     'parts-refresh' = @('parts-refresh-validation.FCMacro', 'parts-refresh\gui-result.json', 0)
     'geometry-check-timing' = @('geometry-check-timing-validation.FCMacro', 'geometry-check-timing\gui-result.json', 0)
     'geometry-check-lifecycle' = @('geometry-check-lifecycle-validation.FCMacro', 'geometry-check-lifecycle\gui-result.json', 0)
@@ -204,6 +205,36 @@ try {
         if ($scopeWarnings.Count) {
             $result.scope_warnings = $scopeWarnings
             throw ('Workflow recipe emitted native link-scope warnings: ' + $scopeWarnings.Count)
+        }
+    }
+    if ($Recipe -eq 'pattern-mirror') {
+        # Only the legacy example's first load may warn; everything after the
+        # strict marker (migrated reopen and all new features) must not.
+        $marker = 'KURTSHAPE_STRICT_SCOPE_BEGIN'
+        $strict = @()
+        $canary = 0
+        $markerSeen = $false
+        foreach ($path in @($logPath, $stdoutPath, $stderrPath)) {
+            if (-not (Test-Path -LiteralPath $path)) { continue }
+            $lines = @(Get-Content -LiteralPath $path)
+            $index = -1
+            for ($i = $lines.Count - 1; $i -ge 0; $i--) { if ($lines[$i] -match $marker) { $index = $i; break } }
+            if ($index -ge 0) {
+                $markerSeen = $true
+                if ($index -gt 0) { $canary += @($lines[0..($index - 1)] | Where-Object { $_ -match 'go out of the allowed scope' }).Count }
+                if ($index -lt $lines.Count - 1) {
+                    $strict += @($lines[($index + 1)..($lines.Count - 1)] | Where-Object { $_ -match 'go out of the allowed scope' })
+                }
+            }
+        }
+        if (-not $markerSeen) { throw 'Pattern/Mirror recipe did not emit its strict-scope marker' }
+        # The recipe's deliberate canary must be visible, or the check below proves nothing.
+        $result.scope_canary_count = $canary
+        if (-not $canary) { throw 'Native link-scope warnings are not captured by this run; the strict check would be vacuous' }
+        $result.scope_warning_count = $strict.Count
+        if ($strict.Count) {
+            $result.scope_warnings = @($strict | ForEach-Object { $_.Trim() } | Select-Object -Unique)
+            throw ('Pattern/Mirror recipe emitted native link-scope warnings after its marker: ' + $strict.Count)
         }
     }
     if ($Recipe -eq 'sketch-references') {

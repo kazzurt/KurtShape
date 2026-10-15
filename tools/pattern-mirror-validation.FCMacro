@@ -1,0 +1,407 @@
+"""Hidden GUI checks: associative pattern references and cross-body Mirror planes.
+
+Real viewport clicks pick the references. The runner fails on any native
+"go out of the allowed scope" warning printed after the strict-scope marker;
+only the legacy saved example's first load precedes it.
+"""
+import json
+import os
+from pathlib import Path
+import shutil
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+from kurtshape.ui import start
+from kurtshape.core import intent_signature
+from kurtshape import studio
+from preview_validation import wait_for_exact
+panel = start()
+output = evidence_dir("pattern-mirror")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "samples": {},
+          "method": "Separate hidden native GUI; real viewport clicks, feature dialogs, native recompute"}
+SAVED_EXAMPLE = root.parent / "test-261014.FCStd"
+
+
+def check(label, condition):
+    assert condition, label + ": " + panel.message.text()
+    report["checks"].append(label)
+
+
+def call(op, **args):
+    state = panel.operation(op, **args)
+    assert state, op + ": " + panel.message.text()
+    return state
+
+
+def wait(ms=80):
+    QtTest.QTest.qWait(ms)
+
+
+def doc():
+    return App.activeDocument()
+
+
+def view():
+    return Gui.activeDocument().activeView()
+
+
+def viewport():
+    windows = [window for area in main.findChildren(QtWidgets.QMdiArea)
+               for window in ([area.activeSubWindow()] if area.activeSubWindow() else area.subWindowList())]
+    window = next(window for window in windows if doc().Label in window.windowTitle() or len(windows) == 1)
+    return next(widget for widget in window.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget")
+
+
+def click(vector):
+    gl = viewport()
+    pixel = view().getPointOnViewport(vector)
+    ratio = gl.devicePixelRatioF()
+    point = QtCore.QPoint(int(pixel[0] / ratio), gl.height() - 1 - int(pixel[1] / ratio))
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point), QtCore.QPointF(gl.mapToGlobal(point)),
+                              QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+    QtGui.QApplication.sendEvent(gl, event)
+    wait(120)
+    QtTest.QTest.mouseClick(gl, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+    wait(250)
+
+
+def hit(vector):
+    pixel = view().getPointOnViewport(vector)
+    return view().getObjectInfo((int(pixel[0]), int(pixel[1]))) or {}
+
+
+def pick_point(feature, element):
+    """A point on the element whose viewport pick reports exactly that element."""
+    obj = doc().getObject(feature)
+    shape = obj.Shape.getElement(element).copy()
+    shape.Placement = obj.getGlobalPlacement() * obj.Placement.inverse() * shape.Placement
+    if element.startswith("Edge"):
+        candidates = [shape.valueAt(shape.FirstParameter + t * (shape.LastParameter - shape.FirstParameter))
+                      for t in (0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8)]
+    else:
+        center = shape.CenterOfMass
+        candidates = [center] + [center + (vertex.Point - center) * 0.4 for vertex in shape.Vertexes]
+    for point in candidates:
+        info = hit(point)
+        if (info.get("Component") or "").split(".")[-1] == element:
+            return point
+    raise AssertionError("%s.%s is not pickable in this view" % (feature, element))
+
+
+def element_named(feature, kind, test):
+    shape = doc().getObject(feature).Shape
+    items = shape.Edges if kind == "Edge" else shape.Faces
+    return kind + str(next(i + 1 for i, item in enumerate(items) if test(item)))
+
+
+def state():
+    return intent_signature(doc()), doc().UndoCount
+
+
+def tip(part):
+    return studio.current_part(doc(), part).Tip
+
+
+def check_parts(dialog, ids):
+    widget = dialog.findChild(QtWidgets.QListWidget, "KurtShapeStudio_parts")
+    for row in range(widget.count()):
+        item = widget.item(row)
+        item.setCheckState(QtCore.Qt.Checked if item.data(QtCore.Qt.UserRole) in ids else QtCore.Qt.Unchecked)
+    wait(50)
+
+
+def set_text(dialog, key, text):
+    widget = dialog.findChild(QtWidgets.QWidget, "KurtShapeStudio_" + key)
+    edit = widget.lineEdit() if hasattr(widget, "lineEdit") else widget
+    edit.selectAll()
+    QtTest.QTest.keyClicks(edit, text)
+    wait(50)
+
+
+def picker_labels(dialog, key):
+    items = dialog.fields[key].items
+    return [items.item(row).text() for row in range(items.count())]
+
+
+def outputs(name):
+    return [doc().getObject(part) for part in doc().getObject(name).KurtShapeOutputParts]
+
+
+def driver_axis(name):
+    driver = doc().getObject(name)
+    return driver.Placement.Base, driver.Placement.Rotation.multVec(App.Vector(0, 0, 1))
+
+
+def move_part(body, placement):
+    body.Placement = placement
+    doc().recompute()
+    call("inspect")
+    wait(100)
+
+
+def confirm(dialog):
+    QtTest.QTest.mouseClick(dialog.confirm, QtCore.Qt.LeftButton)
+    wait(400)
+
+
+def validate():
+    try:
+        # Legacy saved example: its first load prints the reported warning
+        # (the link is restored before any migration can run).
+        if SAVED_EXAMPLE.is_file():
+            copy = output / "saved-example-copy.FCStd"
+            shutil.copyfile(SAVED_EXAMPLE, copy)
+            migrated = output / "saved-example-migrated.FCStd"
+            panel.core.settings.grant_destination(str(migrated))
+            call("open", path=str(copy))
+            wait(300)
+            mirror = doc().Mirror
+            check("Saved example Mirror keeps its identity and source", mirror.Source.Name == "MirrorInput")
+            driver = mirror.MirrorPlane[0]
+            check("Saved example Mirror plane now follows Shell.Face11 through a root driver",
+                  driver.getParentGeoFeatureGroup() is None
+                  and driver.KurtShapeReferenceDatum.AttachmentSupport == [(doc().Shell, ("Face11",))])
+            check("Saved example Mirror geometry is unchanged", abs(mirror.Shape.Volume - 1373.672113) < 1e-5)
+            report["samples"]["saved_example_mirror_bbox"] = str(mirror.Shape.BoundBox)
+            call("save", path=str(migrated))
+            name = doc().Name
+            App.closeDocument(name)
+            wait(200)
+        # Canary: a deliberately out-of-scope native Mirror in a scratch
+        # document proves this process's log captures the warning at all.
+        canary = App.newDocument("ScopeCanary")
+        body = canary.addObject("PartDesign::Body", "Body")
+        box = body.newObject("PartDesign::AdditiveBox", "Box")
+        canary.recompute()
+        mirror = canary.addObject("Part::Mirroring", "CanaryMirror")
+        mirror.Source = body
+        mirror.MirrorPlane = (box, ["Face1"])
+        canary.recompute()
+        App.closeDocument(canary.Name)
+        wait(100)
+        App.Console.PrintWarning("KURTSHAPE_STRICT_SCOPE_BEGIN\n")
+        if SAVED_EXAMPLE.is_file():
+            call("open", path=str(migrated))
+            wait(300)
+            for obj in doc().Objects:
+                obj.touch()
+            doc().recompute()
+            check("Migrated example reopens valid", not [o for o in doc().Objects if "Invalid" in o.State]
+                  and abs(doc().Mirror.Shape.Volume - 1373.672113) < 1e-5)
+            App.closeDocument(doc().Name)
+            wait(200)
+        else:
+            report["samples"]["saved_example"] = "missing: " + str(SAVED_EXAMPLE)
+
+        call("new")
+        call("sketch_rectangle", id="BodyProfile", width=4, height=3)
+        call("pad", id="BodyExtrude", profile="BodyProfile", length=2, operation="new")
+        call("create_body", id="Rail", name="Rail")
+        call("sketch_rectangle", id="RailProfile", body="Rail", x=30, y=10, width=20, height=2)
+        call("pad", id="RailExtrude", profile="RailProfile", body="Rail", length=4, operation="new")
+        call("create_body", id="Hub", name="Hub")
+        call("sketch_circle", id="HubProfile", body="Hub", x=20, y=-15, diameter=6)
+        call("pad", id="HubExtrude", profile="HubProfile", body="Hub", length=2, operation="new")
+        panel.isometric()
+        view().fitAll()
+        wait(500)
+        source = tip("Body").Shape.copy()
+        rail = tip("Rail")
+        rail_edge = element_named(rail.Name, "Edge", lambda e: isinstance(e.Curve, Part.Line) and abs(e.Length - 20) < 1e-6
+                                  and e.BoundBox.ZMin > 4 - 1e-6 and e.BoundBox.YMax < 10 + 1e-6)
+
+        # Linear pattern by a picked edge on another part.
+        Gui.Selection.clearSelection()
+        dialog = panel.studio_tool("linear_pattern_parts")
+        wait(300)
+        check_parts(dialog, ["Body"])
+        check("Linear starts with a manual direction when no edge is selected",
+              dialog.fields["direction_by"].currentData() == "manual" and dialog.fields["direction"].isVisible())
+        click(pick_point(rail.Name, rail_edge))
+        check("Clicking an edge sets it as the direction reference",
+              dialog.fields["direction_by"].currentData() == "selected" and dialog.fields["direction_reference"].value() is not None)
+        labels = picker_labels(dialog, "direction_reference")
+        report["samples"]["linear_reference_label"] = labels
+        check("The reference names its feature, edge and kind", labels and labels[0].endswith("· line"))
+        check("Manual direction fields hide while a reference is used", not dialog.fields["direction"].isVisible())
+        set_text(dialog, "spacing", "10 mm")
+        dialog.findChild(QtWidgets.QSpinBox, "KurtShapeStudio_count").setValue(3)
+        before = state()
+        forward = wait_for_exact(dialog.preview)
+        check("Referenced linear preview is valid and leaves the model unchanged", forward.valid and state() == before)
+        dialog.fields["reversed"].setChecked(True)
+        backward = wait_for_exact(dialog.preview)
+        check("Reverse flips the previewed direction", backward.valid
+              and abs(backward.measurements["bbox_mm"]["min"][0] - forward.measurements["bbox_mm"]["min"][0]) > 5)
+        dialog.fields["reversed"].setChecked(False)
+        wait_for_exact(dialog.preview)
+        confirm(dialog)
+        linear = next(o for o in doc().Objects if getattr(o, "KurtShapeStudioOperation", "") and '"linear_pattern_parts"' in o.KurtShapeStudioOperation)
+        check("Confirm creates the pattern in one Undo step", doc().UndoCount == before[1] + 1)
+        driver_name = doc().getObject(linear.Name + "Direction").Name
+        _, direction = driver_axis(driver_name)
+        check("Pattern direction follows the picked edge", direction.cross(App.Vector(1, 0, 0)).Length < 1e-7)
+        offsets = sorted(round(abs(body.Shape.BoundBox.XMin - source.BoundBox.XMin), 6) for body in outputs(linear.Name))
+        check("Instances are spaced along the edge", offsets == [10, 20])
+        move_part(doc().Rail, App.Placement(App.Vector(), App.Rotation(App.Vector(0, 0, 1), 90)))
+        offsets = sorted(round(abs(body.Shape.BoundBox.YMin - source.BoundBox.YMin), 6) for body in outputs(linear.Name))
+        check("Rotating the referenced part's Body turns the pattern", offsets == [10, 20])
+        move_part(doc().Rail, App.Placement())
+        view().fitAll()
+        wait(300)
+
+        # Clearing a reference explains itself; Manual remains available.
+        Gui.Selection.clearSelection()
+        dialog = panel.studio_tool("linear_pattern_parts")
+        wait(300)
+        check_parts(dialog, ["Body"])
+        click(pick_point(rail.Name, rail_edge))
+        dialog.fields["direction_reference"].clear_all()
+        wait(400)
+        check("A cleared reference blocks Confirm with guidance", not dialog.confirm.isEnabled()
+              and "direction" in dialog.verdict.text().lower())
+        report["samples"]["cleared_reference_message"] = dialog.verdict.text()
+        dialog.fields["direction_by"].setCurrentIndex(dialog.fields["direction_by"].findData("manual"))
+        set_text(dialog, "spacing", "12 mm")
+        manual = wait_for_exact(dialog.preview)
+        check("Manual direction remains a valid fallback", manual.valid)
+        before = state()
+        dialog.reject()
+        wait(200)
+        check("Cancel leaves the model unchanged", state() == before)
+
+        # Circular pattern about a picked circle on another part.
+        hub = tip("Hub")
+        circle = element_named(hub.Name, "Edge", lambda e: isinstance(e.Curve, Part.Circle) and e.BoundBox.ZMin > 2 - 1e-6)
+        Gui.Selection.clearSelection()
+        dialog = panel.studio_tool("circular_pattern_parts")
+        wait(300)
+        check_parts(dialog, ["Body"])
+        click(pick_point(hub.Name, circle))
+        labels = picker_labels(dialog, "axis_reference")
+        report["samples"]["circular_reference_label"] = labels
+        check("Clicking a circle sets the rotation axis", dialog.fields["axis_by"].currentData() == "selected"
+              and labels and labels[0].endswith("· circle"))
+        set_text(dialog, "angle", "90 deg")
+        dialog.findChild(QtWidgets.QSpinBox, "KurtShapeStudio_count").setValue(2)
+        before = state()
+        result = wait_for_exact(dialog.preview)
+        check("Circle-axis preview is valid and leaves the model unchanged", result.valid and state() == before)
+        confirm(dialog)
+        circular = next(o for o in doc().Objects if getattr(o, "KurtShapeStudioOperation", "") and '"circular_pattern_parts"' in o.KurtShapeStudioOperation)
+        check("Circular pattern commits in one Undo step", doc().UndoCount == before[1] + 1)
+
+        def matches_axis():
+            base, axis = driver_axis(circular.Name + "Axis")
+            expected = source.copy()
+            expected.rotate(base, axis, 90)
+            actual = outputs(circular.Name)[0].Shape.BoundBox
+            return base, max(abs(getattr(actual, key) - getattr(expected.BoundBox, key)) for key in ("XMin", "XMax", "YMin", "YMax", "ZMin", "ZMax"))
+        base, error = matches_axis()
+        check("Pattern rotates about the circle's center", (base - App.Vector(20, -15, 2)).Length < 1e-6 and error < 1e-6)
+        move_part(doc().Hub, App.Placement(App.Vector(5, 0, 0), App.Rotation(App.Vector(1, 0, 0), 30)))
+        base, error = matches_axis()
+        check("Moving and tilting the referenced part moves the axis", (base - App.Vector(20, -15, 2)).Length > 1 and error < 1e-6)
+        move_part(doc().Hub, App.Placement())
+        view().fitAll()
+        wait(300)
+
+        # Manual circular fallback (nothing preselected).
+        Gui.Selection.clearSelection()
+        dialog = panel.studio_tool("circular_pattern_parts")
+        wait(300)
+        check_parts(dialog, ["Body"])
+        check("Circular starts with a manual axis", dialog.fields["axis_by"].currentData() == "manual")
+        set_text(dialog, "angle", "180 deg")
+        dialog.findChild(QtWidgets.QSpinBox, "KurtShapeStudio_count").setValue(2)
+        result = wait_for_exact(dialog.preview)
+        check("Manual axis preview is valid", result.valid)
+        confirm(dialog)
+        check("Manual circular pattern commits", panel.studio_dialog is None)
+
+        # Mirror about another part's planar face, picked in the viewport.
+        face = element_named(rail.Name, "Face", lambda f: isinstance(f.Surface, Part.Plane) and f.normalAt(0, 0).y < -0.99)
+        Gui.Selection.clearSelection()
+        dialog = panel.studio_tool("mirror_parts")
+        wait(300)
+        check_parts(dialog, ["Body"])
+        face_point = pick_point(rail.Name, face)
+        report["samples"]["mirror_face_hit"] = {k: str(v) for k, v in hit(face_point).items()}
+        click(face_point)
+        report["samples"]["mirror_selection"] = [(s.ObjectName, list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()]
+        report["samples"]["mirror_picker"] = picker_labels(dialog, "plane")
+        report["samples"]["mirror_status"] = dialog.verdict.text()
+        check("Clicking a planar face sets the mirror plane", dialog.fields["plane"].value() is not None)
+        before = state()
+        result = wait_for_exact(dialog.preview)
+        check("Mirror preview is valid and leaves the model unchanged", result.valid and state() == before)
+        confirm(dialog)
+        mirror = next(o for o in doc().Objects if o.TypeId == "Part::Mirroring")
+        mirrored = outputs(mirror.Name)[0]
+        check("Mirror commits in one Undo step", doc().UndoCount == before[1] + 1)
+        check("Mirror links a root driver, not the other Body's face",
+              mirror.MirrorPlane[0].getParentGeoFeatureGroup() is None and "Plane" in mirror.MirrorPlane[0].Name)
+        check("Mirror reflects about the picked face", abs(mirrored.Shape.BoundBox.YMin - 17) < 1e-6
+              and abs(mirrored.Shape.BoundBox.YMax - 20) < 1e-6)
+        move_part(doc().Rail, App.Placement(App.Vector(0, 5, 0), App.Rotation()))
+        check("Moving the plane's part moves the mirror", abs(mirrored.Shape.BoundBox.YMin - 27) < 1e-6)
+        call("set_parameter", feature="BodyProfile", parameter="Height", value=5)
+        check("Editing the source updates the mirror", abs(mirrored.Shape.BoundBox.YMin - 25) < 1e-6)
+        call("undo")
+        check("Undo restores the source edit", abs(mirrored.Shape.BoundBox.YMin - 27) < 1e-6)
+        move_part(doc().Rail, App.Placement())
+        view().fitAll()
+        wait(300)
+        viewport().grab().save(str(output / "patterns-and-mirror.png"))
+
+        # Save, reopen, still associative.
+        linear_name = linear.Name
+        path = output / "pattern-mirror.FCStd"
+        panel.core.settings.grant_destination(str(path))
+        call("save", path=str(path))
+        App.closeDocument(doc().Name)
+        wait(200)
+        call("open", path=str(path))
+        wait(300)
+        linear = doc().getObject(linear_name)
+        move_part(doc().Rail, App.Placement(App.Vector(), App.Rotation(App.Vector(0, 0, 1), 90)))
+        offsets = sorted(round(abs(body.Shape.BoundBox.YMin - source.BoundBox.YMin), 6) for body in outputs(linear.Name))
+        check("After save and reopen the pattern still follows its reference", offsets == [10, 20])
+        check("Reopened document has no invalid objects", not [o for o in doc().Objects if "Invalid" in o.State])
+        report.update(passed=True, engine={"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION})
+    except Exception:
+        report["error"] = traceback.format_exc()
+        try:
+            viewport().grab().save(str(output / "failure-viewport.png"))
+        except Exception:
+            pass
+    finally:
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

@@ -2082,6 +2082,22 @@ class Panel(QtGui.QDockWidget):
             pass
         return reference
 
+    @staticmethod
+    def edge_kind(feature, element):
+        """A short shape description so a picked reference is recognizable."""
+        if not element.startswith("Edge"):
+            return ""
+        try:
+            edge = feature.Shape.getElement(element)
+            curve = type(edge.Curve).__name__
+        except Exception:
+            return ""
+        if curve in {"Line", "LineSegment"}:
+            return " · line"
+        if curve == "Circle":
+            return " · circle" if edge.isClosed() else " · arc"
+        return " · " + curve.lower()
+
     def project_selected_geometry(self):
         return self.sketch_references.use()
 
@@ -2258,15 +2274,26 @@ class Panel(QtGui.QDockWidget):
             field("copy", "", widget, widget.isChecked)
         elif operation in {"linear_pattern_parts", "circular_pattern_parts", "mirror_parts"}:
             checklist("parts", "Parts", part_entries, selected_parts)
+            preselected_edge = bool(self.geometry_references("Edge"))
             if operation == "linear_pattern_parts":
-                vector("direction", "Direction", [1, 0, 0])
+                choice("direction_by", "Direction", [("Selected edge or line", "selected"), ("Manual direction", "manual")],
+                       "selected" if preselected_edge else "manual")
+                reference_field("direction_reference", "Direction edge or line", "Edge")
+                vector("direction", "Manual direction", [1, 0, 0])
                 quantity("spacing", "Spacing", 20)
             else:
                 if operation == "mirror_parts":
                     reference_field("plane", "Mirror plane", "Plane")
+                else:
+                    choice("axis_by", "Axis", [("Selected edge, line, circle or arc", "selected"), ("Manual axis", "manual")],
+                           "selected" if preselected_edge else "manual")
+                    reference_field("axis_reference", "Axis edge, line, circle or arc", "Edge")
                 vector("origin", "Origin", [0, 0, 0], "mm")
                 vector("normal" if operation == "mirror_parts" else "axis_direction",
                        "Plane normal" if operation == "mirror_parts" else "Axis direction", [1, 0, 0] if operation == "mirror_parts" else [0, 0, 1])
+            if operation != "mirror_parts":
+                widget = QtGui.QCheckBox("Reverse direction")
+                field("reversed", "", widget, widget.isChecked)
             if operation != "mirror_parts":
                 count = QtGui.QSpinBox()
                 count.setRange(2, 100)
@@ -2341,12 +2368,18 @@ class Panel(QtGui.QDockWidget):
             if operation in {"revolve", "circular_pattern_parts"}:
                 origin = result.pop("axis_origin", result.pop("origin", [0, 0, 0]))
                 direction = result.pop("axis_direction")
-                if operation == "revolve":
-                    selected_axis = result.pop("axis_by") == "selected"
-                    reference = result.pop("axis_reference")
-                    result["axis"] = reference if selected_axis else {"origin": origin, "direction": direction}
-                else:
-                    result["axis"] = {"origin": origin, "direction": direction}
+                selected_axis = result.pop("axis_by", "manual") == "selected"
+                reference = result.pop("axis_reference", None)
+                if selected_axis and reference is None and operation == "circular_pattern_parts":
+                    raise OperationError("missing_reference", "Select an axis edge, line, circle or arc, or choose Manual axis")
+                result["axis"] = reference if selected_axis else {"origin": origin, "direction": direction}
+            if operation == "linear_pattern_parts":
+                selected_direction = result.pop("direction_by") == "selected"
+                reference = result.pop("direction_reference")
+                if selected_direction:
+                    if reference is None:
+                        raise OperationError("missing_reference", "Select a direction edge or line, or choose Manual direction")
+                    result["direction"] = reference
             if operation == "mirror_parts":
                 result.pop("origin")
                 result.pop("normal")
@@ -2419,11 +2452,15 @@ class Panel(QtGui.QDockWidget):
                     selected_path = fields["path_by"].currentData() == "selected"
                     visible("path", not selected_path)
                     visible("path_hint", selected_path)
-                if operation == "revolve":
+                if operation in {"revolve", "circular_pattern_parts"}:
                     selected_axis = fields["axis_by"].currentData() == "selected"
                     visible("axis_reference", selected_axis)
-                    visible("axis_origin", not selected_axis)
+                    visible("axis_origin" if operation == "revolve" else "origin", not selected_axis)
                     visible("axis_direction", not selected_axis)
+                if operation == "linear_pattern_parts":
+                    selected_direction = fields["direction_by"].currentData() == "selected"
+                    visible("direction_reference", selected_direction)
+                    visible("direction", not selected_direction)
                 if operation == "mirror_parts":
                     visible("origin", False)
                     visible("normal", False)
@@ -2496,9 +2533,14 @@ class Panel(QtGui.QDockWidget):
                         if element.startswith(prefix) and feature:
                             reference = ({"feature": feature.Name, "subelement": element} if entity == "Plane" or key == "axis_reference" and feature.TypeId == "Sketcher::SketchObject" else
                                          self.reference_from_geometry(feature, element, entity))
-                            picker.add(reference, feature.Label + " · " + element, (obj, element))
-                            if key == "axis_reference" and obj.TypeId == "Sketcher::SketchObject":
+                            # Name the part the user sees, not an internal result feature.
+                            shown = next((entry["name"] for entry in parts if body and entry["body"] == body.Name), feature.Label)
+                            picker.add(reference, shown + " · " + element + self.edge_kind(feature, element), (obj, element))
+                            if key == "axis_reference" and obj.TypeId == "Sketcher::SketchObject" and "profile" in fields:
                                 fields["profile"].setCurrentIndex(fields["profile"].findData(obj.Name))
+                            mode = {"axis_reference": "axis_by", "direction_reference": "direction_by"}.get(key)
+                            if mode in fields:
+                                fields[mode].setCurrentIndex(fields[mode].findData("selected"))
         self.studio_selection_callback = capture
         def cleanup():
             if dialog.finished:
