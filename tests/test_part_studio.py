@@ -376,7 +376,8 @@ class PartStudioTests(unittest.TestCase):
         self.assertAlmostEqual(self.doc.Edges.Shape.Volume, full, places=6)
         self.call("delete_feature", feature="Edges")
         self.assertEqual(sorted(obj.Name for obj in self.doc.Objects if obj.TypeId.startswith(("Part::", "PartDesign::")) and "Origin" not in obj.Name),
-                         ["Body", "Path", "Profile", "SweepBody"])
+                         ["Body", "SweepBody"])
+        self.assertEqual(sorted(obj.Name for obj in self.doc.Objects if obj.TypeId == "Sketcher::SketchObject"), ["Path", "Profile"])
 
     def test_revolve_sweep_and_loft_are_native_editable_tools(self):
         self.call("sketch_rectangle", id="RevolveProfile", plane="XZ", x=3, width=2, height=5)
