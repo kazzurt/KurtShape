@@ -20,7 +20,8 @@ RESULT_FIELDS = {"operation", "merge_scope", "name"}
 ARGS = {
     "pad": RESULT_FIELDS | {"face"}, "pocket": RESULT_FIELDS | {"face"},
     "revolve": {"id", "name", "profile", "axis", "angle", "operation", "merge_scope", "body"},
-    "sweep": {"id", "name", "profile", "path", "operation", "merge_scope", "body", "frenet"},
+    "sweep": {"id", "name", "profile", "path", "operation", "merge_scope", "body", "frenet",
+              "extend_full_path", "profile_control", "lock_faces", "lock_direction", "twist", "turns"},
     "loft": {"id", "name", "sections", "operation", "merge_scope", "body", "ruled", "closed"},
     "boolean_parts": {"id", "name", "targets", "tools", "kind", "keep_tools"},
     "split_part": {"id", "name", "part", "plane", "face", "sketch"},
@@ -1116,7 +1117,10 @@ def _tool(controller, doc, req, name):
             raise _error("invalid_argument", "Choose one face or one sketch profile")
         from .modeling_geometry import make_face_tool
         return make_face_tool(controller, doc, req, name)
-    if op in {"pad", "pocket", "revolve", "sweep"}:
+    if op == "sweep" and isinstance(req.get("profile"), (dict, list)):
+        # A picked face is swept as it is; sweep_tools binds and validates it.
+        profile = None
+    elif op in {"pad", "pocket", "revolve", "sweep"}:
         profile = controller._profile(doc, req.get("profile"))
         if not profile.Shape.Wires:
             raise _error("open_profile", "Profile must contain closed geometry")
@@ -1175,33 +1179,13 @@ def _tool(controller, doc, req, name):
         tool.Angle = math.degrees(_number(req.get("angle", "360 deg"), "angle", True, "rad"))
         tool.Solid = True
     elif op == "sweep":
-        path_spec = req.get("path", "")
-        path_ref = None
-        if isinstance(path_spec, dict):
-            from . import selectors, reference_tools
-            path_ref = selectors.native_reference(doc, path_spec, entity_type="edge")
-            path = doc.getObject(path_ref["feature"])
-        else:
-            path = doc.getObject(path_spec)
-        if not path or not hasattr(path, "Shape") or not path.Shape.Edges:
-            raise _error("missing_reference", "Sweep path must name a native curve feature")
-        if path_ref:
-            spine = doc.addObject("PartDesign::ShapeBinder", name + "Path")
-            spine.Support = [(path, [path_ref["subelement"]])]
-            spine.TraceSupport = True
-            _prop(spine, "App::PropertyBool", "KurtShapeInternal", True)
-            if reference_tools.is_selector(path_spec):
-                selectors.bind(spine, "path", reference_tools.selector_value(path_spec),
-                               native_property="Support", mode="linksublist")
-            doc.recompute()
-        else:
-            spine = _world_profile(doc, path, name + "Path")
-        source = _world_profile(doc, profile, name + "Profile")
-        tool = doc.addObject("Part::Sweep", name)
-        tool.Sections = [source]
-        tool.Spine = (spine, [])
-        tool.Solid = True
-        tool.Frenet = _bool(req, "frenet", False)
+        from . import sweep_tools
+        if profile is not None and not any(wire.isClosed() for wire in profile.Shape.Wires):
+            raise _error("open_profile", "Sweep profile must be a closed sketch region or a face")
+        if req.get("path") in (None, "", []):
+            raise _error("missing_reference", "Sweep path must name a native curve feature or picked edges")
+        tool = sweep_tools.build(controller, doc, req, name, profile)
+        return tool
     elif op == "loft":
         sections = req.get("sections")
         if not isinstance(sections, list) or len(sections) < 2:
@@ -1236,7 +1220,8 @@ def _result_operation(controller, doc, req, name):
     doc.recompute()
     if operation == "new":
         _prop(tool_body, "App::PropertyBool", "KurtShapeInternal", False)
-        profile = doc.getObject(req.get("profile", "") or (req.get("sections", [""])[0] if req.get("sections") else ""))
+        profile_name = req.get("profile", "") if isinstance(req.get("profile", ""), str) else ""
+        profile = doc.getObject(profile_name or (req.get("sections", [""])[0] if req.get("sections") else ""))
         source_owner = _body_owner(profile) if profile else None
         if (source_owner and part_id(source_owner) not in _state(doc, _cutoff(doc))
                 and part_id(source_owner) not in held_part_ids(doc)):

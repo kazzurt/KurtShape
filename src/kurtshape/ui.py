@@ -2212,6 +2212,11 @@ class Panel(QtGui.QDockWidget):
                 sections = checklist("sections", "Sections · drag to order", sketch_entries, [obj.Name for obj in Gui.Selection.getSelection() if obj.TypeId == "Sketcher::SketchObject"])
                 sections.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
                 sections.setDefaultDropAction(QtCore.Qt.MoveAction)
+            elif operation == "sweep":
+                # Nothing is chosen for the user: pick the profile (a sketch or
+                # a face) in the viewport or history, then the path.
+                reference_field("profile", "Faces and sketch regions to sweep", "Profile")
+                reference_field("path", "Sweep path", "Path", multiple=True)
             else:
                 choice("profile", "Profile", sketch_entries, current)
         if scoped:
@@ -2225,15 +2230,36 @@ class Panel(QtGui.QDockWidget):
             vector("axis_direction", "Axis direction", [0, 1, 0])
             quantity("angle", "Angle", 360, "deg")
         elif operation == "sweep":
-            path_references = self.geometry_references("Edge")
-            choice("path_by", "Path source", [("Curve feature", "feature"), ("Selected edge", "selected")], "selected" if len(path_references) == 1 else "feature")
-            entries = [(obj.Label, obj.Name) for obj in doc.Objects if hasattr(obj, "Shape") and obj.Shape.Edges]
-            choice("path", "Path", entries)
-            values["selected_path"] = lambda: path_references[0] if len(path_references) == 1 else None
-            selected_hint = QtGui.QLabel("Selected edge · query retained" if len(path_references) == 1 else "Select one path edge in the viewport before opening Sweep.")
-            selected_hint.setWordWrap(True)
-            form.addRow("Selected path", selected_hint)
-            fields["path_hint"] = selected_hint
+            extend = QtGui.QCheckBox("Extend to full path")
+            extend.setToolTip("Off: the sweep starts where the profile sits on the path.\n"
+                              "On: the profile is carried along the entire path, including the part before it.")
+            field("extend_full_path", "", extend, extend.isChecked)
+            choice("profile_control", "Profile control",
+                   [("None", "none"), ("Keep profile orientation", "keep_orientation"),
+                    ("Lock profile faces", "lock_faces"), ("Lock profile direction", "lock_direction")], "none")
+            fields["profile_control"].setToolTip("None: the profile stays normal to the path.\n"
+                                                 "Keep profile orientation: the profile keeps its original orientation.\n"
+                                                 "Lock profile faces: the profile stays aligned to the picked planar face(s).\n"
+                                                 "Lock profile direction: the profile keeps the picked straight edge or face normal as its up direction.")
+            reference_field("lock_faces", "Faces to lock to", "Face", multiple=True)
+            reference_field("lock_direction", "Direction (edge or face)", "Direction")
+            twist = QtGui.QCheckBox("Twist")
+            twist.setToolTip("Rotate the profile around the path as it sweeps.")
+            field("twist", "", twist, twist.isChecked)
+            turns = QtGui.QDoubleSpinBox()
+            turns.setRange(0.01, 1000)
+            turns.setDecimals(3)
+            turns.setSingleStep(0.5)
+            turns.setValue(1.0)
+            turns.setSuffix(" turns")
+            field("turns", "Number of turns", turns, turns.value)
+            # After the profile is picked, the next click goes to the path.
+            def advance_to_path():
+                profile_picker, path_picker = fields["profile"], fields["path"]
+                if profile_picker.references and not path_picker.references:
+                    path_picker.activated.emit()
+            fields["profile"].changed.connect(advance_to_path)
+            fields["profile"].activated.emit()
         elif operation == "boolean_parts":
             checklist("targets", "Target parts", part_entries, selected_parts[:1])
             checklist("tools", "Tool parts", part_entries, selected_parts[1:])
@@ -2360,9 +2386,31 @@ class Panel(QtGui.QDockWidget):
                 else:
                     result.pop("support")
             if operation == "sweep":
-                path_by, selected_path = result.pop("path_by"), result.pop("selected_path")
-                if path_by == "selected":
-                    result["path"] = selected_path
+                profile = result.get("profile")
+                if isinstance(profile, dict) and profile.get("sketch"):
+                    result["profile"] = profile["sketch"]
+                path = result.get("path") or []
+                sketches = [item["sketch"] for item in path if isinstance(item, dict) and item.get("sketch")]
+                edges = [item for item in path if not (isinstance(item, dict) and item.get("sketch"))]
+                if sketches and edges or len(sketches) > 1:
+                    raise ValueError("Sweep path: pick one sketch, or edges of the model")
+                result["path"] = sketches[0] if sketches else (edges[0] if len(edges) == 1 else edges)
+                control = result.get("profile_control")
+                if control != "lock_faces":
+                    result.pop("lock_faces", None)
+                if control != "lock_direction":
+                    result.pop("lock_direction", None)
+                elif not result.get("lock_direction"):
+                    raise ValueError("Pick a straight edge or a planar face for the profile direction")
+                if control == "lock_faces" and not result.get("lock_faces"):
+                    raise ValueError("Pick the planar face(s) the profile should stay aligned to")
+                if not result.get("twist"):
+                    result.pop("turns", None)
+                    result["twist"] = False
+                if not result.get("profile"):
+                    raise ValueError("Pick a face or a sketch to sweep")
+                if not result.get("path"):
+                    raise ValueError("Pick the sweep path: a sketch, or edges of the model")
             if operation == "split_part":
                 kind = result.pop("split_by")
                 origin, normal = result.pop("origin"), result.pop("normal")
@@ -2420,9 +2468,11 @@ class Panel(QtGui.QDockWidget):
                     visible("normal", kind == "plane")
                     visible("sketch", kind == "sketch")
                 if operation == "sweep":
-                    selected_path = fields["path_by"].currentData() == "selected"
-                    visible("path", not selected_path)
-                    visible("path_hint", selected_path)
+                    control = fields["profile_control"].currentData()
+                    visible("lock_faces", control == "lock_faces")
+                    visible("lock_direction", control == "lock_direction")
+                    visible("turns", fields["twist"].isChecked())
+                    fields["profile_control"].setEnabled(not fields["twist"].isChecked())
                 if operation == "revolve":
                     selected_axis = fields["axis_by"].currentData() == "selected"
                     visible("axis_reference", selected_axis)
@@ -2490,6 +2540,20 @@ class Panel(QtGui.QDockWidget):
                     continue
                 picker, entity = picker_entry
                 feature = body.Tip if body and obj == body else obj
+                if entity in {"Profile", "Path"} and obj.TypeId == "Sketcher::SketchObject":
+                    # A sketch is picked as a whole, from the history or any of its edges.
+                    other = fields.get("profile" if entity == "Path" else "path")
+                    if other is not None and {"sketch": obj.Name} in getattr(other, "references", []):
+                        continue  # The sketch already serves the other role.
+                    picker.add({"sketch": obj.Name}, obj.Label, (obj, ""))
+                    continue
+                if entity in {"Profile", "Path", "Direction"}:
+                    wanted = {"Profile": ("Face",), "Path": ("Edge",), "Direction": ("Edge", "Face")}[entity]
+                    for element in selection.SubElementNames:
+                        kind = next((prefix for prefix in wanted if element.startswith(prefix)), None)
+                        if kind and feature and not any(native and native[0] == obj and native[1] == element for native in picker.native_inputs):
+                            picker.add(self.reference_from_geometry(feature, element, kind), feature.Label + " · " + element, (obj, element))
+                    continue
                 if entity == "Plane" and obj.TypeId in {"App::Plane", "PartDesign::Plane"}:
                     picker.add({"feature": obj.Name}, obj.Label, (obj, ""))
                 else:

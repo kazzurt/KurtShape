@@ -348,16 +348,25 @@ def validate():
         call("create_sketch", id="SweepPath", plane="XZ", body="Body")
         call("add_line", sketch="SweepPath", x1=2, y1=0, x2=2, y2=20, body="Body")
         def sweep(dialog):
-            choice(dialog, "profile", "SweepSection")
-            choice(dialog, "path", "SweepPath")
+            # Pickers start empty; the profile pick advances to the path pick.
+            check("sweep: panel opens with nothing chosen and the profile picker active",
+                  not dialog.fields["profile"].references and dialog.fields["profile"].pick.isChecked())
+            dialog.fields["profile"].add({"sketch": "SweepSection"}, "SweepSection", (panel.document().SweepSection, ""))
+            check("sweep: picking the profile activates the path picker", dialog.fields["path"].pick.isChecked())
+            dialog.fields["path"].add({"sketch": "SweepPath"}, "SweepPath", (panel.document().SweepPath, ""))
             choice(dialog, "operation", "new")
         dialog_operation("sweep", sweep, commit=False)
         Gui.Selection.clearSelection()
-        Gui.Selection.addSelection(panel.document().SweepPath, "Edge1")
         def selected_sweep(dialog):
-            choice(dialog, "profile", "SweepSection")
+            dialog.fields["profile"].add({"sketch": "SweepSection"}, "SweepSection", (panel.document().SweepSection, ""))
+            Gui.Selection.addSelection(panel.document().SweepPath, "Edge1")
+            wait(200)
+            check("sweep: a viewport edge of the path sketch picks the whole sketch as the path",
+                  dialog.fields["path"].references == [{"sketch": "SweepPath"}])
             choice(dialog, "operation", "new")
-            choice(dialog, "path_by", "selected")
+            dialog.fields["twist"].setChecked(True)
+            dialog.fields["turns"].setValue(1.5)
+            check("sweep: twist reveals the turns field", dialog.fields["turns"].isVisible())
         dialog_operation("sweep", selected_sweep, label="sweep-selected-curve-dialog", commit=False)
         call("sketch_circle", id="LoftBottom", x=2, y=0, diameter=4, body="Body")
         call("sketch_circle", id="LoftTop", x=2, y=0, diameter=2, body="Body")

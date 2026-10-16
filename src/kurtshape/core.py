@@ -862,11 +862,18 @@ class Controller:
             return result
         studio.prepare_recompute(doc)
         result = native_pass()
+        from . import sweep_tools
+        if sweep_tools.refresh(doc):
+            # Sweep path trims and twist spines derive from freshly recomputed
+            # sources; their consumers need one more native pass.
+            result = native_pass()
         for attempt in range(len(studio.order(doc)) + 1):
             if not studio.sync_auto_scopes(doc):
                 break
             studio.prepare_recompute(doc)
             result = native_pass()
+            if sweep_tools.refresh(doc):
+                result = native_pass()
         else:
             raise OperationError("unstable_merge_scope", "Auto merge scopes did not stabilize during rebuild")
         studio.hide_internal(doc)
@@ -2136,7 +2143,11 @@ class Controller:
 
     @staticmethod
     def _deletable_feature(obj, body):
-        if obj == body or obj not in body.Group:
+        if getattr(obj, "KurtShapeStudioOperation", "") and not getattr(obj, "KurtShapeInternal", False):
+            # A studio operation's representative (Sweep, Revolve, Extrude,
+            # Loft, Boolean, Pattern...) is removed with everything it owns.
+            return True
+        if body is None or obj == body or obj not in body.Group:
             return False
         if obj.TypeId in {"Sketcher::SketchObject", "PartDesign::Plane"}:
             return True
@@ -2157,9 +2168,12 @@ class Controller:
             target = doc.getObject(name)
             if target is None:
                 raise OperationError("missing_reference", "Feature ID does not exist", feature=name)
-            selected_body = self._body(doc, request, target)
+            if getattr(target, "KurtShapeStudioOperation", "") and not getattr(target, "KurtShapeInternal", False):
+                selected_body = owner(doc, target)
+            else:
+                selected_body = self._body(doc, request, target)
             if not self._deletable_feature(target, selected_body):
-                raise OperationError("unsupported_feature", "Delete supports sketches, native datum planes and built-in PartDesign features in their Body", feature=name)
+                raise OperationError("unsupported_feature", "Delete supports sketches, native datum planes, built-in PartDesign features and KurtShape operations", feature=name)
             targets.append(target)
             owners[name] = selected_body
         pending = list(targets)
@@ -2185,7 +2199,9 @@ class Controller:
             for dependent in obj.InList:
                 if dependent == selected_body or dependent.Name == METADATA or dependent.Name in helpers:
                     continue
-                if dependent not in selected_body.Group:
+                if dependent.Name in removed:
+                    continue
+                if selected_body is None or dependent not in selected_body.Group:
                     leftover = getattr(dependent, "KurtShapeOperationOwner", "")
                     if leftover and doc.getObject(leftover) is None:
                         raise OperationError("orphan_helpers", f"Leftover helpers from the removed operation {leftover} still reference this feature. "

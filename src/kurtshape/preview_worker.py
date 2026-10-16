@@ -81,7 +81,7 @@ class NativePreviewWorker:
         self.log = (self.folder / "native-worker.log").open("wb")
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         self.process = subprocess.Popen(
-            [self.executable, "-B", str(Path(__file__).resolve()), str(self.folder), self.token,
+            [self.executable, "-B", "-P", str(Path(__file__).resolve()), str(self.folder), self.token,
              str(self.snapshot), json.dumps(identity)],
             stdin=subprocess.PIPE, stdout=self.log, stderr=subprocess.STDOUT,
             env=environment, cwd=self.folder, creationflags=flags)

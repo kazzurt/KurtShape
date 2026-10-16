@@ -324,6 +324,60 @@ class PartStudioTests(unittest.TestCase):
         for actual, expected in zip(part["color"], [.1, .3, .8]):
             self.assertAlmostEqual(actual, expected)
 
+    def test_sweep_options_trim_twist_profile_control_and_delete(self):
+        import math
+        from kurtshape import sweep_tools
+        self.call("create_body", id="SweepBody")
+        self.call("sketch_circle", id="Profile", body="SweepBody", plane="YZ", x=0, y=0, diameter=2)
+        self.call("create_sketch", id="Path", body="SweepBody")
+        self.call("add_line", sketch="Path", x1=0, y1=0, x2=20, y2=0, body="SweepBody")
+        full = 20 * math.pi
+        # Profile at the path start: trimming changes nothing.
+        self.call("sweep", id="Sweep", profile="Profile", path="Path", operation="new")
+        self.assertEqual(self.doc.Sweep.TypeId, "PartDesign::AdditivePipe")
+        self.assertAlmostEqual(self.doc.Sweep.Shape.Volume, full, places=6)
+        self.assertIsNotNone(self.doc.getObject("SweepPathTrim"))
+        # Move the profile along the path: default sweeps from the profile onward,
+        # extend_full_path carries it back over the whole path.
+        self.doc.Profile.AttachmentOffset = App.Placement(App.Vector(0, 0, 5), App.Rotation())
+        self.doc.recompute()
+        self.fresh()
+        self.call("rebuild")
+        self.assertAlmostEqual(self.doc.Sweep.Shape.Volume, 15 * math.pi, places=6)
+        self.call("delete_feature", feature="Sweep")
+        self.assertFalse([obj.Name for obj in self.doc.Objects if obj.Name.startswith("Sweep") and obj.Name != "SweepBody"])
+        self.call("sweep", id="Full", profile="Profile", path="Path", operation="new", extend_full_path=True)
+        self.assertAlmostEqual(self.doc.Full.Shape.Volume, full, places=6)
+        self.assertIsNone(self.doc.getObject("FullPathTrim"))
+        self.call("delete_feature", feature="Full")
+        self.doc.Profile.AttachmentOffset = App.Placement()
+        self.doc.recompute()
+        self.fresh()
+        # Profile control and twist map to native pipe modes.
+        self.call("sweep", id="Keep", profile="Profile", path="Path", operation="new", profile_control="keep_orientation")
+        self.assertEqual(self.doc.Keep.Mode, "Fixed")
+        self.call("delete_feature", feature="Keep")
+        self.call("sweep", id="Lock", profile="Profile", path="Path", operation="new", profile_control="lock_direction",
+                  lock_direction={"direction": [0, 0, 1]})
+        self.assertEqual(self.doc.Lock.Mode, "Binormal")
+        self.assertAlmostEqual(self.doc.Lock.Binormal.z, 1.0)
+        self.call("delete_feature", feature="Lock")
+        self.call("sweep", id="Twist", profile="Profile", path="Path", operation="new", twist=True, turns=2)
+        self.assertEqual(self.doc.Twist.Mode, "Auxiliary")
+        self.assertTrue(self.doc.Twist.AuxiliaryCurvilinear)
+        spine = sweep_tools.chain(self.doc.getObject("TwistTwistSpine").Shape)
+        self.assertGreater(spine.Length, 20)
+        self.assertAlmostEqual(self.doc.Twist.Shape.Volume, full, delta=full * 0.02)
+        with self.assertRaises(AssertionError):
+            self.call("sweep", id="Bad", profile="Profile", path="Path", operation="new", twist=True, profile_control="keep_orientation")
+        # Picked edges as the path and a whole-operation delete that leaves no helpers behind.
+        self.call("delete_feature", feature="Twist")
+        self.call("sweep", id="Edges", profile="Profile", path=[{"feature": "Path", "subelement": "Edge1"}], operation="new")
+        self.assertAlmostEqual(self.doc.Edges.Shape.Volume, full, places=6)
+        self.call("delete_feature", feature="Edges")
+        self.assertEqual(sorted(obj.Name for obj in self.doc.Objects if obj.TypeId.startswith(("Part::", "PartDesign::")) and "Origin" not in obj.Name),
+                         ["Body", "Path", "Profile", "SweepBody"])
+
     def test_revolve_sweep_and_loft_are_native_editable_tools(self):
         self.call("sketch_rectangle", id="RevolveProfile", plane="XZ", x=3, width=2, height=5)
         self.call("revolve", id="Revolve", profile="RevolveProfile", angle="360 deg", operation="new")
@@ -334,7 +388,8 @@ class PartStudioTests(unittest.TestCase):
         self.call("create_sketch", id="SweepPath", body="SweepBody")
         self.call("add_line", sketch="SweepPath", x1=0, y1=0, x2=10, y2=0, body="SweepBody")
         self.call("sweep", id="Sweep", profile="SweepProfile", path="SweepPath", operation="new")
-        self.assertEqual(self.doc.Sweep.TypeId, "Part::Sweep")
+        self.assertEqual(self.doc.Sweep.TypeId, "PartDesign::AdditivePipe")
+        self.assertEqual(self.doc.Sweep.Mode, "Standard")
         self.assertAlmostEqual(studio.current_part(self.doc, "SweepBody").Shape.Volume, 10 * __import__("math").pi, places=6)
         self.call("create_body", id="LoftBody")
         self.call("sketch_circle", id="LoftStart", body="LoftBody", x=0, y=0, diameter=4)
@@ -562,7 +617,7 @@ class PartStudioTests(unittest.TestCase):
                   path={"feature": "SweepPath", "subelement": "Edge1"}, operation="new")
         path = {"kind": "created_by", "feature": "SweepPath", "entity_type": "edge"}
         self.call("sweep", id="SweepQuery", profile="SweepProfile", path=path, operation="new")
-        self.assertIn("path", __import__("json").loads(self.doc.SweepQuery.Spine[0].QueryInputs))
+        self.assertIn("path", __import__("json").loads(self.doc.SweepQuery.KurtShapeSweepPathSource.QueryInputs))
         self.assertAlmostEqual(self.volumes()["SweepBody"], 10 * __import__("math").pi, places=6)
         for name in ["SweepLiteral", "SweepQuery"]:
             shape = self.doc.getObject(name).Shape

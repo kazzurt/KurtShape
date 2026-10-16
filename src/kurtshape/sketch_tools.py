@@ -40,7 +40,9 @@ def unconsumed_sketches(doc, before=None):
         properties = profile_properties.get(consumer.TypeId, ())
         if (consumer.TypeId.startswith("PartDesign::") and not consumer.TypeId.endswith("Python")
                 and "Profile" in consumer.PropertiesList):
-            properties = ("Profile", "Sections", "Spine")
+            # A KurtShape sweep's spine may be a trimmed helper; its raw path
+            # binder names the sketch that was consumed.
+            properties = ("Profile", "Sections", "Spine", "KurtShapeSweepPathSource")
         for name in properties:
             if name in consumer.PropertiesList:
                 for source in objects(getattr(consumer, name)):
