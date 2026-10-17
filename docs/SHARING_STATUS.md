@@ -46,6 +46,11 @@ The [Windows workflow](https://github.com/kazzurt/KurtShape/actions/workflows/wi
 records hosted results after push and now also exercises newcomer setup under
 Windows PowerShell. The earlier Fable report describes the baseline separately.
 
+The first hosted Windows 2022 run reproduced all 612 passes/seven skips and
+passed the 18-step setup. Its final hygiene check rejected the new empty
+`projects/` directory. The check now permits that empty destination while still
+rejecting files placed there or any other unexpected repository changes.
+
 ## Known limitations to tell testers
 
 - This is a preview, with ongoing sketch/status/viewport polish documented in
