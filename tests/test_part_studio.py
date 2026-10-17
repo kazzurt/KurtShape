@@ -134,6 +134,35 @@ class PartStudioTests(unittest.TestCase):
         contexts = document_index.get(self.doc).derived["selector_contexts"]
         self.assertLessEqual(len(contexts), selectors._CONTEXT_LIMIT)
 
+    def test_extrude_follows_sketch_normal_for_any_profile_winding(self):
+        # Native Normal mode fitted a plane to the binder's edges, so a
+        # clockwise profile extruded against the sketch normal.
+        square = [(0, 0), (0, 10), (10, 10), (10, 0)]
+        for index, (plane, winding) in enumerate([("XY", square), ("XY", square[::-1]), ("XZ", square), ("YZ", square)]):
+            sketch, feature = f"Winding{index}", f"WindingPad{index}"
+            self.call("create_sketch", id=sketch, plane=plane, body="Body")
+            for (x1, y1), (x2, y2) in zip(winding, winding[1:] + winding[:1]):
+                self.call("add_line", sketch=sketch, body="Body", x1=x1, y1=y1, x2=x2, y2=y2)
+            self.call("pad", id=feature, profile=sketch, body="Body", length=4, operation="new", name=feature)
+            normal = self.doc.getObject(sketch).getGlobalPlacement().Rotation.multVec(App.Vector(0, 0, 1))
+            tool = self.doc.getObject(feature)
+            self.assertEqual(tool.DirMode, "Edge")
+            self.assertAlmostEqual(App.Vector(tool.Dir).getAngle(normal), 0, places=7)
+            center = tool.Shape.BoundBox.Center - self.doc.getObject(sketch).getGlobalPlacement().Base
+            self.assertAlmostEqual(center.dot(normal), 2.0, places=6)
+        # The direction is live: moving the sketch's support plane carries it along.
+        self.call("set_sketch_support", sketch="Winding1", plane="YZ")
+        self.call("rebuild")
+        tool = self.doc.getObject("WindingPad1")
+        normal = self.doc.getObject("Winding1").getGlobalPlacement().Rotation.multVec(App.Vector(0, 0, 1))
+        self.assertAlmostEqual(App.Vector(tool.Dir).getAngle(normal), 0, places=7)
+        # Sketch IDs that read as units (S, m, A) still bind.
+        self.call("create_sketch", id="S", plane="XY", body="Body")
+        for (x1, y1), (x2, y2) in zip(square, square[1:] + square[:1]):
+            self.call("add_line", sketch="S", body="Body", x1=x1 + 30, y1=y1, x2=x2 + 30, y2=y2)
+        self.call("pad", id="UnitNamed", profile="S", body="Body", length=2, operation="new", name="Unit named")
+        self.assertAlmostEqual(self.doc.getObject("UnitNamed").Shape.BoundBox.ZMax, 2.0, places=6)
+
     def test_new_parts_and_explicit_add_scope(self):
         self.part()
         self.part("Second", x=20)

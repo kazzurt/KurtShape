@@ -1129,6 +1129,28 @@ def _world_profile(doc, profile, name):
     return native
 
 
+def _sketch_normal_direction(doc, tool, source, name):
+    """Extrude along the sketch's own +Z, never a normal inferred from its edges.
+
+    Native Normal mode honours only a Part2DObject base. For the world
+    ShapeBinder it fits a plane to the edges (BRepLib_FindSurface), whose
+    sign follows the edge winding, so a clockwise profile ran backwards.
+    A unit line placed by the world source (the top-level binder carries the
+    sketch's global placement) keeps the direction native and live. The
+    binder's generated name also avoids sketch IDs such as "S" that the
+    expression parser reads as units.
+    """
+    line = doc.addObject("Part::Line", name + "Direction")
+    line.X1 = line.Y1 = line.Z1 = line.X2 = line.Y2 = 0
+    line.Z2 = 1
+    line.setExpression("Placement", source.Name + ".Placement")
+    _prop(line, "App::PropertyBool", "KurtShapeInternal", True)
+    if App.GuiUp:
+        line.ViewObject.Visibility = False
+    tool.DirMode = "Edge"
+    tool.DirLink = (line, ["Edge1"])
+
+
 def _carrier_binder(carrier, source, elements, name, operation=""):
     binder = carrier.newObject("PartDesign::ShapeBinder", name)
     binder.Support = [(source, elements)]
@@ -1210,7 +1232,7 @@ def _tool(controller, doc, req, name):
         source = _world_profile(doc, profile, name + "Profile")
         tool = doc.addObject("Part::Extrusion", name)
         tool.Base = source
-        tool.DirMode = "Normal"
+        _sketch_normal_direction(doc, tool, source, name)
         tool.Solid = True
         through = end_type == "through_all" or op == "pocket" and _bool(req, "through_all", True)
         if through:
