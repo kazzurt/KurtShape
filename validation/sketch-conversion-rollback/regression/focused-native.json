@@ -1,0 +1,447 @@
+{
+  "name": "native",
+  "passed": true,
+  "cases": [
+    {
+      "id": "test_part_studio.PartStudioTests.test_auto_add_scope_grows_and_shrinks_in_one_transaction",
+      "status": "passed",
+      "seconds": 2.0811099000275135
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_auto_intersect_scope_grows_and_shrinks",
+      "status": "passed",
+      "seconds": 2.1845452999696136
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_auto_remove_scope_grows_drops_and_retargets",
+      "status": "passed",
+      "seconds": 2.5639903999399394
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_auto_scope_unsafe_native_consumer_migration_is_rejected",
+      "status": "passed",
+      "seconds": 1.9824933998752385
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_body_placement_native_new_copy_add_and_export",
+      "status": "passed",
+      "seconds": 1.031294000102207
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_boolean_subtract_keeps_tool_and_targets",
+      "status": "passed",
+      "seconds": 0.9508332000114024
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_collapsed_projection_does_not_select_a_different_external_edge",
+      "status": "passed",
+      "seconds": 0.15693409997038543
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_current_parts_step_export_and_recovery_preserve_bar",
+      "status": "passed",
+      "seconds": 1.3464280001353472
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_face_edge_reference_dimensions_follow_source_and_keep_circle_profile",
+      "status": "passed",
+      "seconds": 0.329779600026086
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_finishing_undone_use_and_deleting_sketch_prune_only_unused_helpers",
+      "status": "passed",
+      "seconds": 0.9363808000925928
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_grouped_same_body_use_selector_slots_remain_distinct_on_rebuild",
+      "status": "passed",
+      "seconds": 0.38862650003284216
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_legacy_body_placement_auto_scope_and_transform_copy",
+      "status": "passed",
+      "seconds": 1.0068517001345754
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_native_sketch_snapshot_restore_has_no_embedded_cache_or_constraint_index_errors",
+      "status": "passed",
+      "seconds": 1.7979613000061363
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_native_sketch_split_attachment_reopen_and_relocation",
+      "status": "passed",
+      "seconds": 2.291780599858612
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_new_parts_and_explicit_add_scope",
+      "status": "passed",
+      "seconds": 0.9359485998284072
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_out_of_plane_use_projects_onto_oblique_plane_and_resolves_binder_sources",
+      "status": "passed",
+      "seconds": 0.2050860000308603
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_part_appearance_survives_new_generation",
+      "status": "passed",
+      "seconds": 0.3296851001214236
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_part_pattern_add_and_remove_scopes",
+      "status": "passed",
+      "seconds": 1.2763096000999212
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_project_order_and_sources_have_document_scope_and_migrate_on_reopen",
+      "status": "passed",
+      "seconds": 1.5804757999721915
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_reference_selector_after_native_dimension_commit_groups_finish_and_cancel",
+      "status": "passed",
+      "seconds": 0.9440756000112742
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_rejected_projection_restores_native_geometry_constraints_and_expressions",
+      "status": "passed",
+      "seconds": 0.24655169993638992
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_rejected_scope_and_transform_are_one_transaction_rollbacks",
+      "status": "passed",
+      "seconds": 0.19690859992988408
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_remove_through_two_parts_and_intersect",
+      "status": "passed",
+      "seconds": 2.5317901000380516
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_revolve_sweep_and_loft_are_native_editable_tools",
+      "status": "passed",
+      "seconds": 0.5789567001629621
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_rollback_insert_rewires_later_stable_part_inputs",
+      "status": "passed",
+      "seconds": 0.8711469999980181
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_split_fillets_and_query_result_before_consumer",
+      "status": "passed",
+      "seconds": 0.6967768999747932
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_studio_up_to_face_and_sweep_path_selectors",
+      "status": "passed",
+      "seconds": 3.573668099939823
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_transform_patterns_mirror_and_delete_undo",
+      "status": "passed",
+      "seconds": 1.971752799814567
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_up_to_face_legacy_carrier_scope_migration_preserves_native_pose_and_undo",
+      "status": "passed",
+      "seconds": 1.371131099993363
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_use_promotes_reference_edge_without_losing_constraints_or_ids",
+      "status": "passed",
+      "seconds": 0.22678919997997582
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_use_rejects_cycle_atomically_and_cancellation_removes_helpers",
+      "status": "passed",
+      "seconds": 0.6635366999544203
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_use_sketch_edit_groups_helper_creation_and_restores_undo_redo",
+      "status": "passed",
+      "seconds": 1.0900481999851763
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_used_edge_follows_source_identity_and_deleted_edge_reports_missing_until_undo",
+      "status": "passed",
+      "seconds": 0.11409930000081658
+    },
+    {
+      "id": "test_part_studio.PartStudioTests.test_used_edges_form_associated_extrusion_profile_across_body_placements",
+      "status": "passed",
+      "seconds": 0.49697550013661385
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_ambiguous_nonplanar_missing_and_cross_body_support_reject",
+      "status": "passed",
+      "seconds": 0.09142740000970662
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_arbitrary_spline_native_edits_and_construction_change_revision",
+      "status": "passed",
+      "seconds": 0.0740912000183016
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_body_face_resolves_actual_tip_without_body_self_reference",
+      "status": "passed",
+      "seconds": 0.08772119996137917
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_body_part_label_rename_undo_preserves_native_id_and_blocks_delete",
+      "status": "passed",
+      "seconds": 0.10104870004579425
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_cancel_after_native_auto_commit_preserves_prior_history_and_shape",
+      "status": "passed",
+      "seconds": 0.12397349998354912
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_closed_native_document_lease_is_not_reused_on_same_uuid_reopen",
+      "status": "passed",
+      "seconds": 0.150144400075078
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_delete_rejects_script_owned_feature_and_its_cascade_dependency",
+      "status": "passed",
+      "seconds": 0.14890230004675686
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_direct_attach_clears_only_a_closed_document_edit_lease",
+      "status": "passed",
+      "seconds": 0.1173558000009507
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_explicit_pocket_direction_is_respected_and_auto_origin_cut_works",
+      "status": "passed",
+      "seconds": 0.1391939001623541
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_external_native_history_change_rejects_without_undoing_prior_features",
+      "status": "passed",
+      "seconds": 0.15309179993346334
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_face_attachment_follows_upstream_thickness_and_cuts_inward",
+      "status": "passed",
+      "seconds": 0.29997200006619096
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_failed_finish_after_native_auto_commit_preserves_draft_and_can_repair",
+      "status": "passed",
+      "seconds": 0.2203544001094997
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_failed_managed_edit_does_not_reuse_pre_edit_revision",
+      "status": "passed",
+      "seconds": 0.13380489987321198
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_finish_groups_multiple_native_command_transactions_without_prior_history_loss",
+      "status": "passed",
+      "seconds": 0.21488069999031723
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_managed_sketch_edits_commit_as_one_undo_and_cancel_restore",
+      "status": "passed",
+      "seconds": 0.1749934998806566
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_managed_undo_redo_tracks_typed_and_native_edits_keeps_transaction",
+      "status": "passed",
+      "seconds": 0.22806090000085533
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_native_constraint_conflict_finish_preserves_draft_until_explicit_cancel",
+      "status": "passed",
+      "seconds": 0.14965359983034432
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_native_datum_plane_attachment_keeps_offset_link",
+      "status": "passed",
+      "seconds": 0.11366749997250736
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_native_fillet_chamfer_deletion_dependencies_cascade_and_undo",
+      "status": "passed",
+      "seconds": 0.1866594001185149
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_native_revolution_delete_keeps_profile_and_restores_tip_geometry_with_undo",
+      "status": "passed",
+      "seconds": 0.1977676001843065
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_native_unnamed_angle_is_inspected_and_edited_in_radians",
+      "status": "passed",
+      "seconds": 0.10887710005044937
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_origin_plane_pads_use_native_rotated_coordinates",
+      "status": "passed",
+      "seconds": 0.230485700070858
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_rename_and_dependency_safe_delete_restore_native_tip_with_undo",
+      "status": "passed",
+      "seconds": 0.20252649998292327
+    },
+    {
+      "id": "test_sketch_planes.SketchPlaneTests.test_unnamed_driving_dimensions_edit_by_native_constraint_index",
+      "status": "passed",
+      "seconds": 0.19699349999427795
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_chamfer_and_shell_selector_native_consumers",
+      "status": "passed",
+      "seconds": 0.3313283999450505
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_face_extrusion_selector_rebinds_after_cap_renumbering",
+      "status": "passed",
+      "seconds": 0.6831053998321295
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_fillet_selector_rebuild_after_upstream_topology_edit",
+      "status": "passed",
+      "seconds": 0.37447749986313283
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_native_input_divergence_blocks_export_until_managed_rebuild",
+      "status": "passed",
+      "seconds": 0.19055559998378158
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_owned_selector_rebinds_after_inserting_native_generation",
+      "status": "passed",
+      "seconds": 0.9742523999884725
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_pattern_add_preserves_source_and_generated_merge_creators",
+      "status": "passed",
+      "seconds": 0.37132990011014044
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_pierce_selector_intersection_retains_intent_and_undo",
+      "status": "passed",
+      "seconds": 0.5060615001711994
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_plane_and_mirror_selectors_keep_native_links_after_reopen",
+      "status": "passed",
+      "seconds": 1.5247011999599636
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_projected_use_selector_tracks_geometry_and_undo",
+      "status": "passed",
+      "seconds": 0.3260588999837637
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_support_follows_actual_face_rename_and_relocation",
+      "status": "passed",
+      "seconds": 0.40947810001671314
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_up_to_face_selector_tracks_stop_part",
+      "status": "passed",
+      "seconds": 0.6125342000741512
+    },
+    {
+      "id": "test_selector_consumers.SelectorConsumerTests.test_whole_part_generated_instances_keep_creator_identity",
+      "status": "passed",
+      "seconds": 2.8054008001927286
+    }
+  ],
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "network": "Python connect/create_connection/DNS denied",
+  "skips": [],
+  "seconds": 52.34418410016224,
+  "counts": {
+    "tests": 70,
+    "passed": 70,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "source_sha256": {
+    "src/kurtshape/__init__.py": "d1c2218eff95a6160d497cee76330d599e32231b47cd9680a05a752429c16682",
+    "src/kurtshape/assembly.py": "97d483c8dd25653c579fcb94e1625a3c7b836a9b43c2bdf92974f20800ab291c",
+    "src/kurtshape/bodies.py": "b45c1054ac6ddcfeaf8d347807a3782891ec587031c3a80025e87905b74f96fa",
+    "src/kurtshape/bridge.py": "6b920b62814b5730d0a0d05907b032b2ac321e7e90923fd91b7c38442af48835",
+    "src/kurtshape/contract.py": "5f7460aced1ee8a6d115a61783ef276960cd75a1d01f5142201f520db170dfc0",
+    "src/kurtshape/core.py": "73f39730e299eee0de13ec39dd30e7e2d2048e6004d7132bda2930f1b1ddf650",
+    "src/kurtshape/document_state.py": "83bb1c1a4791b4799c6bd6295be5d2dd9880b0f01fa846f59dcf8a4221e74dd3",
+    "src/kurtshape/extrusion_preview.py": "be8c1ea1212d9dcacb110ed5dc43a59768bf028e919c9be04bd67b9bdc2f73d6",
+    "src/kurtshape/feature_panel.py": "e88722990b921f9bd1da14dbf87b01b1514cfd130b0415b70565f4b1735faded",
+    "src/kurtshape/feature_tools.py": "eead00ec581d46d952e8972e41c03cfdb6503ebb0e1af3b8a12543acdf120906",
+    "src/kurtshape/general_actions.py": "dc87e63d82ecbb98fccb755bd75fc590bfcf99daf2b9462af273a99622d4bdb8",
+    "src/kurtshape/geometry.py": "afa73adfa80d977eb6832dc58e8bb0f57904cd356e8f63cc964188604c6359e9",
+    "src/kurtshape/hover_outline.py": "bf7abaf645e2de7d2f074c93928c0bc1e1670671b4e4c3dde9291831c40a0953",
+    "src/kurtshape/modeling_geometry.py": "743eac82bfcfb3b8ada905916154afb9f8ebe34c5f6c6d329797ece32e2481de",
+    "src/kurtshape/native_content.py": "13e2b64bdd8aa7a9bb095959a20964bb786dd56bbba6ca5da92cd435e7926796",
+    "src/kurtshape/navigation.py": "f8d9885a89b36853cc448f53c292b31fc6b929e441ea48cbb8ab459b4c71140a",
+    "src/kurtshape/onshape.py": "bd9a6f1c9eeb36b05cf8d7c5f48918b5a4bd2cbdc80484c0642d28803127fdb0",
+    "src/kurtshape/presentation_icons.py": "9eae5a46153c45e3c6d1610f6da3104f9909ec5712f670ea6c48259693d8e287",
+    "src/kurtshape/quantity_field.py": "6f68c24ae5543890ad98bca1c48fc50ffea435a9ffd59e5a27dc2243c702e2c8",
+    "src/kurtshape/recovery.py": "adefe70d2d2aedc02c8ff2ab21dee014e5387165b0c81ac841215768b86b5bae",
+    "src/kurtshape/reference_tools.py": "c289557eb8b6a7e5350d14b39bda6b1a9cb4ff7cb862b02d6ff0bfa02cf8657e",
+    "src/kurtshape/request_ledger.py": "7a969f22a5214f2a99608496ede106cd1057b71f52b2d1060e957c77613711ef",
+    "src/kurtshape/rollback_history.py": "fdadef3e330a51c2afc7ea3a7f177ac34cc1bfc493a6fe0a88a8a2d5710db2c7",
+    "src/kurtshape/selectors.py": "19cdfe9dc276a26f27d17962e2494c91c4ea05c49a40a7a45b9dcc317e3c4cc6",
+    "src/kurtshape/settings.py": "9a759a17b399269f87a2a16b3476f194868f7cdd8c5a1473390c448d48360799",
+    "src/kurtshape/shortcuts.py": "f3266cec7f1b6316f9ca68c714e32c2ae457ab906a38ff0bb055232aeea569be",
+    "src/kurtshape/sketch_references.py": "dab6819b63159bc0f1c1e0db1f708873df69b06bb9c905ffe4ffeb61f04a8ede",
+    "src/kurtshape/sketch_tools.py": "18ffa265d887f04ca05c66dd34f37b28fd4ec05538294759083b4452c3604079",
+    "src/kurtshape/studio.py": "c97398676051bc9d7338d8f7ae8f511ea31d24640fdbec4c3bbc5fdaa2d59f33",
+    "src/kurtshape/theme.py": "5c8922046e23951195202d93c494a7007677cc3b30cc0105d4970b2fa8dffd69",
+    "src/kurtshape/timing.py": "28f32811de2a5c035af1e8ccd5d93b1910b21f9d7b5b23da3b2db2197e6d646d",
+    "src/kurtshape/toolbar_labels.py": "cc0a389aeff8f5d6f299cb8e2b77a767b5b8288ccb8b8610b488d2da4a00bfaf",
+    "src/kurtshape/ui.py": "2b42d390f53cdefa86d961b6a41f863e42859be6ef41e248ccd43b59e625b8db",
+    "src/kurtshape/viewport_actions.py": "e1e347b47f784cb2a7dca98df516f2ac866d1468888855ed8b635f95c40534ce",
+    "src/kurtshape/workspace_preferences.py": "98902015adb35a0598545d827b3cb5d0abbfca522c7ea3bfc33f85bed22c1bdd",
+    "tests/perf_fixture.py": "118cfd556720a735f16a00014f86ac9d2ac6d040e177549fcafaabab96af1988",
+    "tests/support.py": "d55d1c88050b4d7e24e5fc4d939e3e7b0d2d04fb26fb999ab5c63c1566a9d99a",
+    "tests/test_assembly.py": "2ee08d42c91f437b126624899f2ab11db82a711286a20ca96e14605ecde5f3db",
+    "tests/test_bridge.py": "64d9935d681ff05cd5969b29aebc153815a78297912754f1c00636f4e4a3108b",
+    "tests/test_build_status.py": "390b56e0ab9f63d723288c2aa548313669058cd3b7f86de7bf6729dfda0ae0de",
+    "tests/test_core.py": "720fd2f1d516377170865aa58122374283593b41061d95ef7bddd7b2647a5cbe",
+    "tests/test_core_safety.py": "4c45b2f0f5919165416ed68b25ab4773ff83c835ddc276a025727d4379c3027d",
+    "tests/test_extrusion_preview.py": "b5547c905f4b9794beaf191d633be656526e4a6f142235f44a9d9398fe5f2cd4",
+    "tests/test_geometry_queries.py": "f9a3db3cdc91c775eda77a5c34e195770242d6a843d4f371ea84a0db72996cab",
+    "tests/test_native_files.py": "6672fbe62ae206b4f93332a4c0e02578e5bbc1a5742d0276a6fad5c2816f339a",
+    "tests/test_native_validation_snapshot.py": "a1e332775c217c49bc9fa062b3a587909ff26ec85dafd1c7591f384507e15e06",
+    "tests/test_navigation.py": "8e14726121f4f099c3be2c0f907dd1d6adb0984cca4bb74cbaaf4e5e352a3173",
+    "tests/test_onshape.py": "1b8801fde62089602fbefd495398fbb1568ed324a281042e50b8ac2180396fce",
+    "tests/test_part_studio.py": "37023aef784a239197880e72f2f05a42f42b32bed3c1160cb11bd0792e564e2a",
+    "tests/test_reference_tools.py": "37e9976e4f9e5ce4d0e6432b6db1a1a7b94bbdec524d6ba286127eeac1fbb5f9",
+    "tests/test_review_followup.py": "84dad05f51db72e04b1928f21ef497dfab81c89849cae784da4a718881fa9853",
+    "tests/test_runtime_layout.py": "1bd1075391b0602b51c0c41748c277970d6884481bf5828ffb039c71b8e39835",
+    "tests/test_selector_consumers.py": "af9f3856db56455486d599038dccbc8a4f0af29596ae9a398b472e1b15828aae",
+    "tests/test_selectors.py": "bb813f2cab9c1a302deb3ad8a7eb8d108bf1fdb625568495ae2f66d45531454d",
+    "tests/test_shortcuts.py": "77061138d2ac6ca5c5ffa18d07fdc4aa0eff2595c635bd19ac72f136074f8f37",
+    "tests/test_sketch_planes.py": "32a3c389400c6b66d198bbba693e1828568a37f2e5e9ad53f7d06e01d86630bf",
+    "tests/test_step_import.py": "921b0fd570eee661f85c66bf05a2f4d75ca30f2faab282cd1443ff4e15c3dcb8",
+    "tools/run_native_tests.py": "a75e585b20fecb367635331ee492dbb8b0b71fdbb6a0beb20bccd0c9fce4e1a6",
+    "tools/validate_offline.py": "3ad6ca71abb5f52278a9452ead50284487e481004602bb7ba51774dbbdba77ca",
+    "tools/kurtshape_evidence.py": "3add296d1068e605a1d06c623531b0aee6a78e360224f254345deab6e7276124",
+    "tools/native_validation_snapshot.py": "be697dddb5a00d8e4497afb52c41c8d9cc0219a4a2ee7fc9b94a11e057fee1b1",
+    "tools/perf/bench_core.py": "4d2d1cfe79f1f080c06a398c47c4fd26688f89e3917359691e051d1b6ff9a5e4",
+    "tools/perf/report.py": "3c086c482655d82f3ed4f28501b813012d28bed882605f449a3e440ca06b14af",
+    "tools/perf/budgets.json": "b02761fd33830e73bdb1f2704e0f2c73f3ee1d08a2fca11c7c33fa0e527f74d6"
+  },
+  "source_unchanged": true
+}

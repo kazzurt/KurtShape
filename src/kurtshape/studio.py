@@ -478,6 +478,9 @@ def _output(doc, source, name, key=None, label=None):
     body.setExpression("Placement", source.Name + ".Placement")
     _prop(body, "App::PropertyString", "KurtShapePartId", key or body.Name)
     _prop(body, "App::PropertyBool", "KurtShapeOutputGeneration", True)
+    if previous and not label:
+        # A moved part keeps its name in its new generation.
+        label = getattr(previous, "KurtShapePartName", "")
     if label:
         body.Label = label
         _prop(body, "App::PropertyString", "KurtShapePartName", label)
@@ -488,6 +491,25 @@ def _output(doc, source, name, key=None, label=None):
         if App.GuiUp and "KurtShapePartColor" in body.PropertiesList:
             body.ViewObject.ShapeColor = tuple(body.KurtShapePartColor[:3])
     return body
+
+
+def _name_part(doc, body, name):
+    """Give a part's current Body exactly this native Label.
+
+    FreeCAD keeps labels unique. While the part's authoring Body or a
+    superseded generation still holds the name, the current Body would get a
+    numeric suffix ("Bone Mallet003"). The other Bodies of the part become
+    "<name> (history n)" in creation order; labels that change are first
+    released to the unique native Name so no assignment collides.
+    """
+    key = part_id(body)
+    others = [obj for obj in doc.Objects if obj.TypeId == "PartDesign::Body" and obj != body and part_id(obj) == key]
+    wanted = [(obj, f"{name} (history {index})") for index, obj in enumerate(others, 1)] + [(body, name)]
+    stale = [(obj, label) for obj, label in wanted if obj.Label != label]
+    for obj, _ in stale:
+        obj.Label = obj.Name
+    for obj, label in stale:
+        obj.Label = label
 
 
 def _validate(doc, objects):
@@ -547,6 +569,10 @@ def _record(doc, representative, req, outputs, consumed=(), snapshots=()):
         sequence.insert(bar, representative)
         meta.KurtShapeFeatureOrder = sequence
         meta.KurtShapeRollbackIndex = bar + 1
+    # Outputs are now the current Bodies of their parts.
+    for body in outputs:
+        if getattr(body, "KurtShapePartName", ""):
+            _name_part(doc, body, body.KurtShapePartName)
     return representative.Name
 
 
@@ -669,11 +695,6 @@ def prepare_recompute(doc):
                     if snapshot.Placement != body.Placement:
                         snapshot.Placement = body.Placement
     visible_state = _state(doc, bar)
-    sketch_bodies = set()
-    if App.GuiUp:
-        from .sketch_tools import unconsumed_sketches
-        sketch_bodies = {_body_owner(sketch) for sketch in unconsumed_sketches(doc)
-                         if sketch.ViewObject and sketch.ViewObject.Visibility}
     for body in [obj for obj in doc.Objects if obj.TypeId == "PartDesign::Body"]:
         selected_tip = next((entry[1] for entry in visible_state.values() if entry[0] == body), None)
         if selected_tip and body.Tip != selected_tip:
@@ -684,10 +705,48 @@ def prepare_recompute(doc):
             tip = own_active[-1] if own_active else None
             if body.Tip != tip:
                 body.Tip = tip
-        if App.GuiUp:
-            active = body in sketch_bodies or any(entry[0] == body for entry in visible_state.values())
-            desired = getattr(body, "KurtShapePartVisible", True)
-            body.ViewObject.Visibility = bool(active and desired and not getattr(body, "KurtShapeInternal", False))
+    _show_bodies(doc, visible_state)
+    hide_internal(doc)
+
+
+def _show_bodies(doc, visible_state):
+    """Show the Bodies of the parts at the bar and of visible unused sketches."""
+    if not App.GuiUp:
+        return
+    from .sketch_tools import unconsumed_sketches
+    sketch_bodies = {_body_owner(sketch) for sketch in unconsumed_sketches(doc)
+                     if sketch.ViewObject and sketch.ViewObject.Visibility}
+    for body in [obj for obj in doc.Objects if obj.TypeId == "PartDesign::Body"]:
+        active = body in sketch_bodies or any(entry[0] == body for entry in visible_state.values())
+        desired = getattr(body, "KurtShapePartVisible", True)
+        body.ViewObject.Visibility = bool(active and desired and not getattr(body, "KurtShapeInternal", False))
+
+
+def present(doc):
+    """Apply the managed view state to a document FreeCAD just opened.
+
+    View state normally comes from GuiDocument.xml. A Part Studio saved
+    without the GUI (the headless Controller) has none, and FreeCAD's restore
+    then hides every Body and feature and draws them in its default color.
+    Show the parts at the rollback bar in their stored colors and hide the
+    auxiliaries, as a managed rebuild does. Only view providers change.
+    """
+    if not App.GuiUp:
+        return
+    if enabled(doc):
+        _show_bodies(doc, _state(doc, _cutoff(doc)))
+        for body in doc.Objects:
+            if body.TypeId == "PartDesign::Body" and "KurtShapePartColor" in body.PropertiesList:
+                color = tuple(body.KurtShapePartColor[:3])
+                if any(abs(a - b) > 1e-3 for a, b in zip(body.ViewObject.ShapeColor[:3], color)):
+                    body.ViewObject.ShapeColor = color
+    else:
+        # Single-Body projects have no part metadata: show each native result.
+        from .bodies import bodies
+        for body in bodies(doc):
+            if not getattr(body, "KurtShapeInternal", False) and body.Tip and not body.Shape.isNull() and body.Shape.Solids:
+                body.ViewObject.Visibility = True
+                body.Tip.ViewObject.Visibility = True
     hide_internal(doc)
 
 
@@ -1392,8 +1451,8 @@ def handle(controller, doc, req):
                 raise _error("invalid_argument", "Part name must contain 1–120 printable characters")
             for obj in doc.Objects:
                 if obj.TypeId == "PartDesign::Body" and part_id(obj) == part_id(body):
-                    obj.Label = name
                     _prop(obj, "App::PropertyString", "KurtShapePartName", name)
+            _name_part(doc, body, name)
         if "visible" in req:
             for obj in doc.Objects:
                 if obj.TypeId == "PartDesign::Body" and part_id(obj) == part_id(body):
@@ -1507,7 +1566,10 @@ def handle(controller, doc, req):
         copy = _bool(req, "copy", False)
         output, representative = _copy_result(doc, snapshots[0][1], _transform(req), name,
                                               None if copy else part_id(original))
-        output.Label = req.get("name", original.Label + (" copy" if copy else ""))
+        if copy:
+            output.Label = req.get("name", getattr(original, "KurtShapePartName", original.Label) + " copy")
+        elif "name" in req:
+            _prop(output, "App::PropertyString", "KurtShapePartName", req["name"])
         _validate(doc, [output])
         return _record(doc, representative, req, [output], [] if copy else [part_id(original)], snapshots)
     if op in {"linear_pattern_parts", "circular_pattern_parts", "mirror_parts"}:
@@ -1542,7 +1604,8 @@ def handle(controller, doc, req):
         for key, source in snapshots:
             for placement in placements:
                 output, rep = _copy_result(doc, source, placement, name if not reps else name + "Instance", mirror=mirror)
-                output.Label = current_part(doc, key).Label + " pattern"
+                source_part = current_part(doc, key)
+                output.Label = getattr(source_part, "KurtShapePartName", source_part.Label) + " pattern"
                 outputs.append(output)
                 reps.append(rep)
         _validate(doc, outputs)

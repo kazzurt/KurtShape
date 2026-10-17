@@ -1,0 +1,17 @@
+{
+  "recipe": "responsiveness-preview",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\responsiveness-preview\\run-455c9b4b8de64f39abb7b0cee2e8e925",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\responsiveness-preview-benchmark.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\responsiveness-preview\\run-455c9b4b8de64f39abb7b0cee2e8e925\\evidence\\responsiveness-preview\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\responsiveness-preview\\run-455c9b4b8de64f39abb7b0cee2e8e925\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\responsiveness-preview\\run-455c9b4b8de64f39abb7b0cee2e8e925\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\responsiveness-preview\\run-455c9b4b8de64f39abb7b0cee2e8e925\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T02:16:31.3178896Z",
+  "exited_utc": "2026-10-06T02:17:57.7740427Z",
+  "pid": 75076,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T02:17:57.7990949Z"
+}

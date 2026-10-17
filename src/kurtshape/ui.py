@@ -158,6 +158,10 @@ class Panel(QtGui.QDockWidget):
         self.task_edit = None
         self.finishing_sketch = False
         self.entering_sketch = False
+        # Set when FreeCAD's own edit-mode teardown (resetEdit) raised. The
+        # native view provider is then half closed; never re-enter setEdit
+        # automatically from tick() while this names the open sketch lease.
+        self.native_edit_failure = None
         self.placement_document = self.task_document = None
         self.workspace_modes = {}
         self.workspace_documents = {}
@@ -1144,10 +1148,13 @@ class Panel(QtGui.QDockWidget):
 
     def change_body(self, *args):
         if not self.refreshing and self.state:
-            body = self.active_body()
-            if body and Gui.activeDocument():
-                Gui.activeDocument().activeView().setActiveObject("pdbody", body)
+            self.activate_body()
             self.refresh()
+
+    def activate_body(self):
+        body = self.active_body()
+        if body and Gui.activeDocument():
+            Gui.activeDocument().activeView().setActiveObject("pdbody", body)
 
     def maximize_document_view(self):
         if Gui.activeDocument():
@@ -1236,7 +1243,7 @@ class Panel(QtGui.QDockWidget):
             self.cancel_task()
         if doc and any(self.core._is_open(d) and d.Name == doc.Name for d in self.core.documents.values()):
             if self.state is not None and not processed and not self.core.needs_refresh(doc) and self.last_document == doc.Name:
-                if self.state.get("active_sketch_edit") and not self.active_sketch() and not self.finishing_sketch and not self.entering_sketch and not self.sketch_plane_editor.picking:
+                if self.sketch_lease_needs_finish():
                     self.finish_sketch()
                 return
             previous = (self.state or {}).get("revision")
@@ -1250,9 +1257,14 @@ class Panel(QtGui.QDockWidget):
                 if self.last_document != doc.Name:
                     self.toolbar_labels.hide()
                     self.maximize_document_view()
+                    if processed:
+                        # The bridge opened or created this project: finish
+                        # presenting it as GUI Open and New do.
+                        self.activate_body()
+                        navigation.apply_navigation()
                 self.last_document, self.last_status = doc.Name, self.state["build_status"]
                 self.core.observer.state(doc)["refresh"] = False
-                if self.state.get("active_sketch_edit") and not self.active_sketch() and not self.finishing_sketch and not self.entering_sketch and not self.sketch_plane_editor.picking:
+                if self.sketch_lease_needs_finish():
                     self.finish_sketch()
                 self.sync_edit_ui()
         elif self.state is not None:
@@ -1649,8 +1661,11 @@ class Panel(QtGui.QDockWidget):
         previous_body = self.body_choice.currentData()
         self.body_choice.blockSignals(True)
         self.body_choice.clear()
+        # A current part reads as its part name, as in the Parts list; older
+        # files can still carry suffixed native labels such as "Mallet003".
+        part_names = {entry["body"]: entry["name"] for entry in studio.get("parts", [])} if studio.get("enabled") else {}
         for body in self.sketch_owners():
-            self.body_choice.addItem(body.Label, body.Name)
+            self.body_choice.addItem(part_names.get(body.Name, body.Label), body.Name)
         if previous_body:
             self.body_choice.setCurrentIndex(max(0, self.body_choice.findData(previous_body)))
         self.body_choice.blockSignals(False)
@@ -3298,12 +3313,14 @@ class Panel(QtGui.QDockWidget):
         sketch_name = (self.active_sketch().Name if self.active_sketch()
                        else (self.state or {}).get("active_sketch_edit"))
         self.finishing_sketch = True
-        self.sketch_references.end_tool()
+        # A continuous native tool (Circle, Polyline, ...) is still live after
+        # its last click. End it the same way a right-click does, so Sketcher
+        # tears its handler down on the normal path before edit mode closes.
+        self.sketch_references.end_tool(stop_native=bool(self.active_sketch()))
         try:
             self.sketch_plane_editor.close()
-            if self.active_sketch():
-                Gui.activeDocument().resetEdit()
-            result = self.operation("finish_sketch_edit", cancel=bool(cancel))
+            result = (self.operation("finish_sketch_edit", cancel=bool(cancel))
+                      if self.leave_native_sketch_edit(sketch_name) else None)
             if result:
                 self.sketch_snapping.restore()
                 self.sketch_history.leave()
@@ -3312,7 +3329,7 @@ class Panel(QtGui.QDockWidget):
                 self.complete_editor()
             else:
                 feature = (self.state or {}).get("active_sketch_edit")
-                if feature and self.document().getObject(feature) and not self.active_sketch():
+                if feature and self.document().getObject(feature) and not self.active_sketch() and not self.native_edit_failure:
                     Gui.activeDocument().setEdit(feature)
                 self.sketch_history.apply()
         finally:
@@ -3320,6 +3337,48 @@ class Panel(QtGui.QDockWidget):
         self.sync_edit_ui()
         hide_native_panels()
         return result
+
+    def leave_native_sketch_edit(self, sketch_name):
+        """Close FreeCAD's sketch editor for the managed lease; True when it is closed.
+
+        KurtShape's adapters rewire parts of the Sketcher's Coin scene while a
+        drawing tool runs (pick-priority marker wrappers, cursor overrides).
+        Hand those back first, then let FreeCAD leave edit mode. If the native
+        teardown itself fails (Windows reports this as OSError "Access
+        violation"), the view provider is half closed: report it once, keep the
+        managed lease open so the geometry is untouched, and let the user
+        retry, save and restart instead of looping into setEdit every tick.
+        """
+        gui_doc = Gui.activeDocument()
+        if gui_doc is None:
+            return True
+        failure = self.native_edit_failure
+        retrying = bool(failure and failure["sketch"] == sketch_name)
+        if not gui_doc.getInEdit() and not retrying:
+            return True
+        self.sketch_snapping.sync_tool(None)
+        self.sketch_cursor.sync(None)
+        try:
+            gui_doc.resetEdit()
+        except Exception as exc:
+            attempts = (failure["attempts"] + 1) if retrying else 1
+            self.native_edit_failure = {"sketch": sketch_name, "error": str(exc), "attempts": attempts}
+            App.Console.PrintError("KurtShape: FreeCAD could not leave sketch edit mode for %s (attempt %d): %s\n"
+                                   % (sketch_name, attempts, exc))
+            self.notify("FreeCAD failed while closing the sketch editor (%s). Your geometry is kept. "
+                        "Try Finish once more; if it fails again, save and restart KurtShape." % exc, "error")
+            return False
+        self.native_edit_failure = None
+        return True
+
+    def sketch_lease_needs_finish(self):
+        """A managed sketch lease is open but FreeCAD is no longer editing it."""
+        state = self.state or {}
+        if not state.get("active_sketch_edit") or self.active_sketch() or self.finishing_sketch or self.entering_sketch or self.sketch_plane_editor.picking:
+            return False
+        failure = self.native_edit_failure
+        # After a native teardown failure only an explicit Finish may retry.
+        return not (failure and failure["sketch"] == state.get("active_sketch_edit"))
 
     def sync_edit_ui(self):
         sketch = self.active_sketch() or (self.sketch_plane_editor.sketch() if self.sketch_plane_editor.picking else None)

@@ -324,6 +324,77 @@ class PartStudioTests(unittest.TestCase):
         for actual, expected in zip(part["color"], [.1, .3, .8]):
             self.assertAlmostEqual(actual, expected)
 
+    def assert_part_labels(self, name, part="Body"):
+        """The current Body has exactly the part name; the part's other Bodies are distinct."""
+        current = studio.current_part(self.doc, part)
+        others = [obj.Label for obj in self.doc.Objects if obj.TypeId == "PartDesign::Body"
+                  and obj != current and studio.part_id(obj) == studio.part_id(current)]
+        self.assertTrue(others)
+        self.assertEqual(current.Label, name)
+        self.assertEqual(next(entry["name"] for entry in self.state["studio"]["parts"]
+                              if entry["body"] == current.Name), name)
+        self.assertEqual(others, [f"{name} (history {index})" for index in range(1, len(others) + 1)])
+
+    def test_current_body_keeps_exact_part_name_across_generations(self):
+        self.part()
+        self.call("set_part_appearance", part="Body", name="Bone Mallet")
+        self.assert_part_labels("Bone Mallet")
+        self.call("sketch_rectangle", id="AddProfile", body="Body", x=8, width=5, height=10)
+        self.call("pad", id="Add", profile="AddProfile", length=10, operation="add", merge_scope=["Body"])
+        self.call("sketch_rectangle", id="CutProfile", body="Body", x=2, width=3, height=3)
+        self.call("pad", id="Cut", profile="CutProfile", length=3, operation="remove", merge_scope=["Body"])
+        self.assert_part_labels("Bone Mallet")
+        self.call("set_part_appearance", part="Body", name="Mallet head")
+        self.assert_part_labels("Mallet head")
+        self.call("undo")
+        self.assert_part_labels("Bone Mallet")
+        self.call("transform_part", id="Move", part="Body", translation=[0, 0, 5])
+        self.assert_part_labels("Bone Mallet")
+        self.call("transform_part", id="Rename", part="Body", translation=[0, 0, 1], name="Moved mallet")
+        self.assert_part_labels("Moved mallet")
+        self.call("transform_part", id="Copy", part="Body", translation=[40, 0, 0], copy=True)
+        self.assertEqual(sorted(entry["name"] for entry in self.state["studio"]["parts"]),
+                         ["Moved mallet", "Moved mallet copy"])
+        self.assert_part_labels("Moved mallet")
+
+    def test_next_operation_repairs_suffixed_part_labels_from_older_files(self):
+        self.part()
+        self.call("set_part_appearance", part="Body", name="Bone Mallet")
+        # Earlier releases wrote the name to every Body of the part in
+        # document order, so FreeCAD suffixed the current Body.
+        part_bodies = [obj for obj in self.doc.Objects if obj.TypeId == "PartDesign::Body" and studio.part_id(obj) == "Body"]
+        for obj in part_bodies:
+            obj.Label = obj.Name
+        for obj in part_bodies:
+            obj.Label = "Bone Mallet"
+        self.assertNotEqual(studio.current_part(self.doc, "Body").Label, "Bone Mallet")
+        self.fresh()
+        self.assertEqual(self.state["studio"]["parts"][0]["name"], "Bone Mallet")
+        self.call("sketch_rectangle", id="AddProfile", body="Body", x=8, width=5, height=10)
+        self.call("pad", id="Add", profile="AddProfile", length=10, operation="add", merge_scope=["Body"])
+        self.assert_part_labels("Bone Mallet")
+
+    def test_headless_saved_part_reopens_with_its_name_color_and_exact_label(self):
+        import zipfile
+        import headless_part_fixture
+        fixture = headless_part_fixture.build(support.scratch(self, "headless-part-"))["studio"]
+        self.assertEqual(fixture["label"], headless_part_fixture.PART_NAME)
+        with zipfile.ZipFile(fixture["path"]) as archive:
+            names = archive.namelist()
+        # No view state is saved without the GUI; studio.present supplies it on open.
+        self.assertIn("Document.xml", names)
+        self.assertNotIn("GuiDocument.xml", names)
+        App.closeDocument(self.doc.Name)
+        response = self.core.dispatch({"op": "open", "path": fixture["path"]})
+        self.assertTrue(response["ok"], response)
+        self.state = response["result"]
+        part = self.state["studio"]["parts"]
+        self.assertEqual([(entry["id"], entry["name"], entry["body"], entry["visible"]) for entry in part],
+                         [(fixture["part"], headless_part_fixture.PART_NAME, fixture["body"], True)])
+        for actual, expected in zip(part[0]["color"], headless_part_fixture.PART_COLOR):
+            self.assertAlmostEqual(actual, expected, delta=1 / 255)
+        self.assert_part_labels(headless_part_fixture.PART_NAME)
+
     def test_revolve_sweep_and_loft_are_native_editable_tools(self):
         self.call("sketch_rectangle", id="RevolveProfile", plane="XZ", x=3, width=2, height=5)
         self.call("revolve", id="Revolve", profile="RevolveProfile", angle="360 deg", operation="new")

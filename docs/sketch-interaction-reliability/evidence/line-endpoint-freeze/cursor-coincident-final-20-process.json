@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\54e33d16-bd0a-475d-867e-a3bf6fec21d3.FCStd",
+  "source_sha256": "04a22a15eb296c99b8500e01c7ea024cab980222a86797ca264aa52d15a080d5",
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\line-endpoint-freeze-working\\cursor-coincident-final-20",
+  "mode": "production",
+  "cache_probe": true,
+  "visible": false,
+  "pid": 53008,
+  "exit_code": 0,
+  "timed_out": false,
+  "started_utc": "2026-10-06T19:37:52.3430390Z",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\line-endpoint-freeze-working\\cursor-coincident-final-20\\evidence\\line-endpoint-freeze\\gui-result.json",
+  "check_count": 35,
+  "critical_stderr": [],
+  "source_unchanged": true,
+  "finished_utc": "2026-10-06T19:38:09.3057159Z"
+}

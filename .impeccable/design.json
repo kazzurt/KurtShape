@@ -1,0 +1,515 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-05T06:05:43.975Z",
+  "title": "Design System: KurtShape",
+  "extensions": {
+    "colorMeta": {
+      "workspace": {
+        "displayName": "Workspace Gray",
+        "tonalRamp": [
+          "oklch(15.00% 0.00171 247.84)",
+          "oklch(26.43% 0.00171 247.84)",
+          "oklch(37.86% 0.00171 247.84)",
+          "oklch(49.29% 0.00171 247.84)",
+          "oklch(60.71% 0.00171 247.84)",
+          "oklch(72.14% 0.00171 247.84)",
+          "oklch(83.57% 0.00171 247.84)",
+          "oklch(95.00% 0.00171 247.84)"
+        ]
+      },
+      "surface": {
+        "displayName": "Control White",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95.00% 0.00000 0.00)"
+        ]
+      },
+      "viewport": {
+        "displayName": "Canvas White",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95.00% 0.00000 0.00)"
+        ]
+      },
+      "chrome": {
+        "displayName": "Toolbar Gray",
+        "tonalRamp": [
+          "oklch(15.00% 0.00171 247.84)",
+          "oklch(26.43% 0.00171 247.84)",
+          "oklch(37.86% 0.00171 247.84)",
+          "oklch(49.29% 0.00171 247.84)",
+          "oklch(60.71% 0.00171 247.84)",
+          "oklch(72.14% 0.00171 247.84)",
+          "oklch(83.57% 0.00171 247.84)",
+          "oklch(95.00% 0.00171 247.84)"
+        ]
+      },
+      "alternate": {
+        "displayName": "Row Off-white",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95.00% 0.00000 0.00)"
+        ]
+      },
+      "ink": {
+        "displayName": "Modeling Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.01220 243.22)",
+          "oklch(26.43% 0.01220 243.22)",
+          "oklch(37.86% 0.01220 243.22)",
+          "oklch(49.29% 0.01220 243.22)",
+          "oklch(60.71% 0.01220 243.22)",
+          "oklch(72.14% 0.01220 243.22)",
+          "oklch(83.57% 0.01220 243.22)",
+          "oklch(95.00% 0.01220 243.22)"
+        ]
+      },
+      "muted": {
+        "displayName": "Quiet Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.01900 245.34)",
+          "oklch(26.43% 0.01900 245.34)",
+          "oklch(37.86% 0.01900 245.34)",
+          "oklch(49.29% 0.01900 245.34)",
+          "oklch(60.71% 0.01900 245.34)",
+          "oklch(72.14% 0.01900 245.34)",
+          "oklch(83.57% 0.01900 245.34)",
+          "oklch(95.00% 0.01900 245.34)"
+        ]
+      },
+      "placeholder": {
+        "displayName": "Prompt Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.02251 245.88)",
+          "oklch(26.43% 0.02251 245.88)",
+          "oklch(37.86% 0.02251 245.88)",
+          "oklch(49.29% 0.02251 245.88)",
+          "oklch(60.71% 0.02251 245.88)",
+          "oklch(72.14% 0.02251 245.88)",
+          "oklch(83.57% 0.02251 245.88)",
+          "oklch(95.00% 0.02251 245.88)"
+        ]
+      },
+      "disabled_ink": {
+        "displayName": "Disabled Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.01943 242.68)",
+          "oklch(26.43% 0.01943 242.68)",
+          "oklch(37.86% 0.01943 242.68)",
+          "oklch(49.29% 0.01943 242.68)",
+          "oklch(60.71% 0.01943 242.68)",
+          "oklch(72.14% 0.01943 242.68)",
+          "oklch(83.57% 0.01943 242.68)",
+          "oklch(95.00% 0.01943 242.68)"
+        ]
+      },
+      "disabled": {
+        "displayName": "Disabled Gray",
+        "tonalRamp": [
+          "oklch(15.00% 0.00343 247.86)",
+          "oklch(26.43% 0.00343 247.86)",
+          "oklch(37.86% 0.00343 247.86)",
+          "oklch(49.29% 0.00343 247.86)",
+          "oklch(60.71% 0.00343 247.86)",
+          "oklch(72.14% 0.00343 247.86)",
+          "oklch(83.57% 0.00343 247.86)",
+          "oklch(95.00% 0.00343 247.86)"
+        ]
+      },
+      "divider": {
+        "displayName": "Soft Divider",
+        "tonalRamp": [
+          "oklch(15.00% 0.00812 253.86)",
+          "oklch(26.43% 0.00812 253.86)",
+          "oklch(37.86% 0.00812 253.86)",
+          "oklch(49.29% 0.00812 253.86)",
+          "oklch(60.71% 0.00812 253.86)",
+          "oklch(72.14% 0.00812 253.86)",
+          "oklch(83.57% 0.00812 253.86)",
+          "oklch(95.00% 0.00812 253.86)"
+        ]
+      },
+      "border": {
+        "displayName": "Control Outline",
+        "tonalRamp": [
+          "oklch(15.00% 0.01884 248.11)",
+          "oklch(26.43% 0.01884 248.11)",
+          "oklch(37.86% 0.01884 248.11)",
+          "oklch(49.29% 0.01884 248.11)",
+          "oklch(60.71% 0.01884 248.11)",
+          "oklch(72.14% 0.01884 248.11)",
+          "oklch(83.57% 0.01884 248.11)",
+          "oklch(95.00% 0.01884 248.11)"
+        ]
+      },
+      "hover": {
+        "displayName": "Hover Gray",
+        "tonalRamp": [
+          "oklch(15.00% 0.00759 241.66)",
+          "oklch(26.43% 0.00759 241.66)",
+          "oklch(37.86% 0.00759 241.66)",
+          "oklch(49.29% 0.00759 241.66)",
+          "oklch(60.71% 0.00759 241.66)",
+          "oklch(72.14% 0.00759 241.66)",
+          "oklch(83.57% 0.00759 241.66)",
+          "oklch(95.00% 0.00759 241.66)"
+        ]
+      },
+      "selection": {
+        "displayName": "Selected Row Blue",
+        "tonalRamp": [
+          "oklch(15.00% 0.01688 242.43)",
+          "oklch(26.43% 0.01688 242.43)",
+          "oklch(37.86% 0.01688 242.43)",
+          "oklch(49.29% 0.01688 242.43)",
+          "oklch(60.71% 0.01688 242.43)",
+          "oklch(72.14% 0.01688 242.43)",
+          "oklch(83.57% 0.01688 242.43)",
+          "oklch(95.00% 0.01688 242.43)"
+        ]
+      },
+      "active_field_fill": {
+        "displayName": "Receiving Field Blue",
+        "tonalRamp": [
+          "oklch(15.00% 0.01688 242.43)",
+          "oklch(26.43% 0.01688 242.43)",
+          "oklch(37.86% 0.01688 242.43)",
+          "oklch(49.29% 0.01688 242.43)",
+          "oklch(60.71% 0.01688 242.43)",
+          "oklch(72.14% 0.01688 242.43)",
+          "oklch(83.57% 0.01688 242.43)",
+          "oklch(95.00% 0.01688 242.43)"
+        ]
+      },
+      "selection_ink": {
+        "displayName": "Selection Ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.08692 248.48)",
+          "oklch(26.43% 0.08692 248.48)",
+          "oklch(37.86% 0.08692 248.48)",
+          "oklch(49.29% 0.08692 248.48)",
+          "oklch(60.71% 0.08692 248.48)",
+          "oklch(72.14% 0.08692 248.48)",
+          "oklch(83.57% 0.08692 248.48)",
+          "oklch(95.00% 0.08692 248.48)"
+        ]
+      },
+      "accent": {
+        "displayName": "Action Blue",
+        "tonalRamp": [
+          "oklch(15.00% 0.13108 252.49)",
+          "oklch(26.43% 0.13108 252.49)",
+          "oklch(37.86% 0.13108 252.49)",
+          "oklch(49.29% 0.13108 252.49)",
+          "oklch(60.71% 0.13108 252.49)",
+          "oklch(72.14% 0.13108 252.49)",
+          "oklch(83.57% 0.13108 252.49)",
+          "oklch(95.00% 0.13108 252.49)"
+        ]
+      },
+      "accent_pressed": {
+        "displayName": "Pressed Action Blue",
+        "tonalRamp": [
+          "oklch(15.00% 0.10963 252.27)",
+          "oklch(26.43% 0.10963 252.27)",
+          "oklch(37.86% 0.10963 252.27)",
+          "oklch(49.29% 0.10963 252.27)",
+          "oklch(60.71% 0.10963 252.27)",
+          "oklch(72.14% 0.10963 252.27)",
+          "oklch(83.57% 0.10963 252.27)",
+          "oklch(95.00% 0.10963 252.27)"
+        ]
+      },
+      "error": {
+        "displayName": "Failure Red",
+        "tonalRamp": [
+          "oklch(15.00% 0.17709 22.47)",
+          "oklch(26.43% 0.17709 22.47)",
+          "oklch(37.86% 0.17709 22.47)",
+          "oklch(49.29% 0.17709 22.47)",
+          "oklch(60.71% 0.17709 22.47)",
+          "oklch(72.14% 0.17709 22.47)",
+          "oklch(83.57% 0.17709 22.47)",
+          "oklch(95.00% 0.17709 22.47)"
+        ]
+      },
+      "warning": {
+        "displayName": "Caution Ochre",
+        "tonalRamp": [
+          "oklch(15.00% 0.10771 76.99)",
+          "oklch(26.43% 0.10771 76.99)",
+          "oklch(37.86% 0.10771 76.99)",
+          "oklch(49.29% 0.10771 76.99)",
+          "oklch(60.71% 0.10771 76.99)",
+          "oklch(72.14% 0.10771 76.99)",
+          "oklch(83.57% 0.10771 76.99)",
+          "oklch(95.00% 0.10771 76.99)"
+        ]
+      },
+      "success": {
+        "displayName": "Valid Preview Green",
+        "tonalRamp": [
+          "oklch(15.00% 0.11826 151.48)",
+          "oklch(26.43% 0.11826 151.48)",
+          "oklch(37.86% 0.11826 151.48)",
+          "oklch(49.29% 0.11826 151.48)",
+          "oklch(60.71% 0.11826 151.48)",
+          "oklch(72.14% 0.11826 151.48)",
+          "oklch(83.57% 0.11826 151.48)",
+          "oklch(95.00% 0.11826 151.48)"
+        ]
+      },
+      "tooltip": {
+        "displayName": "Command Charcoal",
+        "tonalRamp": [
+          "oklch(15.00% 0.01250 252.97)",
+          "oklch(26.43% 0.01250 252.97)",
+          "oklch(37.86% 0.01250 252.97)",
+          "oklch(49.29% 0.01250 252.97)",
+          "oklch(60.71% 0.01250 252.97)",
+          "oklch(72.14% 0.01250 252.97)",
+          "oklch(83.57% 0.01250 252.97)",
+          "oklch(95.00% 0.01250 252.97)"
+        ]
+      },
+      "tooltip_border": {
+        "displayName": "Command Outline",
+        "tonalRamp": [
+          "oklch(15.00% 0.01397 248.32)",
+          "oklch(26.43% 0.01397 248.32)",
+          "oklch(37.86% 0.01397 248.32)",
+          "oklch(49.29% 0.01397 248.32)",
+          "oklch(60.71% 0.01397 248.32)",
+          "oklch(72.14% 0.01397 248.32)",
+          "oklch(83.57% 0.01397 248.32)",
+          "oklch(95.00% 0.01397 248.32)"
+        ]
+      },
+      "icon_ink": {
+        "displayName": "Glyph Outline",
+        "tonalRamp": [
+          "oklch(15.00% 0.01242 248.10)",
+          "oklch(26.43% 0.01242 248.10)",
+          "oklch(37.86% 0.01242 248.10)",
+          "oklch(49.29% 0.01242 248.10)",
+          "oklch(60.71% 0.01242 248.10)",
+          "oklch(72.14% 0.01242 248.10)",
+          "oklch(83.57% 0.01242 248.10)",
+          "oklch(95.00% 0.01242 248.10)"
+        ]
+      },
+      "icon_light": {
+        "displayName": "Light Glyph Face",
+        "tonalRamp": [
+          "oklch(15.00% 0.00292 264.54)",
+          "oklch(26.43% 0.00292 264.54)",
+          "oklch(37.86% 0.00292 264.54)",
+          "oklch(49.29% 0.00292 264.54)",
+          "oklch(60.71% 0.00292 264.54)",
+          "oklch(72.14% 0.00292 264.54)",
+          "oklch(83.57% 0.00292 264.54)",
+          "oklch(95.00% 0.00292 264.54)"
+        ]
+      },
+      "icon_mid": {
+        "displayName": "Middle Glyph Face",
+        "tonalRamp": [
+          "oklch(15.00% 0.00900 247.94)",
+          "oklch(26.43% 0.00900 247.94)",
+          "oklch(37.86% 0.00900 247.94)",
+          "oklch(49.29% 0.00900 247.94)",
+          "oklch(60.71% 0.00900 247.94)",
+          "oklch(72.14% 0.00900 247.94)",
+          "oklch(83.57% 0.00900 247.94)",
+          "oklch(95.00% 0.00900 247.94)"
+        ]
+      },
+      "icon_dark": {
+        "displayName": "Dark Glyph Face",
+        "tonalRamp": [
+          "oklch(15.00% 0.01399 244.36)",
+          "oklch(26.43% 0.01399 244.36)",
+          "oklch(37.86% 0.01399 244.36)",
+          "oklch(49.29% 0.01399 244.36)",
+          "oklch(60.71% 0.01399 244.36)",
+          "oklch(72.14% 0.01399 244.36)",
+          "oklch(83.57% 0.01399 244.36)",
+          "oklch(95.00% 0.01399 244.36)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Body",
+        "purpose": "Native fields, menus, tool labels, history and status."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Section titles and primary text-button emphasis."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Document identity and feature-editor titles."
+      },
+      "brand": {
+        "displayName": "Brand",
+        "purpose": "The compact KurtShape name."
+      },
+      "active_part": {
+        "displayName": "Active part",
+        "purpose": "Bold target-part identity, independently of selection."
+      }
+    },
+    "motion": [
+      {
+        "name": "toolbar-label-delay",
+        "value": "350ms",
+        "purpose": "Observed native hover/focus timer; no added animation."
+      },
+      {
+        "name": "ordinary-feedback-expiry",
+        "value": "4500ms",
+        "purpose": "Observed timer restoring actual task/document footer state after ordinary completion."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Icon Command",
+      "kind": "button",
+      "refersTo": "toolbar-command",
+      "description": "Original Extrude SVG with the native icon-only command states; action naming stays accessible.",
+      "html": "<button class=\"ds-icon-command\" aria-label=\"Extrude\" title=\"Extrude\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n<g stroke=\"#51575d\" stroke-width=\"0.95\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 10.5 L12 7 19 10.5 12 14 Z\" fill=\"#dedfe1\" /><path d=\"M5 10.5 L12 14 12 21 5 17.5 Z\" fill=\"#b8bdc2\" /><path d=\"M12 14 L19 10.5 19 17.5 12 21 Z\" fill=\"#899198\" /><path d=\"M9 8 V4 H15 V8\" fill=\"#dedfe1\" /><path d=\"M12 6 V1 M9 4 L12 1 15 4\" fill=\"none\" /></g>\r\n</svg></button>",
+      "css": ".ds-icon-command{font-family:'Segoe UI';font-size:13px;color:#2d3338;background:transparent;border:1px solid transparent;border-radius:2px;padding:4px;min-width:22px;min-height:22px;cursor:pointer}.ds-icon-command svg{display:block;width:20px;height:20px;margin:auto}.ds-icon-command:hover{background:#edf2f6;border-color:#8a949e}.ds-icon-command:focus-visible{outline:none;border-color:#185fa5}.ds-icon-command:active,.ds-icon-command[aria-pressed=\"true\"]{background:#e6f1fa;border-color:#185fa5;color:#204f79}.ds-icon-command:disabled{color:#646f78;background:transparent;border-color:transparent;cursor:default}"
+    },
+    {
+      "name": "Primary Text Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Native dialog/form primary button. Feature-header acceptance uses the separate icon-only specimen.",
+      "html": "<button class=\"ds-primary-button\">Confirm</button>",
+      "css": ".ds-primary-button{font-family:'Segoe UI';font-size:13px;font-weight:600;color:#ffffff;background:#185fa5;border:1px solid #185fa5;border-radius:2px;padding:4px 8px;min-height:20px;cursor:pointer}.ds-primary-button:hover{background:#124b83}.ds-primary-button:focus-visible{border-color:#185fa5}.ds-primary-button:active{background:#124b83;color:#ffffff}.ds-primary-button:disabled{color:#646f78;background:#f1f3f5;border-color:#d6dadf;cursor:default}"
+    },
+    {
+      "name": "Secondary Text Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Compact native dialog/form button with neutral rest and blue focus.",
+      "html": "<button class=\"ds-secondary-button\">Edit sketch</button>",
+      "css": ".ds-secondary-button{font-family:'Segoe UI';font-size:13px;color:#2d3338;background:#ffffff;border:1px solid #8a949e;border-radius:2px;padding:4px 8px;min-height:20px;cursor:pointer}.ds-secondary-button:hover{background:#edf2f6}.ds-secondary-button:focus-visible{outline:none;border-color:#185fa5}.ds-secondary-button:active{color:#204f79;background:#e6f1fa;border-color:#185fa5}.ds-secondary-button:disabled{color:#646f78;background:#f1f3f5;border-color:#d6dadf;cursor:default}"
+    },
+    {
+      "name": "Quantity Field",
+      "kind": "input",
+      "refersTo": "quantity-input",
+      "description": "Visual translation of the compact white native quantity control. Units, expressions and transactions remain native.",
+      "html": "<label class=\"ds-quantity-label\" for=\"ds-depth-field\">Depth</label><input class=\"ds-quantity-input\" id=\"ds-depth-field\" value=\"6 mm\" aria-label=\"Depth\"/>",
+      "css": ".ds-quantity-label{font-family:'Segoe UI';font-size:13px;color:#2d3338;display:block;margin-bottom:6px}.ds-quantity-input{font-family:'Segoe UI';font-size:13px;color:#2d3338;background:#ffffff;border:1px solid #8a949e;border-radius:2px;padding:4px 6px;min-height:18px;width:150px}.ds-quantity-input:hover{border-color:#8a949e}.ds-quantity-input:focus-visible{outline:none;border-color:#185fa5}.ds-quantity-input::selection{background:#e6f1fa;color:#204f79}.ds-quantity-input:disabled{color:#646f78;background:#f1f3f5;border-color:#d6dadf}"
+    },
+    {
+      "name": "Document Navigation",
+      "kind": "nav",
+      "refersTo": "document-navigation",
+      "description": "Native header composition specimen: compact symbols around an elastic local-document identity.",
+      "html": "<nav class=\"ds-document-navigation\" aria-label=\"Document\"><span class=\"ds-doc-brand\">KurtShape</span><button class=\"ds-doc-symbol\" aria-label=\"Document menu\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n<g stroke=\"#51575d\" stroke-width=\"0.95\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 6 H21 M3 12 H21 M3 18 H21\" fill=\"none\" stroke-width=\"1.8\"/></g>\r\n</svg></button><span class=\"ds-doc-identity\" title=\"Part studio · Modified\">Part studio · Modified</span><select class=\"ds-doc-mode\" aria-label=\"Workspace mode\"><option>Part Studio</option><option>Assembly</option></select><button class=\"ds-doc-symbol\" aria-label=\"Save\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n<g stroke=\"#51575d\" stroke-width=\"0.95\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 2 H18 L22 6 V22 H3 Z\" fill=\"#dedfe1\" /><path d=\"M7 2 V9 H17 V2 M7 22 V14 H18 V22\" fill=\"none\" /><rect x=\"13\" y=\"3\" width=\"2\" height=\"4\" rx=\"0\" fill=\"#899198\"/></g>\r\n</svg></button><button class=\"ds-doc-symbol\" aria-label=\"Settings\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n<g stroke=\"#51575d\" stroke-width=\"0.95\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 2 H15 L16 6 20 5 23 10 20 13 22 17 17 21 13 19 9 22 5 19 6 15 2 12 5 7 9 8 Z\" fill=\"#b8bdc2\" /><ellipse cx=\"12\" cy=\"12\" rx=\"4\" ry=\"4\" fill=\"#dedfe1\"/></g>\r\n</svg></button></nav>",
+      "css": ".ds-document-navigation{font-family:'Segoe UI';font-size:13px;display:flex;align-items:center;gap:0;max-width:720px;background:#f5f6f7;color:#2d3338;padding:0 4px;border-bottom:1px solid #d6dadf}.ds-doc-brand{font-size:16px;font-weight:600;padding:0 6px;white-space:nowrap}.ds-doc-identity{font-size:14px;font-weight:600;padding:0 6px;min-width:90px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ds-doc-symbol{background:transparent;border:1px solid transparent;border-radius:2px;padding:4px;min-width:22px;min-height:22px;cursor:pointer;flex-shrink:0}.ds-doc-symbol svg{width:20px;height:20px;display:block;margin:auto}.ds-doc-symbol:hover{background:#edf2f6;border-color:#8a949e}.ds-doc-symbol:focus-visible{outline:none;border-color:#185fa5}.ds-doc-symbol:active{background:#e6f1fa;border-color:#185fa5}.ds-doc-mode{font-family:'Segoe UI';font-size:13px;color:#2d3338;background:#ffffff;border:1px solid #8a949e;border-radius:2px;padding:4px 6px;min-height:18px}.ds-doc-mode:focus-visible{outline:none;border-color:#185fa5}"
+    },
+    {
+      "name": "Active Reference Picker",
+      "kind": "custom",
+      "refersTo": "reference-picker-active",
+      "description": "Blue receiving field with compact references, full-name labels and explicit removal; Clear all belongs to Reference options.",
+      "html": "<section class=\"ds-reference-picker\" aria-label=\"Edges references\"><div class=\"ds-ref-heading\"><button class=\"ds-ref-prompt\" aria-pressed=\"true\" aria-label=\"Select edges; 1 selected\">Select edges</button><button class=\"ds-ref-remove-selected\" aria-label=\"Remove selected references\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n<g stroke=\"#51575d\" stroke-width=\"0.95\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 5 L19 19 M19 5 L5 19\" fill=\"none\" stroke-width=\"1.9\"/></g>\r\n</svg></button></div><div class=\"ds-ref-row\"><span class=\"ds-ref-name\" title=\"Part 1 · Edge2\">Part 1 · Edge2</span><button class=\"ds-ref-row-remove\" aria-label=\"Remove Part 1 Edge2\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n<g stroke=\"#51575d\" stroke-width=\"0.95\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 5 L19 19 M19 5 L5 19\" fill=\"none\" stroke-width=\"1.9\"/></g>\r\n</svg></button></div></section>",
+      "css": ".ds-reference-picker{font-family:'Segoe UI';font-size:13px;color:#2d3338;background:#e6f1fa;border:1px solid #185fa5;border-radius:2px;width:280px}.ds-ref-heading{display:flex;gap:2px}.ds-ref-prompt{font-family:'Segoe UI';font-size:13px;flex:1;text-align:left;color:#204f79;background:#e6f1fa;border:1px solid #185fa5;border-radius:2px;padding:4px 8px;min-height:20px;cursor:pointer}.ds-ref-prompt:hover{background:#edf2f6}.ds-ref-prompt:focus-visible{outline:none;border-color:#185fa5}.ds-ref-remove-selected,.ds-ref-row-remove{background:transparent;border:1px solid transparent;border-radius:2px;padding:2px;width:28px;height:28px;cursor:pointer}.ds-ref-remove-selected svg,.ds-ref-row-remove svg{width:16px;height:16px}.ds-ref-remove-selected:hover,.ds-ref-row-remove:hover{background:#edf2f6;border-color:#8a949e}.ds-ref-remove-selected:focus-visible,.ds-ref-row-remove:focus-visible{outline:none;border-color:#185fa5}.ds-ref-remove-selected:active,.ds-ref-row-remove:active{background:#e6f1fa;border-color:#185fa5}.ds-ref-row{display:flex;align-items:center;gap:2px;min-height:28px;padding:0 0 0 6px;background:#ffffff}.ds-ref-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"
+    },
+    {
+      "name": "Modeless Feature Editor",
+      "kind": "custom",
+      "refersTo": "feature-editor",
+      "description": "Static native editor specimen: title and icon-only acceptance remain above the scrolling form; the copyable verdict remains below it.",
+      "html": "<section class=\"ds-feature-editor\" aria-label=\"Fillet editor\"><header class=\"ds-feature-header\"><strong class=\"ds-feature-title\">Fillet</strong><button class=\"ds-feature-accept\" aria-label=\"Confirm Fillet\" disabled><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n<g stroke=\"#51575d\" stroke-width=\"0.95\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12 L9 18 21 5\" fill=\"none\" stroke-width=\"2.1\"/></g>\r\n</svg></button><button class=\"ds-feature-cancel\" aria-label=\"Cancel Fillet\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n<g stroke=\"#51575d\" stroke-width=\"0.95\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 5 L19 19 M19 5 L5 19\" fill=\"none\" stroke-width=\"1.9\"/></g>\r\n</svg></button></header><div class=\"ds-feature-scroll\"><label class=\"ds-feature-field\">Edges<input value=\"Part 1 · Edge2\" aria-label=\"Edges\"/></label><label class=\"ds-feature-field\">Radius<input value=\"0 mm\" aria-label=\"Radius\"/></label></div><div class=\"ds-feature-verdict\" role=\"status\">Radius must be greater than zero.</div></section>",
+      "css": ".ds-feature-editor{font-family:'Segoe UI';font-size:13px;color:#2d3338;background:#ffffff;width:320px;min-width:280px;max-width:440px;border:1px solid #8a949e}.ds-feature-header{display:flex;align-items:center;gap:4px;padding:4px 4px 4px 8px;background:#f5f6f7;border-bottom:1px solid #d6dadf}.ds-feature-title{font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ds-feature-accept,.ds-feature-cancel{padding:2px;width:28px;height:28px;background:transparent;border:1px solid transparent;border-radius:2px;cursor:pointer}.ds-feature-accept svg,.ds-feature-cancel svg{width:16px;height:16px}.ds-feature-accept:hover,.ds-feature-cancel:hover{background:#edf2f6;border-color:#8a949e}.ds-feature-accept:focus-visible,.ds-feature-cancel:focus-visible{outline:none;border-color:#185fa5}.ds-feature-accept:disabled{color:#646f78;background:transparent;border-color:transparent;cursor:default}.ds-feature-scroll{max-height:120px;overflow-y:auto;padding:8px;display:grid;gap:6px}.ds-feature-field{display:grid;gap:6px;min-width:0}.ds-feature-field input{font-family:'Segoe UI';font-size:13px;color:#2d3338;background:#ffffff;border:1px solid #8a949e;border-radius:2px;padding:4px 6px;min-height:18px;min-width:0}.ds-feature-field input:focus-visible{outline:none;border-color:#185fa5}.ds-feature-verdict{color:#bd3039;padding:8px;overflow-wrap:break-word;user-select:text}"
+    },
+    {
+      "name": "Active Part Row",
+      "kind": "nav",
+      "refersTo": "history-active-part",
+      "description": "Bold active-part identity at rest; hover, focus and selection remain separate from the target-part emphasis.",
+      "html": "<button class=\"ds-active-part-row\" aria-label=\"Part 1, active part for new features\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n<g stroke=\"#51575d\" stroke-width=\"0.95\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 10.5 L12 7 19 10.5 12 14 Z\" fill=\"#dedfe1\" /><path d=\"M5 10.5 L12 14 12 21 5 17.5 Z\" fill=\"#b8bdc2\" /><path d=\"M12 14 L19 10.5 19 17.5 12 21 Z\" fill=\"#899198\" /><path d=\"M9 8 V4 H15 V8\" fill=\"#dedfe1\" /><path d=\"M12 6 V1 M9 4 L12 1 15 4\" fill=\"none\" /></g>\r\n</svg><span>Part 1</span></button>",
+      "css": ".ds-active-part-row{font-family:'Segoe UI';font-size:13px;font-weight:700;color:#2d3338;background:#ffffff;border:1px solid transparent;padding:3px 2px;display:flex;align-items:center;gap:4px;width:250px;text-align:left;cursor:pointer}.ds-active-part-row svg{width:20px;height:20px;flex-shrink:0}.ds-active-part-row:hover{background:#edf2f6}.ds-active-part-row:focus-visible{outline:none;border-color:#185fa5}.ds-active-part-row:active,.ds-active-part-row[aria-current=\"true\"]{color:#204f79;background:#e6f1fa}"
+    },
+    {
+      "name": "Below-symbol Command Label",
+      "kind": "custom",
+      "refersTo": "toolbar-label",
+      "description": "Hover or focus the symbol for the native 350ms label delay; the label takes neither focus nor pointer events.",
+      "html": "<div class=\"ds-command-demo\"><button class=\"ds-command-anchor\" aria-label=\"Extrude\" aria-describedby=\"ds-extrude-label\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\">\r\n<g stroke=\"#51575d\" stroke-width=\"0.95\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 10.5 L12 7 19 10.5 12 14 Z\" fill=\"#dedfe1\" /><path d=\"M5 10.5 L12 14 12 21 5 17.5 Z\" fill=\"#b8bdc2\" /><path d=\"M12 14 L19 10.5 19 17.5 12 21 Z\" fill=\"#899198\" /><path d=\"M9 8 V4 H15 V8\" fill=\"#dedfe1\" /><path d=\"M12 6 V1 M9 4 L12 1 15 4\" fill=\"none\" /></g>\r\n</svg></button><span class=\"ds-command-label\" id=\"ds-extrude-label\" role=\"tooltip\">Extrude  (Shift+E)</span></div>",
+      "css": ".ds-command-demo{font-family:'Segoe UI';font-size:13px;position:relative;display:inline-block;margin:0 70px 42px}.ds-command-anchor{background:transparent;border:1px solid transparent;border-radius:2px;padding:4px;min-width:22px;min-height:22px;cursor:pointer}.ds-command-anchor svg{display:block;width:20px;height:20px;margin:auto}.ds-command-anchor:hover{background:#edf2f6;border-color:#8a949e}.ds-command-anchor:focus-visible{outline:none;border-color:#185fa5}.ds-command-anchor:active{background:#e6f1fa;border-color:#185fa5}.ds-command-label{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);color:#ffffff;background:#353a40;border:1px solid #242a30;border-radius:2px;padding:5px 8px;white-space:nowrap;pointer-events:none;visibility:hidden;transition:visibility 0s linear 0s}.ds-command-demo:hover .ds-command-label,.ds-command-demo:focus-within .ds-command-label{visibility:visible;transition-delay:350ms}.ds-command-anchor:active+.ds-command-label{visibility:hidden;transition-delay:0s}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Modeling Desk",
+    "overview": "KurtShape follows the user's light desktop Onshape reference: a compact document bar, dense command symbols, left history and parts, and a large white modeling canvas. Shaded grayscale CAD glyphs, pale neutral chrome and readable system type make geometry and parameter entry the focus.\n\nThe system is implemented in native Qt around the FreeCAD viewport. KurtShape aligns its active local FreeCAD appearance profile with FreeCAD Light and owns the application palette and stylesheet together, including native Tasks, menus, popups and floating quantity editors. It preserves local document identity, explicit Save, existing modeling transactions, user part appearances, geometry selection and the established SolidWorks mouse gestures.",
+    "keyCharacteristics": [
+      "Dense icon-only command rows with names available on hover, focus, menus and search.",
+      "Light neutral surfaces with blue selection and active reference fields.",
+      "Compact modeless feature editors with fixed acceptance controls and visible preview verdicts.",
+      "Resizable history and parts beside the native white canvas."
+    ],
+    "rules": [
+      {
+        "name": "The Model Color Rule",
+        "body": "Theme the workspace and viewer background without overwriting part appearances, geometry selection or native solver states.",
+        "section": "colors"
+      },
+      {
+        "name": "The Icon Row Rule",
+        "body": "Persistent top command buttons show symbols only. Preserve descriptive action names for menus, accessibility, search and delayed labels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Chrome Rule",
+        "body": "Use tonal surfaces, thin boundaries and native floating-window separation. Do not introduce decorative card shadows into the modeling workspace.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the document identity elastic and show its full name on hover.",
+      "Do provide original command icons, grayscale native fallback, accessible names and real menu/search routes.",
+      "Do show a small white-text label below the symbol after the established hover or keyboard-focus delay.",
+      "Do keep the receiving reference field blue while preserving independent quantity-entry focus.",
+      "Do keep Confirm, Cancel and the current preview verdict outside the scrolling form.",
+      "Do use the adjustable history/parts split and bold active-part text without changing selection or camera.",
+      "Do keep local Unsaved/Modified wording, explicit Save and copyable errors tied to the current edit.",
+      "Do keep native appearance preferences and report text compatible with the owned light palette. Refresh the native report highlighter after changing its parameters so retained warning/error ranges use the new colors and preserve their native severity metadata."
+    ],
+    "donts": [
+      "Don't add inline command captions or category headings to persistent top toolbars.",
+      "Don't replace the native viewport, solver, quantity parsing or existing SolidWorks navigation to achieve the appearance.",
+      "Don't recolor user parts or alter authoritative geometry for hover, selection or preview styling.",
+      "Don't show cloud-save claims or make local document tabs imply cloud element semantics.",
+      "Don't let stale completion text appear to be the current preview verdict.",
+      "Don't let long form labels or reference names force controls beyond the available screen.",
+      "Don't invent unsupported commands, progress percentages or acceptance states.",
+      "Don't apply the entire native preference pack to repair appearance; preserve selection, navigation and model colors."
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "recipe": "messages",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-5caaded4cf324541af3b5b17675c82e7",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\messages-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-5caaded4cf324541af3b5b17675c82e7\\evidence\\messages-behavior\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-5caaded4cf324541af3b5b17675c82e7\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-5caaded4cf324541af3b5b17675c82e7\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-5caaded4cf324541af3b5b17675c82e7\\freecad-stderr.txt",
+  "started_utc": "2026-10-05T06:21:19.1380926Z",
+  "exited_utc": "2026-10-05T06:21:29.6978417Z",
+  "pid": 25732,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-05T06:21:29.7314848Z"
+}

@@ -1,0 +1,1148 @@
+{
+  "passed": true,
+  "checks": [
+    "Actual viewport face click selects the body support",
+    "Sketch begins on selected body face",
+    "Actual face-edge click selects its source without changing the sketch",
+    "U converts the preselected body edge immediately",
+    "Preselected Use geometry participates in the sketch profile",
+    "Use keeps its projected edge selected for the next hover",
+    "A real model-edge hover displays an edge highlight",
+    "Hover then U converts the highlighted edge without a mouse click",
+    "Hovered Use geometry is defining and keeps its native source link",
+    "Hover conversion keeps the newly projected edge selected",
+    "A second consecutive hover highlights an out-of-plane model edge",
+    "Consecutive hover then U converts a different edge without clearing selection",
+    "Hovering another body edge prepares a new source",
+    "Leaving the viewport clears the cached source and highlight",
+    "U after leaving the viewport cannot convert a stale hovered edge",
+    "Moving to empty space clears stale hover and starts Use picking",
+    "U without a hovered or selected edge starts viewport Use picking",
+    "Tool-first Use reuses the out-of-plane source without duplicates",
+    "Out-of-plane Use projects orthogonally onto local z zero",
+    "Projected Use retains the native source link",
+    "C and actual viewport clicks create a circle on the body face",
+    "Circle-center and used edge remain selected together",
+    "Native dimension dialog accepts 9 mm",
+    "Dimension adds one native constraint",
+    "Native dimension drives the selected value",
+    "Circle-center offset references the used horizontal edge",
+    "The used-edge dimension positions the circle center",
+    "A second native circle can dimension to an untouched model edge",
+    "Circle-center and raw body-edge selection preserves the sketch",
+    "Selection-first D imports only reference geometry",
+    "Native dimension dialog accepts 4 mm",
+    "Dimension adds one native constraint",
+    "Native dimension drives the selected value",
+    "Selection-first body-edge dimension positions the second center",
+    "D starts Dimension before geometry is selected",
+    "Tool-first Dimension collects a center and existing body-edge reference",
+    "Native dimension dialog accepts 11 mm",
+    "Dimension adds one native constraint",
+    "Native dimension drives the selected value",
+    "Body-edge reference produces a native horizontal offset",
+    "The body-edge dimension positions the circle center",
+    "Edge imported for Dimension stays outside the profile",
+    "Native line drawing remains available with projected references",
+    "Line and used edge can be selected for another constraint",
+    "Constraint toolbar menu is available",
+    "Parallel applies to the used body edge",
+    "Parallel changes the native line orientation",
+    "Sketch solver accepts dimensions and reference constraints",
+    "Undo within the sketch removes the last reference constraint",
+    "Redo within the sketch restores the reference constraint",
+    "Finish accepts the face sketch with references",
+    "Finish leaves no pending native transaction",
+    "One document Undo removes the entire accepted sketch edit",
+    "One document Redo restores all geometry, references and constraints",
+    "A later edit can add the visible top edge as another reference",
+    "Reopened viewport picking chooses the front model boundary",
+    "Cancel fixture contains newly drawn geometry",
+    "Cancel restores accepted geometry and source references",
+    "Cancel leaves no transaction or discarded Redo",
+    "Saved project reopens all projected source links",
+    "Saved project reopens native dimension and parallel constraints",
+    "Changing the upstream plate width updates the converted edge",
+    "Upstream changes preserve circle-center dimensions to body edges",
+    "A missing projection source produces an explicit error",
+    "Missing-source rejection preserves all accepted geometry and dimensions",
+    "Cancel remains available after a rejected projection",
+    "Simple body-edge conversions stay within the responsiveness bound"
+  ],
+  "probe": [
+    {
+      "stage": "click-hits",
+      "world": "Vector (20.0, 14.999999999999996, 8.0)",
+      "pixel": [
+        888,
+        644
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (20.0, 0.0, 8.0)",
+      "pixel": [
+        619,
+        326
+      ]
+    },
+    {
+      "stage": "hovered-body-edge-before-use",
+      "selection": [
+        [
+          "Sketch",
+          [
+            "ExternalEdge1"
+          ]
+        ]
+      ],
+      "preselection": [
+        "Sketch",
+        [
+          "V_Axis"
+        ]
+      ],
+      "geometry": [],
+      "external": [
+        [
+          "Base",
+          [
+            "Edge4"
+          ]
+        ]
+      ],
+      "geometry_count": 0,
+      "message": "Used Base \u00b7 Edge4 \u00b7 linked to source geometry",
+      "widgets": [
+        {
+          "class": "QPushButton",
+          "text": "Close",
+          "object": ""
+        },
+        {
+          "class": "QLineEdit",
+          "text": "",
+          "object": ""
+        },
+        {
+          "class": "Gui::DimensionWidget",
+          "text": "76.01 mm x 70.00 mm",
+          "object": ""
+        },
+        {
+          "class": "QPushButton",
+          "text": "7",
+          "object": "notificationArea"
+        },
+        {
+          "class": "QPushButton",
+          "text": "Base \u00b7 Face6",
+          "object": "KurtShapeSketchPlaneValue"
+        },
+        {
+          "class": "SearchField",
+          "text": "",
+          "object": "KurtShapeToolSearch"
+        }
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (20.0, 30.0, 0.0)",
+      "pixel": [
+        792,
+        617
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (12.0, 12.0, 8.0)",
+      "pixel": [
+        489,
+        522
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (15.0, 12.0, 8.0)",
+      "pixel": [
+        538,
+        522
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (11.993867, 12.024538, 8.0)",
+      "pixel": [
+        489,
+        522
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (20.0, 0.0, 8.0)",
+      "pixel": [
+        619,
+        326
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (23.0, 5.0, 8.0)",
+      "pixel": [
+        668,
+        408
+      ]
+    },
+    {
+      "stage": "dimension-dialog",
+      "class": "QDialog",
+      "widgets": [
+        {
+          "class": "QLabel",
+          "text": "Length:",
+          "object": "label"
+        },
+        {
+          "class": "Gui::PrefQuantitySpinBox",
+          "text": "12.02 mm",
+          "object": "labelEdit"
+        },
+        {
+          "class": "QLineEdit",
+          "text": "12.02 mm",
+          "object": "qt_spinbox_lineedit"
+        },
+        {
+          "class": "ExpressionLabel",
+          "text": "",
+          "object": ""
+        },
+        {
+          "class": "QLabel",
+          "text": "Name",
+          "object": "label_2"
+        },
+        {
+          "class": "QLineEdit",
+          "text": "",
+          "object": "name"
+        },
+        {
+          "class": "QCheckBox",
+          "text": "Reference",
+          "object": "cbDriving"
+        },
+        {
+          "class": "QDialogButtonBox",
+          "text": "",
+          "object": "buttonBox"
+        },
+        {
+          "class": "QPushButton",
+          "text": "OK",
+          "object": ""
+        },
+        {
+          "class": "QPushButton",
+          "text": "Cancel",
+          "object": ""
+        }
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (34.0, 24.0, 8.0)",
+      "pixel": [
+        848,
+        717
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (35.0, 24.0, 8.0)",
+      "pixel": [
+        864,
+        717
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (33.957058, 23.987728, 8.0)",
+      "pixel": [
+        847,
+        717
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (40.0, 15.0, 8.0)",
+      "pixel": [
+        945,
+        571
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (35.0, 20.0, 8.0)",
+      "pixel": [
+        864,
+        652
+      ]
+    },
+    {
+      "stage": "dimension-dialog",
+      "class": "QDialog",
+      "widgets": [
+        {
+          "class": "QLabel",
+          "text": "Length:",
+          "object": "label"
+        },
+        {
+          "class": "Gui::PrefQuantitySpinBox",
+          "text": "6.04 mm",
+          "object": "labelEdit"
+        },
+        {
+          "class": "QLineEdit",
+          "text": "6.04 mm",
+          "object": "qt_spinbox_lineedit"
+        },
+        {
+          "class": "ExpressionLabel",
+          "text": "",
+          "object": ""
+        },
+        {
+          "class": "QLabel",
+          "text": "Name",
+          "object": "label_2"
+        },
+        {
+          "class": "QLineEdit",
+          "text": "",
+          "object": "name"
+        },
+        {
+          "class": "QCheckBox",
+          "text": "Reference",
+          "object": "cbDriving"
+        },
+        {
+          "class": "QDialogButtonBox",
+          "text": "",
+          "object": "buttonBox"
+        },
+        {
+          "class": "QPushButton",
+          "text": "OK",
+          "object": ""
+        },
+        {
+          "class": "QPushButton",
+          "text": "Cancel",
+          "object": ""
+        }
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (11.993867, 9.0, 8.0)",
+      "pixel": [
+        489,
+        473
+      ]
+    },
+    {
+      "stage": "tool-first-dimension-center",
+      "selection": [
+        [
+          "Sketch",
+          [
+            "Vertex1"
+          ]
+        ]
+      ],
+      "preselection": [
+        "Sketch",
+        [
+          "Vertex1"
+        ]
+      ],
+      "geometry": [
+        "Circle (Radius : 3.00614, Position : (11.9939, 9, 0), Direction : (0, 0, 1))",
+        "Circle (Radius : 1.04295, Position : (36, 23.9877, 0), Direction : (0, 0, 1))"
+      ],
+      "external": [
+        [
+          "Base",
+          [
+            "Edge4",
+            "Edge12",
+            "Edge9",
+            "Edge7"
+          ]
+        ]
+      ],
+      "geometry_count": 2,
+      "message": "Dimension \u00b7 choose the other point or edge",
+      "widgets": [
+        {
+          "class": "QPushButton",
+          "text": "Close",
+          "object": ""
+        },
+        {
+          "class": "QLineEdit",
+          "text": "",
+          "object": ""
+        },
+        {
+          "class": "Gui::DimensionWidget",
+          "text": "76.01 mm x 70.00 mm",
+          "object": ""
+        },
+        {
+          "class": "QPushButton",
+          "text": "7",
+          "object": "notificationArea"
+        },
+        {
+          "class": "QPushButton",
+          "text": "Base \u00b7 Face6",
+          "object": "KurtShapeSketchPlaneValue"
+        },
+        {
+          "class": "SearchField",
+          "text": "",
+          "object": "KurtShapeToolSearch"
+        }
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (40.0, 15.0, 8.0)",
+      "pixel": [
+        945,
+        571
+      ]
+    },
+    {
+      "stage": "tool-first-dimension-edge",
+      "selection": [],
+      "preselection": [
+        "",
+        [
+          ""
+        ]
+      ],
+      "geometry": [
+        "Circle (Radius : 3.00614, Position : (11.9939, 9, 0), Direction : (0, 0, 1))",
+        "Circle (Radius : 1.04295, Position : (36, 23.9877, 0), Direction : (0, 0, 1))"
+      ],
+      "external": [
+        [
+          "Base",
+          [
+            "Edge4",
+            "Edge12",
+            "Edge9",
+            "Edge7"
+          ]
+        ]
+      ],
+      "geometry_count": 2,
+      "message": "Dimension \u00b7 choose the other point or edge",
+      "widgets": [
+        {
+          "class": "QPushButton",
+          "text": "Close",
+          "object": ""
+        },
+        {
+          "class": "QLineEdit",
+          "text": "",
+          "object": ""
+        },
+        {
+          "class": "Gui::DimensionWidget",
+          "text": "76.01 mm x 70.00 mm",
+          "object": ""
+        },
+        {
+          "class": "QPushButton",
+          "text": "7",
+          "object": "notificationArea"
+        },
+        {
+          "class": "QPushButton",
+          "text": "Base \u00b7 Face6",
+          "object": "KurtShapeSketchPlaneValue"
+        },
+        {
+          "class": "SearchField",
+          "text": "",
+          "object": "KurtShapeToolSearch"
+        }
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (25.0, 18.0, 8.0)",
+      "pixel": [
+        701,
+        619
+      ]
+    },
+    {
+      "stage": "dimension-dialog",
+      "class": "QDialog",
+      "widgets": [
+        {
+          "class": "QLabel",
+          "text": "Length:",
+          "object": "label"
+        },
+        {
+          "class": "Gui::PrefQuantitySpinBox",
+          "text": "28.01 mm",
+          "object": "labelEdit"
+        },
+        {
+          "class": "QLineEdit",
+          "text": "28.01 mm",
+          "object": "qt_spinbox_lineedit"
+        },
+        {
+          "class": "ExpressionLabel",
+          "text": "",
+          "object": ""
+        },
+        {
+          "class": "QLabel",
+          "text": "Name",
+          "object": "label_2"
+        },
+        {
+          "class": "QLineEdit",
+          "text": "",
+          "object": "name"
+        },
+        {
+          "class": "QCheckBox",
+          "text": "Reference",
+          "object": "cbDriving"
+        },
+        {
+          "class": "QDialogButtonBox",
+          "text": "",
+          "object": "buttonBox"
+        },
+        {
+          "class": "QPushButton",
+          "text": "OK",
+          "object": ""
+        },
+        {
+          "class": "QPushButton",
+          "text": "Cancel",
+          "object": ""
+        }
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (8.0, 18.0, 8.0)",
+      "pixel": [
+        424,
+        619
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (22.0, 21.0, 8.0)",
+      "pixel": [
+        652,
+        668
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (15.000002, 19.447851, 8.0)",
+      "pixel": [
+        538,
+        643
+      ]
+    },
+    {
+      "stage": "parallel-line-selected",
+      "selection": [
+        [
+          "Sketch",
+          [
+            "Edge3"
+          ]
+        ]
+      ],
+      "preselection": [
+        "Sketch",
+        [
+          "Edge3"
+        ]
+      ],
+      "geometry": [
+        "Circle (Radius : 3.00614, Position : (29, 9, 0), Direction : (0, 0, 1))",
+        "Circle (Radius : 1.04295, Position : (36, 23.9877, 0), Direction : (0, 0, 1))",
+        "<Line segment (8.00614,17.9755,0) (21.9939,20.9202,0) >"
+      ],
+      "external": [
+        [
+          "Base",
+          [
+            "Edge4",
+            "Edge12",
+            "Edge9",
+            "Edge7"
+          ]
+        ]
+      ],
+      "geometry_count": 3,
+      "message": "Dimension \u00b7 choose the other point or edge",
+      "widgets": [
+        {
+          "class": "QPushButton",
+          "text": "Close",
+          "object": ""
+        },
+        {
+          "class": "QLineEdit",
+          "text": "",
+          "object": ""
+        },
+        {
+          "class": "Gui::DimensionWidget",
+          "text": "76.01 mm x 70.00 mm",
+          "object": ""
+        },
+        {
+          "class": "QPushButton",
+          "text": "7",
+          "object": "notificationArea"
+        },
+        {
+          "class": "QPushButton",
+          "text": "Base \u00b7 Face6",
+          "object": "KurtShapeSketchPlaneValue"
+        },
+        {
+          "class": "SearchField",
+          "text": "",
+          "object": "KurtShapeToolSearch"
+        }
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (20.0, 0.0, 8.0)",
+      "pixel": [
+        619,
+        326
+      ]
+    },
+    {
+      "stage": "parallel-line-and-edge-selected",
+      "selection": [
+        [
+          "Sketch",
+          [
+            "Edge3",
+            "ExternalEdge1"
+          ]
+        ]
+      ],
+      "preselection": [
+        "Sketch",
+        [
+          "ExternalEdge1"
+        ]
+      ],
+      "geometry": [
+        "Circle (Radius : 3.00614, Position : (29, 9, 0), Direction : (0, 0, 1))",
+        "Circle (Radius : 1.04295, Position : (36, 23.9877, 0), Direction : (0, 0, 1))",
+        "<Line segment (8.00614,17.9755,0) (21.9939,20.9202,0) >"
+      ],
+      "external": [
+        [
+          "Base",
+          [
+            "Edge4",
+            "Edge12",
+            "Edge9",
+            "Edge7"
+          ]
+        ]
+      ],
+      "geometry_count": 3,
+      "message": "Dimension \u00b7 choose the other point or edge",
+      "widgets": [
+        {
+          "class": "QPushButton",
+          "text": "Close",
+          "object": ""
+        },
+        {
+          "class": "QLineEdit",
+          "text": "",
+          "object": ""
+        },
+        {
+          "class": "Gui::DimensionWidget",
+          "text": "76.01 mm x 70.00 mm",
+          "object": ""
+        },
+        {
+          "class": "QPushButton",
+          "text": "7",
+          "object": "notificationArea"
+        },
+        {
+          "class": "QPushButton",
+          "text": "Base \u00b7 Face6",
+          "object": "KurtShapeSketchPlaneValue"
+        },
+        {
+          "class": "SearchField",
+          "text": "",
+          "object": "KurtShapeToolSearch"
+        }
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (20.0, 30.0, 8.0)",
+      "pixel": [
+        619,
+        815
+      ]
+    },
+    {
+      "stage": "cancel-reference-added",
+      "selection": [
+        [
+          "Sketch",
+          [
+            "ExternalEdge5"
+          ]
+        ]
+      ],
+      "preselection": [
+        "",
+        [
+          ""
+        ]
+      ],
+      "geometry": [
+        "Circle (Radius : 3.00614, Position : (29, 9, 0), Direction : (0, 0, 1))",
+        "Circle (Radius : 1.04295, Position : (36, 23.9877, 0), Direction : (0, 0, 1))",
+        "<Line segment (8.00614,20.001,0) (21.9939,20.001,0) >"
+      ],
+      "external": [
+        [
+          "Base",
+          [
+            "Edge4",
+            "Edge12",
+            "Edge9",
+            "Edge7",
+            "Edge10"
+          ]
+        ]
+      ],
+      "geometry_count": 3,
+      "message": "Project geometry complete",
+      "widgets": [
+        {
+          "class": "QLineEdit",
+          "text": "",
+          "object": ""
+        },
+        {
+          "class": "Gui::DimensionWidget",
+          "text": "76.01 mm x 70.00 mm",
+          "object": ""
+        },
+        {
+          "class": "QPushButton",
+          "text": "Close",
+          "object": ""
+        },
+        {
+          "class": "QPushButton",
+          "text": "7",
+          "object": "notificationArea"
+        },
+        {
+          "class": "QPushButton",
+          "text": "Base \u00b7 Face6",
+          "object": "KurtShapeSketchPlaneValue"
+        },
+        {
+          "class": "SearchField",
+          "text": "",
+          "object": "KurtShapeToolSearch"
+        }
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (23.0, 23.0, 8.0)",
+      "pixel": [
+        668,
+        701
+      ]
+    },
+    {
+      "stage": "click-hits",
+      "world": "Vector (25.0, 23.0, 8.0)",
+      "pixel": [
+        701,
+        701
+      ]
+    }
+  ],
+  "pid": 67856,
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "timings": [
+    {
+      "action": "keyboard",
+      "key": "85",
+      "elapsed_ms": 71.315,
+      "external_before": 0,
+      "external_after": 1,
+      "profile_before": 0,
+      "profile_after": 1
+    },
+    {
+      "action": "keyboard",
+      "key": "85",
+      "elapsed_ms": 110.9,
+      "external_before": 1,
+      "external_after": 2,
+      "profile_before": 1,
+      "profile_after": 2
+    },
+    {
+      "action": "keyboard",
+      "key": "85",
+      "elapsed_ms": 65.368,
+      "external_before": 2,
+      "external_after": 3,
+      "profile_before": 2,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "85",
+      "elapsed_ms": 5.012,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 2.74,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "85",
+      "elapsed_ms": 3.015,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 1.494,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "85",
+      "elapsed_ms": 2.777,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 2.371,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "67",
+      "elapsed_ms": 222.08,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 3.163,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "68",
+      "elapsed_ms": 38.131,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 4.993,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "67",
+      "elapsed_ms": 130.929,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 3.741,
+      "external_before": 3,
+      "external_after": 3,
+      "profile_before": 3,
+      "profile_after": 3
+    },
+    {
+      "action": "keyboard",
+      "key": "68",
+      "elapsed_ms": 135.614,
+      "external_before": 3,
+      "external_after": 4,
+      "profile_before": 3,
+      "profile_after": 5
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 6.168,
+      "external_before": 4,
+      "external_after": 4,
+      "profile_before": 5,
+      "profile_after": 5
+    },
+    {
+      "action": "keyboard",
+      "key": "68",
+      "elapsed_ms": 2.995,
+      "external_before": 4,
+      "external_after": 4,
+      "profile_before": 5,
+      "profile_after": 5
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 7.752,
+      "external_before": 4,
+      "external_after": 4,
+      "profile_before": 5,
+      "profile_after": 5
+    },
+    {
+      "action": "keyboard",
+      "key": "76",
+      "elapsed_ms": 15.073,
+      "external_before": 4,
+      "external_after": 4,
+      "profile_before": 5,
+      "profile_after": 5
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 2.908,
+      "external_before": 4,
+      "external_after": 4,
+      "profile_before": 5,
+      "profile_after": 5
+    },
+    {
+      "action": "keyboard",
+      "key": "85",
+      "elapsed_ms": 3.08,
+      "external_before": 4,
+      "external_after": 4,
+      "profile_before": 6,
+      "profile_after": 6
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 1.917,
+      "external_before": 5,
+      "external_after": 5,
+      "profile_before": 7,
+      "profile_after": 7
+    },
+    {
+      "action": "keyboard",
+      "key": "67",
+      "elapsed_ms": 181.52,
+      "external_before": 5,
+      "external_after": 5,
+      "profile_before": 7,
+      "profile_after": 7
+    },
+    {
+      "action": "keyboard",
+      "key": "16777216",
+      "elapsed_ms": 3.135,
+      "external_before": 5,
+      "external_after": 5,
+      "profile_before": 7,
+      "profile_after": 7
+    }
+  ],
+  "method": "Production Panel, actual Qt keyboard/viewport clicks and native Sketcher geometry in a private hidden FreeCAD process; assistant transport disabled.",
+  "screens": [
+    "hover-body-edge-before-u.png",
+    "circle-dimensions-and-parallel-used-edge.png"
+  ],
+  "dimension_input": {
+    "expected": 11,
+    "accepted": true
+  },
+  "constraints": [
+    {
+      "type": "Distance",
+      "first": 0,
+      "first_pos": 3,
+      "second": -3,
+      "second_pos": 0,
+      "value": 9.0
+    },
+    {
+      "type": "Distance",
+      "first": 1,
+      "first_pos": 3,
+      "second": -6,
+      "second_pos": 0,
+      "value": 4.0
+    },
+    {
+      "type": "Distance",
+      "first": 0,
+      "first_pos": 3,
+      "second": -6,
+      "second_pos": 0,
+      "value": 11.0
+    },
+    {
+      "type": "Parallel",
+      "first": 2,
+      "first_pos": 0,
+      "second": -3,
+      "second_pos": 0,
+      "value": 0.0
+    }
+  ],
+  "dimension_stage": {
+    "active": null,
+    "refs": []
+  },
+  "draft_history": {
+    "before_undo": 15,
+    "pending": false,
+    "accepted_constraints": 4,
+    "after_undo": 14,
+    "constraints_after_undo": 3,
+    "message": "Undo complete"
+  },
+  "cancel_projection": {
+    "message": "Project geometry complete",
+    "last_failure": null
+  },
+  "project": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-ab89664d615c451cb6e3456d5e0fb4a2\\evidence\\sketch-references\\face-sketch-references.FCStd",
+  "upstream_project": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-ab89664d615c451cb6e3456d5e0fb4a2\\evidence\\sketch-references\\face-sketch-references-source-updated.FCStd",
+  "missing_source": {
+    "message": "Reference selector resolves to no matching element",
+    "failure": {
+      "request": {
+        "op": "project_geometry",
+        "sketch": "Sketch",
+        "references": [
+          {
+            "feature": "MissingProjectionSource",
+            "subelement": "Edge1"
+          }
+        ],
+        "document_id": "1961ac30-956b-4dd9-868f-974946fd784a",
+        "expected_revision": "01744927-dc12-4255-90c0-45cb5ab9e136",
+        "body": "Body",
+        "measure": false
+      },
+      "error": {
+        "code": "missing_reference",
+        "message": "Reference selector resolves to no matching element"
+      },
+      "rejected": true
+    }
+  },
+  "performance": {
+    "conversion_dispatch_ms": [
+      71.315,
+      110.9,
+      65.368
+    ],
+    "max_conversion_dispatch_ms": 110.9,
+    "budget_ms": 2000,
+    "method": "Synchronous actual U key dispatch for conversions, excluding artificial QTest waits; this is a bound, not a comparative benchmark."
+  },
+  "check_count": 67
+}

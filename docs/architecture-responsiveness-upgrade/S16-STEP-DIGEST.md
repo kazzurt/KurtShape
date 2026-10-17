@@ -1,0 +1,63 @@
+# S16 — reuse the initial STEP admission digest
+
+Status: **private candidate retained; production activation declined**. All 111 accepted S14 sources were restored and verified at 16:17:20 UTC. The candidate shows useful measured benefit and passes its native/GUI functional assertions, but final lifecycle receipts are incomplete. It is not installed in production.
+
+The narrow candidate computes a canonical BRep SHA-256 during exact roundtrip admission for one STEP target and carries it into the initial fingerprint. This avoids a second initial BRep serialization and canonicalization. A fresh detached shape copy and every ordinary fingerprint field are still read; the independent final fingerprint, child checks, source/archive checks, numeric measurements, destination/provenance checks and synchronous fallback remain intact. Multi-target admission and fingerprints use the original implementation. The S15 pending-feedback prototype is not activated.
+
+## Measured result and limits
+
+Four fresh native processes ran in baseline/candidate/candidate/baseline order, with three full preparation calls per process. Median full `Controller.prepare_step_export` time was **2043.4025 ms baseline and 1670.3853 ms candidate**, a reduction of **373.0172 ms (18.2547%)**. All six candidate samples were below all six baseline samples. The reduction exceeded the largest observed sample range, 274.3163 ms. These twelve nested observations across four processes support a descriptive preparation benefit, not a statistical or whole-application responsiveness claim.
+
+| Arm | PID | Three samples, ms | Median, ms |
+|---|---:|---|---:|
+| Baseline A1 | 22500 | 2023.6910, 2032.1751, 2055.9269 | 2032.1751 |
+| Candidate B1 | 17356 | 1704.8250, 1644.9600, 1686.3425 | 1686.3425 |
+| Candidate B2 | 59384 | 1645.9154, 1654.4281, 1696.4870 | 1654.4281 |
+| Baseline A2 | 56296 | 2054.6299, 2271.4076, 1997.0913 | 2054.6299 |
+
+Baseline range: 1997.0913–2271.4076 ms. Candidate range: 1644.9600–1704.8250 ms. Only two independent processes per mode were measured. Preparation remains about 1.67 seconds on this fixture. No measurement here establishes GUI paint latency, native child export time, publication time or total export latency.
+
+All arms use the same retained S09B `representative-source.FCStd` path, SHA-256 `ed2b514d7550c3f74eea2ded2fb71cb900ad70fd8708982ac88253cda7405642`, single `WorldSolids` target with 1000 solids, FreeCAD 1.1.4 commit `4fd3bf320d9566a27e60069fc8387448aaa3a094`, OCCT 7.8.1, writer settings and default measurements. Real synchronous export warms the geometry cache; a current accepted archive is published before timing and reused by each call. Separate frozen source roots differ only in `core.py` and the new helper.
+
+Plain `perf_counter_ns` surrounds the entire real preparation call, including existing bookkeeping. There are no diagnostic wrappers, profiler, event pumping, setup operations or preservation reads inside the interval. No measured worker is submitted. The original fingerprint oracle, full source/BRep, ordered native maps and reverse maps, map versions/sizes, indexed and mapped shape/object histories, observer boundary, undo/redo, archive hashes and destination sentinels are checked outside every call. Native geometry computation counters remain unchanged. Fresh attachment produces different session revisions/keys and cache archive bytes between arms; those values remain exact within each arm. Cross-process native hash identity and independently attached archive byte equality are not claimed.
+
+The authoritative [timing assessment](../../runtime/architecture-upgrade-working/s16-step-digest-working/timing-assessment.json) binds all parent/child/measurement PIDs, modes, manifests, imports, engine, executed helpers and retained preservation artifacts. [Timing findings and reproduction commands](../../runtime/architecture-upgrade-working/s16-step-digest-working/timing-findings.md) retain the full methodology and its historical pre-integration checkpoint.
+
+## Correctness and implementation
+
+The initial private suite passes 11/11. An additional native fixture gate passes 2/2 after selecting an existing saved/reopened translated Pad Body that satisfies unchanged roundtrip admission and explicitly has nonempty forward and reverse maps. Its optimized fingerprint equals the original oracle exactly, with source and saved bytes preserved. NaN map data produces the same finite-JSON rejection in both implementations. The earlier Part::Box attempt remains failed because its native maps were empty; it provides no mapped-positive evidence.
+
+All 18 final test methods pass in the frozen private candidate before integration: the original 11, five ownership/freshness/fallback/ticket tests, and the two mapped/NaN tests. Coverage includes serialization map effects, real signed-zero unstable admission, selected and multiple targets, ordinary metadata/map exceptions, native geometry mutation between admission and capture and during map/field reads, forced-old-key rejection, metadata Revision-only mutation, wrong context/key, one-shot ticket consumption and unchanged final publication guards.
+
+The ticket contains one 64-character digest, fixed-count references to existing controller/document/target/metadata/observer objects and small identity values. It retains no new native shape, BRep string or byte buffer after admission. This is established by source and field checks, not a measured memory benchmark. Native ownership reads after successful admission bind the ticket; ordinary target fingerprint field ordering remains unchanged. No caller-supplied ticket or digest enters a worker envelope. `_json_copy` retains its finite-value and 8 MiB boundary.
+
+Integration changes exactly three existing files (`core.py`, existing STEP tests, native-suite registration) and adds `step_capture.py` and its 18-method test class. Both old and new admission entry points are forbidden by the existing early Link and metadata eligibility sentinels. Production core is byte-identical to the timed candidate; the helper differs only by a corrected docstring. The STEP worker remains byte-identical to S14. All 111 S14 originals are preserved and the final 113 inputs are frozen under the working folder.
+
+## Retained failures and lifecycle
+
+Six unsuccessful outer attempts remain part of the evidence:
+
+- `correctness-a1da90ce`: all eleven cases failed setup because the private suite environment was missing; no candidate correctness result follows. The repair uses the established strict `runtime/test-tmp` suite/profile containment.
+- `baseline-a-6efd7090`: the original harness compared a JSON plain dict with a live `defaultdict`; its strict type check rejected the containers. The raw 1999.881 ms sample is excluded. Both complete counters are now recorded as JSON and the native `computed` counters must match.
+- `mapped-correctness-2b004760`: Part::Box had empty native maps; the NaN subtest passed. The successful mapped fixture uses the existing moved-save-reopen Body recipe without changing admission or normalizing maps.
+- `final-native-9534e121`: the first full-suite launcher used ordinary Python instead of bundled native Python and then hit a cp1252 log-encoding error. Its zero-valid-native-result receipt is retained. The private launcher was repaired to use bundled Python and UTF-8; production sources were unchanged.
+- `final-native-03859a0d`: valid full native evidence passes 421/425 methods with four existing opt-in performance skips, zero failures/errors and unchanged sources. Native PID 60468 and aggregator 30060 report exit 0. The outer receipt remains false because one of 48 contained processes was still active before kill-on-close Job closure. No post-close empty accounting or exit observation for that unidentified remaining process was recorded. This is a failed historical cleanup gate, not a failed native assertion.
+- `final-gui-015a5763`: all 76 functional GUI assertions pass, including actual STEP child zero exits, exact synchronous geometry/provenance comparison and worker cleanup. The PowerShell recipe recorded GUI PID 15844's exit code as null and therefore failed; outer PowerShell PID 78588 exited 1. The owned Job drained to zero and closed, with no forced reap. A GUI exit-code pass is not inferred from its passing assertions.
+
+Root alone runs sequential native/GUI jobs. Each exact launcher is created suspended, assigned to a private kill-on-close Windows Job Object, then resumed. Private jobs reserve 180 seconds plus 30 seconds cleanup; final gates reserve 240 plus 30 seconds. Every launch must fit the absolute 16:20 UTC cleanup deadline. Successful receipts require actual report acceptance, unchanged frozen sources, process exit and reap, no forced termination and zero active contained descendants.
+
+## Final acceptance and continuity
+
+The [native supplemental verification](../../runtime/architecture-upgrade-working/s16-step-digest-working/native-supplemental-verification.json) binds the actual 421-pass report, its 98 source hashes, 113-file production freeze and executed launcher hashes while explicitly retaining the failed cleanup gate. The original [acceptance verifier](../../runtime/architecture-upgrade-working/s16-step-digest-working/verify_s16.py) remains an unexecuted acceptance recipe and cannot pass these receipts. No accepted S16 manifest is issued.
+
+The final GUI result lives under `runtime/ci-gui/step-export/run-15a3a224e7be40e3b982417b4711cb97/`. Its source/recipe hashes match the candidate freeze. All GUI assertions are valid evidence, but the native GUI process's null exit-code receipt remains unresolved. The repaired final wrapper's bounded Job drain is a closeout instrumentation change only; no feature source changed after 16:06:38. No completed native suite was rerun merely to change its summary.
+
+After the final GUI attempt, insufficient time remained for another complete 240-second run plus 30-second cleanup reserve. Root restored only the three changed originals and removed only the two newly introduced S16 source/test paths, first verifying their exact candidate hashes. All 113 candidate sources remain in `source-after/`, with private helpers, eighteen tests, raw timing/snapshot evidence and all failures preserved. Production is exactly the accepted S14 111-file manifest. [production-rollback-receipt.json](../../runtime/architecture-upgrade-working/s16-step-digest-working/production-rollback-receipt.json) records the scoped restoration.
+
+The next separately authorized step is to repair and verify the validation launcher's native exit capture and Job cleanup receipts, then reapply the unchanged candidate and complete its final gates under fresh finite bounds. No further algorithm change or automatic run is implied. S15 feedback remains private.
+
+[Final private verification](../../runtime/architecture-upgrade-working/s16-step-digest-working/final-verification.json) verifies 111 restored production sources, 113 preserved candidate sources, all 155 prior S15 evidence entries and 13 retained outer attempts (seven passed, six failed). The accompanying manifest hashes 1082 evidence files. A targeted inventory observes all 33 receipt-recorded owned PIDs absent and user FreeCAD 40888 still present with its original October 3 start time. This inventory does not identify or retrospectively prove the exit of the historical native Job residual. All launcher handles were closed and their known children reaped; the historical cleanup limitation remains explicit. No validation job is queued or running through this task.
+
+This finite batch uses the original 10080-minute usage window, reset 1791958350 (October 14, 06:12:30 UTC), ordinary allowance and unchanged 62500 credits. Root controls progress from 69% at 15:44:11 to 73% at 16:06:38 and 16:10:17 UTC. S16 cap is 76%, overall cap 90%. Production implementation is frozen at 16:06:38; the final launcher repair completed before 16:10. New implementation stops at 16:10, owned jobs finish by 16:20 and closeout by 16:25. No reset, account/credit action, automation, commit/push, publication or automatic next batch is authorized.
+
+Final control at 16:19:41 UTC reports 74% used, the same original window/reset, ordinary allowance and unchanged credits. The final GUI launcher finished at about 16:15:26; scoped production rollback completed at 16:17:20. Closeout verification and documentation finish within the batch boundary. The original native-runtime/encoding repair preceded 16:10; the later bounded Job-drain instrumentation was limited to verification and cleanup, with no feature-source changes.

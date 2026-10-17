@@ -1,0 +1,18 @@
+{
+  "recipe": "sketch-references",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-d54c4925899e4479a6d96afd9dab8949",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\sketch-references-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-d54c4925899e4479a6d96afd9dab8949\\evidence\\sketch-references\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-d54c4925899e4479a6d96afd9dab8949\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-d54c4925899e4479a6d96afd9dab8949\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-d54c4925899e4479a6d96afd9dab8949\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T18:11:20.0907914Z",
+  "exited_utc": "2026-10-06T18:11:47.4700833Z",
+  "pid": 12968,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "sketch_reference_warning_count": 0,
+  "finished_utc": "2026-10-06T18:11:47.5153599Z"
+}

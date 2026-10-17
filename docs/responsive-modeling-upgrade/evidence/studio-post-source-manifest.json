@@ -1,0 +1,194 @@
+{
+  "captured_utc": "2026-10-06T01:54:15.5048369+00:00",
+  "note": "Post-upgrade working tree. Agent validation and benchmarks serialized. Headless controller, measure false; not input-to-paint or asynchronous GUI preview timing. Shallow native session avoids Windows serializer path limits.",
+  "files": [
+    {
+      "path": "src\\kurtshape\\__init__.py",
+      "sha256": "D1C2218EFF95A6160D497CEE76330D599E32231B47CD9680A05A752429C16682"
+    },
+    {
+      "path": "src\\kurtshape\\assembly.py",
+      "sha256": "97D483C8DD25653C579FCB94E1625A3C7B836A9B43C2BDF92974F20800AB291C"
+    },
+    {
+      "path": "src\\kurtshape\\bodies.py",
+      "sha256": "3720161D25E235F631052EAF486CE21A1687F125E304780FD048CA84A8447DC4"
+    },
+    {
+      "path": "src\\kurtshape\\bridge.py",
+      "sha256": "6B920B62814B5730D0A0D05907B032B2AC321E7E90923FD91B7C38442AF48835"
+    },
+    {
+      "path": "src\\kurtshape\\contract.py",
+      "sha256": "5F7460ACED1EE8A6D115A61783EF276960CD75A1D01F5142201F520DB170DFC0"
+    },
+    {
+      "path": "src\\kurtshape\\core.py",
+      "sha256": "F71E9605FBA1BAB29B38D157E55692D324DB6C820505532915D2FD85DB550669"
+    },
+    {
+      "path": "src\\kurtshape\\document_index.py",
+      "sha256": "91020941B5E69B9174577F4DD90CAE02D335770D82A20B1D47F7BE109460D10D"
+    },
+    {
+      "path": "src\\kurtshape\\document_state.py",
+      "sha256": "8045E24E324CA628A617DC1E61530E2111F580079E338B5FAD02BF17DD998502"
+    },
+    {
+      "path": "src\\kurtshape\\extrusion_preview.py",
+      "sha256": "C5AB6D38B393AF11DD1AB30BED664405E86E4EAC8A29FDCBDCDFE5EDD840A6A2"
+    },
+    {
+      "path": "src\\kurtshape\\feature_panel.py",
+      "sha256": "0D5ADBD8ABAF7932CDA5F33FB8E4EF6A209E6EF989AF584BB74E7F556230DDA6"
+    },
+    {
+      "path": "src\\kurtshape\\feature_tools.py",
+      "sha256": "EEAD00EC581D46D952E8972E41C03CFDB6503EBB0E1AF3B8A12543ACDF120906"
+    },
+    {
+      "path": "src\\kurtshape\\general_actions.py",
+      "sha256": "DC87E63D82ECBB98FCCB755BD75FC590BFCF99DAF2B9462AF273A99622D4BDB8"
+    },
+    {
+      "path": "src\\kurtshape\\geometry.py",
+      "sha256": "AFA73ADFA80D977EB6832DC58E8BB0F57904CD356E8F63CC964188604C6359E9"
+    },
+    {
+      "path": "src\\kurtshape\\history_model.py",
+      "sha256": "55557C49650CE9737C667E6285C2B83D15732AA19AA988B82A51EDD0A42A0731"
+    },
+    {
+      "path": "src\\kurtshape\\history_selection.py",
+      "sha256": "5878382A5C58D9EE145E3819716FDF30850221EB451C9BE646E9FADAE043FB73"
+    },
+    {
+      "path": "src\\kurtshape\\hover_outline.py",
+      "sha256": "32F2A23455795EA90AE42CC92D0FAFE7BA5D192BDD2161695762449E83B5F035"
+    },
+    {
+      "path": "src\\kurtshape\\modeling_geometry.py",
+      "sha256": "743EAC82BFCFB3B8ADA905916154AFB9F8EBE34C5F6C6D329797ECE32E2481DE"
+    },
+    {
+      "path": "src\\kurtshape\\native_content.py",
+      "sha256": "13E2B64BDD8AA7A9BB095959A20964BB786DD56BBBA6CA5DA92CD435E7926796"
+    },
+    {
+      "path": "src\\kurtshape\\navigation.py",
+      "sha256": "F8D9885A89B36853CC448F53C292B31FC6B929E441EA48CBB8AB459B4C71140A"
+    },
+    {
+      "path": "src\\kurtshape\\onshape.py",
+      "sha256": "BD9A6F1C9EEB36B05CF8D7C5F48918B5A4BD2CBDC80484C0642D28803127FDB0"
+    },
+    {
+      "path": "src\\kurtshape\\presentation_icons.py",
+      "sha256": "9EAE5A46153C45E3C6D1610F6DA3104F9909EC5712F670EA6C48259693D8E287"
+    },
+    {
+      "path": "src\\kurtshape\\preview_worker.py",
+      "sha256": "78718780D092B2936B0F8F492829444CD711C2D930922DACDD9B5B93D3E3BAEE"
+    },
+    {
+      "path": "src\\kurtshape\\quantity_field.py",
+      "sha256": "6F68C24AE5543890AD98BCA1C48FC50FFEA435A9FFD59E5A27DC2243C702E2C8"
+    },
+    {
+      "path": "src\\kurtshape\\recovery.py",
+      "sha256": "0DA42E69AD29FBEFB5284E946F71D5140FF8BEF3A61DDFBFE9EAF4F0BE2C3F49"
+    },
+    {
+      "path": "src\\kurtshape\\reference_tools.py",
+      "sha256": "C289557EB8B6A7E5350D14B39BDA6B1A9CB4FF7CB862B02D6FF0BFA02CF8657E"
+    },
+    {
+      "path": "src\\kurtshape\\request_ledger.py",
+      "sha256": "7A969F22A5214F2A99608496EDE106CD1057B71F52B2D1060E957C77613711EF"
+    },
+    {
+      "path": "src\\kurtshape\\responsiveness.py",
+      "sha256": "B03C271C91A5CCCA12BDFD3C57890BF0CCDCB6735ECC9F12A2EBE3385253E96F"
+    },
+    {
+      "path": "src\\kurtshape\\rollback_history.py",
+      "sha256": "FDADEF3E330A51C2AFC7EA3A7F177AC34CC1BFC493A6FE0A88A8A2D5710DB2C7"
+    },
+    {
+      "path": "src\\kurtshape\\selectors.py",
+      "sha256": "103AA30546D28401F0AD90786AF4D74ECB5966D57A5B4BCEF4A063A4BC1D9A71"
+    },
+    {
+      "path": "src\\kurtshape\\settings.py",
+      "sha256": "9A759A17B399269F87A2A16B3476F194868F7CDD8C5A1473390C448D48360799"
+    },
+    {
+      "path": "src\\kurtshape\\shortcuts.py",
+      "sha256": "F3266CEC7F1B6316F9CA68C714E32C2AE457AB906A38FF0BB055232AEEA569BE"
+    },
+    {
+      "path": "src\\kurtshape\\sketch_colors.py",
+      "sha256": "69CE7F5416F0496F8B2E4B4770EFB03410B452B09431085399E01CF62419FEB9"
+    },
+    {
+      "path": "src\\kurtshape\\sketch_edit_panel.py",
+      "sha256": "82712D5EDC744F4973CE7E7DB717B7DF06112DE6D5FAEF53FC2BD657C22B5DEE"
+    },
+    {
+      "path": "src\\kurtshape\\sketch_history.py",
+      "sha256": "865F2B17CAD959A05B4204D69E9D427F8BD8AC25CA5B87F34E57D6E2839E26B7"
+    },
+    {
+      "path": "src\\kurtshape\\sketch_references.py",
+      "sha256": "91F2EE83FD7928646B5B457E3A5BBE7F213F32FA5E22D33E0B5736998DC45060"
+    },
+    {
+      "path": "src\\kurtshape\\sketch_regions.py",
+      "sha256": "35A47CB9AA36A8BF2BC96B80F3D11EF99A9B09AB8DC7C6FD1043B3705F2FBB12"
+    },
+    {
+      "path": "src\\kurtshape\\sketch_tools.py",
+      "sha256": "54F6C375AB886425B9A719EAEF3A650E8CC436B9B05B5910E1B4F50BE0D6D9B0"
+    },
+    {
+      "path": "src\\kurtshape\\studio.py",
+      "sha256": "6CAD59D273384B823286FDD7E30CA0005801895560374CDAA8291520B6A63440"
+    },
+    {
+      "path": "src\\kurtshape\\theme.py",
+      "sha256": "299154F47E49811AFF4B472853A3EC3DE9F3BEE8655B04195072827209E4D4DD"
+    },
+    {
+      "path": "src\\kurtshape\\timing.py",
+      "sha256": "28F32811DE2A5C035AF1E8CCD5D93B1910B21F9D7B5B23DA3B2DB2197E6D646D"
+    },
+    {
+      "path": "src\\kurtshape\\toolbar_labels.py",
+      "sha256": "CC0A389AEFF8F5D6F299CB8E2B77A767B5B8288CCB8B8610B488D2DA4A00BFAF"
+    },
+    {
+      "path": "src\\kurtshape\\ui.py",
+      "sha256": "FA61CA2CCE2C8C9B48F646B82EDD8938A81E7688F32A2764179CFBB75BB6C4A2"
+    },
+    {
+      "path": "src\\kurtshape\\viewport_actions.py",
+      "sha256": "E1E347B47F784CB2A7DCA98DF516F2AC866D1468888855ED8B635F95C40534CE"
+    },
+    {
+      "path": "src\\kurtshape\\workspace_preferences.py",
+      "sha256": "98902015ADB35A0598545D827B3CB5D0ABBFCA522C7EA3BFC33F85BED22C1BDD"
+    },
+    {
+      "path": "tools\\perf\\bench_core.py",
+      "sha256": "4D2D1CFE79F1F080C06A398C47C4FD26688F89E3917359691E051D1B6FF9A5E4"
+    },
+    {
+      "path": "tools\\perf\\report.py",
+      "sha256": "3C086C482655D82F3ED4F28501B813012D28BED882605F449A3E440CA06B14AF"
+    },
+    {
+      "path": "tools\\perf\\budgets.json",
+      "sha256": "B02761FD33830E73BDB1F2704E0F2C73F3EE1D08A2FCA11C7C33FA0E527F74D6"
+    }
+  ]
+}

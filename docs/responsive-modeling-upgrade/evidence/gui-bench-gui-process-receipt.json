@@ -1,0 +1,17 @@
+{
+  "recipe": "bench-gui",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\bench-gui\\run-02318f6407774eeaa479cd8b8212ae3e",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\perf\\bench_gui.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\bench-gui\\run-02318f6407774eeaa479cd8b8212ae3e\\evidence\\perf\\bench-gui.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\bench-gui\\run-02318f6407774eeaa479cd8b8212ae3e\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\bench-gui\\run-02318f6407774eeaa479cd8b8212ae3e\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\bench-gui\\run-02318f6407774eeaa479cd8b8212ae3e\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T03:13:39.6275168Z",
+  "exited_utc": "2026-10-06T03:14:43.4816305Z",
+  "pid": 78688,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T03:14:43.5099931Z"
+}

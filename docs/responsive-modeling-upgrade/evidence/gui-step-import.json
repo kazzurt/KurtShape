@@ -1,0 +1,189 @@
+{
+  "passed": true,
+  "checks": [
+    "Open chooser includes FCStd, STEP and STP including uppercase suffixes",
+    "Actual Open imports the three pipe solids into a managed unsaved project",
+    "Three native Bodies and three selectable Parts are shown",
+    "Import is marked unsaved in the native GUI",
+    "Original project remains open with unchanged intent",
+    "Body chooser activates the selected imported native Body",
+    "Part selection selects the imported solid",
+    "Save suggests the STEP source stem with FCStd extension",
+    "Actual Save writes FCStd and clears unsaved flag",
+    "Saved STEP project reopens with provenance and all solids",
+    "Open chooser includes FCStd, STEP and STP including uppercase suffixes",
+    "Cancel Open preserves the current project",
+    "Recent STEP entry reimports through the typed operation",
+    "Conformal hub imports all three solids through Open path",
+    "Deferred viewport fit frames the hub after native view nodes exist",
+    "Broken STEP reports failure without opening Messages and preserves current project",
+    "Wait cursor is restored after failed import",
+    "Import is blocked during native sketch editing",
+    "Both original STEP hashes are unchanged"
+  ],
+  "method": "Separate hidden FreeCAD GUI; actual Qt Open/Save/Cancel dialogs, real STEP sources and native body selection",
+  "source_hashes": {
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec pipe mount.step": "0d83f47ae66ddf23de94c7cadc56ac1634ee1c5583f5a6895af3d569fe1957f0",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Onshape examples\\Dodec Hub Conformal.step": "ed9949c937ccaa768d018038cebcbab6638c9af48223b684dd7ace235389a3fc"
+  },
+  "native_messages": "20:09:01  Migrating Start Workbench to Start command... done.\n20:09:14  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\5e5718b7461fab07110befb9253733a6.png\"): device not open\n20:09:14  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\75292e0a20854497660f8c4dfc4be4b9.png\"): device not open\n20:09:14  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\bb448bc572657bb8e67db5ccce4c147b.png\"): device not open\n20:09:14  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\9217d59def2f632f64cac703dd0866ef.png\"): device not open\n20:09:14  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\18454f9c4ef66d31f5c13beb658410c1.png\"): device not open\n20:09:14  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\00f6208f57d0c1e17f8fb96d05c09abc.png\"): device not open\n20:09:14  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\b422966d528006fef56eb186c6c55ccd.png\"): device not open\n\nSTEP could not be read; check the source file\nFinish or cancel the active sketch before changing documents",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "timings": {
+    "input_to_command_started": {
+      "samples": 13,
+      "median_ms": 0.004,
+      "p95_ms": 0.009,
+      "worst_ms": 0.009
+    },
+    "native_recompute": {
+      "samples": 16,
+      "median_ms": 56.731,
+      "p95_ms": 491.393,
+      "worst_ms": 491.393
+    },
+    "selector_evaluation": {
+      "samples": 16,
+      "median_ms": 0.0,
+      "p95_ms": 0.0,
+      "worst_ms": 0.0
+    },
+    "managed_rebuild": {
+      "samples": 16,
+      "median_ms": 57.314,
+      "p95_ms": 492.004,
+      "worst_ms": 492.004
+    },
+    "intent": {
+      "samples": 14,
+      "median_ms": 1.085,
+      "p95_ms": 4.212,
+      "worst_ms": 4.212
+    },
+    "inspection": {
+      "samples": 24,
+      "median_ms": 5.5,
+      "p95_ms": 13.213,
+      "worst_ms": 14.483
+    },
+    "operation": {
+      "samples": 24,
+      "median_ms": 11.204,
+      "p95_ms": 1122.04,
+      "worst_ms": 2212.092
+    },
+    "input_to_ui_updated": {
+      "samples": 13,
+      "median_ms": 114.79,
+      "p95_ms": 2240.254,
+      "worst_ms": 2240.254
+    },
+    "input_to_command_finished": {
+      "samples": 13,
+      "median_ms": 120.715,
+      "p95_ms": 2263.402,
+      "worst_ms": 2263.402
+    },
+    "command_new": {
+      "samples": 1,
+      "median_ms": 1240.001,
+      "p95_ms": 1240.001,
+      "worst_ms": 1240.001
+    },
+    "input_to_paint_event": {
+      "samples": 5,
+      "median_ms": 1265.078,
+      "p95_ms": 2297.462,
+      "worst_ms": 2297.462
+    },
+    "event_loop_delay": {
+      "samples": 25,
+      "median_ms": 21.368,
+      "p95_ms": 2513.742,
+      "worst_ms": 7184.073
+    },
+    "recovery_snapshot_gui": {
+      "samples": 12,
+      "median_ms": 1.498,
+      "p95_ms": 372.067,
+      "worst_ms": 372.067
+    },
+    "command_sketch_rectangle": {
+      "samples": 1,
+      "median_ms": 48.972,
+      "p95_ms": 48.972,
+      "worst_ms": 48.972
+    },
+    "command_pad": {
+      "samples": 1,
+      "median_ms": 57.188,
+      "p95_ms": 57.188,
+      "worst_ms": 57.188
+    },
+    "input_to_superseded_before_frame": {
+      "samples": 7,
+      "median_ms": 1777.141,
+      "p95_ms": 9334.643,
+      "worst_ms": 9334.643
+    },
+    "command_import_step": {
+      "samples": 5,
+      "median_ms": 634.622,
+      "p95_ms": 2263.4,
+      "worst_ms": 2263.4
+    },
+    "command_save": {
+      "samples": 1,
+      "median_ms": 145.281,
+      "p95_ms": 145.281,
+      "worst_ms": 145.281
+    },
+    "command_open": {
+      "samples": 1,
+      "median_ms": 556.625,
+      "p95_ms": 556.625,
+      "worst_ms": 556.625
+    },
+    "command_create_sketch": {
+      "samples": 1,
+      "median_ms": 120.71,
+      "p95_ms": 120.71,
+      "worst_ms": 120.71
+    },
+    "command_begin_sketch_edit": {
+      "samples": 1,
+      "median_ms": 20.313,
+      "p95_ms": 20.313,
+      "worst_ms": 20.313
+    },
+    "native_reference_reconciliation": {
+      "samples": 1,
+      "median_ms": 0.321,
+      "p95_ms": 0.321,
+      "worst_ms": 0.321
+    },
+    "native_scope_validation": {
+      "samples": 1,
+      "median_ms": 0.003,
+      "p95_ms": 0.003,
+      "worst_ms": 0.003
+    },
+    "command_finish_sketch_edit": {
+      "samples": 1,
+      "median_ms": 89.144,
+      "p95_ms": 89.144,
+      "worst_ms": 89.144
+    }
+  }
+}

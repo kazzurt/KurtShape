@@ -1,0 +1,46 @@
+{
+  "passed": true,
+  "date": "2026-10-05",
+  "timezone": "America/Los_Angeles",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "regression": {
+    "report": "native-regression.json",
+    "tests": 250,
+    "passed": 250,
+    "skipped": 0,
+    "source_unchanged": true
+  },
+  "gui": [
+    {
+      "recipe": "sketch-references",
+      "report": "gui-result.json",
+      "checks": 45,
+      "receipt": "runtime/ci-gui/sketch-references/run-edf9bfb0382343b0a6daa8e92e848341/recipe-result.json"
+    },
+    {
+      "recipe": "onshape-workflows",
+      "report": "workflow-regression.json",
+      "checks": 45,
+      "scope_warning_count": 0,
+      "receipt": "runtime/ci-gui/onshape-workflows/run-9389c5ee4a2848689803729521153178/recipe-result.json"
+    }
+  ],
+  "editable_example": "face-sketch-references.FCStd",
+  "screenshot": "circle-dimensions-and-parallel-used-edge.png",
+  "limitations": [
+    "Hidden Qt GUI checks establish the recorded workflows; hands-on behavior on arbitrary models remains user feedback.",
+    "Native projection may split a curve or collapse an edge to a point; automatic edge selection only maps an unambiguous projected curve."
+  ]
+}

@@ -1,7 +1,7 @@
 param(
     [ValidateSet('step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
         'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline','responsiveness-preview',
-        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit')]
+        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open')]
     [string]$Recipe = 'interface',
     [ValidateRange(1,7200)][int]$TimeoutSeconds = 900,
     [switch]$WriteEvidence,
@@ -25,6 +25,7 @@ $recipes = @{
     'history-lifecycle' = @('history-lifecycle-validation.FCMacro', 'history-lifecycle\gui-result.json', 0)
     'everyday-ui' = @('everyday-ui-validation.FCMacro', 'everyday-ui\gui-result.json', 0)
     'dress-up-edit' = @('dress-up-edit-validation.FCMacro', 'dress-up-edit\gui-result.json', 0)
+    'headless-open' = @('headless-open-validation.FCMacro', 'headless-open\gui-result.json', 0)
     'parts-refresh' = @('parts-refresh-validation.FCMacro', 'parts-refresh\gui-result.json', 0)
     'geometry-check-timing' = @('geometry-check-timing-validation.FCMacro', 'geometry-check-timing\gui-result.json', 0)
     'geometry-check-lifecycle' = @('geometry-check-lifecycle-validation.FCMacro', 'geometry-check-lifecycle\gui-result.json', 0)

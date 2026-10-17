@@ -1,0 +1,2217 @@
+{
+  "passed": true,
+  "checks": [
+    "Fixture enters production managed native sketch editing",
+    "Free line endpoint is blue",
+    "Fully fixed endpoint of a free line is black",
+    "Other free endpoint of the same line is blue",
+    "Point constrained along only one axis is blue",
+    "Fully fixed center of a variable-radius circle is black",
+    "Free circle center is blue",
+    "Center of fixed geometry is black",
+    "Free standalone point is blue",
+    "Fixed standalone point is black",
+    "Rendered fixed endpoint is black",
+    "Rendered free endpoint is blue",
+    "Rendered fixed center with free radius is black",
+    "Rendered free circle center is blue",
+    "Native driving dimension labels are black",
+    "Native fixed sketch origin remains black",
+    "Reference dimension label is black",
+    "Deactivated dimension label is black",
+    "Expression dimension label is black",
+    "Removing a point coordinate constraint changes black back to blue",
+    "Restoring the coordinate constraint changes the fixed endpoint back to black",
+    "Actual viewport click selects the fixed sketch point",
+    "Selected points retain native highlight color",
+    "Coincident endpoint attached to a fixed point is black",
+    "Unconstrained coincident point is blue rather than native constraint red",
+    "Both members of a free coincident pair stay blue",
+    "Idle point-color updates make no Coin material writes",
+    "Conflicting dimensions keep black native labels",
+    "Native geometry error still colors points red",
+    "Native geometry error still colors curves red",
+    "Production source remains frozen during GUI validation"
+  ],
+  "points": [
+    {
+      "label": "Free line endpoint is blue",
+      "geo": 0,
+      "pos": 1,
+      "slot": 0,
+      "actual": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "expected": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "label": "Fully fixed endpoint of a free line is black",
+      "geo": 1,
+      "pos": 1,
+      "slot": 2,
+      "actual": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expected": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "Other free endpoint of the same line is blue",
+      "geo": 1,
+      "pos": 2,
+      "slot": 3,
+      "actual": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "expected": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "label": "Point constrained along only one axis is blue",
+      "geo": 2,
+      "pos": 1,
+      "slot": 4,
+      "actual": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "expected": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "label": "Fully fixed center of a variable-radius circle is black",
+      "geo": 3,
+      "pos": 3,
+      "slot": 6,
+      "actual": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expected": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "Free circle center is blue",
+      "geo": 4,
+      "pos": 3,
+      "slot": 7,
+      "actual": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "expected": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "label": "Center of fixed geometry is black",
+      "geo": 5,
+      "pos": 3,
+      "slot": 8,
+      "actual": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expected": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "Free standalone point is blue",
+      "geo": 6,
+      "pos": 1,
+      "slot": 9,
+      "actual": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "expected": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "label": "Fixed standalone point is black",
+      "geo": 7,
+      "pos": 1,
+      "slot": 10,
+      "actual": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expected": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "Removing a point coordinate constraint changes black back to blue",
+      "geo": 1,
+      "pos": 1,
+      "slot": 2,
+      "actual": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "expected": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "label": "Restoring the coordinate constraint changes the fixed endpoint back to black",
+      "geo": 1,
+      "pos": 1,
+      "slot": 2,
+      "actual": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expected": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "Coincident endpoint attached to a fixed point is black",
+      "geo": 8,
+      "pos": 1,
+      "slot": 11,
+      "actual": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expected": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "Unconstrained coincident point is blue rather than native constraint red",
+      "geo": 9,
+      "pos": 1,
+      "slot": 13,
+      "actual": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "expected": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "label": "Both members of a free coincident pair stay blue",
+      "geo": 10,
+      "pos": 1,
+      "slot": 15,
+      "actual": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "expected": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "label": "Native geometry error still colors points red",
+      "geo": 0,
+      "pos": 1,
+      "slot": 0,
+      "actual": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "expected": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "screens": [
+    "selected-point-native-highlight.png",
+    "black-dimensions-red-geometry-error.png",
+    "native-mixed-point-colors.png"
+  ],
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "source_sha256": {
+    "theme.py": "299154f47e49811aff4b472853a3ec3de9f3bee8655b04195072827209e4d4dd",
+    "sketch_colors.py": "69ce7f5416f0496f8b2e4b4770efb03410b452b09431085399e01cf62419feb9"
+  },
+  "acceptance": true,
+  "limits": "Pinned FreeCAD 1.1.4 returns start position for all dependent end/center entries. Single-point geometry uses native diagnosis; ambiguous curve points require active constraint graph proof and remain blue when no proof is available. No solve or model mutation is used by the color adapter.",
+  "native_source": "https://raw.githubusercontent.com/FreeCAD/FreeCAD/1.1.4/src/Mod/Sketcher/App/SketchObject.cpp#L9802",
+  "method": "Production native Sketcher edit with real solver constraints and rendered Coin point/label colors; isolated hidden process and fresh profile.",
+  "native_sketch_api": [
+    {
+      "attribute": "ArcFitTolerance",
+      "value": "1e-06"
+    },
+    {
+      "attribute": "Attacher",
+      "value": "<Attacher::AttachEngine>"
+    },
+    {
+      "attribute": "AttacherEngine",
+      "value": "Engine 3D"
+    },
+    {
+      "attribute": "AttacherType",
+      "value": "Attacher::AttachEnginePlane"
+    },
+    {
+      "attribute": "AttachmentOffset",
+      "value": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]"
+    },
+    {
+      "attribute": "AttachmentSupport",
+      "value": "[(<GeoFeature object>, ('',))]"
+    },
+    {
+      "attribute": "AxisCount",
+      "value": "0"
+    },
+    {
+      "attribute": "ConflictingConstraints",
+      "value": "[]"
+    },
+    {
+      "attribute": "ConstraintCount",
+      "value": "7"
+    },
+    {
+      "attribute": "Constraints",
+      "value": "[<Constraint 'DistanceX'>, <Constraint 'DistanceY'>, <Constraint 'DistanceX'>, <Constraint 'DistanceX'>, <Constraint 'DistanceY'>, <Constraint 'Block' (5)>, <Constraint 'Block' (7)>]"
+    },
+    {
+      "attribute": "Content",
+      "value": "    <Extensions Count=\"1\">\n        <Extension type=\"Part::AttachExtension\" name=\"AttachExtension\">\n        </Extension>\n    </Extensions>\n    <Properties Count=\"25\" TransientCount=\"1\">\n        <_Property name=\"_ElementMapVersion\" type=\"App::PropertyString\" status=\"234881024\"/>\n        <Property name=\"ArcFitTolerance\" type=\"App::PropertyPrecision\">\n            <Float value=\"1e-06\"/>\n        </Property>\n        <Property name=\"AttacherEngine\" type=\"App::PropertyEnumeration\">\n            <Integer value=\"0\" CustomEnum=\"true\"/>\n            <CustomEnumList count=\"4\">\n                <Enum value=\"Engine 3D\"/>\n                <Enum value=\"Engine Plane\"/>\n                <Enum value=\"Engine Line\"/>\n                <Enum value=\"Engine Point\"/>\n            </CustomEnumList>\n        </Property>\n        <Property name=\"AttacherType\" type=\"App::PropertyString\" status=\"83886080\">\n            <String value=\"Attacher::AttachEnginePlane\"/>\n        </Property>\n        <Property name=\"AttachmentOffset\" type=\"App::PropertyPlacement\">\n            <PropertyPlacement Px=\"0\" Py=\"0\" Pz=\"0\" Q0=\"0\" Q1=\"0\" Q2=\"0\" Q3=\"1\" A=\"0\" Ox=\"0\" Oy=\"0\" Oz=\"1\"/>\n        </Property>\n        <Property name=\"AttachmentSupport\" type=\"App::PropertyLinkSubList\">\n            <LinkSubList count=\"1\">\n                <Link obj=\"XY_Plane\" sub=\"\"/>\n            </LinkSubList>\n        </Property>\n        <Property name=\"Constraints\" type=\"Sketcher::PropertyConstraintList\" status=\"1\">\n            <ConstraintList count=\"7\">\n                <Constrain Name=\"\" Type=\"7\" Value=\"-30\" LabelDistance=\"10\" LabelPosition=\"0\" IsDriving=\"1\" IsInVirtualSpace=\"0\" IsVisible=\"1\" IsActive=\"1\" First=\"1\" FirstPos=\"1\" Second=\"-2000\" SecondPos=\"0\" Third=\"-2000\" ThirdPos=\"0\" ElementIds=\"1 -2000 -2000\" ElementPositions=\"1 0 0\" />\n                <Constrain Name=\"\" Type=\"8\" Value=\"-5\" LabelDistance=\"10\" LabelPosition=\"0\" IsDriving=\"1\" IsInVirtualSpace=\"0\" IsVisible=\"1\" IsActive=\"1\" First=\"1\" FirstPos=\"1\" Second=\"-2000\" SecondPos=\"0\" Third=\"-2000\" ThirdPos=\"0\" ElementIds=\"1 -2000 -2000\" ElementPositions=\"1 0 0\" />\n                <Constrain Name=\"\" Type=\"7\" Value=\"-30\" LabelDistance=\"10\" LabelPosition=\"0\" IsDriving=\"1\" IsInVirtualSpace=\"0\" IsVisible=\"1\" IsActive=\"1\" First=\"2\" FirstPos=\"1\" Second=\"-2000\" SecondPos=\"0\" Third=\"-2000\" ThirdPos=\"0\" ElementIds=\"2 -2000 -2000\" ElementPositions=\"1 0 0\" />\n                <Constrain Name=\"\" Type=\"7\" Value=\"-5\" LabelDistance=\"10\" LabelPosition=\"0\" IsDriving=\"1\" IsInVirtualSpace=\"0\" IsVisible=\"1\" IsActive=\"1\" First=\"3\" FirstPos=\"3\" Second=\"-2000\" SecondPos=\"0\" Third=\"-2000\" ThirdPos=\"0\" ElementIds=\"3 -2000 -2000\" ElementPositions=\"3 0 0\" />\n                <Constrain Name=\"\" Type=\"8\" Value=\"10\" LabelDistance=\"10\" LabelPosition=\"0\" IsDriving=\"1\" IsInVirtualSpace=\"0\" IsVisible=\"1\" IsActive=\"1\" First=\"3\" FirstPos=\"3\" Second=\"-2000\" SecondPos=\"0\" Third=\"-2000\" ThirdPos=\"0\" ElementIds=\"3 -2000 -2000\" ElementPositions=\"3 0 0\" />\n                <Constrain Name=\"\" Type=\"17\" Value=\"0\" LabelDistance=\"10\" LabelPosition=\"0\" IsDriving=\"1\" IsInVirtualSpace=\"0\" IsVisible=\"1\" IsActive=\"1\" First=\"5\" FirstPos=\"0\" Second=\"-2000\" SecondPos=\"0\" Third=\"-2000\" ThirdPos=\"0\" ElementIds=\"5 -2000 -2000\" ElementPositions=\"0 0 0\" />\n                <Constrain Name=\"\" Type=\"17\" Value=\"0\" LabelDistance=\"10\" LabelPosition=\"0\" IsDriving=\"1\" IsInVirtualSpace=\"0\" IsVisible=\"1\" IsActive=\"1\" First=\"7\" FirstPos=\"0\" Second=\"-2000\" SecondPos=\"0\" Third=\"-2000\" ThirdPos=\"0\" ElementIds=\"7 -2000 -2000\" ElementPositions=\"0 0 0\" />\n            </ConstraintList>\n        </Property>\n        <Property name=\"Exports\" type=\"App::PropertyLinkListHidden\" status=\"67108864\">\n            <LinkList count=\"0\">\n            </LinkList>\n        </Property>\n        <Property name=\"ExpressionEngine\" type=\"App::PropertyExpressionEngine\" status=\"67108864\">\n            <ExpressionEngine count=\"0\">\n            </ExpressionEngine>\n        </Property>\n        <Property name=\"ExternalGeo\" type=\"Part::PropertyGeometryList\" status=\"67108864\">\n            <GeometryList count=\"2\">\n                <Geometry type=\"Part::GeomLineSegment\" id=\"-1\" migrated=\"1\">\n                    <GeoExtensions count=\"2\">\n                        <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"-1\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000010\" geometryLayer=\"0\"/>\n                        <GeoExtension type=\"Sketcher::ExternalGeometryExtension\" Ref=\"\" Flags=\"0\"/>\n                    </GeoExtensions>\n                    <LineSegment StartX=\"0\" StartY=\"0\" StartZ=\"0\" EndX=\"1\" EndY=\"0\" EndZ=\"0\"/>\n                    <Construction value=\"1\"/>\n                </Geometry>\n                <Geometry type=\"Part::GeomLineSegment\" id=\"-2\" migrated=\"1\">\n                    <GeoExtensions count=\"2\">\n                        <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"-2\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000010\" geometryLayer=\"0\"/>\n                        <GeoExtension type=\"Sketcher::ExternalGeometryExtension\" Ref=\"\" Flags=\"0\"/>\n                    </GeoExtensions>\n                    <LineSegment StartX=\"0\" StartY=\"0\" StartZ=\"0\" EndX=\"0\" EndY=\"1\" EndZ=\"0\"/>\n                    <Construction value=\"1\"/>\n                </Geometry>\n            </GeometryList>\n        </Property>\n        <Property name=\"ExternalGeometry\" type=\"App::PropertyLinkSubList\" status=\"16777216\">\n            <LinkSubList count=\"0\">\n            </LinkSubList>\n        </Property>\n        <Property name=\"ExternalTypes\" type=\"App::PropertyIntegerList\" status=\"67108864\">\n            <IntegerList count=\"1\">\n                <I v=\"0\"/>\n            </IntegerList>\n        </Property>\n        <Property name=\"FullyConstrained\" type=\"App::PropertyBool\" status=\"218103809\">\n            <Bool value=\"false\"/>\n        </Property>\n        <Property name=\"Geometry\" type=\"Part::PropertyGeometryList\" status=\"8193\">\n            <GeometryList count=\"8\">\n                <Geometry type=\"Part::GeomLineSegment\" id=\"1\" migrated=\"1\">\n                    <GeoExtensions count=\"1\">\n                        <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"1\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n                    </GeoExtensions>\n                    <LineSegment StartX=\"-30\" StartY=\"10\" StartZ=\"0\" EndX=\"-20\" EndY=\"10\" EndZ=\"0\"/>\n                    <Construction value=\"0\"/>\n                </Geometry>\n                <Geometry type=\"Part::GeomLineSegment\" id=\"2\" migrated=\"1\">\n                    <GeoExtensions count=\"1\">\n                        <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"2\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n                    </GeoExtensions>\n                    <LineSegment StartX=\"-30\" StartY=\"-5\" StartZ=\"0\" EndX=\"-20\" EndY=\"-5\" EndZ=\"0\"/>\n                    <Construction value=\"0\"/>\n                </Geometry>\n                <Geometry type=\"Part::GeomLineSegment\" id=\"3\" migrated=\"1\">\n                    <GeoExtensions count=\"1\">\n                        <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"3\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n                    </GeoExtensions>\n                    <LineSegment StartX=\"-30\" StartY=\"-20\" StartZ=\"0\" EndX=\"-20\" EndY=\"-20\" EndZ=\"0\"/>\n                    <Construction value=\"0\"/>\n                </Geometry>\n                <Geometry type=\"Part::GeomCircle\" id=\"4\" migrated=\"1\">\n                    <GeoExtensions count=\"1\">\n                        <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"4\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n                    </GeoExtensions>\n                    <Circle CenterX=\"-5\" CenterY=\"10\" CenterZ=\"0\" NormalX=\"0\" NormalY=\"0\" NormalZ=\"1\" AngleXU=\"-0\" Radius=\"3\"/>\n                    <Construction value=\"0\"/>\n                </Geometry>\n                <Geometry type=\"Part::GeomCircle\" id=\"5\" migrated=\"1\">\n                    <GeoExtensions count=\"1\">\n                        <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"5\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n                    </GeoExtensions>\n                    <Circle CenterX=\"-5\" CenterY=\"-5\" CenterZ=\"0\" NormalX=\"0\" NormalY=\"0\" NormalZ=\"1\" AngleXU=\"-0\" Radius=\"3\"/>\n                    <Construction value=\"0\"/>\n                </Geometry>\n                <Geometry type=\"Part::GeomCircle\" id=\"6\" migrated=\"1\">\n                    <GeoExtensions count=\"1\">\n                        <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"6\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000001\" geometryLayer=\"0\"/>\n                    </GeoExtensions>\n                    <Circle CenterX=\"-5\" CenterY=\"-20\" CenterZ=\"0\" NormalX=\"0\" NormalY=\"0\" NormalZ=\"1\" AngleXU=\"-0\" Radius=\"3\"/>\n                    <Construction value=\"0\"/>\n                </Geometry>\n                <Geometry type=\"Part::GeomPoint\" id=\"7\" migrated=\"1\">\n                    <GeoExtensions count=\"1\">\n                        <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"7\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n                    </GeoExtensions>\n                    <GeomPoint X=\"10\" Y=\"10\" Z=\"0\"/>\n                    <Construction value=\"0\"/>\n                </Geometry>\n                <Geometry type=\"Part::GeomPoint\" id=\"8\" migrated=\"1\">\n                    <GeoExtensions count=\"1\">\n                        <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"8\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000001\" geometryLayer=\"0\"/>\n                    </GeoExtensions>\n                    <GeomPoint X=\"10\" Y=\"-5\" Z=\"0\"/>\n                    <Construction value=\"0\"/>\n                </Geometry>\n            </GeometryList>\n        </Property>\n        <Property name=\"InternalShape\" type=\"Part::PropertyPartShape\">\n            <Part ElementMap=\"15.70200.5\" brep=\"1\">\n<![CDATA[\n\nCASCADE Topology V1, (c) Matra-Datavision\nLocations 0\nCurve2ds 0\nCurves 0\nPolygon3D 0\nPolygonOnTriangulations 0\nSurfaces 0\nTriangulations 0\n\nTShapes 0\n\n*]]>\n            </Part>\n            <ElementMap/>\n        </Property>\n        <Property name=\"Label\" type=\"App::PropertyString\" status=\"134217728\">\n            <String value=\"ColorSketch\"/>\n        </Property>\n        <Property name=\"Label2\" type=\"App::PropertyString\" status=\"67108992\">\n            <String value=\"\"/>\n        </Property>\n        <Property name=\"MakeInternals\" type=\"App::PropertyBool\">\n            <Bool value=\"false\"/>\n        </Property>\n        <Property name=\"MapMode\" type=\"App::PropertyEnumeration\">\n            <Integer value=\"5\"/>\n        </Property>\n        <Property name=\"MapPathParameter\" type=\"App::PropertyFloat\" status=\"8\">\n            <Float value=\"0\"/>\n        </Property>\n        <Property name=\"MapReversed\" type=\"App::PropertyBool\">\n            <Bool value=\"false\"/>\n        </Property>\n        <Property name=\"Placement\" type=\"App::PropertyPlacement\" status=\"8388612\">\n            <PropertyPlacement Px=\"0\" Py=\"0\" Pz=\"0\" Q0=\"0\" Q1=\"0\" Q2=\"0\" Q3=\"1\" A=\"0\" Ox=\"0\" Oy=\"0\" Oz=\"1\"/>\n        </Property>\n        <Property name=\"Shape\" type=\"Part::PropertyPartShape\">\n            <Part ElementMap=\"15.70200.5\" brep=\"1\">\n<![CDATA[\n\nCASCADE Topology V1, (c) Matra-Datavision\nLocations 1\n1\n              1               0               0               0 \n              0               1               0               0 \n              0               0               1               0 \nCurve2ds 0\nCurves 6\n1 -30 10 0 1 0 0 \n1 -30 -5 0 1 0 0 \n1 -30 -20 0 1 0 0 \n2 -5 10 0 0 0 1 1 0 -0 -0 1 0 3\n2 -5 -5 0 0 0 1 1 0 -0 -0 1 0 3\n2 -5 -20 0 0 0 1 1 0 -0 -0 1 0 3\nPolygon3D 0\nPolygonOnTriangulations 0\nSurfaces 0\nTriangulations 0\n\nTShapes 24\nVe\n1e-07\n-30 10 0\n0 0\n\n0101101\n*\nVe\n1e-07\n-20 10 0\n0 0\n\n0101101\n*\nEd\n 1e-07 1 1 0\n1  1 0 0 10\n0\n\n0101000\n+24 0 -23 0 *\nWi\n\n0101000\n+22 0 *\nVe\n1e-07\n-30 -5 0\n0 0\n\n0101101\n*\nVe\n1e-07\n-20 -5 0\n0 0\n\n0101101\n*\nEd\n 1e-07 1 1 0\n1  2 0 0 10\n0\n\n0101000\n+20 0 -19 0 *\nWi\n\n0101000\n+18 0 *\nVe\n1e-07\n-30 -20 0\n0 0\n\n0101101\n*\nVe\n1e-07\n-20 -20 0\n0 0\n\n0101101\n*\nEd\n 1e-07 1 1 0\n1  3 0 0 10\n0\n\n0101000\n+16 0 -15 0 *\nWi\n\n0101000\n+14 0 *\nVe\n1e-07\n-2 10 0\n0 0\n\n0101101\n*\nEd\n 1e-07 1 1 0\n1  4 0 0 6.28318530717959\n0\n\n0101100\n+12 0 -12 0 *\nWi\n\n0101100\n+11 0 *\nVe\n1e-07\n-2 -5 0\n0 0\n\n0101101\n*\nEd\n 1e-07 1 1 0\n1  5 0 0 6.28318530717959\n0\n\n0101100\n+9 0 -9 0 *\nWi\n\n0101100\n+8 0 *\nVe\n1e-07\n-2 -20 0\n0 0\n\n0101101\n*\nEd\n 1e-07 1 1 0\n1  6 0 0 6.28318530717959\n0\n\n0101100\n+6 0 -6 0 *\nWi\n\n0101100\n+5 0 *\nVe\n1e-07\n10 10 0\n0 0\n\n0101101\n*\nVe\n1e-07\n10 -5 0\n0 0\n\n0101101\n*\nCo\n\n1100000\n+21 0 +17 0 +13 0 +10 0 +7 0 +4 0 +3 0 +2 0 *\n\n+1 1 ]]>\n            </Part>\n            <ElementMap new=\"1\" count=\"1\"><Element key=\"Dummy\" value=\"Dummy\"/></ElementMap>\n            <ElementMap2 count=\"17\">\n<![CDATA[\n0 PostfixCount 3\nEdge\nVertex\n;SKT\n\nMapCount 1\n\nElementMap 1 0 2\n\nEdge\n\nChildCount 0\n\nNameCount 7\n0\n;g1.3 0\n;g2.3 0\n;g3.3 0\n;g4.3 0\n;g5.3 0\n;g6.3 0\n\nVertex\n\nChildCount 0\n\nNameCount 12\n0\n;g1v1.3 0\n;g1v2.3 0\n;g2v1.3 0\n;g2v2.3 0\n;g3v1.3 0\n;g3v2.3 0\n;g4v1.3 0\n;g5v1.3 0\n;g6v1.3 0\n;g7v1.3 0\n;g8v1.3 0\n\nEndMap\n]]>\n            </ElementMap2>\n        </Property>\n        <Property name=\"ShapeMaterial\" type=\"Materials::PropertyMaterial\">\n            <PropertyMaterial uuid=\"7f9fd73b-50c9-41d8-b7b2-575a030c1eeb\"/>\n        </Property>\n        <Property name=\"Visibility\" type=\"App::PropertyBool\" status=\"649\">\n            <Bool value=\"false\"/>\n        </Property>\n        <Property name=\"_ExternalGeoVersion\" type=\"App::PropertyInteger\" status=\"83886080\">\n            <Integer value=\"1\"/>\n        </Property>\n    </Properties>\n"
+    },
+    {
+      "attribute": "DeleteUnusedInternalGeometry",
+      "value": "callable"
+    },
+    {
+      "attribute": "DoF",
+      "value": "15"
+    },
+    {
+      "attribute": "Document",
+      "value": "<Document 'KurtShape1' (Sketch dimension and point colors) >"
+    },
+    {
+      "attribute": "ElementMapVersion",
+      "value": "15.70200.5"
+    },
+    {
+      "attribute": "Exports",
+      "value": "[]"
+    },
+    {
+      "attribute": "ExposeInternalGeometry",
+      "value": "callable"
+    },
+    {
+      "attribute": "ExpressionEngine",
+      "value": "[]"
+    },
+    {
+      "attribute": "ExternalGeo",
+      "value": "[<Line segment (0,0,0) (1,0,0) >, <Line segment (0,0,0) (0,1,0) >]"
+    },
+    {
+      "attribute": "ExternalGeometry",
+      "value": "[]"
+    },
+    {
+      "attribute": "ExternalTypes",
+      "value": "[0]"
+    },
+    {
+      "attribute": "FullName",
+      "value": "KurtShape1#ColorSketch"
+    },
+    {
+      "attribute": "FullyConstrained",
+      "value": "False"
+    },
+    {
+      "attribute": "Geometry",
+      "value": "[<Line segment (-30,10,0) (-20,10,0) >, <Line segment (-30,-5,0) (-20,-5,0) >, <Line segment (-30,-20,0) (-20,-20,0) >, Circle (Radius : 3, Position : (-5, 10, 0), Direction : (0, 0, 1)), Circle (Radius : 3, Position : (-5, -5, 0), Direction : (0, 0, 1)), Circle (Radius : 3, Position : (-5, -20, 0), Direction : (0, 0, 1)), <Point (10,10,0) >, <Point (10,-5,0) >]"
+    },
+    {
+      "attribute": "GeometryCount",
+      "value": "8"
+    },
+    {
+      "attribute": "GeometryFacadeList",
+      "value": "[<GeometryFacade ( Id=1 ) >, <GeometryFacade ( Id=2 ) >, <GeometryFacade ( Id=3 ) >, <GeometryFacade ( Id=4 ) >, <GeometryFacade ( Id=5 ) >, <GeometryFacade ( Id=6 ) >, <GeometryFacade ( Id=7 ) >, <GeometryFacade ( Id=8 ) >]"
+    },
+    {
+      "attribute": "ID",
+      "value": "3597"
+    },
+    {
+      "attribute": "InList",
+      "value": "[<body object>, <App::FeaturePython object>]"
+    },
+    {
+      "attribute": "InListRecursive",
+      "value": "[<body object>, <App::FeaturePython object>]"
+    },
+    {
+      "attribute": "InternalShape",
+      "value": "<Shape object at 0000024A99A88290>"
+    },
+    {
+      "attribute": "Label",
+      "value": "ColorSketch"
+    },
+    {
+      "attribute": "Label2",
+      "value": ""
+    },
+    {
+      "attribute": "MakeInternals",
+      "value": "False"
+    },
+    {
+      "attribute": "MalformedConstraints",
+      "value": "[]"
+    },
+    {
+      "attribute": "MapMode",
+      "value": "FlatFace"
+    },
+    {
+      "attribute": "MapPathParameter",
+      "value": "0.0"
+    },
+    {
+      "attribute": "MapReversed",
+      "value": "False"
+    },
+    {
+      "attribute": "MemSize",
+      "value": "0"
+    },
+    {
+      "attribute": "MissingLineEqualityConstraints",
+      "value": "[]"
+    },
+    {
+      "attribute": "MissingPointOnPointConstraints",
+      "value": "[]"
+    },
+    {
+      "attribute": "MissingRadiusConstraints",
+      "value": "[]"
+    },
+    {
+      "attribute": "MissingVerticalHorizontalConstraints",
+      "value": "[]"
+    },
+    {
+      "attribute": "Module",
+      "value": "Sketcher"
+    },
+    {
+      "attribute": "MustExecute",
+      "value": "True"
+    },
+    {
+      "attribute": "Name",
+      "value": "ColorSketch"
+    },
+    {
+      "attribute": "NoTouch",
+      "value": "False"
+    },
+    {
+      "attribute": "OldLabel",
+      "value": "Unnamed"
+    },
+    {
+      "attribute": "OpenVertices",
+      "value": "[(-30.0, 10.0, 0.0), (-20.0, 10.0, 0.0), (-30.0, -5.0, 0.0), (-20.0, -5.0, 0.0), (-30.0, -20.0, 0.0), (-20.0, -20.0, 0.0), (10.0, 10.0, 0.0), (10.0, -5.0, 0.0)]"
+    },
+    {
+      "attribute": "OutList",
+      "value": "[<GeoFeature object>]"
+    },
+    {
+      "attribute": "OutListRecursive",
+      "value": "[<GeoFeature object>]"
+    },
+    {
+      "attribute": "Parents",
+      "value": "[(<body object>, 'ColorSketch.')]"
+    },
+    {
+      "attribute": "PartiallyRedundantConstraints",
+      "value": "[]"
+    },
+    {
+      "attribute": "Placement",
+      "value": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]"
+    },
+    {
+      "attribute": "PropertiesList",
+      "value": "['ArcFitTolerance', 'AttacherEngine', 'AttacherType', 'AttachmentOffset', 'AttachmentSupport', 'Constraints', 'Exports', 'ExpressionEngine', 'ExternalGeo', 'ExternalGeometry', 'ExternalTypes', 'FullyConstrained', 'Geometry', 'InternalShape', 'Label', 'Label2', 'MakeInternals', 'MapMode', 'MapPathParameter', 'MapReversed', 'Placement', 'Shape', 'ShapeMaterial', 'Visibility', '_ElementMapVersion', '_ExternalGeoVersion']"
+    },
+    {
+      "attribute": "RedundantConstraints",
+      "value": "[]"
+    },
+    {
+      "attribute": "Removing",
+      "value": "False"
+    },
+    {
+      "attribute": "Shape",
+      "value": "<Compound object at 0000024A99A87790>"
+    },
+    {
+      "attribute": "ShapeMaterial",
+      "value": "<Material at 0000024ABF959570>"
+    },
+    {
+      "attribute": "State",
+      "value": "['Touched']"
+    },
+    {
+      "attribute": "TypeId",
+      "value": "Sketcher::SketchObject"
+    },
+    {
+      "attribute": "ViewObject",
+      "value": "<View provider geometry object at 0000024A99AC6180>"
+    },
+    {
+      "attribute": "Visibility",
+      "value": "False"
+    },
+    {
+      "attribute": "addConstraint",
+      "value": "callable"
+    },
+    {
+      "attribute": "addCopy",
+      "value": "callable"
+    },
+    {
+      "attribute": "addExtension",
+      "value": "callable"
+    },
+    {
+      "attribute": "addExternal",
+      "value": "callable"
+    },
+    {
+      "attribute": "addGeometry",
+      "value": "callable"
+    },
+    {
+      "attribute": "addMove",
+      "value": "callable"
+    },
+    {
+      "attribute": "addObject",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "addObjects",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "addProperty",
+      "value": "callable"
+    },
+    {
+      "attribute": "addRectangularArray",
+      "value": "callable"
+    },
+    {
+      "attribute": "addSymmetric",
+      "value": "callable"
+    },
+    {
+      "attribute": "adjustRelativeLinks",
+      "value": "callable"
+    },
+    {
+      "attribute": "allowObject",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "analyseMissingPointOnPointCoincident",
+      "value": "callable"
+    },
+    {
+      "attribute": "autoRemoveRedundants",
+      "value": "callable"
+    },
+    {
+      "attribute": "autoconstraint",
+      "value": "callable"
+    },
+    {
+      "attribute": "calculateAngleViaPoint",
+      "value": "callable"
+    },
+    {
+      "attribute": "calculateConstraintError",
+      "value": "callable"
+    },
+    {
+      "attribute": "carbonCopy",
+      "value": "callable"
+    },
+    {
+      "attribute": "changeAttacherType",
+      "value": "callable"
+    },
+    {
+      "attribute": "changeConstraintsLocking",
+      "value": "callable"
+    },
+    {
+      "attribute": "clearExpression",
+      "value": "callable"
+    },
+    {
+      "attribute": "convertToNURBS",
+      "value": "callable"
+    },
+    {
+      "attribute": "decreaseBSplineDegree",
+      "value": "callable"
+    },
+    {
+      "attribute": "delConstraint",
+      "value": "callable"
+    },
+    {
+      "attribute": "delConstraintOnPoint",
+      "value": "callable"
+    },
+    {
+      "attribute": "delConstraints",
+      "value": "callable"
+    },
+    {
+      "attribute": "delConstraintsToExternal",
+      "value": "callable"
+    },
+    {
+      "attribute": "delExternal",
+      "value": "callable"
+    },
+    {
+      "attribute": "delGeometries",
+      "value": "callable"
+    },
+    {
+      "attribute": "delGeometry",
+      "value": "callable"
+    },
+    {
+      "attribute": "deleteAllConstraints",
+      "value": "callable"
+    },
+    {
+      "attribute": "deleteAllGeometry",
+      "value": "callable"
+    },
+    {
+      "attribute": "deleteUnusedInternalGeometry",
+      "value": "callable"
+    },
+    {
+      "attribute": "detectDegeneratedGeometries",
+      "value": "callable"
+    },
+    {
+      "attribute": "detectMissingEqualityConstraints",
+      "value": "callable"
+    },
+    {
+      "attribute": "detectMissingPointOnPointConstraints",
+      "value": "callable"
+    },
+    {
+      "attribute": "detectMissingVerticalHorizontalConstraints",
+      "value": "callable"
+    },
+    {
+      "attribute": "dumpContent",
+      "value": "callable"
+    },
+    {
+      "attribute": "dumpPropertyContent",
+      "value": "callable"
+    },
+    {
+      "attribute": "enforceRecompute",
+      "value": "callable"
+    },
+    {
+      "attribute": "evalExpression",
+      "value": "callable"
+    },
+    {
+      "attribute": "evaluateConstraints",
+      "value": "callable"
+    },
+    {
+      "attribute": "exposeInternalGeometry",
+      "value": "callable"
+    },
+    {
+      "attribute": "extend",
+      "value": "callable"
+    },
+    {
+      "attribute": "fillet",
+      "value": "callable"
+    },
+    {
+      "attribute": "getActive",
+      "value": "callable"
+    },
+    {
+      "attribute": "getAllDerivedFrom",
+      "value": "callable"
+    },
+    {
+      "attribute": "getAxis",
+      "value": "callable"
+    },
+    {
+      "attribute": "getConstruction",
+      "value": "callable"
+    },
+    {
+      "attribute": "getDatum",
+      "value": "callable"
+    },
+    {
+      "attribute": "getDocumentationOfProperty",
+      "value": "callable"
+    },
+    {
+      "attribute": "getDriving",
+      "value": "callable"
+    },
+    {
+      "attribute": "getEditorMode",
+      "value": "callable"
+    },
+    {
+      "attribute": "getElementHistory",
+      "value": "callable"
+    },
+    {
+      "attribute": "getElementMapVersion",
+      "value": "callable"
+    },
+    {
+      "attribute": "getEnumerationsOfProperty",
+      "value": "callable"
+    },
+    {
+      "attribute": "getGeoVertexIndex",
+      "value": "callable"
+    },
+    {
+      "attribute": "getGeometryId",
+      "value": "callable"
+    },
+    {
+      "attribute": "getGeometryWithDependentParameters",
+      "value": "callable"
+    },
+    {
+      "attribute": "getGlobalPlacement",
+      "value": "callable"
+    },
+    {
+      "attribute": "getGlobalPlacementOf",
+      "value": "callable"
+    },
+    {
+      "attribute": "getGroupOfProperty",
+      "value": "callable"
+    },
+    {
+      "attribute": "getIndexByName",
+      "value": "callable"
+    },
+    {
+      "attribute": "getLabelDistance",
+      "value": "callable"
+    },
+    {
+      "attribute": "getLabelPosition",
+      "value": "callable"
+    },
+    {
+      "attribute": "getLinkedObject",
+      "value": "callable"
+    },
+    {
+      "attribute": "getObject",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "getObjectsOfType",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "getParent",
+      "value": "callable"
+    },
+    {
+      "attribute": "getParentGeoFeatureGroup",
+      "value": "callable"
+    },
+    {
+      "attribute": "getParentGroup",
+      "value": "callable"
+    },
+    {
+      "attribute": "getPaths",
+      "value": "callable"
+    },
+    {
+      "attribute": "getPathsByOutList",
+      "value": "callable"
+    },
+    {
+      "attribute": "getPlacementOf",
+      "value": "callable"
+    },
+    {
+      "attribute": "getPoint",
+      "value": "callable"
+    },
+    {
+      "attribute": "getPropertyByName",
+      "value": "callable"
+    },
+    {
+      "attribute": "getPropertyNameOfGeometry",
+      "value": "callable"
+    },
+    {
+      "attribute": "getPropertyOfGeometry",
+      "value": "callable"
+    },
+    {
+      "attribute": "getPropertyStatus",
+      "value": "callable"
+    },
+    {
+      "attribute": "getPropertyTouchList",
+      "value": "callable"
+    },
+    {
+      "attribute": "getStatusString",
+      "value": "callable"
+    },
+    {
+      "attribute": "getSubObject",
+      "value": "callable"
+    },
+    {
+      "attribute": "getSubObjectList",
+      "value": "callable"
+    },
+    {
+      "attribute": "getSubObjects",
+      "value": "callable"
+    },
+    {
+      "attribute": "getTypeIdOfProperty",
+      "value": "callable"
+    },
+    {
+      "attribute": "getTypeOfProperty",
+      "value": "callable"
+    },
+    {
+      "attribute": "getVirtualSpace",
+      "value": "callable"
+    },
+    {
+      "attribute": "hasChildElement",
+      "value": "callable"
+    },
+    {
+      "attribute": "hasExtension",
+      "value": "callable"
+    },
+    {
+      "attribute": "hasObject",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "increaseBSplineDegree",
+      "value": "callable"
+    },
+    {
+      "attribute": "insertBSplineKnot",
+      "value": "callable"
+    },
+    {
+      "attribute": "isAttachedToDocument",
+      "value": "callable"
+    },
+    {
+      "attribute": "isDerivedFrom",
+      "value": "callable"
+    },
+    {
+      "attribute": "isElementVisible",
+      "value": "callable"
+    },
+    {
+      "attribute": "isPointOnCurve",
+      "value": "callable"
+    },
+    {
+      "attribute": "isValid",
+      "value": "callable"
+    },
+    {
+      "attribute": "join",
+      "value": "callable"
+    },
+    {
+      "attribute": "makeMissingEquality",
+      "value": "callable"
+    },
+    {
+      "attribute": "makeMissingPointOnPointCoincident",
+      "value": "callable"
+    },
+    {
+      "attribute": "makeMissingVerticalHorizontal",
+      "value": "callable"
+    },
+    {
+      "attribute": "modifyBSplineKnotMultiplicity",
+      "value": "callable"
+    },
+    {
+      "attribute": "moveDatumsToEnd",
+      "value": "callable"
+    },
+    {
+      "attribute": "moveGeometries",
+      "value": "callable"
+    },
+    {
+      "attribute": "moveGeometry",
+      "value": "callable"
+    },
+    {
+      "attribute": "newObject",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "positionBySupport",
+      "value": "callable"
+    },
+    {
+      "attribute": "purgeTouched",
+      "value": "callable"
+    },
+    {
+      "attribute": "recompute",
+      "value": "callable"
+    },
+    {
+      "attribute": "removeAxesAlignment",
+      "value": "callable"
+    },
+    {
+      "attribute": "removeDegeneratedGeometries",
+      "value": "callable"
+    },
+    {
+      "attribute": "removeObject",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "removeObjects",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "removeObjectsFromDocument",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "removeProperty",
+      "value": "callable"
+    },
+    {
+      "attribute": "renameConstraint",
+      "value": "callable"
+    },
+    {
+      "attribute": "renameProperty",
+      "value": "callable"
+    },
+    {
+      "attribute": "resolve",
+      "value": "callable"
+    },
+    {
+      "attribute": "resolveSubElement",
+      "value": "callable"
+    },
+    {
+      "attribute": "restoreContent",
+      "value": "callable"
+    },
+    {
+      "attribute": "restorePropertyContent",
+      "value": "callable"
+    },
+    {
+      "attribute": "setActive",
+      "value": "callable"
+    },
+    {
+      "attribute": "setAllowUnaligned",
+      "value": "callable"
+    },
+    {
+      "attribute": "setConstruction",
+      "value": "callable"
+    },
+    {
+      "attribute": "setDatum",
+      "value": "callable"
+    },
+    {
+      "attribute": "setDatumsDriving",
+      "value": "callable"
+    },
+    {
+      "attribute": "setDocumentationOfProperty",
+      "value": "callable"
+    },
+    {
+      "attribute": "setDriving",
+      "value": "callable"
+    },
+    {
+      "attribute": "setEditorMode",
+      "value": "callable"
+    },
+    {
+      "attribute": "setElementVisible",
+      "value": "callable"
+    },
+    {
+      "attribute": "setExpression",
+      "value": "callable"
+    },
+    {
+      "attribute": "setGeometryId",
+      "value": "callable"
+    },
+    {
+      "attribute": "setGeometryIds",
+      "value": "callable"
+    },
+    {
+      "attribute": "setGroupOfProperty",
+      "value": "callable"
+    },
+    {
+      "attribute": "setLabelDistance",
+      "value": "callable"
+    },
+    {
+      "attribute": "setLabelPosition",
+      "value": "callable"
+    },
+    {
+      "attribute": "setObjects",
+      "value": "AttributeError"
+    },
+    {
+      "attribute": "setPropertyStatus",
+      "value": "callable"
+    },
+    {
+      "attribute": "setVirtualSpace",
+      "value": "callable"
+    },
+    {
+      "attribute": "setVisibility",
+      "value": "callable"
+    },
+    {
+      "attribute": "solve",
+      "value": "callable"
+    },
+    {
+      "attribute": "split",
+      "value": "callable"
+    },
+    {
+      "attribute": "supportedProperties",
+      "value": "callable"
+    },
+    {
+      "attribute": "toPythonCommands",
+      "value": "callable"
+    },
+    {
+      "attribute": "toggleActive",
+      "value": "callable"
+    },
+    {
+      "attribute": "toggleConstruction",
+      "value": "callable"
+    },
+    {
+      "attribute": "toggleDriving",
+      "value": "callable"
+    },
+    {
+      "attribute": "toggleVirtualSpace",
+      "value": "callable"
+    },
+    {
+      "attribute": "touch",
+      "value": "callable"
+    },
+    {
+      "attribute": "trim",
+      "value": "callable"
+    },
+    {
+      "attribute": "validateConstraints",
+      "value": "callable"
+    }
+  ],
+  "native_facade_api": [
+    {
+      "attribute": "Blocked",
+      "value": "False"
+    },
+    {
+      "attribute": "Construction",
+      "value": "False"
+    },
+    {
+      "attribute": "Geometry",
+      "value": "<Line segment (-30,-5,0) (-20,-5,0) >"
+    },
+    {
+      "attribute": "GeometryLayerId",
+      "value": "0"
+    },
+    {
+      "attribute": "Id",
+      "value": "2"
+    },
+    {
+      "attribute": "InternalType",
+      "value": "None"
+    },
+    {
+      "attribute": "Module",
+      "value": "Sketcher"
+    },
+    {
+      "attribute": "Tag",
+      "value": "115f551b-9fcc-4e92-a103-49e211d3d3fb"
+    },
+    {
+      "attribute": "TypeId",
+      "value": "Sketcher::GeometryFacade"
+    },
+    {
+      "attribute": "deleteExtensionOfName",
+      "value": "callable"
+    },
+    {
+      "attribute": "deleteExtensionOfType",
+      "value": "callable"
+    },
+    {
+      "attribute": "getAllDerivedFrom",
+      "value": "callable"
+    },
+    {
+      "attribute": "getExtensionOfName",
+      "value": "callable"
+    },
+    {
+      "attribute": "getExtensionOfType",
+      "value": "callable"
+    },
+    {
+      "attribute": "getExtensions",
+      "value": "callable"
+    },
+    {
+      "attribute": "hasExtensionOfName",
+      "value": "callable"
+    },
+    {
+      "attribute": "hasExtensionOfType",
+      "value": "callable"
+    },
+    {
+      "attribute": "isDerivedFrom",
+      "value": "callable"
+    },
+    {
+      "attribute": "mirror",
+      "value": "callable"
+    },
+    {
+      "attribute": "rotate",
+      "value": "callable"
+    },
+    {
+      "attribute": "scale",
+      "value": "callable"
+    },
+    {
+      "attribute": "setExtension",
+      "value": "callable"
+    },
+    {
+      "attribute": "setGeometryMode",
+      "value": "callable"
+    },
+    {
+      "attribute": "testGeometryMode",
+      "value": "callable"
+    },
+    {
+      "attribute": "transform",
+      "value": "callable"
+    },
+    {
+      "attribute": "translate",
+      "value": "callable"
+    }
+  ],
+  "native_geometry_api": [
+    {
+      "attribute": "Content",
+      "value": "<GeoExtensions count=\"1\">\n    <GeoExtension type=\"Sketcher::SketchGeometryExtension\" id=\"2\" internalGeometryType=\"0\" geometryModeFlags=\"00000000000000000000000000000000\" geometryLayer=\"0\"/>\n</GeoExtensions>\n<LineSegment StartX=\"-30\" StartY=\"-5\" StartZ=\"0\" EndX=\"-20\" EndY=\"-5\" EndZ=\"0\"/>\n"
+    },
+    {
+      "attribute": "Continuity",
+      "value": "CN"
+    },
+    {
+      "attribute": "EndPoint",
+      "value": "Vector (-20.0, -5.0, 0.0)"
+    },
+    {
+      "attribute": "FirstParameter",
+      "value": "0.0"
+    },
+    {
+      "attribute": "LastParameter",
+      "value": "10.0"
+    },
+    {
+      "attribute": "MemSize",
+      "value": "104"
+    },
+    {
+      "attribute": "Module",
+      "value": "Part"
+    },
+    {
+      "attribute": "Rotation",
+      "value": "None"
+    },
+    {
+      "attribute": "StartPoint",
+      "value": "Vector (-30.0, -5.0, 0.0)"
+    },
+    {
+      "attribute": "Tag",
+      "value": "115f551b-9fcc-4e92-a103-49e211d3d3fb"
+    },
+    {
+      "attribute": "TypeId",
+      "value": "Part::GeomLineSegment"
+    },
+    {
+      "attribute": "approximateBSpline",
+      "value": "callable"
+    },
+    {
+      "attribute": "centerOfCurvature",
+      "value": "callable"
+    },
+    {
+      "attribute": "clone",
+      "value": "callable"
+    },
+    {
+      "attribute": "continuityWith",
+      "value": "callable"
+    },
+    {
+      "attribute": "copy",
+      "value": "callable"
+    },
+    {
+      "attribute": "curvature",
+      "value": "callable"
+    },
+    {
+      "attribute": "deleteExtensionOfName",
+      "value": "callable"
+    },
+    {
+      "attribute": "deleteExtensionOfType",
+      "value": "callable"
+    },
+    {
+      "attribute": "discretize",
+      "value": "callable"
+    },
+    {
+      "attribute": "dumpContent",
+      "value": "callable"
+    },
+    {
+      "attribute": "getAllDerivedFrom",
+      "value": "callable"
+    },
+    {
+      "attribute": "getD0",
+      "value": "callable"
+    },
+    {
+      "attribute": "getD1",
+      "value": "callable"
+    },
+    {
+      "attribute": "getD2",
+      "value": "callable"
+    },
+    {
+      "attribute": "getD3",
+      "value": "callable"
+    },
+    {
+      "attribute": "getDN",
+      "value": "callable"
+    },
+    {
+      "attribute": "getExtensionOfName",
+      "value": "callable"
+    },
+    {
+      "attribute": "getExtensionOfType",
+      "value": "callable"
+    },
+    {
+      "attribute": "getExtensions",
+      "value": "callable"
+    },
+    {
+      "attribute": "hasExtensionOfName",
+      "value": "callable"
+    },
+    {
+      "attribute": "hasExtensionOfType",
+      "value": "callable"
+    },
+    {
+      "attribute": "intersect",
+      "value": "callable"
+    },
+    {
+      "attribute": "intersect2d",
+      "value": "callable"
+    },
+    {
+      "attribute": "intersectCC",
+      "value": "callable"
+    },
+    {
+      "attribute": "intersectCS",
+      "value": "callable"
+    },
+    {
+      "attribute": "isClosed",
+      "value": "callable"
+    },
+    {
+      "attribute": "isDerivedFrom",
+      "value": "callable"
+    },
+    {
+      "attribute": "isPeriodic",
+      "value": "callable"
+    },
+    {
+      "attribute": "isSame",
+      "value": "callable"
+    },
+    {
+      "attribute": "length",
+      "value": "callable"
+    },
+    {
+      "attribute": "makeRuledSurface",
+      "value": "callable"
+    },
+    {
+      "attribute": "mirror",
+      "value": "callable"
+    },
+    {
+      "attribute": "normal",
+      "value": "callable"
+    },
+    {
+      "attribute": "parameter",
+      "value": "callable"
+    },
+    {
+      "attribute": "parameterAtDistance",
+      "value": "callable"
+    },
+    {
+      "attribute": "period",
+      "value": "callable"
+    },
+    {
+      "attribute": "projectPoint",
+      "value": "callable"
+    },
+    {
+      "attribute": "restoreContent",
+      "value": "callable"
+    },
+    {
+      "attribute": "reverse",
+      "value": "callable"
+    },
+    {
+      "attribute": "reversedParameter",
+      "value": "callable"
+    },
+    {
+      "attribute": "rotate",
+      "value": "callable"
+    },
+    {
+      "attribute": "scale",
+      "value": "callable"
+    },
+    {
+      "attribute": "setExtension",
+      "value": "callable"
+    },
+    {
+      "attribute": "setParameterRange",
+      "value": "callable"
+    },
+    {
+      "attribute": "tangent",
+      "value": "callable"
+    },
+    {
+      "attribute": "toBSpline",
+      "value": "callable"
+    },
+    {
+      "attribute": "toNurbs",
+      "value": "callable"
+    },
+    {
+      "attribute": "toShape",
+      "value": "callable"
+    },
+    {
+      "attribute": "transform",
+      "value": "callable"
+    },
+    {
+      "attribute": "translate",
+      "value": "callable"
+    },
+    {
+      "attribute": "trim",
+      "value": "callable"
+    },
+    {
+      "attribute": "value",
+      "value": "callable"
+    }
+  ],
+  "state": [
+    "Touched"
+  ],
+  "adapter_targets": [
+    [
+      "PointsMaterials_0",
+      0,
+      0,
+      1,
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    [
+      "PointsMaterials_0",
+      1,
+      0,
+      2,
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    [
+      "PointsMaterials_0",
+      2,
+      1,
+      1,
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    [
+      "PointsMaterials_0",
+      3,
+      1,
+      2,
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    [
+      "PointsMaterials_0",
+      4,
+      2,
+      1,
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    [
+      "PointsMaterials_0",
+      5,
+      2,
+      2,
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    [
+      "PointsMaterials_0",
+      6,
+      3,
+      3,
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    [
+      "PointsMaterials_0",
+      7,
+      4,
+      3,
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    [
+      "CurvesMaterials0",
+      5,
+      5,
+      0
+    ],
+    [
+      "PointsMaterials_0",
+      8,
+      5,
+      3,
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    [
+      "PointsMaterials_0",
+      9,
+      6,
+      1,
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    [
+      "PointsMaterials_0",
+      10,
+      7,
+      1,
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ]
+  ],
+  "adapter_writes": 2,
+  "adapter_timer": {
+    "active": true,
+    "interval": 25,
+    "busy": false
+  },
+  "constraint_api": [
+    {
+      "attribute": "Content",
+      "value": "<Constrain Name=\"\" Type=\"7\" Value=\"-30\" LabelDistance=\"10\" LabelPosition=\"0\" IsDriving=\"1\" IsInVirtualSpace=\"0\" IsVisible=\"1\" IsActive=\"1\" First=\"1\" FirstPos=\"1\" Second=\"-2000\" SecondPos=\"0\" Third=\"-2000\" ThirdPos=\"0\" ElementIds=\"1 -2000 -2000\" ElementPositions=\"1 0 0\" />\n"
+    },
+    {
+      "attribute": "Driving",
+      "value": "True"
+    },
+    {
+      "attribute": "First",
+      "value": "1"
+    },
+    {
+      "attribute": "FirstPos",
+      "value": "1"
+    },
+    {
+      "attribute": "InVirtualSpace",
+      "value": "False"
+    },
+    {
+      "attribute": "IsActive",
+      "value": "True"
+    },
+    {
+      "attribute": "LabelDistance",
+      "value": "10.0"
+    },
+    {
+      "attribute": "LabelPosition",
+      "value": "0.0"
+    },
+    {
+      "attribute": "MemSize",
+      "value": "0"
+    },
+    {
+      "attribute": "Module",
+      "value": "Sketcher"
+    },
+    {
+      "attribute": "Name",
+      "value": ""
+    },
+    {
+      "attribute": "Second",
+      "value": "-2000"
+    },
+    {
+      "attribute": "SecondPos",
+      "value": "0"
+    },
+    {
+      "attribute": "Third",
+      "value": "-2000"
+    },
+    {
+      "attribute": "ThirdPos",
+      "value": "0"
+    },
+    {
+      "attribute": "Type",
+      "value": "DistanceX"
+    },
+    {
+      "attribute": "TypeId",
+      "value": "Sketcher::Constraint"
+    },
+    {
+      "attribute": "Value",
+      "value": "-30.0"
+    },
+    {
+      "attribute": "dumpContent",
+      "value": "callable"
+    },
+    {
+      "attribute": "getAllDerivedFrom",
+      "value": "callable"
+    },
+    {
+      "attribute": "isDerivedFrom",
+      "value": "callable"
+    },
+    {
+      "attribute": "restoreContent",
+      "value": "callable"
+    }
+  ],
+  "dependent_parameters_doc": "getGeometryWithDependentParameters - returns a list of geoid posid pairs\nwith all the geometry element edges and vertices which the solver regards\nas being dependent on other parameters.",
+  "dependent_parameters": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      6,
+      1
+    ]
+  ],
+  "extensions": [
+    {
+      "geo": 0,
+      "requested": "Sketcher::SolverGeometryExtension",
+      "error": "Geometry extension does not implement a Python counterpart."
+    },
+    {
+      "geo": 0,
+      "requested": "SolverGeometryExtension",
+      "error": "Exception type does not exist"
+    },
+    {
+      "geo": 0,
+      "api": [
+        {
+          "attribute": "Blocked",
+          "value": "False"
+        },
+        {
+          "attribute": "Construction",
+          "value": "False"
+        },
+        {
+          "attribute": "GeometryLayerId",
+          "value": "0"
+        },
+        {
+          "attribute": "Id",
+          "value": "1"
+        },
+        {
+          "attribute": "InternalType",
+          "value": "None"
+        },
+        {
+          "attribute": "Name",
+          "value": ""
+        },
+        {
+          "attribute": "copy",
+          "value": "callable"
+        },
+        {
+          "attribute": "setGeometryMode",
+          "value": "callable"
+        },
+        {
+          "attribute": "testGeometryMode",
+          "value": "callable"
+        }
+      ]
+    },
+    {
+      "geo": 1,
+      "requested": "Sketcher::SolverGeometryExtension",
+      "error": "Geometry extension does not implement a Python counterpart."
+    },
+    {
+      "geo": 1,
+      "requested": "SolverGeometryExtension",
+      "error": "Exception type does not exist"
+    },
+    {
+      "geo": 1,
+      "api": [
+        {
+          "attribute": "Blocked",
+          "value": "False"
+        },
+        {
+          "attribute": "Construction",
+          "value": "False"
+        },
+        {
+          "attribute": "GeometryLayerId",
+          "value": "0"
+        },
+        {
+          "attribute": "Id",
+          "value": "2"
+        },
+        {
+          "attribute": "InternalType",
+          "value": "None"
+        },
+        {
+          "attribute": "Name",
+          "value": ""
+        },
+        {
+          "attribute": "copy",
+          "value": "callable"
+        },
+        {
+          "attribute": "setGeometryMode",
+          "value": "callable"
+        },
+        {
+          "attribute": "testGeometryMode",
+          "value": "callable"
+        }
+      ]
+    },
+    {
+      "geo": 2,
+      "requested": "Sketcher::SolverGeometryExtension",
+      "error": "Geometry extension does not implement a Python counterpart."
+    },
+    {
+      "geo": 2,
+      "requested": "SolverGeometryExtension",
+      "error": "Exception type does not exist"
+    },
+    {
+      "geo": 2,
+      "api": [
+        {
+          "attribute": "Blocked",
+          "value": "False"
+        },
+        {
+          "attribute": "Construction",
+          "value": "False"
+        },
+        {
+          "attribute": "GeometryLayerId",
+          "value": "0"
+        },
+        {
+          "attribute": "Id",
+          "value": "3"
+        },
+        {
+          "attribute": "InternalType",
+          "value": "None"
+        },
+        {
+          "attribute": "Name",
+          "value": ""
+        },
+        {
+          "attribute": "copy",
+          "value": "callable"
+        },
+        {
+          "attribute": "setGeometryMode",
+          "value": "callable"
+        },
+        {
+          "attribute": "testGeometryMode",
+          "value": "callable"
+        }
+      ]
+    },
+    {
+      "geo": 3,
+      "requested": "Sketcher::SolverGeometryExtension",
+      "error": "Geometry extension does not implement a Python counterpart."
+    },
+    {
+      "geo": 3,
+      "requested": "SolverGeometryExtension",
+      "error": "Exception type does not exist"
+    },
+    {
+      "geo": 3,
+      "api": [
+        {
+          "attribute": "Blocked",
+          "value": "False"
+        },
+        {
+          "attribute": "Construction",
+          "value": "False"
+        },
+        {
+          "attribute": "GeometryLayerId",
+          "value": "0"
+        },
+        {
+          "attribute": "Id",
+          "value": "4"
+        },
+        {
+          "attribute": "InternalType",
+          "value": "None"
+        },
+        {
+          "attribute": "Name",
+          "value": ""
+        },
+        {
+          "attribute": "copy",
+          "value": "callable"
+        },
+        {
+          "attribute": "setGeometryMode",
+          "value": "callable"
+        },
+        {
+          "attribute": "testGeometryMode",
+          "value": "callable"
+        }
+      ]
+    },
+    {
+      "geo": 5,
+      "requested": "Sketcher::SolverGeometryExtension",
+      "error": "Geometry extension does not implement a Python counterpart."
+    },
+    {
+      "geo": 5,
+      "requested": "SolverGeometryExtension",
+      "error": "Exception type does not exist"
+    },
+    {
+      "geo": 5,
+      "api": [
+        {
+          "attribute": "Blocked",
+          "value": "True"
+        },
+        {
+          "attribute": "Construction",
+          "value": "False"
+        },
+        {
+          "attribute": "GeometryLayerId",
+          "value": "0"
+        },
+        {
+          "attribute": "Id",
+          "value": "6"
+        },
+        {
+          "attribute": "InternalType",
+          "value": "None"
+        },
+        {
+          "attribute": "Name",
+          "value": ""
+        },
+        {
+          "attribute": "copy",
+          "value": "callable"
+        },
+        {
+          "attribute": "setGeometryMode",
+          "value": "callable"
+        },
+        {
+          "attribute": "testGeometryMode",
+          "value": "callable"
+        }
+      ]
+    },
+    {
+      "geo": 7,
+      "requested": "Sketcher::SolverGeometryExtension",
+      "error": "Geometry extension does not implement a Python counterpart."
+    },
+    {
+      "geo": 7,
+      "requested": "SolverGeometryExtension",
+      "error": "Exception type does not exist"
+    },
+    {
+      "geo": 7,
+      "api": [
+        {
+          "attribute": "Blocked",
+          "value": "True"
+        },
+        {
+          "attribute": "Construction",
+          "value": "False"
+        },
+        {
+          "attribute": "GeometryLayerId",
+          "value": "0"
+        },
+        {
+          "attribute": "Id",
+          "value": "8"
+        },
+        {
+          "attribute": "InternalType",
+          "value": "None"
+        },
+        {
+          "attribute": "Name",
+          "value": ""
+        },
+        {
+          "attribute": "copy",
+          "value": "callable"
+        },
+        {
+          "attribute": "setGeometryMode",
+          "value": "callable"
+        },
+        {
+          "attribute": "testGeometryMode",
+          "value": "callable"
+        }
+      ]
+    }
+  ],
+  "sketcher_module_api": [
+    "Constraint",
+    "ExternalGeometryExtension",
+    "ExternalGeometryFacade",
+    "GeometryFacade",
+    "Sketch",
+    "SketchGeometryExtension",
+    "__doc__",
+    "__file__",
+    "__loader__",
+    "__name__",
+    "__package__",
+    "__spec__",
+    "insert",
+    "open"
+  ],
+  "dimension_preferences": {
+    "ConstrainedDimColor": "0xff",
+    "NonDrivingConstrDimColor": "0xff",
+    "ExprBasedConstrDimColor": "0xff",
+    "DeactivatedConstrDimColor": "0xff"
+  },
+  "constraint_nodes": [
+    "<pivy.coin.SoSeparator; proxy of <Swig Object of type 'SoSeparator *' at 0x0000024AC13BB450> >",
+    "<pivy.coin.SoSeparator; proxy of <Swig Object of type 'SoSeparator *' at 0x0000024AC13BB450> >",
+    "<pivy.coin.SoSeparator; proxy of <Swig Object of type 'SoSeparator *' at 0x0000024AC13BB450> >",
+    "<pivy.coin.SoSeparator; proxy of <Swig Object of type 'SoSeparator *' at 0x0000024AC13BB450> >",
+    "<pivy.coin.SoSeparator; proxy of <Swig Object of type 'SoSeparator *' at 0x0000024AC13BB450> >",
+    "<pivy.coin.SoSeparator; proxy of <Swig Object of type 'SoSeparator *' at 0x0000024AC13BB450> >",
+    "<pivy.coin.SoSeparator; proxy of <Swig Object of type 'SoSeparator *' at 0x0000024AC13BB450> >"
+  ],
+  "constraint_children": [
+    {
+      "index": 0,
+      "nodes": [
+        "<pivy.coin.SoShape; proxy of <Swig Object of type 'SoShape *' at 0x0000024AC13B84E0> >"
+      ]
+    },
+    {
+      "index": 1,
+      "nodes": [
+        "<pivy.coin.SoShape; proxy of <Swig Object of type 'SoShape *' at 0x0000024AC13B84B0> >"
+      ]
+    },
+    {
+      "index": 2,
+      "nodes": [
+        "<pivy.coin.SoShape; proxy of <Swig Object of type 'SoShape *' at 0x0000024AC13B84E0> >"
+      ]
+    },
+    {
+      "index": 3,
+      "nodes": [
+        "<pivy.coin.SoShape; proxy of <Swig Object of type 'SoShape *' at 0x0000024AC13B84B0> >"
+      ]
+    },
+    {
+      "index": 4,
+      "nodes": [
+        "<pivy.coin.SoShape; proxy of <Swig Object of type 'SoShape *' at 0x0000024AC13B84E0> >"
+      ]
+    },
+    {
+      "index": 5,
+      "nodes": [
+        "<pivy.coin.SoMaterial; proxy of <Swig Object of type 'SoMaterial *' at 0x0000024AC13B84B0> >",
+        "<pivy.coin.SoTranslation; proxy of <Swig Object of type 'SoTranslation *' at 0x0000024AC13B8510> >",
+        "<pivy.coin.SoImage; proxy of <Swig Object of type 'SoImage *' at 0x0000024AC13B8540> >",
+        "<pivy.coin.SoInfo; proxy of <Swig Object of type 'SoInfo *' at 0x0000024AC13B8270> >",
+        "<pivy.coin.SoTranslation; proxy of <Swig Object of type 'SoTranslation *' at 0x0000024AC13B8270> >",
+        "<pivy.coin.SoImage; proxy of <Swig Object of type 'SoImage *' at 0x0000024AC13B8270> >",
+        "<pivy.coin.SoInfo; proxy of <Swig Object of type 'SoInfo *' at 0x0000024AC13B8270> >"
+      ]
+    },
+    {
+      "index": 6,
+      "nodes": [
+        "<pivy.coin.SoMaterial; proxy of <Swig Object of type 'SoMaterial *' at 0x0000024AC13B84E0> >",
+        "<pivy.coin.SoTranslation; proxy of <Swig Object of type 'SoTranslation *' at 0x0000024AC13B84E0> >",
+        "<pivy.coin.SoImage; proxy of <Swig Object of type 'SoImage *' at 0x0000024AC13B84E0> >",
+        "<pivy.coin.SoInfo; proxy of <Swig Object of type 'SoInfo *' at 0x0000024AC13B84E0> >",
+        "<pivy.coin.SoTranslation; proxy of <Swig Object of type 'SoTranslation *' at 0x0000024AC13B84E0> >",
+        "<pivy.coin.SoImage; proxy of <Swig Object of type 'SoImage *' at 0x0000024AC13B84E0> >",
+        "<pivy.coin.SoInfo; proxy of <Swig Object of type 'SoInfo *' at 0x0000024AC13B84E0> >"
+      ]
+    }
+  ],
+  "rendered_points": [
+    {
+      "label": "Rendered fixed endpoint is black",
+      "matches": 48,
+      "pixel": [
+        261,
+        603
+      ]
+    },
+    {
+      "label": "Rendered free endpoint is blue",
+      "matches": 48,
+      "pixel": [
+        440,
+        603
+      ]
+    },
+    {
+      "label": "Rendered fixed center with free radius is black",
+      "matches": 49,
+      "pixel": [
+        709,
+        872
+      ]
+    },
+    {
+      "label": "Rendered free circle center is blue",
+      "matches": 48,
+      "pixel": [
+        709,
+        603
+      ]
+    }
+  ],
+  "source_unchanged": true,
+  "check_count": 31
+}

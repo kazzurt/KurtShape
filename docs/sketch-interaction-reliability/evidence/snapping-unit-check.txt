@@ -1,0 +1,10 @@
+test_existing_larger_aperture_and_disabled_snap_are_restored (__main__.SketchSnappingTests.test_existing_larger_aperture_and_disabled_snap_are_restored) ... ok
+test_high_dpi_uses_physical_pixels_for_same_logical_capture_area (__main__.SketchSnappingTests.test_high_dpi_uses_physical_pixels_for_same_logical_capture_area) ... ok
+test_missing_origin_never_retries_scene_search_during_idle_ticks (__main__.SketchSnappingTests.test_missing_origin_never_retries_scene_search_during_idle_ticks) ... ok
+test_native_edit_enables_point_snaps_and_restores_absent_preferences (__main__.SketchSnappingTests.test_native_edit_enables_point_snaps_and_restores_absent_preferences) ... ok
+test_repeated_begin_keeps_original_lifetime_and_user_changes_survive (__main__.SketchSnappingTests.test_repeated_begin_keeps_original_lifetime_and_user_changes_survive) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.000s
+
+OK

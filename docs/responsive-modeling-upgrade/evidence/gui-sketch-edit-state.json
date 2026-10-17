@@ -1,0 +1,880 @@
+{
+  "passed": true,
+  "checks": [
+    "Native solver color preferences are blue, black and red",
+    "Earlier sketch enters managed native editing",
+    "Future sketch and future part are hidden across shared history",
+    "The previous plate remains visible while editing the earlier sketch",
+    "Historical edit does not move persisted rollback or body tips",
+    "Historical source guard accepts prior plate and rejects future part",
+    "Later geometry cannot be imported through a raw projection request",
+    "Mixed-color fixture has remaining degrees of freedom",
+    "Fixed line is black inside a partially constrained sketch",
+    "Free line is blue",
+    "Fixed circle is black",
+    "Free circle is blue",
+    "Fixed endpoint is black",
+    "Free endpoint is blue",
+    "Construction geometry uses the same underconstrained blue",
+    "Free construction line is blue and retains its dashed style",
+    "Idle production ticks make no material writes",
+    "A fixed curve retains native hover highlighting",
+    "The Block color adapter preserves preselection color",
+    "Native viewport click selects the fixed sketch edge",
+    "The Block color adapter preserves native selection color",
+    "The selected fixed curve remains highlighted",
+    "Dimensional fixture remains a partially constrained sketch",
+    "Dimensionally constrained line is black in a mixed sketch",
+    "Dimensionally constrained circle is black in a mixed sketch",
+    "Dimensionally constrained endpoint is black",
+    "A fixed standalone sketch point is black",
+    "A free standalone sketch point is blue",
+    "A fixed arc is black in a mixed sketch",
+    "A defining projected edge is fully constrained black",
+    "A projected reference edge is fully constrained black",
+    "The conflicting length creates an actual native solver error",
+    "A conflicting sketch renders its free curve red",
+    "A conflicting sketch renders its point red",
+    "Removing the conflict restores blue free geometry",
+    "The native solver reports the fully constrained fixture",
+    "A fully constrained line is black",
+    "A fully constrained curve is black",
+    "A fully constrained point is black",
+    "A fully constrained construction line is black",
+    "Cancel restores every original visibility",
+    "Earlier sketch can be reopened after cancellation",
+    "Future geometry stays hidden after a production refresh",
+    "Finish restores other visibility and reveals the accepted unused sketch",
+    "History boundary remains unchanged after Finish and Cancel"
+  ],
+  "samples": [
+    {
+      "name": "Fixed line is black inside a partially constrained sketch",
+      "world": [
+        -25,
+        -12,
+        0
+      ],
+      "pixel": [
+        169,
+        790
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Free line is blue",
+      "world": [
+        -25,
+        0,
+        0
+      ],
+      "pixel": [
+        169,
+        655
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        255
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Fixed circle is black",
+      "world": [
+        -5,
+        -12,
+        0
+      ],
+      "pixel": [
+        394,
+        790
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          235,
+          235,
+          235
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Free circle is blue",
+      "world": [
+        -5,
+        0,
+        0
+      ],
+      "pixel": [
+        394,
+        655
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        255
+      ],
+      "matching_pixels": 28,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          204,
+          51,
+          51
+        ],
+        [
+          235,
+          235,
+          235
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Fixed endpoint is black",
+      "world": [
+        -30,
+        -12,
+        0
+      ],
+      "pixel": [
+        113,
+        790
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 68,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Free endpoint is blue",
+      "world": [
+        -30,
+        0,
+        0
+      ],
+      "pixel": [
+        113,
+        655
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        255
+      ],
+      "matching_pixels": 76,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Free construction line is blue and retains its dashed style",
+      "world": [
+        -25,
+        12,
+        0
+      ],
+      "pixel": [
+        169,
+        520
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        255
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "The selected fixed curve remains highlighted",
+      "world": [
+        -25,
+        -12,
+        0
+      ],
+      "pixel": [
+        169,
+        790
+      ],
+      "expected_rgb": [
+        92,
+        122,
+        28
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          92,
+          122,
+          28
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Dimensionally constrained line is black in a mixed sketch",
+      "world": [
+        -25,
+        -24,
+        0
+      ],
+      "pixel": [
+        169,
+        925
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Dimensionally constrained circle is black in a mixed sketch",
+      "world": [
+        -5,
+        -24,
+        0
+      ],
+      "pixel": [
+        394,
+        925
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 45,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          235,
+          235,
+          235
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Dimensionally constrained endpoint is black",
+      "world": [
+        -30,
+        -24,
+        0
+      ],
+      "pixel": [
+        113,
+        925
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 71,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A fixed standalone sketch point is black",
+      "world": [
+        -38,
+        -12,
+        0
+      ],
+      "pixel": [
+        23,
+        790
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 68,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A free standalone sketch point is blue",
+      "world": [
+        -38,
+        0,
+        0
+      ],
+      "pixel": [
+        23,
+        655
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        255
+      ],
+      "matching_pixels": 76,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A fixed arc is black in a mixed sketch",
+      "world": [
+        -5,
+        12,
+        0
+      ],
+      "pixel": [
+        394,
+        520
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A defining projected edge is fully constrained black",
+      "world": [
+        20.0,
+        30.0,
+        0
+      ],
+      "pixel": [
+        676,
+        317
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          146,
+          152,
+          158
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A projected reference edge is fully constrained black",
+      "world": [
+        20.0,
+        30.0,
+        0
+      ],
+      "pixel": [
+        676,
+        317
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          146,
+          152,
+          158
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A conflicting sketch renders its free curve red",
+      "world": [
+        -5,
+        0,
+        0
+      ],
+      "pixel": [
+        394,
+        655
+      ],
+      "expected_rgb": [
+        255,
+        0,
+        0
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          235,
+          235,
+          235
+        ],
+        [
+          255,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A conflicting sketch renders its point red",
+      "world": [
+        -30,
+        0,
+        0
+      ],
+      "pixel": [
+        113,
+        655
+      ],
+      "expected_rgb": [
+        255,
+        0,
+        0
+      ],
+      "matching_pixels": 76,
+      "sample_rgb": [
+        [
+          255,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Removing the conflict restores blue free geometry",
+      "world": [
+        -5,
+        0,
+        0
+      ],
+      "pixel": [
+        394,
+        655
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        255
+      ],
+      "matching_pixels": 28,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          235,
+          235,
+          235
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A fully constrained line is black",
+      "world": [
+        -25,
+        0,
+        0
+      ],
+      "pixel": [
+        169,
+        655
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A fully constrained curve is black",
+      "world": [
+        -5,
+        0,
+        0
+      ],
+      "pixel": [
+        394,
+        655
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 45,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          235,
+          235,
+          235
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A fully constrained point is black",
+      "world": [
+        -30,
+        0,
+        0
+      ],
+      "pixel": [
+        113,
+        655
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 76,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A fully constrained construction line is black",
+      "world": [
+        -25,
+        12,
+        0
+      ],
+      "pixel": [
+        169,
+        520
+      ],
+      "expected_rgb": [
+        0,
+        0,
+        0
+      ],
+      "matching_pixels": 27,
+      "sample_rgb": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    }
+  ],
+  "screens": [
+    "native-selection-highlight.png",
+    "mixed-native-solver-colors.png",
+    "native-solver-error-red.png",
+    "fully-constrained-native-black.png"
+  ],
+  "pid": 75264,
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "method": "Production Panel and native Sketcher solver/render in an isolated hidden process, with the production timer running.",
+  "history": {
+    "order": [
+      "PriorProfile",
+      "PriorPlate",
+      "EarlySketch",
+      "FutureProfile",
+      "FuturePart"
+    ],
+    "before_visibility": {
+      "KurtShapeProject": true,
+      "Body": true,
+      "Origin": false,
+      "X_Axis": true,
+      "Y_Axis": true,
+      "Z_Axis": true,
+      "XY_Plane": true,
+      "XZ_Plane": true,
+      "YZ_Plane": true,
+      "Origin001": true,
+      "PriorProfile": true,
+      "PriorPlate": true,
+      "EarlySketch": false,
+      "FutureProfile": true,
+      "FuturePartProfile": false,
+      "FuturePart": false,
+      "FuturePartToolBody": true,
+      "Origin002": false,
+      "X_Axis001": true,
+      "Y_Axis001": true,
+      "Z_Axis001": true,
+      "XY_Plane001": true,
+      "XZ_Plane001": true,
+      "YZ_Plane001": true,
+      "Origin003": true,
+      "BaseFeature": true
+    },
+    "before_tips": {
+      "Body": "PriorPlate",
+      "FuturePartToolBody": "BaseFeature"
+    },
+    "rollback": 5
+  },
+  "conflict_solve": -3,
+  "project": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-5e3fe1aa2b884e03ad1cd5a27d6611e4\\evidence\\sketch-edit-state\\earlier-sketch-colors-visibility.FCStd",
+  "check_count": 45
+}

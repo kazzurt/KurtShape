@@ -1,0 +1,111 @@
+{
+  "passed": true,
+  "checks": [
+    "Valid preview enables Confirm",
+    "Confirm closes accepted feature dock",
+    "Plane can be created in a blank studio",
+    "Undo removes a blank studio plane",
+    "Valid preview enables Confirm",
+    "Confirm closes accepted feature dock",
+    "Plane in a two part studio uses the active sketch owner",
+    "Fillet opens with zero selected edges",
+    "Feature editor is a modeless dock",
+    "Viewport click after starting Fillet collects an edge",
+    "Reference field removes an edge",
+    "Ctrl adding an edge after preview retains the explicit removal",
+    "Valid preview enables Confirm",
+    "Confirm closes accepted feature dock",
+    "Fillet adds one native undo step",
+    "Undo invalidates and closes the staged feature panel",
+    "Valid preview enables Confirm",
+    "Confirm closes accepted feature dock",
+    "New reference plane appears in history",
+    "Plane has offset native attachment",
+    "Mirror accepts an existing plane from history",
+    "Valid preview enables Confirm",
+    "Confirm closes accepted feature dock",
+    "Mirror creates a second semantic part",
+    "Face Remove depth can be edited",
+    "Extrude Remove from a flat face previews",
+    "Face Extrude Remove offsets inward",
+    "Extrude directly from a planar face previews",
+    "Face extrusion changes solid height",
+    "Valid preview enables Confirm",
+    "Confirm closes accepted feature dock",
+    "Move face offsets inward",
+    "Revolve receives a line from its own profile",
+    "Valid preview enables Confirm",
+    "Confirm closes accepted feature dock",
+    "Selected-axis revolve creates valid solid",
+    "Use shortcut starts in actual native Sketcher edit",
+    "Use fixture has four source profile edges",
+    "Model edges can be selected during native sketch edit",
+    "Viewport focus keeps the active sketch for U",
+    "U projects selected model edges as an associated closed sketch",
+    "Finish commits the projected sketch",
+    "Used edges can create a solid extrusion",
+    "Used sketch and extrusion update with source edges",
+    "Compact workspace retains usable viewport"
+  ],
+  "screens": [
+    "fillet-pick-after-command.png",
+    "plane-editor.png",
+    "mirror-existing-plane.png",
+    "remove-from-planar-face.png",
+    "extrude-planar-face.png",
+    "move-face-inward.png",
+    "revolve-profile-line-axis.png",
+    "use-shortcut-diagnostics.png",
+    "use-shortcut-associated-edges.png",
+    "compact-workspace.png"
+  ],
+  "method": "Production feature docks, Qt button and viewport clicks, native geometry; private hidden FreeCAD process.",
+  "use_diagnostics": {
+    "message": "Used UseSource \u00b7 Edge4, UseSource \u00b7 Edge7, UseSource \u00b7 Edge10, UseSource \u00b7 Edge12 \u00b7 linked to source geometry",
+    "context": "sketch",
+    "references": [],
+    "external": [
+      [
+        "UsedProfileUseSource",
+        [
+          "Edge1"
+        ]
+      ],
+      [
+        "UsedProfileUseSource001",
+        [
+          "Edge1"
+        ]
+      ],
+      [
+        "UsedProfileUseSource002",
+        [
+          "Edge1"
+        ]
+      ],
+      [
+        "UsedProfileUseSource003",
+        [
+          "Edge1"
+        ]
+      ]
+    ],
+    "geometry_count": 0,
+    "external_geo_count": 6,
+    "shape_edges": 4,
+    "shape_wires": 1,
+    "state": [
+      "Up-to-date"
+    ],
+    "u_action": {
+      "id": "sketch.project",
+      "key": "U",
+      "contexts": [
+        "sketch"
+      ],
+      "label": "Use / project external geometry",
+      "status": "native",
+      "native_command": "Sketcher_Projection"
+    }
+  }
+}

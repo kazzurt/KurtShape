@@ -1,0 +1,238 @@
+{
+  "passed": true,
+  "checks": [
+    "Actual saved native dark theme is reproduced",
+    "Inherited pale sketch text conflicts with white canvas",
+    "Actual native ReportOutput is available",
+    "Native profile now records FreeCAD Light",
+    "Owned application CSS survives deferred native startup",
+    "Model default and selection preferences are preserved",
+    "CursorTextColor is readable on white canvas",
+    "SketchEdgeColor is readable on white canvas",
+    "EditedEdgeColor is readable on white canvas",
+    "CreateLineColor is readable on white canvas",
+    "Inherited report text is preserved and readable",
+    "Retained native highlighter warning/error/text formats are readable",
+    "Delayed native stylesheet replacement is repaired",
+    "Input palette changes recover even with unchanged WindowText",
+    "light-shell-after-dark-profile actual native widget capture saved",
+    "Private model fixture created",
+    "Native sketch fixture created",
+    "Native solid fixture created",
+    "Actual native sketch edit remains available",
+    "native-sketch-readable actual native widget capture saved",
+    "Theme recovery preserves sketch and solid geometry",
+    "native-report-readable actual native widget capture saved",
+    "Inherited report text is preserved and readable",
+    "Inherited report text is preserved and readable",
+    "Retained native highlighter warning/error/text formats are readable",
+    "Settings exposes the active light appearance",
+    "appearance-settings actual native widget capture saved",
+    "Actual Restore light appearance button succeeds",
+    "Restore retains model BRep and owned styling",
+    "Inherited report text is preserved and readable"
+  ],
+  "snapshots": [
+    {
+      "state": "native startup",
+      "native_theme": "FreeCAD Dark",
+      "app_css_length": 70183,
+      "main_css_length": 0,
+      "window_text": "#000000",
+      "window": "#f0f0f0",
+      "edited_edge": "0xf1f3f5ff",
+      "cursor_text": "0xadb5bdff",
+      "report_text": "0xd4d4d4ff"
+    },
+    {
+      "state": "before light correction",
+      "native_theme": "FreeCAD Dark",
+      "app_css_length": 70183,
+      "main_css_length": 0,
+      "window_text": "#000000",
+      "window": "#f0f0f0",
+      "edited_edge": "0xf1f3f5ff",
+      "cursor_text": "0xadb5bdff",
+      "report_text": "0xd4d4d4ff"
+    },
+    {
+      "state": "immediately after shell",
+      "native_theme": "FreeCAD Light",
+      "app_css_length": 9985,
+      "main_css_length": 0,
+      "window_text": "#2d3338",
+      "window": "#f5f6f7",
+      "edited_edge": "0x495057ff",
+      "cursor_text": "0x212529ff",
+      "report_text": "0x2d3338ff"
+    },
+    {
+      "state": "after native deferred startup",
+      "native_theme": "FreeCAD Light",
+      "app_css_length": 9985,
+      "main_css_length": 0,
+      "window_text": "#2d3338",
+      "window": "#f5f6f7",
+      "edited_edge": "0x495057ff",
+      "cursor_text": "0x212529ff",
+      "report_text": "0x2d3338ff"
+    },
+    {
+      "state": "final",
+      "native_theme": "FreeCAD Light",
+      "app_css_length": 9985,
+      "main_css_length": 0,
+      "window_text": "#2d3338",
+      "window": "#f5f6f7",
+      "edited_edge": "0x495057ff",
+      "cursor_text": "0x212529ff",
+      "report_text": "0x2d3338ff"
+    }
+  ],
+  "screens": [
+    {
+      "file": "light-shell-after-dark-profile.png",
+      "device_pixel_ratio": 1.5,
+      "logical_size": [
+        1440,
+        917
+      ]
+    },
+    {
+      "file": "native-sketch-readable.png",
+      "device_pixel_ratio": 1.5,
+      "logical_size": [
+        1440,
+        917
+      ]
+    },
+    {
+      "file": "native-report-readable.png",
+      "device_pixel_ratio": 1.5,
+      "logical_size": [
+        660,
+        268
+      ]
+    },
+    {
+      "file": "appearance-settings.png",
+      "device_pixel_ratio": 1.5,
+      "logical_size": [
+        360,
+        208
+      ]
+    }
+  ],
+  "method": "Bundled FreeCAD Dark pack loaded before GUI initialization; real native sketch/report widgets, theme reload and settings clicks in hidden isolated process",
+  "limits": "Native palette/fragment/render checks at actual desktop DPI; no inspection or manipulation of the user's running window",
+  "native_highlighters": [
+    {
+      "class": "QSyntaxHighlighter",
+      "methods": [
+        "destroyed(QObject*)",
+        "destroyed()",
+        "objectNameChanged(QString)",
+        "deleteLater()",
+        "rehighlight()",
+        "rehighlightBlock(QTextBlock)",
+        "_q_reformatBlocks(int,int,int)",
+        "_q_delayedRehighlight()"
+      ]
+    }
+  ],
+  "initial_report_format_colors": [
+    {
+      "color": "#d4d4d4",
+      "text": "23:18:54  Migrating Start Workbench to Start command... done."
+    },
+    {
+      "color": "#ff945f",
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADSta"
+    },
+    {
+      "color": "#ff945f",
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADSta"
+    },
+    {
+      "color": "#ff945f",
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADSta"
+    },
+    {
+      "color": "#ff945f",
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADSta"
+    },
+    {
+      "color": "#ff945f",
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADSta"
+    },
+    {
+      "color": "#ff945f",
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADSta"
+    },
+    {
+      "color": "#ff945f",
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADSta"
+    },
+    {
+      "color": "#ff945f",
+      "text": "Inherited native report readability fixture"
+    }
+  ],
+  "retained_native_report_formats": [
+    {
+      "foreground": "#2d3338",
+      "contrast": 12.787622247902455,
+      "text": "23:18:54  Migrating Start Workbench to Start command... done."
+    },
+    {
+      "foreground": "#8c6005",
+      "contrast": 5.540268693809315,
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\5e5718b"
+    },
+    {
+      "foreground": "#8c6005",
+      "contrast": 5.540268693809315,
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\75292e0"
+    },
+    {
+      "foreground": "#8c6005",
+      "contrast": 5.540268693809315,
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\bb448bc"
+    },
+    {
+      "foreground": "#8c6005",
+      "contrast": 5.540268693809315,
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\9217d59"
+    },
+    {
+      "foreground": "#8c6005",
+      "contrast": 5.540268693809315,
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\18454f9"
+    },
+    {
+      "foreground": "#8c6005",
+      "contrast": 5.540268693809315,
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\00f6208"
+    },
+    {
+      "foreground": "#8c6005",
+      "contrast": 5.540268693809315,
+      "text": "23:18:56  QIODevice::read (QFile, \"C:\\Users\\Kurtz\\AppData\\Local\\cache\\FreeCADStartThumbnails\\b422966"
+    },
+    {
+      "foreground": "#8c6005",
+      "contrast": 5.540268693809315,
+      "text": "Inherited native report readability fixture"
+    },
+    {
+      "foreground": "#bd3039",
+      "contrast": 5.760327586039855,
+      "text": "23:19:07  Reading failed from embedded file: Profile.InternalShape.bin (0 bytes, 2 bytes compressed)"
+    },
+    {
+      "foreground": "#2d3338",
+      "contrast": 12.787622247902455,
+      "text": "23:19:07  New native report text after light correction"
+    }
+  ]
+}

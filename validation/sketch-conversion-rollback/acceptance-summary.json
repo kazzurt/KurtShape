@@ -1,0 +1,121 @@
+{
+  "passed": true,
+  "date": "2026-10-05",
+  "timezone": "America/Los_Angeles",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "source_unchanged": true,
+  "regressions": {
+    "tests": 253,
+    "passed": 253,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "regression_suites": {
+    "native": {
+      "tests": 218,
+      "passed": 218,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "expected_failures": 0
+    },
+    "bridge": {
+      "tests": 7,
+      "passed": 7,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "expected_failures": 0
+    },
+    "shortcuts": {
+      "tests": 22,
+      "passed": 22,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "expected_failures": 0
+    },
+    "workflows": {
+      "tests": 6,
+      "passed": 6,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "expected_failures": 0
+    }
+  },
+  "workflow_assertions": 415,
+  "gui_checks": 257,
+  "gui": {
+    "sketch": {
+      "checks": 67,
+      "exit_code": 0,
+      "report": "sketch/gui-result.json",
+      "receipt": "receipts/sketch.json",
+      "original_session": "runtime/ci-gui/sketch-references/run-5de754e2c8314655bbc09f413fad80af",
+      "native_shape_constraint_warnings": 0,
+      "performance": {
+        "conversion_dispatch_ms": [
+          51.535,
+          43.235,
+          40.323
+        ],
+        "max_conversion_dispatch_ms": 51.535,
+        "budget_ms": 2000,
+        "method": "Synchronous actual U key dispatch for conversions, excluding artificial QTest waits; this is a bound, not a comparative benchmark."
+      }
+    },
+    "rollback": {
+      "checks": 46,
+      "exit_code": 0,
+      "report": "rollback/gui-result.json",
+      "receipt": "receipts/rollback.json",
+      "original_session": "runtime/ci-gui/rollback-history/run-858f5c1ba09747a98ef14de10ae4ebfb",
+      "idle_marker_paints_600ms": 0
+    },
+    "part-studio": {
+      "checks": 99,
+      "exit_code": 0,
+      "report": "regression/part-studio-gui.json",
+      "receipt": "receipts/part-studio.json",
+      "original_session": "runtime/ci-gui/part-studio/run-6f1681347ad74ed9afa188d4878ce972"
+    },
+    "workflows": {
+      "checks": 45,
+      "exit_code": 0,
+      "report": "regression/workflows-gui.json",
+      "receipt": "receipts/workflows.json",
+      "original_session": "runtime/ci-gui/onshape-workflows/run-f10ada1dc29f4a7f908251f526c62513"
+    }
+  },
+  "editable_examples": [
+    "sketch/face-sketch-references.FCStd",
+    "sketch/face-sketch-references-source-updated.FCStd",
+    "rollback/rollback-history.FCStd"
+  ],
+  "screenshots": [
+    "sketch/hover-body-edge-before-u.png",
+    "sketch/circle-dimensions-and-parallel-used-edge.png",
+    "rollback/between-extrusion-and-hole-history.png"
+  ],
+  "development_note": "The earlier 104930 full run passed all 253 cases but was rejected by its source-change guard after the final held-feature keyboard guard changed ui.py. It is retained under runtime and excluded from acceptance.",
+  "limits": [
+    "GUI/performance measurements use small synthetic native fixtures; the user's actual unsaved document was not accessed.",
+    "Native command timings exclude artificial QTest waits and are not a whole-application speed guarantee.",
+    "The separate M1 conversion milestone and paused long-run pilot remain unchanged."
+  ]
+}

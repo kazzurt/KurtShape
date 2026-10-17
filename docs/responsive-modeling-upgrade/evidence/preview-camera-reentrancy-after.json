@@ -1,0 +1,9 @@
+{
+  "ui_after": {
+    "camera": "new orbit during snapshot",
+    "selection": "new face during snapshot"
+  },
+  "new_user_input_preserved": true,
+  "worker_submitted": 1,
+  "error": null
+}

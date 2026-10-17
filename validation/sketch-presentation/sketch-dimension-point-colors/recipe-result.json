@@ -1,0 +1,17 @@
+{
+  "recipe": "sketch-dimension-point-colors",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-dimension-point-colors\\run-baac91cfc981482694025f29840229cd",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\sketch-dimension-point-colors-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-dimension-point-colors\\run-baac91cfc981482694025f29840229cd\\evidence\\sketch-dimension-point-colors\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-dimension-point-colors\\run-baac91cfc981482694025f29840229cd\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-dimension-point-colors\\run-baac91cfc981482694025f29840229cd\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-dimension-point-colors\\run-baac91cfc981482694025f29840229cd\\freecad-stderr.txt",
+  "started_utc": "2026-10-05T23:02:35.0602516Z",
+  "exited_utc": "2026-10-05T23:02:50.3809642Z",
+  "pid": 77020,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-05T23:02:50.4209510Z"
+}

@@ -1,0 +1,636 @@
+"""Probe pending toolbar-polyline endpoints using a private recovery copy."""
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import queue
+import re
+import shutil
+import sys
+import time
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from pivy import coin
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+visible_probe=os.environ.get("LINE_FREEZE_VISIBLE")=="1"
+original_cursor_position=QtGui.QCursor.pos() if visible_probe else None
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, not visible_probe)
+main.resize(1440, 920)
+main.show()
+cursor_events=[]
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type()==QtCore.QEvent.CursorChange and isinstance(watched,QtWidgets.QWidget):
+            cursor_events.append({"time":time.perf_counter(),"class":watched.metaObject().className(),"shape":str(watched.cursor().shape()),
+                                  "key":watched.cursor().pixmap().cacheKey()})
+        if not visible_probe and event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("line-endpoint-freeze")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "pid": os.getpid(), "cases": [], "checks": [], "engine": App.Version(),
+          "visible_probe":visible_probe,
+          "recipe_sha256":hashlib.sha256((root/"tools/line-endpoint-freeze-validation.FCMacro").read_bytes()).hexdigest(),
+          "source_sha256": {name: hashlib.sha256((root / "src/kurtshape" / name).read_bytes()).hexdigest()
+                            for name in ("ui.py", "sketch_snapping.py", "sketch_references.py", "shortcuts.py", "sketch_cursor.py", "responsiveness.py")}}
+panel = None
+sketch = None
+cleaned = False
+heartbeats = []
+last_heartbeat = time.perf_counter()
+def heartbeat():
+    global last_heartbeat
+    now = time.perf_counter()
+    heartbeats.append((now-last_heartbeat)*1000)
+    last_heartbeat = now
+heartbeat_timer = QtCore.QTimer()
+heartbeat_timer.setInterval(10)
+heartbeat_timer.timeout.connect(heartbeat)
+heartbeat_timer.start()
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+def stage(label):
+    App.Console.PrintLog("LINE_ENDPOINT_STAGE "+label+"\n")
+def wait(ms=80): QtTest.QTest.qWait(ms)
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(w for w in active.findChildren(QtWidgets.QWidget) if w.metaObject().className() == "QOpenGLWidget" and w.isVisible() and w.width()>300)
+def pixel(local):
+    gl=viewport()
+    p=Gui.activeDocument().activeView().getPointOnViewport(sketch.Placement.multVec(local))
+    return QtCore.QPoint(round(p[0]/gl.devicePixelRatioF()), gl.height()-1-round(p[1]/gl.devicePixelRatioF()))
+def coords():
+    result=[]
+    search=coin.SoSearchAction()
+    search.setType(coin.SoCoordinate3.getClassTypeId())
+    search.setInterest(coin.SoSearchAction.ALL)
+    search.apply(Gui.activeDocument().activeView().getSceneGraph())
+    paths=search.getPaths()
+    for i in range(paths.getLength()):
+        path=paths[i]
+        node=path.getTail()
+        name=str(node.getName())
+        if node.point.getNum()<=12:
+            result.append({"name":name,"parent":str(path.getNode(path.getLength()-2).getName()),
+                           "points":[list(node.point[j].getValue()) for j in range(node.point.getNum())]})
+    return result
+def preview_points():
+    search=coin.SoSearchAction()
+    search.setName("EditCurvesCoordinate")
+    search.apply(Gui.activeDocument().activeView().getSceneGraph())
+    path=search.getPath()
+    if path is None: return []
+    node=path.getTail()
+    return [list(node.point[j].getValue()) for j in range(node.point.getNum())]
+def move(point, sample, dwell=1, capture=False):
+    gl=viewport()
+    if not gl.rect().contains(point):
+        sample.setdefault("offscreen",[]).append([point.x(),point.y()])
+        return
+    event=QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point), QtCore.QPointF(gl.mapToGlobal(point)), QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+    started=time.perf_counter()
+    app.sendEvent(gl,event)
+    elapsed=(time.perf_counter()-started)*1000
+    started_wait=time.perf_counter()
+    wait(dwell)
+    spent_wait=(time.perf_counter()-started_wait)*1000
+    pre=Gui.Selection.getPreselection()
+    entry={"pixel":[point.x(),point.y()],"dispatch_ms":round(elapsed,4),"event_wait_ms":round(spent_wait,4),
+           "preselection":[getattr(pre,"ObjectName",""),list(getattr(pre,"SubElementNames",[]))],"preview":preview_points(),
+           "cursor_pixmap_key":gl.cursor().pixmap().cacheKey()}
+    if capture: entry["coordinates"]=coords()
+    sample["moves"].append(entry)
+def click(point,sample):
+    move(point,sample,60)
+    started=time.perf_counter()
+    hold=int(os.environ.get("LINE_ENDPOINT_CLICK_HOLD_MS","0"))
+    if hold:
+        QtTest.QTest.mousePress(viewport(),QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,point)
+        wait(hold)
+        QtTest.QTest.mouseRelease(viewport(),QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,point)
+    else:
+        QtTest.QTest.mouseClick(viewport(),QtCore.Qt.LeftButton,QtCore.Qt.NoModifier,point)
+    sample.setdefault("click_ms",[]).append((time.perf_counter()-started)*1000)
+    wait(80)
+def command():
+    stage("command begin")
+    if panel:
+        action=next(a for a in panel.sketch_bar.actions() if a.text()=="Line")
+        button=panel.sketch_bar.widgetForAction(action)
+        QtTest.QTest.mouseClick(button,QtCore.Qt.LeftButton)
+    else:
+        Gui.runCommand("Sketcher_CreatePolyline")
+    wait(100)
+    stage("command end")
+def stop():
+    stage("stop begin")
+    if panel: panel.native_command("Sketcher_StopOperation")
+    else: Gui.runCommand("Sketcher_StopOperation")
+    wait(60)
+    stage("stop end")
+def configure(mode):
+    if mode=="no_autoconstraints": sketch.ViewObject.Autoconstraints=False
+    if mode=="no_avoid_redundant": sketch.ViewObject.AvoidRedundant=False
+    if mode=="no_native_snap":
+        prefs=App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher/Snap")
+        prefs.SetBool("Snap",False)
+        prefs.SetBool("SnapToObjects",False)
+    if mode=="no_point_priority":
+        panel.sketch_snapping.before_native=lambda *args: None
+    if mode=="no_adapters":
+        panel.sketch_snapping.restore()
+        panel.sketch_snapping.begin=lambda *args: None
+        panel.sketch_snapping.before_native=lambda *args: None
+        panel.sketch_snapping.sync_tool=lambda *args: None
+        panel.sketch_references.event=lambda *args: False
+    return mode
+def setup(mode):
+    global sketch
+    stage("setup begin")
+    source=Path(os.environ.get("LINE_FREEZE_SOURCE") or os.environ["LINE_ENDPOINT_RECOVERY"])
+    copy=output/(mode+"-recovery-copy.FCStd")
+    shutil.copy2(source,copy)
+    report["input"]={"source":str(source),"sha256":hashlib.sha256(source.read_bytes()).hexdigest(),"copy":str(copy)}
+    if panel:
+        stage("open begin")
+        assert panel.operation("open",path=str(copy)),panel.message.text()
+        stage("open end")
+        doc=panel.document()
+        sketch=doc.getObject("Sketch2")
+        panel.select_feature(sketch.Name)
+        stage("edit begin")
+        panel.edit_sketch()
+        stage("edit end normal begin")
+        panel.normal()
+        stage("normal end")
+    else:
+        doc=App.openDocument(str(copy))
+        sketch=doc.getObject("Sketch2")
+        Gui.activateWorkbench("SketcherWorkbench")
+        Gui.getDocument(doc.Name).setEdit(sketch.Name)
+        Gui.activeDocument().activeView().setCameraOrientation(sketch.Placement.Rotation.Q)
+    wait(200)
+    stage("camera begin")
+    view=Gui.activeDocument().activeView()
+    view.getCameraNode().height.setValue(60)
+    if os.environ.get("LINE_ENDPOINT_BACK_VIEW"):
+        view.setCameraOrientation((sketch.Placement.Rotation*App.Rotation(App.Vector(0,1,0),180)).Q)
+        view.getCameraNode().position.setValue(*tuple(sketch.Placement.multVec(App.Vector(0,10,-50))))
+    else:
+        view.getCameraNode().position.setValue(*tuple(sketch.Placement.multVec(App.Vector(0,10,50))))
+    wait(200)
+    stage("camera end")
+    report["model"]={"placement":str(sketch.Placement),"geometry":[str(g) for g in sketch.Geometry],"external":[str(g) for g in sketch.ExternalGeo],
+        "constraints":[str(c) for c in sketch.Constraints],"camera":view.getCameraOrientation().Q,
+        "autoconstraints":sketch.ViewObject.Autoconstraints,"avoid_redundant":sketch.ViewObject.AvoidRedundant,
+        "snap_preferences":App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher/Snap").GetContents()}
+    configure(mode)
+    Gui.Selection.clearSelection()
+    save()
+    stage("setup end")
+    return doc
+def target_points(doc):
+    targets=[("origin",App.Vector(0,0,0)),("axis_x",App.Vector(9,0,0)),("axis_y",App.Vector(0,9,0))]
+    for i,g in enumerate(sketch.Geometry):
+        for name in ("StartPoint","EndPoint","Center"):
+            if hasattr(g,name): targets.append(("internal"+str(i)+"_"+name,getattr(g,name)))
+    inverse=sketch.Placement.inverse()
+    support=sketch.AttachmentSupport[0]
+    face=support[0].Shape.getElement(support[1][0])
+    for i,vertex in enumerate(face.Vertexes): targets.append(("body_vertex"+str(i),inverse.multVec(vertex.Point)))
+    for i,edge in enumerate(face.Edges): targets.append(("body_midpoint"+str(i),inverse.multVec(edge.CenterOfMass)))
+    return targets
+def visible_run(doc):
+    """Opt-in visible, physical-pointer probe; the launcher requires approval."""
+    deadline=time.perf_counter()+25
+    main.setWindowTitle("KurtShape · private line endpoint diagnostic")
+    main.show()
+    main.raise_()
+    main.activateWindow()
+    wait(250)
+    targets=target_points(doc)
+    chosen=[entry for entry in targets if entry[0] in ("origin","internal0_EndPoint")]
+    helper=getattr(panel,"sketch_cursor",None)
+    normal_sync=helper.sync if helper else None
+    normal_event=helper.event if helper else None
+    cases=[(phase,label,target) for phase in (("native","cached") if helper else ("native",)) for label,target in chosen]
+    report["cursor_helper_available"]=helper is not None
+    for phase,label,target in cases:
+        if time.perf_counter()>deadline: break
+        if helper:
+            normal_sync(None)
+            helper.sync=(lambda *args: None) if phase=="native" else normal_sync
+            helper.event=(lambda *args: False) if phase=="native" else normal_event
+        sample={"phase":phase,"target":label,"local":tuple(target),"physical_pointer":True,"moves":[],"before_count":sketch.GeometryCount,
+                "cursor_helper_before":helper.counters if helper else None}
+        report["cases"].append(sample)
+        command()
+        start=pixel(App.Vector(5.7,11.3,0))
+        QtGui.QCursor.setPos(viewport().mapToGlobal(start))
+        wait(40)
+        click(start,sample)
+        center=pixel(target)
+        cursor_before=len(cursor_events)
+        for repetition in range(3):
+            for dx in range(36,-37,-3):
+                if time.perf_counter()>deadline: break
+                point=center+QtCore.QPoint(dx,round(11*math.sin(dx/7)))
+                if not viewport().rect().contains(point): continue
+                started=time.perf_counter()
+                QtGui.QCursor.setPos(viewport().mapToGlobal(point))
+                wait(16)
+                vertices=preview_points()
+                entry={"pixel":[point.x(),point.y()],"setpos_and_events_ms":(time.perf_counter()-started)*1000,"preview":vertices,
+                       "cursor_pixmap_key":viewport().cursor().pixmap().cacheKey(),
+                       "override_cursor_key":app.overrideCursor().pixmap().cacheKey() if app.overrideCursor() else None}
+                if vertices:
+                    endpoint=pixel(App.Vector(*vertices[-1]))
+                    entry["preview_error_px"]=math.hypot(endpoint.x()-point.x(),endpoint.y()-point.y())
+                sample["moves"].append(entry)
+            wait(100)
+        QtGui.QCursor.setPos(viewport().mapToGlobal(center))
+        wait(40)
+        click(center,sample)
+        sample.update({"after_count":sketch.GeometryCount,"geometry":[str(g) for g in sketch.Geometry],
+                       "cursor_events":cursor_events[cursor_before:],"cursor_helper_after":helper.counters if helper else None})
+        main.grab().save(str(output/("visible-"+phase+"-"+label+".png")))
+        save()
+        stop()
+        for i in reversed(range(sample["before_count"],sketch.GeometryCount)): sketch.delGeometry(i)
+        doc.recompute()
+        wait(60)
+    if helper:
+        helper.sync=normal_sync
+        helper.event=normal_event
+        helper.sync(None)
+    report["passed"]=True
+def hidden_cache_run(doc):
+    """Model an active viewport scope without showing a window or moving the pointer."""
+    helper=panel.sketch_cursor
+    original_app=helper.app
+    original_allowed=helper._allowed
+    original_sync=helper.sync
+    original_event=helper.event
+    class ActiveViewportApplication:
+        def __getattr__(self,name): return getattr(original_app,name)
+        def widgetAt(self,*args): return viewport()
+    helper.app=ActiveViewportApplication()
+    helper._allowed=lambda: (not helper._closed and (helper._command or "").startswith("Sketcher_Create")
+        and not app.activeModalWidget() and not app.activePopupWidget() and bool(panel.active_sketch()))
+    report["scope_simulation"]="Test-only helper application.widgetAt returns the private real viewport and _allowed omits inactive hidden-window check. Other guard and cursor APIs are real Qt; no pointer movement. This is cache/geometry validation, not Windows latency proof."
+    def check(label,value):
+        assert value,label
+        report["checks"].append(label)
+    try:
+        internal_target=sketch.Geometry[0].EndPoint
+        support,subelements=sketch.AttachmentSupport[0]
+        face=support.Shape.getElement(subelements[0])
+        source_edge=face.Edges[0]
+        edge_name=next("Edge"+str(i) for i,edge in enumerate(support.Shape.Edges,1) if edge.isSame(source_edge))
+        check("Private supported edge converts successfully",bool(panel.operation("project_geometry",sketch=sketch.Name,
+              references=[{"feature":support.Name,"subelement":edge_name}])))
+        wait(120)
+        external_target=sketch.ExternalGeo[-1].EndPoint
+        report["converted_source"]={"feature":support.Name,"edge":edge_name,"external":str(sketch.ExternalGeo[-1])}
+        targets=[("internal_endpoint",internal_target,0),("converted_endpoint",external_target,-3)]
+        phases=[(label,target,reference,phase) for label,target,reference in targets for phase in ("native","cached")]
+        for label,target,reference,phase in phases:
+            original_sync(None)
+            helper.sync=(lambda *args:None) if phase=="native" else original_sync
+            helper.event=(lambda *args:False) if phase=="native" else original_event
+            sample={"phase":phase,"target":label,"moves":[],"before_count":sketch.GeometryCount,
+                    "helper_before":helper.counters,"appearance_checks":0,"override_keys":[]}
+            report["cases"].append(sample)
+            command()
+            click(pixel(App.Vector(5.7,11.3,0)),sample)
+            center=pixel(target)
+            cursor_before=len(cursor_events)
+            for repetition in range(3):
+                for dx in range(30,-31,-2):
+                    move(center+QtCore.QPoint(dx,round(7*math.sin(dx/5))),sample,2)
+                    override=app.overrideCursor()
+                    if phase=="cached":
+                        assert override is not None,"Cached move keeps override scoped to drawing"
+                        native=viewport().cursor()
+                        native_image=native.pixmap().toImage().convertToFormat(QtGui.QImage.Format_RGBA8888)
+                        override_image=override.pixmap().toImage().convertToFormat(QtGui.QImage.Format_RGBA8888)
+                        native_hash=hashlib.sha256(native_image.constBits()).hexdigest()
+                        override_hash=hashlib.sha256(override_image.constBits()).hexdigest()
+                        if override.hotSpot()!=native.hotSpot() or native_hash!=override_hash or native_image.size()!=override_image.size():
+                            mismatch={"move":len(sample["moves"]),"native_hash":native_hash,"override_hash":override_hash,
+                                "native_hotspot":[native.hotSpot().x(),native.hotSpot().y()],"override_hotspot":[override.hotSpot().x(),override.hotSpot().y()],
+                                "native_size":[native_image.width(),native_image.height()],"override_size":[override_image.width(),override_image.height()],
+                                "helper":helper.counters}
+                            sample.setdefault("appearance_mismatches",[]).append(mismatch)
+                            if len(sample["appearance_mismatches"])<=3:
+                                native_image.save(str(output/("mismatch-"+str(len(sample["moves"]))+"-native.png")))
+                                override_image.save(str(output/("mismatch-"+str(len(sample["moves"]))+"-cached.png")))
+                        sample["appearance_checks"]+=1
+                        sample["override_keys"].append(override.pixmap().cacheKey())
+            click(center,sample)
+            sample.update({"after_count":sketch.GeometryCount,"helper_after":helper.counters,"cursor_events":cursor_events[cursor_before:],
+                           "max_dispatch_ms":max(m["dispatch_ms"] for m in sample["moves"]),
+                           "endpoint_error_mm":(sketch.Geometry[-1].EndPoint-target).Length if sketch.GeometryCount>sample["before_count"] else None,
+                           "constraints":[[c.Type,c.First,c.FirstPos,c.Second,c.SecondPos] for c in sketch.Constraints]})
+            check(phase+" creates exactly one segment",sketch.GeometryCount==sample["before_count"]+1)
+            check(phase+" endpoint snaps exactly",sample["endpoint_error_mm"]<1e-7)
+            check(phase+" "+label+" preserves native coincidence",any(c.Type=="Coincident" and
+                  ((c.First==sample["before_count"] and c.Second==reference) or
+                   (c.Second==sample["before_count"] and c.First==reference)) for c in sketch.Constraints))
+            check(phase+" sketch remains editable",not sketch.FullyConstrained and sketch.solve()==0)
+            if phase=="cached":
+                before=sample["helper_before"]
+                after=sample["helper_after"]
+                sample["native_cursor_events"]=after["cursor_events"]-before["cursor_events"]
+                sample["cache_misses"]=after["cache_misses"]-before["cache_misses"]
+                sample["cache_hits"]=after["cache_hits"]-before["cache_hits"]
+                sample["override_changes"]=after["changes"]-before["changes"]
+                check("Repeated native cursor appearances reuse cached Qt cursors",sample["cache_hits"]>sample["cache_misses"]*4)
+                check("All sampled cached appearances preserve native icon pixels and hotspot",not sample.get("appearance_mismatches"))
+                original_event(viewport(),QtCore.QEvent(QtCore.QEvent.Leave))
+                check("Leaving viewport restores application cursor",app.overrideCursor() is None)
+                original_event(viewport(),QtCore.QEvent(QtCore.QEvent.Enter))
+                check("Returning to drawing restores cached cursor",app.overrideCursor() is not None)
+                original_event(main,QtCore.QEvent(QtCore.QEvent.WindowBlocked))
+                check("Blocking modal releases cached cursor",app.overrideCursor() is None)
+                original_event(viewport(),QtCore.QEvent(QtCore.QEvent.Enter))
+            stop()
+            check(phase+" stopping leaves no cursor override",app.overrideCursor() is None)
+            for i in reversed(range(sample["before_count"],sketch.GeometryCount)): sketch.delGeometry(i)
+            doc.recompute()
+            save()
+        command()
+        pending={"moves":[]}
+        click(pixel(App.Vector(4.2,13.6,0)),pending)
+        check("Pending native second point owns a cached cursor",app.overrideCursor() is not None)
+        check("Cancel safely ends a pending native second point",panel.finish_sketch(cancel=True))
+        check("Cancel leaves no cursor override",app.overrideCursor() is None)
+        check("Cancel leaves original geometry unchanged",sketch.GeometryCount==1)
+        report["check_count"]=len(report["checks"])
+        report["passed"]=True
+    finally:
+        helper.sync=original_sync
+        helper.event=original_event
+        original_sync(None)
+        helper._allowed=original_allowed
+        helper.app=original_app
+def collision_probe(doc):
+    stage("collision begin")
+    support,subelements=sketch.AttachmentSupport[0]
+    source_edge=support.Shape.getElement(subelements[0]).Edges[0]
+    edge_name=next("Edge"+str(i) for i,edge in enumerate(support.Shape.Edges,1) if edge.isSame(source_edge))
+    stage("project geometry begin")
+    assert panel.operation("project_geometry",sketch=sketch.Name,references=[{"feature":support.Name,"subelement":edge_name}])
+    wait(100)
+    stage("project geometry end")
+    target=sketch.ExternalGeo[-1].EndPoint
+    internal=sketch.Geometry[0].StartPoint
+    report["collision"]={"external_target":tuple(target),"internal_neighbor":tuple(internal),"external_pixel":[pixel(target).x(),pixel(target).y()],
+                         "internal_pixel":[pixel(internal).x(),pixel(internal).y()],"source_edge":edge_name}
+    snapping=panel.sketch_snapping
+    before_native=snapping.before_native
+    native_event=snapping.event
+    prefs=App.ParamGet("User parameter:BaseApp/Preferences/View")
+    saved_radius=prefs.GetFloat("PickRadius",5.0)
+    class NearestPointProbe(QtCore.QObject):
+        def __init__(self):
+            super().__init__(app)
+            self.enabled=False
+            self.samples=[]
+        def eventFilter(self,watched,event):
+            if not self.enabled or watched is not viewport() or event.type() not in (QtCore.QEvent.MouseMove,QtCore.QEvent.MouseButtonPress): return False
+            view=Gui.activeDocument().activeView()
+            renderer=view.getViewer().getSoRenderManager()
+            region=renderer.getViewportRegion()
+            width,height=region.getViewportSizePixels().getValue()
+            ratio=watched.devicePixelRatioF()
+            position=event.position()
+            x=int(position.x()*ratio)
+            y=int((watched.height()-position.y()-1)*ratio)
+            action=coin.SoRayPickAction(region)
+            action.setPoint(coin.SbVec2s(x,y))
+            action.setRadius(9*ratio)
+            action.setPickAll(True)
+            action.apply(renderer.getSceneGraph())
+            volume=renderer.getCamera().getViewVolume(region.getViewportAspectRatio())
+            picked=action.getPickedPointList()
+            candidates=[]
+            all_names=[]
+            for i in range(picked.getLength()):
+                point=picked[i]
+                path=point.getPath()
+                name=str(path.getTail().getName())
+                all_names.append(name)
+                if name!="OriginPointSet" and not re.fullmatch(r"PointSet\d+",name): continue
+                projected=volume.projectToScreen(point.getPoint())
+                distance=math.hypot(projected[0]*width-x,projected[1]*height-y)
+                candidates.append({"name":name,"distance_fb":distance,"point":list(point.getPoint().getValue())})
+            candidates.sort(key=lambda value:value["distance_fb"])
+            radius=9*ratio
+            if candidates:
+                nearest=candidates[0]["distance_fb"]
+                radius=min(radius,max(0.5,nearest+0.6))
+                distinct=next((c["distance_fb"] for c in candidates[1:] if c["distance_fb"]>nearest+1e-3),None)
+                if distinct is not None: radius=min(radius,(nearest+distinct)/2)
+            view.getViewer().setPickRadius(radius)
+            self.samples.append({"cursor_fb":[x,y],"radius_fb":radius,"candidates":candidates,"all_names":all_names})
+            return False
+    nearest_probe=NearestPointProbe()
+    app.installEventFilter(nearest_probe)
+    try:
+        modes=(("dynamic",9),) if os.environ.get("LINE_ENDPOINT_DYNAMIC_ONLY")=="1" else (("production",9),("no_priority",9),("radius1",1),("radius2",2),("radius3",3),("radius5",5),("dynamic",9))
+        if os.environ.get("LINE_ENDPOINT_START_NEIGHBOR")=="1": modes=(("wide_baseline",9),("dynamic",9),("adaptive",9))
+        for mode,radius in modes:
+            stage("case "+mode+" begin")
+            snapping.event=native_event if mode=="adaptive" else (lambda *args:False)
+            nearest_probe.enabled=mode=="dynamic"
+            nearest_probe.samples=[]
+            snapping.before_native=(lambda *args:None) if mode=="no_priority" else before_native
+            prefs.SetFloat("PickRadius",radius*viewport().devicePixelRatioF())
+            Gui.activeDocument().activeView().getViewer().setPickRadius(radius*viewport().devicePixelRatioF())
+            sample={"mode":mode,"radius_logical_px":radius,"moves":[],"before_count":sketch.GeometryCount}
+            report["cases"].append(sample)
+            Gui.Selection.clearSelection()
+            command()
+            start=internal if os.environ.get("LINE_ENDPOINT_START_NEIGHBOR")=="1" else App.Vector(5.7,11.3,0)
+            sample["start"]=tuple(start)
+            click(pixel(start),sample)
+            stage("case "+mode+" first click done")
+            center=pixel(target)
+            for dx in list(range(20,-21,-1))+list(range(-20,21)):
+                move(center+QtCore.QPoint(dx,0),sample,5)
+            click(center,sample)
+            stage("case "+mode+" second click done")
+            preview=sample["moves"][-1]["preview"]
+            sample.update({"after_count":sketch.GeometryCount,
+                "preview_at_click":preview,"preview_length_at_click":(App.Vector(*preview[1])-App.Vector(*preview[0])).Length if len(preview)>=2 else None,
+                "geometry":[str(g) for g in sketch.Geometry],
+                "constraints":[[c.Type,c.First,c.FirstPos,c.Second,c.SecondPos] for c in sketch.Constraints],
+                "nearest_probe":nearest_probe.samples,
+                "endpoint_error_mm":(sketch.Geometry[-1].EndPoint-target).Length if sketch.GeometryCount>sample["before_count"] else None})
+            if mode=="adaptive" and sketch.GeometryCount>sample["before_count"]:
+                click(pixel(target+App.Vector(4,3,0)),sample)
+                sample["continued_count"]=sketch.GeometryCount
+                sample["continued_constraints"]=[[c.Type,c.First,c.FirstPos,c.Second,c.SecondPos] for c in sketch.Constraints]
+            stop()
+            stage("case "+mode+" delete begin")
+            for i in reversed(range(sample["before_count"],sketch.GeometryCount)): sketch.delGeometry(i)
+            doc.recompute()
+            wait(60)
+            save()
+            stage("case "+mode+" end")
+        if os.environ.get("LINE_ENDPOINT_START_NEIGHBOR")=="1":
+            def check(label,value):
+                assert value,label
+                report["checks"].append(label)
+            baseline=next(case for case in report["cases"] if case["mode"]=="wide_baseline")
+            adaptive=next(case for case in report["cases"] if case["mode"]=="adaptive")
+            check("Wide native picking reproduces zero-length sticky preview",baseline["preview_length_at_click"]<1e-7)
+            check("Wide native picking reproduces refused second endpoint",baseline["after_count"]==baseline["before_count"])
+            check("Nearest-point picking creates the short intended segment",adaptive["after_count"]==adaptive["before_count"]+1 and adaptive["endpoint_error_mm"]<1e-7)
+            check("Short segment preserves both native endpoint coincidences",len([c for c in adaptive["constraints"] if c[0]=="Coincident"])==2)
+            check("Polyline continues after the close-point segment",adaptive["continued_count"]==adaptive["before_count"]+2)
+            nearest_probe.enabled=False
+            snapping.event=native_event
+            for tool,label,start,end in (("Polyline","adaptive_reverse",target,internal),("Circle","adaptive_circle",target,target+App.Vector(-3,4,0))):
+                sample={"mode":label,"moves":[],"before_count":sketch.GeometryCount}
+                report["cases"].append(sample)
+                panel.native_command("Sketcher_Create"+tool)
+                wait(60)
+                click(pixel(start),sample)
+                click(pixel(end),sample)
+                sample.update({"after_count":sketch.GeometryCount,"geometry":[str(g) for g in sketch.Geometry],
+                    "constraints":[[c.Type,c.First,c.FirstPos,c.Second,c.SecondPos] for c in sketch.Constraints]})
+                check(label+" creates exactly one native entity",sketch.GeometryCount==sample["before_count"]+1)
+                geometry=sketch.Geometry[-1]
+                if tool=="Polyline":
+                    sample["endpoint_error_mm"]=(geometry.EndPoint-internal).Length
+                    check("Both close points can be chosen in reverse order",(geometry.StartPoint-target).Length<1e-7 and sample["endpoint_error_mm"]<1e-7)
+                    check("Reversed segment retains two native coincidences",len(sketch.Constraints)==2 and all(c.Type=="Coincident" for c in sketch.Constraints))
+                else:
+                    sample["center_error_mm"]=(geometry.Center-target).Length
+                    check("Circle center chooses converted point over neighboring internal point",sample["center_error_mm"]<1e-7)
+                    check("Circle center has native external coincidence",any(c.Type=="Coincident" and c.First==sample["before_count"] and c.FirstPos==3 and c.Second==-3 for c in sketch.Constraints))
+                stop()
+                for i in reversed(range(sample["before_count"],sketch.GeometryCount)): sketch.delGeometry(i)
+                doc.recompute()
+            check("Stopping restores the full sketch capture radius",abs(Gui.activeDocument().activeView().getViewer().getPickRadius()-saved_radius)<1e-5)
+            report["check_count"]=len(report["checks"])
+        report["passed"]=True
+    finally:
+        app.removeEventFilter(nearest_probe)
+        snapping.before_native=before_native
+        snapping.event=native_event
+        prefs.SetFloat("PickRadius",saved_radius)
+def run():
+    global panel
+    try:
+        mode=os.environ.get("LINE_ENDPOINT_MODE","production")
+        report["mode"]=mode
+        if mode!="stock_native":
+            stage("ui start begin")
+            panel=ui.start()
+            stage("ui start end")
+            panel.recovery_timer.stop()
+        doc=setup(mode)
+        if os.environ.get("LINE_ENDPOINT_COLLISION_PROBE")=="1":
+            collision_probe(doc)
+            return
+        if os.environ.get("LINE_ENDPOINT_CACHE_PROBE")=="1":
+            hidden_cache_run(doc)
+            return
+        if visible_probe:
+            visible_run(doc)
+            return
+        targets=target_points(doc)
+        if os.environ.get("LINE_ENDPOINT_TARGET_LIMIT"):
+            targets=targets[:int(os.environ["LINE_ENDPOINT_TARGET_LIMIT"])]
+        for label,target in targets:
+            sample={"target":label,"local":tuple(target),"moves":[],"before_count":sketch.GeometryCount}
+            report["cases"].append(sample)
+            if not viewport().rect().contains(pixel(target)):
+                sample["skipped_offscreen"]=True
+                continue
+            command()
+            start=App.Vector(5.7,11.3,0)
+            if (start-target).Length<2: start+=App.Vector(4,3,0)
+            click(pixel(start),sample)
+            target_pixel=pixel(target)
+            initial_heartbeat=len(heartbeats)
+            cursor_before=len(cursor_events)
+            for repetition in range(3):
+                for dx in range(30,-31,-2):
+                    move(target_pixel+QtCore.QPoint(dx,round(7*math.sin(dx/5))),sample)
+                move(target_pixel,sample,600,capture=True)
+            movement_heartbeats=heartbeats[initial_heartbeat:]
+            main.grab().save(str(output/(mode+"-"+label+"-preview.png")))
+            click(target_pixel,sample)
+            sample.update({"after_count":sketch.GeometryCount,"geometry":[str(g) for g in sketch.Geometry],
+                           "constraints":[[c.Type,c.First,c.FirstPos,c.Second,c.SecondPos] for c in sketch.Constraints],
+                           "max_heartbeat_gap_ms":max(movement_heartbeats,default=0),
+                           "cursor_events":cursor_events[cursor_before:],
+                           "max_dispatch_ms":max(m["dispatch_ms"] for m in sample["moves"]),
+                           "max_event_wait_ms":max(m["event_wait_ms"] for m in sample["moves"] if m["event_wait_ms"]<500)})
+            if sketch.GeometryCount>sample["before_count"]:
+                sample["endpoint_error_mm"]=(sketch.Geometry[-1].EndPoint-target).Length
+            save()
+            stop()
+            for i in reversed(range(sample["before_count"],sketch.GeometryCount)): sketch.delGeometry(i)
+            doc.recompute()
+            wait(100)
+        report["passed"]=True
+    except Exception:
+        report["error"]=traceback.format_exc()
+    finally:
+        save()
+        cleanup()
+def cleanup():
+    global cleaned
+    if cleaned:return
+    cleaned=True
+    stage("cleanup begin")
+    heartbeat_timer.stop()
+    if panel and panel.active_sketch():
+        stage("cleanup finish sketch begin")
+        panel.finish_sketch(cancel=True)
+        stage("cleanup finish sketch end")
+    for name in list(App.listDocuments()):
+        doc=App.getDocument(name)
+        gui=Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction: doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+        stage("cleanup document closed")
+    if panel:panel.shutdown()
+    stage("cleanup panel shutdown")
+    app.removeEventFilter(hidden)
+    if original_cursor_position is not None:
+        QtGui.QCursor.setPos(original_cursor_position)
+    QtCore.QTimer.singleShot(0,app.quit)
+QtCore.QTimer.singleShot(220000,cleanup)
+QtCore.QTimer.singleShot(1200,run)

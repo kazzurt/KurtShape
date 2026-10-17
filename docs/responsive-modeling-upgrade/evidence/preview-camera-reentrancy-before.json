@@ -1,0 +1,9 @@
+{
+  "ui_after": {
+    "camera": "initial camera",
+    "selection": "initial face"
+  },
+  "new_user_input_preserved": false,
+  "worker_submitted": 1,
+  "error": null
+}

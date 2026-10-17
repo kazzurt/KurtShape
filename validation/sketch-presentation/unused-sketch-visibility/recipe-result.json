@@ -1,0 +1,17 @@
+{
+  "recipe": "unused-sketch-visibility",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-3d9d060e233d4fbdb61118094889a9d3",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\unused-sketch-visibility-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-3d9d060e233d4fbdb61118094889a9d3\\evidence\\unused-sketch-visibility\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-3d9d060e233d4fbdb61118094889a9d3\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-3d9d060e233d4fbdb61118094889a9d3\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-3d9d060e233d4fbdb61118094889a9d3\\freecad-stderr.txt",
+  "started_utc": "2026-10-05T23:02:40.5126030Z",
+  "exited_utc": "2026-10-05T23:03:02.4084456Z",
+  "pid": 57988,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-05T23:03:02.4422504Z"
+}

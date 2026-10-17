@@ -1,0 +1,17 @@
+{
+  "recipe": "sketch-plane-editor",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-18aec27dfb8449ca9ec21a8f820e5446",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\sketch-plane-editor-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-18aec27dfb8449ca9ec21a8f820e5446\\evidence\\sketch-plane-editor\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-18aec27dfb8449ca9ec21a8f820e5446\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-18aec27dfb8449ca9ec21a8f820e5446\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-18aec27dfb8449ca9ec21a8f820e5446\\freecad-stderr.txt",
+  "started_utc": "2026-10-05T20:41:24.1786054Z",
+  "exited_utc": "2026-10-05T20:41:54.4134473Z",
+  "pid": 33956,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-05T20:41:54.4501656Z"
+}

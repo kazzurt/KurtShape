@@ -1,0 +1,18 @@
+{
+  "recipe": "onshape-workflows",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-f10ada1dc29f4a7f908251f526c62513",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\onshape-workflows-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-f10ada1dc29f4a7f908251f526c62513\\evidence\\onshape-workflows\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-f10ada1dc29f4a7f908251f526c62513\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-f10ada1dc29f4a7f908251f526c62513\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-f10ada1dc29f4a7f908251f526c62513\\freecad-stderr.txt",
+  "started_utc": "2026-10-05T17:54:38.4629527Z",
+  "exited_utc": "2026-10-05T17:55:02.9032012Z",
+  "pid": 11012,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "scope_warning_count": 0,
+  "finished_utc": "2026-10-05T17:55:02.9583350Z"
+}

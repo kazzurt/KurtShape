@@ -1,0 +1,469 @@
+{
+  "passed": true,
+  "regression": {
+    "tests": 285,
+    "passed": 285,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "gui": [
+    {
+      "recipe": "extrusion-preview",
+      "checks": 29,
+      "passed": true,
+      "report": "gui-extrusion-preview.json",
+      "receipt": "gui-extrusion-preview-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "interface",
+      "checks": 42,
+      "passed": true,
+      "report": "gui-interface.json",
+      "receipt": "gui-interface-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "presentation-scheduling",
+      "checks": 21,
+      "passed": true,
+      "report": "gui-presentation-scheduling.json",
+      "receipt": "gui-presentation-scheduling-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "onshape-workflows",
+      "checks": 45,
+      "passed": true,
+      "report": "gui-onshape-workflows.json",
+      "receipt": "gui-onshape-workflows-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "design-surface",
+      "checks": 423,
+      "passed": true,
+      "report": "gui-design-surface.json",
+      "receipt": "gui-design-surface-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "ui-refinement",
+      "checks": 106,
+      "passed": true,
+      "report": "gui-ui-refinement.json",
+      "receipt": "gui-ui-refinement-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "sketch-plane-editor",
+      "checks": 27,
+      "passed": true,
+      "report": "gui-sketch-plane-editor.json",
+      "receipt": "gui-sketch-plane-editor-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "history-selection",
+      "checks": 47,
+      "passed": true,
+      "report": "gui-history-selection.json",
+      "receipt": "gui-history-selection-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "rollback-history",
+      "checks": 46,
+      "passed": true,
+      "report": "gui-rollback-history.json",
+      "receipt": "gui-rollback-history-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "part-studio",
+      "checks": 101,
+      "passed": true,
+      "report": "gui-part-studio.json",
+      "receipt": "gui-part-studio-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "assembly",
+      "checks": 58,
+      "passed": true,
+      "report": "gui-assembly.json",
+      "receipt": "gui-assembly-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "step-import",
+      "checks": 19,
+      "passed": true,
+      "report": "gui-step-import.json",
+      "receipt": "gui-step-import-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "assembly-step",
+      "checks": 35,
+      "passed": true,
+      "report": "gui-assembly-step.json",
+      "receipt": "gui-assembly-step-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "review-recovery",
+      "checks": 10,
+      "passed": true,
+      "report": "gui-review-recovery.json",
+      "receipt": "gui-review-recovery-process-receipt.json",
+      "recovery_proof": "gui-review-recovery-proof.json",
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "messages",
+      "checks": 34,
+      "passed": true,
+      "report": "gui-messages.json",
+      "receipt": "gui-messages-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "unused-sketch-visibility",
+      "checks": 44,
+      "passed": true,
+      "report": "gui-unused-sketch-visibility.json",
+      "receipt": "gui-unused-sketch-visibility-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "sketch-edit-state",
+      "checks": 45,
+      "passed": true,
+      "report": "gui-sketch-edit-state.json",
+      "receipt": "gui-sketch-edit-state-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "sketch-references",
+      "checks": 74,
+      "passed": true,
+      "report": "gui-sketch-references.json",
+      "receipt": "gui-sketch-references-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    },
+    {
+      "recipe": "bench-gui",
+      "checks": 11,
+      "passed": true,
+      "report": "gui-bench-gui.json",
+      "receipt": "gui-bench-gui-process-receipt.json",
+      "recovery_proof": null,
+      "diagnostic_matches": []
+    }
+  ],
+  "gui_recipe_count": 19,
+  "gui_checks": 1217,
+  "production_source_sha256": {
+    "src/kurtshape/__init__.py": "d1c2218eff95a6160d497cee76330d599e32231b47cd9680a05a752429c16682",
+    "src/kurtshape/assembly.py": "97d483c8dd25653c579fcb94e1625a3c7b836a9b43c2bdf92974f20800ab291c",
+    "src/kurtshape/bodies.py": "3720161d25e235f631052eaf486ce21a1687f125e304780fd048ca84a8447dc4",
+    "src/kurtshape/bridge.py": "6b920b62814b5730d0a0d05907b032b2ac321e7e90923fd91b7c38442af48835",
+    "src/kurtshape/contract.py": "5f7460aced1ee8a6d115a61783ef276960cd75a1d01f5142201f520db170dfc0",
+    "src/kurtshape/core.py": "f71e9605fba1bab29b38d157e55692d324db6c820505532915d2fd85db550669",
+    "src/kurtshape/document_index.py": "9be07280f9696c14830b76fbffb081da7e06218d9ff7071e092a64d527a533b1",
+    "src/kurtshape/document_state.py": "8045e24e324ca628a617dc1e61530e2111f580079e338b5fad02bf17dd998502",
+    "src/kurtshape/extrusion_preview.py": "b374671a4f630e91b2d80733c41446abef8450ec41dedb864096e0fb7d65a2a7",
+    "src/kurtshape/feature_panel.py": "0d5adbd8abaf7932cda5f33fb8e4ef6a209e6ef989af584bb74e7f556230dda6",
+    "src/kurtshape/feature_tools.py": "eead00ec581d46d952e8972e41c03cfdb6503ebb0e1af3b8a12543acdf120906",
+    "src/kurtshape/general_actions.py": "dc87e63d82ecbb98fccb755bd75fc590bfcf99daf2b9462af273a99622d4bdb8",
+    "src/kurtshape/geometry.py": "afa73adfa80d977eb6832dc58e8bb0f57904cd356e8f63cc964188604c6359e9",
+    "src/kurtshape/history_model.py": "55557c49650ce9737c667e6285c2b83d15732aa19aa988b82a51edd0a42a0731",
+    "src/kurtshape/history_selection.py": "5878382a5c58d9ee145e3819716fdf30850221eb451c9be646e9fadae043fb73",
+    "src/kurtshape/hover_outline.py": "32f2a23455795ea90ae42cc92d0fafe7ba5d192bdd2161695762449e83b5f035",
+    "src/kurtshape/modeling_geometry.py": "743eac82bfcfb3b8ada905916154afb9f8ebe34c5f6c6d329797ece32e2481de",
+    "src/kurtshape/native_content.py": "13e2b64bdd8aa7a9bb095959a20964bb786dd56bbba6ca5da92cd435e7926796",
+    "src/kurtshape/navigation.py": "f8d9885a89b36853cc448f53c292b31fc6b929e441ea48cbb8ab459b4c71140a",
+    "src/kurtshape/onshape.py": "bd9a6f1c9eeb36b05cf8d7c5f48918b5a4bd2cbdc80484c0642d28803127fdb0",
+    "src/kurtshape/presentation_icons.py": "9eae5a46153c45e3c6d1610f6da3104f9909ec5712f670ea6c48259693d8e287",
+    "src/kurtshape/preview_worker.py": "566031f3b9ccce176dfd2282cd621044549ad4c5e314ca15bf43694fd67c1ab8",
+    "src/kurtshape/quantity_field.py": "6f68c24ae5543890ad98bca1c48fc50ffea435a9ffd59e5a27dc2243c702e2c8",
+    "src/kurtshape/recovery.py": "8f48bbc111d3cbdfeeea7e0f6315b4ee79150cc4b1a8c8218731ccb20b665db2",
+    "src/kurtshape/reference_tools.py": "c289557eb8b6a7e5350d14b39bda6b1a9cb4ff7cb862b02d6ff0bfa02cf8657e",
+    "src/kurtshape/request_ledger.py": "7a969f22a5214f2a99608496ede106cd1057b71f52b2d1060e957c77613711ef",
+    "src/kurtshape/responsiveness.py": "b03c271c91a5ccca12bdfd3c57890bf0ccdcb6735ecc9f12a2ebe3385253e96f",
+    "src/kurtshape/rollback_history.py": "fdadef3e330a51c2afc7ea3a7f177ac34cc1bfc493a6fe0a88a8a2d5710db2c7",
+    "src/kurtshape/selectors.py": "103aa30546d28401f0ad90786af4d74ecb5966d57a5b4bcef4a063a4bc1d9a71",
+    "src/kurtshape/settings.py": "9a759a17b399269f87a2a16b3476f194868f7cdd8c5a1473390c448d48360799",
+    "src/kurtshape/shortcuts.py": "f3266cec7f1b6316f9ca68c714e32c2ae457ab906a38ff0bb055232aeea569be",
+    "src/kurtshape/sketch_colors.py": "69ce7f5416f0496f8b2e4b4770efb03410b452b09431085399e01cf62419feb9",
+    "src/kurtshape/sketch_edit_panel.py": "82712d5edc744f4973ce7e7db717b7df06112de6d5faef53fc2bd657c22b5dee",
+    "src/kurtshape/sketch_history.py": "054521355ae215aa232bd5b901665ae808c7ff7c0504294fa2d54d90ee64e1b7",
+    "src/kurtshape/sketch_references.py": "91f2ee83fd7928646b5b457e3a5bbe7f213f32fa5e22d33e0b5736998dc45060",
+    "src/kurtshape/sketch_regions.py": "35a47cb9aa36a8bf2bc96b80f3d11ef99a9b09ab8dc7c6fd1043b3705f2fbb12",
+    "src/kurtshape/sketch_tools.py": "54f6c375ab886425b9a719eaef3a650e8cc436b9b05b5910e1b4f50be0d6d9b0",
+    "src/kurtshape/studio.py": "6cad59d273384b823286fdd7e30ca0005801895560374cdaa8291520b6a63440",
+    "src/kurtshape/theme.py": "299154f47e49811aff4b472853a3ec3de9f3bee8655b04195072827209e4d4dd",
+    "src/kurtshape/timing.py": "28f32811de2a5c035af1e8ccd5d93b1910b21f9d7b5b23da3b2db2197e6d646d",
+    "src/kurtshape/toolbar_labels.py": "cc0a389aeff8f5d6f299cb8e2b77a767b5b8288ccb8b8610b488d2da4a00bfaf",
+    "src/kurtshape/ui.py": "f1e695bfa60982d8a05066ff801773639d265b3ed35233a11932d055feba12e7",
+    "src/kurtshape/viewport_actions.py": "e1e347b47f784cb2a7dca98df516f2ac866d1468888855ed8b635f95c40534ce",
+    "src/kurtshape/workspace_preferences.py": "98902015adb35a0598545d827b3cb5d0abbfca522c7ea3bfc33f85bed22c1bdd"
+  },
+  "collected_reports": [
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\test-tmp\\checks-20261005-195826-72996\\evidence\\checks\\native.json",
+      "copy": "full-regression.json",
+      "sha256": "a5d3cf7d3af79d4e87ac4569749abfbece9a025008a29faf22a15accaa886ee6"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\final-postsnapshot-preview-gui-acceptance\\recipe-summary.json",
+      "copy": "gui-sweep-1-summary.json",
+      "sha256": "81473a5c1e0828986a531930e3a193d010b8e64e7dfa4c55c045ba564fe06ce9"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\final-postsnapshot-preview-gui-acceptance\\source-hashes-before.json",
+      "copy": "gui-sweep-1-sources.json",
+      "sha256": "b86251afc4b96be4cc08e54017530ebb25a08a36ec68c1c95f8b7785911a7dbf"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\final-acceptance-gui-validation\\recipe-summary.json",
+      "copy": "gui-sweep-2-summary.json",
+      "sha256": "37d2879d8d3050b7b165d95a5f54b2b463af6967a0d6234d04251d6094ce8592"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\final-acceptance-gui-validation\\source-hashes-before.json",
+      "copy": "gui-sweep-2-sources.json",
+      "sha256": "536ba812382f7486bf4f74d6a4e955957e7b05a5cbd633cf4c45640a98ece1d2"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\final-isolated-gui-benchmark20\\recipe-summary.json",
+      "copy": "gui-sweep-3-summary.json",
+      "sha256": "593f01e24077689154ec67ccd947d4d12e824e166719dc7fec7f189fd973a62d"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\final-isolated-gui-benchmark20\\source-hashes-before.json",
+      "copy": "gui-sweep-3-sources.json",
+      "sha256": "4a29acdfeace7179d4d4d290f7206a50b81383428cea11e0aa0c9ea049ec455b"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-bf0281a7a4d9409baeaf3185d8ca9486\\evidence\\ui-refinement-preview\\gui-result.json",
+      "copy": "gui-extrusion-preview.json",
+      "sha256": "0175e0ecef4b2d76c8708beceabeb34f195fcd0b11de0757a1a6cfbf6402ecf0"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-bf0281a7a4d9409baeaf3185d8ca9486\\recipe-result.json",
+      "copy": "gui-extrusion-preview-process-receipt.json",
+      "sha256": "86c670ca90e06b9bd1a396e48c0357511fbd0056c81eda571513aa226c5962c0"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390\\evidence\\interface-pass\\gui-test-result.json",
+      "copy": "gui-interface.json",
+      "sha256": "50ee1bcc3f1083f255a6c4805da0485ba0b1271db66359ea8b72e091ca768189"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390\\recipe-result.json",
+      "copy": "gui-interface-process-receipt.json",
+      "sha256": "51b005d735fe5f03ba8116b6017c1859f2afaa0e8d9ff6fea97e286e91682f1b"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-75dd09a8d9874ae19c6b55a49b28fae0\\evidence\\presentation-scheduling\\gui-result.json",
+      "copy": "gui-presentation-scheduling.json",
+      "sha256": "57948e2f0d65dc6ca3eea2d98ad379a1760f28ab108c379be6d2f834c6d38698"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-75dd09a8d9874ae19c6b55a49b28fae0\\recipe-result.json",
+      "copy": "gui-presentation-scheduling-process-receipt.json",
+      "sha256": "750379900644267c44ac80fe4e8a27d9677a5d8d0f004c6fe02c3c7726cfdd3c"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-d72c59e3b31e46d196cd66c9c5387a49\\evidence\\onshape-workflows\\gui-result.json",
+      "copy": "gui-onshape-workflows.json",
+      "sha256": "093198e594160e3d25db656dfb8114fd4508890c552938d1389e5cb8fc16be0b"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-d72c59e3b31e46d196cd66c9c5387a49\\recipe-result.json",
+      "copy": "gui-onshape-workflows-process-receipt.json",
+      "sha256": "3bfe716fef58839d3f984cf4f341de3180bc633356369ee8694f2ecd9c3dc3b8"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-cc8d987eac2e40d6963b868fc43532b2\\evidence\\onshape-design\\gui-result.json",
+      "copy": "gui-design-surface.json",
+      "sha256": "085630d90636564149ecbcf79158e94cac5c4f2517ce9218f2886a0cf780227a"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-cc8d987eac2e40d6963b868fc43532b2\\recipe-result.json",
+      "copy": "gui-design-surface-process-receipt.json",
+      "sha256": "d48cc9f86e4ddccaffb98ef2f42c9d79d88abfd85c149d9ba1a7b01a725f2db3"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-38e5122f979c4a1e90384a05e12fe49a\\evidence\\ui-refinement\\gui-refinement.json",
+      "copy": "gui-ui-refinement.json",
+      "sha256": "b4170c415f4009840a7f2809f569fcd50802b5b4052bdebe5c31d8e6ada58526"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-38e5122f979c4a1e90384a05e12fe49a\\recipe-result.json",
+      "copy": "gui-ui-refinement-process-receipt.json",
+      "sha256": "46f0355d6a605ca0f64831519bf5715dc2acd04e8d5a9f295d36f5271df5de3c"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-0e0f6d0a498e48bca322794fa6dccde7\\evidence\\sketch-plane-editor\\gui-result.json",
+      "copy": "gui-sketch-plane-editor.json",
+      "sha256": "d58250fa4321fca58ae903c24a361b48afd0ecec9a5bf769fb68a76a74e838b1"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-0e0f6d0a498e48bca322794fa6dccde7\\recipe-result.json",
+      "copy": "gui-sketch-plane-editor-process-receipt.json",
+      "sha256": "9630be84883cfec918d5964517ee67581db804406d63125ff9c35c7482f1b748"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-5110b7f2105a43c9adb1f81e9d7af2f7\\evidence\\history-selection\\gui-result.json",
+      "copy": "gui-history-selection.json",
+      "sha256": "b314ebee6a4f8a272b88a9191dfef96b40b25883ac98815d1f9577ab3aaf4b50"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-5110b7f2105a43c9adb1f81e9d7af2f7\\recipe-result.json",
+      "copy": "gui-history-selection-process-receipt.json",
+      "sha256": "8b888c311bf3c1954f4a17c69a9d4283ebc71dff407597c336084554aa3656ba"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-fb36acfa71c9422788cc22708126ac0b\\evidence\\rollback-history\\gui-result.json",
+      "copy": "gui-rollback-history.json",
+      "sha256": "e8efe5b08f40aec75068a2a0321579dbf7635a71c851c4e0046ab65f797d2a82"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-fb36acfa71c9422788cc22708126ac0b\\recipe-result.json",
+      "copy": "gui-rollback-history-process-receipt.json",
+      "sha256": "06e3b7ac82fcfcb902b33878a735d90f9b05b5dc4ec026da58e449b521b92750"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-675d55f2e02f41f09486836f7fd19f5c\\evidence\\u2-part-model\\gui-result.json",
+      "copy": "gui-part-studio.json",
+      "sha256": "5c938a52b95e3c60ebb98425021cd7b626105fe4f7402df5b8f096ba4b2ab079"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-675d55f2e02f41f09486836f7fd19f5c\\recipe-result.json",
+      "copy": "gui-part-studio-process-receipt.json",
+      "sha256": "de0b8f4e737cf2cff1b242fdbcca988afa559d05e2b58c434538064cfe689522"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\run-163cbd0ac68e4ba399e5742b030fc806\\evidence\\assembly-workflow\\gui-test-result.json",
+      "copy": "gui-assembly.json",
+      "sha256": "40a1bf32f27cf6f7b334fb40f413aead4e85a7223355773e77f211168216e3f0"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\run-163cbd0ac68e4ba399e5742b030fc806\\recipe-result.json",
+      "copy": "gui-assembly-process-receipt.json",
+      "sha256": "6c477f6a25270fdb9ccf5abc85c7ca3cc6b22e071c358992ebf61ac4841d974e"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\run-bfe03aeb748f4827bbfc47c3591e9fde\\evidence\\step-import\\gui-test-result.json",
+      "copy": "gui-step-import.json",
+      "sha256": "041f4962ffe2299f3b4feb1f651ddbcfe8126dafa27c78398268e61f0e26731c"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\run-bfe03aeb748f4827bbfc47c3591e9fde\\recipe-result.json",
+      "copy": "gui-step-import-process-receipt.json",
+      "sha256": "cc8e69b4db42610ae171390226cb1986ce35d62bfe4090fa7d0c7a264cd7bc1c"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3\\evidence\\assembly-step-import\\gui-result.json",
+      "copy": "gui-assembly-step.json",
+      "sha256": "5f167cfa7fc9b4bce19e2377ebd1f86eaef7c806bd5ea46f4738de02af2e0f2b"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3\\recipe-result.json",
+      "copy": "gui-assembly-step-process-receipt.json",
+      "sha256": "6edce1870c3287397cb2f2e486fcacd974318eed10afdb9e80084bfa9998f2c5"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\evidence\\review-followup\\recovery-crash.json",
+      "copy": "gui-review-recovery.json",
+      "sha256": "1f4bcacf14af1daf2b02a227b563859d88896733d52f52a5327c084ec930685f"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\recipe-result.json",
+      "copy": "gui-review-recovery-process-receipt.json",
+      "sha256": "398388e3f805a32899e7b04020fdc61412932291aa20c1dee3215a6d8b8fa18e"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery-proof\\run-c85a3d5e756547408f8b8d270a86fb52\\evidence\\review-followup\\recovery-proof.json",
+      "copy": "gui-review-recovery-proof.json",
+      "sha256": "e05308153a7ec85d3bb876a4b169af689cd20d71925c03a61e253944f78c4fed"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-1017fe04961b49a49cb64d7d8fa2067b\\evidence\\messages-behavior\\gui-result.json",
+      "copy": "gui-messages.json",
+      "sha256": "c4a81edebbd1dfc6c6cf7db3afe2073f55b92478b22a496b8e6f5276893502fa"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-1017fe04961b49a49cb64d7d8fa2067b\\recipe-result.json",
+      "copy": "gui-messages-process-receipt.json",
+      "sha256": "ec647a9eb9e451b3a261c6ed151672b9243be38e4be19f28c59e57c7c58eb094"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-4683876f83644c34903c2a7a28296bd4\\evidence\\unused-sketch-visibility\\gui-result.json",
+      "copy": "gui-unused-sketch-visibility.json",
+      "sha256": "95f8bcc23380c1e5135a1bc25f34d7e87e75ea2903e2f988355788391459ef48"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-4683876f83644c34903c2a7a28296bd4\\recipe-result.json",
+      "copy": "gui-unused-sketch-visibility-process-receipt.json",
+      "sha256": "78f2e2b50c63aaf6e3afe5de9f044e877f52b7e742bcc90378da9b3081a67cd6"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-5e3fe1aa2b884e03ad1cd5a27d6611e4\\evidence\\sketch-edit-state\\gui-result.json",
+      "copy": "gui-sketch-edit-state.json",
+      "sha256": "21799b80dd04044004760d0d759d6e301d3295669e476e19ede10f0779745491"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-5e3fe1aa2b884e03ad1cd5a27d6611e4\\recipe-result.json",
+      "copy": "gui-sketch-edit-state-process-receipt.json",
+      "sha256": "79198665cc90fb4d7ec62e8b264b2c0e6ede50161564047c332aff12ababa436"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-e26c36d74f044c479bbb1106c5bff97b\\evidence\\sketch-references\\gui-result.json",
+      "copy": "gui-sketch-references.json",
+      "sha256": "a53996e16a30834d5de90f9f58f012b73737a3723375bb77e30af1b3383b4a31"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-e26c36d74f044c479bbb1106c5bff97b\\recipe-result.json",
+      "copy": "gui-sketch-references-process-receipt.json",
+      "sha256": "5dc9b32db98237fa9d9d7c6b608965567559d375b747d527702aa952d121e4bb"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\bench-gui\\run-02318f6407774eeaa479cd8b8212ae3e\\evidence\\perf\\bench-gui.json",
+      "copy": "gui-bench-gui.json",
+      "sha256": "bc3827f95c5750f19ab3ca5faea12f16b269f7ed88f938c054ce85c106dfa3d1"
+    },
+    {
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\bench-gui\\run-02318f6407774eeaa479cd8b8212ae3e\\recipe-result.json",
+      "copy": "gui-bench-gui-process-receipt.json",
+      "sha256": "06ea1e6292381cd5f22f3afe04c19af274c6892ffbb7d3cb683b203f72397ce9"
+    }
+  ],
+  "limits": [
+    "Performance runs have separately recorded source versions and methods.",
+    "Earlier failed diagnostics and original native fixtures remain in runtime; they are not accepted results.",
+    "Hidden GUI correctness checks do not replace the user's hands-on feel assessment."
+  ]
+}

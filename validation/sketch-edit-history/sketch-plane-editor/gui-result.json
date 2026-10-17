@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "checks": [
+    "New sketch shows only a plane picker",
+    "A history plane starts native sketch editing",
+    "Sketch field displays its actual Top support",
+    "Sketch panel has no notes or view buttons",
+    "Clear opens replacement picking without finishing the sketch",
+    "Picking preserves the original native support until valid replacement",
+    "Toolbar Finish also waits for a valid plane",
+    "Timer retains the edit lease during plane selection",
+    "History plane choice resumes the same native sketch",
+    "Replacement is shown as Front with local geometry preserved",
+    "Draft Undo restores Top support",
+    "Draft Redo restores Front support",
+    "Escape resumes the current support",
+    "Finish exits native sketch editing",
+    "Accepted sketch panel stays closed after refresh",
+    "Support picking restores exact original plane visibility after deselection",
+    "Header cancel while choosing restores the original sketch support",
+    "Canceled sketch panel stays closed",
+    "Extrusion preview enables acceptance",
+    "Accepted extrusion closes its task and properties panel",
+    "Extrusion committed a native solid",
+    "Create plane preview enables acceptance",
+    "Accepted create-plane feature closes its task and properties panel",
+    "A later support is rejected while the plane picker stays open",
+    "Viewport face selection replaces support and resumes editing",
+    "Plane field identifies the chosen body face",
+    "Face-supported sketch also closes on acceptance"
+  ],
+  "screens": [
+    "compact-sketch-plane-field.png",
+    "sketch-face-field.png"
+  ],
+  "pid": 33956,
+  "method": "Production timer, native sketch lease, Qt header/plane-field/history clicks in a private hidden FreeCAD process.",
+  "original_plane_visibility": {
+    "Origin": false,
+    "XY_Plane": true,
+    "XZ_Plane": true,
+    "YZ_Plane": true
+  },
+  "restored_plane_visibility": {
+    "Origin": false,
+    "XY_Plane": true,
+    "XZ_Plane": true,
+    "YZ_Plane": true
+  },
+  "check_count": 27
+}

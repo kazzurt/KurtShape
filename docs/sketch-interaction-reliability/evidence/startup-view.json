@@ -1,0 +1,125 @@
+{
+  "passed": true,
+  "checks": [
+    "Startup maximizes the application window",
+    "Startup selects the primary monitor",
+    "Startup part: orthographic camera looks at the world origin",
+    "Startup part: origin projects to viewport center",
+    "Startup part: predictable 100 mm vertical frame",
+    "New part after displaced view: orthographic camera looks at the world origin",
+    "New part after displaced view: origin projects to viewport center",
+    "New part after displaced view: predictable 100 mm vertical frame",
+    "Creating a new part preserves the old document camera",
+    "Normal and isometric commands preserve intentional focus and zoom"
+  ],
+  "cameras": [
+    {
+      "label": "Startup part",
+      "focus": [
+        -1.294024286835338e-06,
+        -1.3069786035657671e-06,
+        1.1698553379346777e-06
+      ],
+      "height": 100.0,
+      "origin_pixel": [
+        888,
+        533
+      ],
+      "viewport_size": [
+        1776,
+        1065
+      ],
+      "projection": "Orthographic"
+    },
+    {
+      "label": "New part after displaced view",
+      "focus": [
+        -1.294024286835338e-06,
+        -1.3069786035657671e-06,
+        1.1698553379346777e-06
+      ],
+      "height": 100.0,
+      "origin_pixel": [
+        888,
+        533
+      ],
+      "viewport_size": [
+        1776,
+        1065
+      ],
+      "projection": "Orthographic"
+    },
+    {
+      "label": "Before normal/isometric commands",
+      "focus": [
+        242.26497520744056,
+        457.7350260062538,
+        642.2649700419256
+      ],
+      "height": 63.0,
+      "origin_pixel": [
+        -7479,
+        -9820
+      ],
+      "viewport_size": [
+        1776,
+        1065
+      ],
+      "projection": "Orthographic"
+    },
+    {
+      "label": "After normal/isometric commands",
+      "focus": [
+        242.26497520744056,
+        457.7350260062538,
+        642.2649700419256
+      ],
+      "height": 63.0,
+      "origin_pixel": [
+        -7479,
+        -9820
+      ],
+      "viewport_size": [
+        1776,
+        1065
+      ],
+      "projection": "Orthographic"
+    }
+  ],
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "method": "Real hidden native window starts with displaced geometry; production startup and New commands reset placement and camera.",
+  "initial_screen": "DELL S2721HN",
+  "primary_screen": "NE180QDM-NZ2",
+  "screen_count": 2,
+  "initial_geometry": [
+    2600,
+    50,
+    700,
+    500
+  ],
+  "window": {
+    "maximized": true,
+    "screen": "NE180QDM-NZ2",
+    "geometry": [
+      133,
+      76,
+      1440,
+      866
+    ],
+    "available_geometry": [
+      0,
+      0,
+      1707,
+      1019
+    ]
+  }
+}

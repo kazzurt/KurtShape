@@ -1,0 +1,12 @@
+{
+  "checks_session": "runtime/test-tmp/checks-20261005-160135-75896",
+  "gui_sessions": {
+    "sketch-dimension-point-colors": "runtime/ci-gui/sketch-dimension-point-colors/run-baac91cfc981482694025f29840229cd",
+    "sketch-regions": "runtime/ci-gui/sketch-regions/run-88a3db1bcc354c95b1a5a767175b633f",
+    "unused-sketch-visibility": "runtime/ci-gui/unused-sketch-visibility/run-3d9d060e233d4fbdb61118094889a9d3",
+    "sketch-references": "runtime/ci-gui/sketch-references/run-cf252e308cd44b3791c6b2d2cb24ebc7",
+    "sketch-edit-state": "runtime/ci-gui/sketch-edit-state/run-1fbc3e6404b34f6f9d39e4145a36770f",
+    "sketch-plane-editor": "runtime/ci-gui/sketch-plane-editor/run-d53b919b94cd405b8a085ed99ff33feb",
+    "part-studio": "runtime/ci-gui/part-studio/run-ebc1e1f019e04ab794f71703cdcbe8f9"
+  }
+}

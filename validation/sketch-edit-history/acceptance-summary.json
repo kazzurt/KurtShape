@@ -1,0 +1,147 @@
+{
+  "passed": true,
+  "date": "2026-10-05",
+  "timezone": "America/Los_Angeles",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "source_unchanged": true,
+  "source_hashes_rechecked_at_collection": true,
+  "regressions": {
+    "tests": 259,
+    "passed": 259,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "regression_suites": {
+    "native": {
+      "tests": 224,
+      "passed": 224,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "expected_failures": 0
+    },
+    "bridge": {
+      "tests": 7,
+      "passed": 7,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "expected_failures": 0
+    },
+    "shortcuts": {
+      "tests": 22,
+      "passed": 22,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "expected_failures": 0
+    },
+    "workflows": {
+      "tests": 6,
+      "passed": 6,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "expected_failures": 0
+    }
+  },
+  "workflow_assertions": 415,
+  "regression_report": "regression/native.json",
+  "gui_checks": 376,
+  "gui": {
+    "sketch-plane-editor": {
+      "checks": 27,
+      "passed": true,
+      "report": "sketch-plane-editor/gui-result.json",
+      "receipt": "receipts/sketch-plane-editor.json",
+      "original_session": "runtime/ci-gui/sketch-plane-editor/run-18aec27dfb8449ca9ec21a8f820e5446"
+    },
+    "sketch-edit-state": {
+      "checks": 45,
+      "passed": true,
+      "report": "sketch-edit-state/gui-result.json",
+      "receipt": "receipts/sketch-edit-state.json",
+      "original_session": "runtime/ci-gui/sketch-edit-state/run-f379ddcb9fb04740af4db9f82c54929d"
+    },
+    "history-selection": {
+      "checks": 47,
+      "passed": true,
+      "report": "history-selection/gui-result.json",
+      "receipt": "receipts/history-selection.json",
+      "original_session": "runtime/ci-gui/history-selection/run-12da93ad54cb435f91a6b9ebeef3a938"
+    },
+    "rollback-history": {
+      "checks": 46,
+      "passed": true,
+      "report": "rollback-history/gui-result.json",
+      "receipt": "receipts/rollback-history.json",
+      "original_session": "runtime/ci-gui/rollback-history/run-d11831fa727a47ce983faf2e6d534186"
+    },
+    "sketch-references": {
+      "checks": 67,
+      "passed": true,
+      "report": "sketch-references/gui-result.json",
+      "receipt": "receipts/sketch-references.json",
+      "original_session": "runtime/ci-gui/sketch-references/run-ab89664d615c451cb6e3456d5e0fb4a2"
+    },
+    "part-studio": {
+      "checks": 99,
+      "passed": true,
+      "report": "part-studio/gui-result.json",
+      "receipt": "receipts/part-studio.json",
+      "original_session": "runtime/ci-gui/part-studio/run-afe096c1882742a0aa6a895182f6877f"
+    },
+    "onshape-workflows": {
+      "checks": 45,
+      "passed": true,
+      "report": "onshape-workflows/gui-result.json",
+      "receipt": "receipts/onshape-workflows.json",
+      "original_session": "runtime/ci-gui/onshape-workflows/run-e96cf8c7b6fc42b29c6a99d429762dde"
+    }
+  },
+  "behavior": [
+    "History plane selections highlight native graphics; temporary presentation is excluded from save and recovery snapshots.",
+    "Rolled-back rows are gray and italic without a held suffix.",
+    "Sketch, extrusion and typed feature acceptance close their panels.",
+    "Compact sketch plane field permits origin, datum or planar face replacement with native Undo/Redo, Cancel, Finish and persistence.",
+    "Earlier sketch edits hide later geometry across shared history and reject future supports/projections.",
+    "Shift selects inclusive ranges; Ctrl toggles independent rows; Delete validates and deletes the whole selected set atomically.",
+    "Native sketch geometry is blue when free, black when constrained, red in solver error, preserving native hover/selection. Block-only native diagnosis corner corrected only in display materials."
+  ],
+  "screenshots_reviewed": [
+    "sketch-plane-editor/compact-sketch-plane-field.png",
+    "sketch-edit-state/mixed-native-solver-colors.png",
+    "sketch-edit-state/native-solver-error-red.png",
+    "history-selection/gray-italic-rollback-history.png",
+    "history-selection/datum-plane-highlight.png"
+  ],
+  "editable_examples": [
+    "sketch-edit-state/earlier-sketch-colors-visibility.FCStd",
+    "history-selection/history-selection.FCStd"
+  ],
+  "development_notes": [
+    "Prior development GUI probes corrected invalid diameter/plane test fields, physical versus logical mouse coordinates and native support occlusion; failed raw reports remain in runtime.",
+    "Native empty-matrix diagnosis classified Block-fixed geometry as dependent; tested material correction uses native Block flags and retains selection/error colors.",
+    "The first plane-visibility cleanup assertion incorrectly assumed origin child planes default hidden; the final assertion compares exact original visibility, including hidden Origin with visible child flags."
+  ],
+  "limits": [
+    "Tests use isolated synthetic native fixtures; the user live document was not opened or modified.",
+    "FreeCAD native datum presentation can set its modified flag; this is retained conservatively. Tests prove native intent/revision/Undo and original saved presentation remain unchanged.",
+    "The Block-only material correction is scoped to verified standard native layer-zero geometry; unsupported native layers retain engine behavior.",
+    "The separate M1 conversion milestone remains incomplete; the long-run pilot remains paused."
+  ]
+}

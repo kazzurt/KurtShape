@@ -1,0 +1,17 @@
+{
+  "recipe": "interface",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\gui-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390\\evidence\\interface-pass\\gui-test-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T03:02:47.7177051Z",
+  "exited_utc": "2026-10-06T03:03:27.7754007Z",
+  "pid": 38044,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T03:03:27.8083320Z"
+}

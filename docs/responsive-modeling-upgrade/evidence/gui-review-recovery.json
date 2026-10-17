@@ -1,0 +1,135 @@
+{
+  "passed": true,
+  "pid": 86304,
+  "method": "Disposable hidden GUI, real 30-second native checkpoint timer, native autosave enabled at one minute, os._exit without clean shutdown",
+  "stable_transient_directory": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/runtime/ci-gui/review-recovery/run-83d066ad022f47e59b32d9025b5b58ff/user-data/temp\\FreeCAD_Doc_75dabf94-dedc-47b6-9d9e-50827963a2d1_03b7ed_870379",
+  "document_id": "9f646530-6eed-4224-81a2-189a52fa4ae3",
+  "expected_volume_mm3": 1800,
+  "expected_draft_geometry": 1,
+  "original_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\saved-before-crash.FCStd",
+  "native_transient_directory": "C:/Users/Kurtz/Documents/KURT/CADkz/Codex/kurtshape/runtime/ci-gui/review-recovery/run-83d066ad022f47e59b32d9025b5b58ff/user-data/temp\\FreeCAD_Doc_a641ed6c-b42c-4d06-afb7-cf0c8631223f_da39a3_870379",
+  "autosave": {
+    "enabled": true,
+    "recovery_enabled": true,
+    "minutes": 1
+  },
+  "checkpoint_manifest": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\project-recovery\\9f646530-6eed-4224-81a2-189a52fa4ae3.json",
+  "native_recovery_files": [],
+  "native_stable_recovery_files": [],
+  "timings": {
+    "input_to_command_started": {
+      "samples": 8,
+      "median_ms": 0.003,
+      "p95_ms": 0.006,
+      "worst_ms": 0.006
+    },
+    "native_recompute": {
+      "samples": 10,
+      "median_ms": 8.775,
+      "p95_ms": 47.322,
+      "worst_ms": 47.322
+    },
+    "selector_evaluation": {
+      "samples": 10,
+      "median_ms": 0.0,
+      "p95_ms": 0.0,
+      "worst_ms": 0.0
+    },
+    "managed_rebuild": {
+      "samples": 10,
+      "median_ms": 9.094,
+      "p95_ms": 47.643,
+      "worst_ms": 47.643
+    },
+    "intent": {
+      "samples": 11,
+      "median_ms": 1.379,
+      "p95_ms": 5.23,
+      "worst_ms": 5.23
+    },
+    "inspection": {
+      "samples": 19,
+      "median_ms": 3.004,
+      "p95_ms": 5.973,
+      "worst_ms": 5.973
+    },
+    "operation": {
+      "samples": 19,
+      "median_ms": 4.73,
+      "p95_ms": 960.086,
+      "worst_ms": 960.086
+    },
+    "input_to_ui_updated": {
+      "samples": 8,
+      "median_ms": 54.906,
+      "p95_ms": 972.079,
+      "worst_ms": 972.079
+    },
+    "input_to_command_finished": {
+      "samples": 8,
+      "median_ms": 64.913,
+      "p95_ms": 1064.316,
+      "worst_ms": 1064.316
+    },
+    "command_new": {
+      "samples": 1,
+      "median_ms": 1064.314,
+      "p95_ms": 1064.314,
+      "worst_ms": 1064.314
+    },
+    "event_loop_delay": {
+      "samples": 512,
+      "median_ms": 5.378,
+      "p95_ms": 19.406,
+      "worst_ms": 21.998
+    },
+    "recovery_snapshot_gui": {
+      "samples": 76,
+      "median_ms": 1.43,
+      "p95_ms": 2.388,
+      "worst_ms": 459.5
+    },
+    "command_sketch_rectangle": {
+      "samples": 1,
+      "median_ms": 53.404,
+      "p95_ms": 53.404,
+      "worst_ms": 53.404
+    },
+    "command_pad": {
+      "samples": 1,
+      "median_ms": 76.416,
+      "p95_ms": 76.416,
+      "worst_ms": 76.416
+    },
+    "command_save": {
+      "samples": 1,
+      "median_ms": 84.164,
+      "p95_ms": 84.164,
+      "worst_ms": 84.164
+    },
+    "command_set_parameter": {
+      "samples": 1,
+      "median_ms": 34.409,
+      "p95_ms": 34.409,
+      "worst_ms": 34.409
+    },
+    "command_create_sketch": {
+      "samples": 1,
+      "median_ms": 46.656,
+      "p95_ms": 46.656,
+      "worst_ms": 46.656
+    },
+    "command_begin_sketch_edit": {
+      "samples": 1,
+      "median_ms": 27.796,
+      "p95_ms": 27.796,
+      "worst_ms": 27.796
+    },
+    "command_add_circle": {
+      "samples": 1,
+      "median_ms": 245.966,
+      "p95_ms": 245.966,
+      "worst_ms": 245.966
+    }
+  }
+}

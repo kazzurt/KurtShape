@@ -1,0 +1,4293 @@
+{
+  "passed": true,
+  "checks": [
+    "production viewport selects actual solid face",
+    "production sketch is supported by selected solid face",
+    "production actual U converts solid edge",
+    "top Line completes exactly one native geometry",
+    "top Line snaps to the exact external point",
+    "top Line preserves a native external coincidence",
+    "top Line solves successfully",
+    "top Line pointer processing remains responsive",
+    "top Line Stop restores native point picking",
+    "top Circle completes exactly one native geometry",
+    "top Circle snaps to the exact external point",
+    "top Circle preserves a native external coincidence",
+    "top Circle solves successfully",
+    "top Circle pointer processing remains responsive",
+    "top Circle Stop restores native point picking",
+    "top leaving sketch restores native point picking",
+    "production viewport selects actual solid face",
+    "production sketch is supported by selected solid face",
+    "production actual U converts solid edge",
+    "isometric Line completes exactly one native geometry",
+    "isometric Line snaps to the exact external point",
+    "isometric Line preserves a native external coincidence",
+    "isometric Line solves successfully",
+    "isometric Line pointer processing remains responsive",
+    "isometric Line Stop restores native point picking",
+    "isometric Circle completes exactly one native geometry",
+    "isometric Circle snaps to the exact external point",
+    "isometric Circle preserves a native external coincidence",
+    "isometric Circle solves successfully",
+    "isometric Circle pointer processing remains responsive",
+    "isometric Circle Stop restores native point picking",
+    "isometric leaving sketch restores native point picking",
+    "production viewport selects actual solid face",
+    "production sketch is supported by selected solid face",
+    "production actual U converts solid edge",
+    "side Line completes exactly one native geometry",
+    "side Line snaps to the exact external point",
+    "side Line preserves a native external coincidence",
+    "side Line solves successfully",
+    "side Line pointer processing remains responsive",
+    "side Line Stop restores native point picking",
+    "side Circle completes exactly one native geometry",
+    "side Circle snaps to the exact external point",
+    "side Circle preserves a native external coincidence",
+    "side Circle solves successfully",
+    "side Circle pointer processing remains responsive",
+    "side Circle Stop restores native point picking",
+    "side leaving sketch restores native point picking",
+    "production viewport selects actual solid face",
+    "production sketch is supported by selected solid face",
+    "production actual U converts solid edge",
+    "projected Line completes exactly one native geometry",
+    "projected Line snaps to the exact external point",
+    "projected Line preserves a native external coincidence",
+    "projected Line solves successfully",
+    "projected Line pointer processing remains responsive",
+    "projected Line Stop restores native point picking",
+    "projected Circle completes exactly one native geometry",
+    "projected Circle snaps to the exact external point",
+    "projected Circle preserves a native external coincidence",
+    "projected Circle solves successfully",
+    "projected Circle pointer processing remains responsive",
+    "projected Circle Stop restores native point picking",
+    "projected leaving sketch restores native point picking",
+    "production viewport selects actual solid face",
+    "production sketch is supported by selected solid face",
+    "production actual U converts solid edge",
+    "circle Line completes exactly one native geometry",
+    "circle Line snaps to the exact external point",
+    "circle Line preserves a native external coincidence",
+    "circle Line solves successfully",
+    "circle Line pointer processing remains responsive",
+    "circle Line Stop restores native point picking",
+    "circle Circle completes exactly one native geometry",
+    "circle Circle snaps to the exact external point",
+    "circle Circle preserves a native external coincidence",
+    "circle Circle solves successfully",
+    "circle Circle pointer processing remains responsive",
+    "circle Circle Stop restores native point picking",
+    "circle leaving sketch restores native point picking",
+    "production viewport selects actual solid face",
+    "production sketch is supported by selected solid face",
+    "production actual U converts solid edge",
+    "circle_isometric Line completes exactly one native geometry",
+    "circle_isometric Line snaps to the exact external point",
+    "circle_isometric Line preserves a native external coincidence",
+    "circle_isometric Line solves successfully",
+    "circle_isometric Line pointer processing remains responsive",
+    "circle_isometric Line Stop restores native point picking",
+    "circle_isometric Circle completes exactly one native geometry",
+    "circle_isometric Circle snaps to the exact external point",
+    "circle_isometric Circle preserves a native external coincidence",
+    "circle_isometric Circle solves successfully",
+    "circle_isometric Circle pointer processing remains responsive",
+    "circle_isometric Circle Stop restores native point picking",
+    "circle_isometric leaving sketch restores native point picking",
+    "continuous_Circle_False_converted_endpoint viewport selects actual solid face",
+    "continuous_Circle_False_converted_endpoint sketch is supported by selected solid face",
+    "continuous_Circle_False_converted_endpoint actual U converts solid edge",
+    "continuous_Circle_False_converted_endpoint right-click completely leaves drawing",
+    "continuous_Circle_False_converted_endpoint subsequent selection clicks never continue drawing",
+    "continuous_Circle_False_converted_endpoint right-click restores native point picking",
+    "continuous_Circle_False_converted_endpoint restarted tool receives all clicks",
+    "continuous_Circle_False_converted_endpoint restarted tool creates one geometry",
+    "continuous_Circle_False_converted_endpoint restarted tool snaps exactly to external endpoint",
+    "continuous_Circle_False_converted_endpoint snap is a native coincidence",
+    "continuous_Circle_False_converted_endpoint hover remains within responsiveness bound",
+    "continuous_Circle_False_converted_endpoint Escape restores native point picking",
+    "continuous_Circle_False_converted_endpoint leaving sketch restores native point picking",
+    "continuous_Circle_False_unconverted_edge viewport selects actual solid face",
+    "continuous_Circle_False_unconverted_edge sketch is supported by selected solid face",
+    "continuous_Circle_False_unconverted_edge actual U converts solid edge",
+    "continuous_Circle_False_unconverted_edge right-click completely leaves drawing",
+    "continuous_Circle_False_unconverted_edge subsequent selection clicks never continue drawing",
+    "continuous_Circle_False_unconverted_edge right-click restores native point picking",
+    "continuous_Circle_False_unconverted_edge restarted tool receives all clicks",
+    "continuous_Circle_False_unconverted_edge restarted tool creates one geometry",
+    "continuous_Circle_False_unconverted_edge hover remains within responsiveness bound",
+    "continuous_Circle_False_unconverted_edge Escape restores native point picking",
+    "continuous_Circle_False_unconverted_edge leaving sketch restores native point picking",
+    "continuous_Polyline_False_converted_endpoint viewport selects actual solid face",
+    "continuous_Polyline_False_converted_endpoint sketch is supported by selected solid face",
+    "continuous_Polyline_False_converted_endpoint actual U converts solid edge",
+    "continuous_Polyline_False_converted_endpoint right-click completely leaves drawing",
+    "continuous_Polyline_False_converted_endpoint subsequent selection clicks never continue drawing",
+    "continuous_Polyline_False_converted_endpoint right-click restores native point picking",
+    "continuous_Polyline_False_converted_endpoint restarted tool receives all clicks",
+    "continuous_Polyline_False_converted_endpoint restarted tool creates one geometry",
+    "continuous_Polyline_False_converted_endpoint restarted tool snaps exactly to external endpoint",
+    "continuous_Polyline_False_converted_endpoint snap is a native coincidence",
+    "continuous_Polyline_False_converted_endpoint hover remains within responsiveness bound",
+    "continuous_Polyline_False_converted_endpoint Escape restores native point picking",
+    "continuous_Polyline_False_converted_endpoint leaving sketch restores native point picking",
+    "continuous_Polyline_False_unconverted_edge viewport selects actual solid face",
+    "continuous_Polyline_False_unconverted_edge sketch is supported by selected solid face",
+    "continuous_Polyline_False_unconverted_edge actual U converts solid edge",
+    "continuous_Polyline_False_unconverted_edge right-click completely leaves drawing",
+    "continuous_Polyline_False_unconverted_edge subsequent selection clicks never continue drawing",
+    "continuous_Polyline_False_unconverted_edge right-click restores native point picking",
+    "continuous_Polyline_False_unconverted_edge restarted tool receives all clicks",
+    "continuous_Polyline_False_unconverted_edge restarted tool creates one geometry",
+    "continuous_Polyline_False_unconverted_edge hover remains within responsiveness bound",
+    "continuous_Polyline_False_unconverted_edge Escape restores native point picking",
+    "continuous_Polyline_False_unconverted_edge leaving sketch restores native point picking",
+    "continuous_Polyline_True_converted_endpoint viewport selects actual solid face",
+    "continuous_Polyline_True_converted_endpoint sketch is supported by selected solid face",
+    "continuous_Polyline_True_converted_endpoint actual U converts solid edge",
+    "continuous_Polyline_True_converted_endpoint right-click completely leaves drawing",
+    "continuous_Polyline_True_converted_endpoint subsequent selection clicks never continue drawing",
+    "continuous_Polyline_True_converted_endpoint right-click restores native point picking",
+    "continuous_Polyline_True_converted_endpoint restarted tool receives all clicks",
+    "continuous_Polyline_True_converted_endpoint restarted tool creates one geometry",
+    "continuous_Polyline_True_converted_endpoint restarted tool snaps exactly to external endpoint",
+    "continuous_Polyline_True_converted_endpoint snap is a native coincidence",
+    "continuous_Polyline_True_converted_endpoint hover remains within responsiveness bound",
+    "continuous_Polyline_True_converted_endpoint Escape restores native point picking",
+    "continuous_Polyline_True_converted_endpoint leaving sketch restores native point picking",
+    "continuous_Polyline_True_unconverted_edge viewport selects actual solid face",
+    "continuous_Polyline_True_unconverted_edge sketch is supported by selected solid face",
+    "continuous_Polyline_True_unconverted_edge actual U converts solid edge",
+    "continuous_Polyline_True_unconverted_edge right-click completely leaves drawing",
+    "continuous_Polyline_True_unconverted_edge subsequent selection clicks never continue drawing",
+    "continuous_Polyline_True_unconverted_edge right-click restores native point picking",
+    "continuous_Polyline_True_unconverted_edge restarted tool receives all clicks",
+    "continuous_Polyline_True_unconverted_edge restarted tool creates one geometry",
+    "continuous_Polyline_True_unconverted_edge hover remains within responsiveness bound",
+    "continuous_Polyline_True_unconverted_edge Escape restores native point picking",
+    "continuous_Polyline_True_unconverted_edge leaving sketch restores native point picking"
+  ],
+  "cases": [
+    {
+      "mode": "production",
+      "variant": "top",
+      "snap_preferences": [
+        [
+          "Boolean",
+          "Snap",
+          true
+        ],
+        [
+          "Boolean",
+          "SnapToObjects",
+          true
+        ]
+      ],
+      "external_geometry": [
+        "<Line segment (0,0,0) (1,0,0) >",
+        "<Line segment (0,0,0) (0,1,0) >",
+        "<Line segment (0,0,0) (40,0,0) >"
+      ],
+      "placement": "Placement [Pos=(0,0,8), Yaw-Pitch-Roll=(0,0,0)]",
+      "camera": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "avoid_redundant": true,
+      "tools": [
+        {
+          "tool": "Line",
+          "moves": [
+            {
+              "pixel": [
+                413,
+                425
+              ],
+              "dispatch_ms": 1.248,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "click_ms": 40.247
+            },
+            {
+              "pixel": [
+                636,
+                518
+              ],
+              "dispatch_ms": 4.448,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                628,
+                514
+              ],
+              "dispatch_ms": 10.557,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                624,
+                510
+              ],
+              "dispatch_ms": 6.88,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                621,
+                508
+              ],
+              "dispatch_ms": 6.755,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                618,
+                507
+              ],
+              "dispatch_ms": 4.041,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 5.411,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                614,
+                505
+              ],
+              "dispatch_ms": 4.862,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                611,
+                504
+              ],
+              "dispatch_ms": 3.385,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 3.747,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                620,
+                508
+              ],
+              "dispatch_ms": 3.402,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 3.259,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                620,
+                508
+              ],
+              "dispatch_ms": 3.325,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 55.187
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (40,0,0) >"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              2,
+              -3,
+              2
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 10.557
+        },
+        {
+          "tool": "Circle",
+          "moves": [
+            {
+              "pixel": [
+                636,
+                518
+              ],
+              "dispatch_ms": 1.17,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                628,
+                514
+              ],
+              "dispatch_ms": 3.554,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                624,
+                510
+              ],
+              "dispatch_ms": 2.928,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                621,
+                508
+              ],
+              "dispatch_ms": 4.156,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                618,
+                507
+              ],
+              "dispatch_ms": 4.477,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 4.574,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                614,
+                505
+              ],
+              "dispatch_ms": 3.27,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                611,
+                504
+              ],
+              "dispatch_ms": 4.452,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 6.644,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                620,
+                508
+              ],
+              "dispatch_ms": 3.671,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 5.904,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                620,
+                508
+              ],
+              "dispatch_ms": 4.251,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 37.645
+            },
+            {
+              "pixel": [
+                555,
+                445
+              ],
+              "dispatch_ms": 1.276,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 46.448
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "Circle (Radius : 8.52844, Position : (40, 0, 0), Direction : (0, 0, 1))"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              3,
+              -3,
+              2
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 6.644
+        }
+      ]
+    },
+    {
+      "mode": "production",
+      "variant": "isometric",
+      "snap_preferences": [
+        [
+          "Boolean",
+          "Snap",
+          true
+        ],
+        [
+          "Boolean",
+          "SnapToObjects",
+          true
+        ]
+      ],
+      "external_geometry": [
+        "<Line segment (0,0,0) (1,0,0) >",
+        "<Line segment (0,0,0) (0,1,0) >",
+        "<Line segment (0,0,0) (40,0,0) >"
+      ],
+      "placement": "Placement [Pos=(0,0,8), Yaw-Pitch-Roll=(0,0,0)]",
+      "camera": [
+        0.4247081131882081,
+        0.1759200332902716,
+        0.3398510695385579,
+        0.8204732847648121
+      ],
+      "avoid_redundant": true,
+      "tools": [
+        {
+          "tool": "Line",
+          "moves": [
+            {
+              "pixel": [
+                363,
+                350
+              ],
+              "dispatch_ms": 1.066,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "click_ms": 49.151
+            },
+            {
+              "pixel": [
+                469,
+                478
+              ],
+              "dispatch_ms": 5.12,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                461,
+                474
+              ],
+              "dispatch_ms": 4.829,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                457,
+                470
+              ],
+              "dispatch_ms": 5.246,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                454,
+                468
+              ],
+              "dispatch_ms": 8.334,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                451,
+                467
+              ],
+              "dispatch_ms": 3.519,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                449,
+                466
+              ],
+              "dispatch_ms": 4.205,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                447,
+                465
+              ],
+              "dispatch_ms": 2.128,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                444,
+                464
+              ],
+              "dispatch_ms": 8.787,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                449,
+                466
+              ],
+              "dispatch_ms": 5.325,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                453,
+                468
+              ],
+              "dispatch_ms": 5.606,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                449,
+                466
+              ],
+              "dispatch_ms": 5.614,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                453,
+                468
+              ],
+              "dispatch_ms": 4.239,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 37.811
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (20.0483,7.93378,0) (40,0,0) >"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              2,
+              -3,
+              2
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 8.787
+        },
+        {
+          "tool": "Circle",
+          "moves": [
+            {
+              "pixel": [
+                469,
+                478
+              ],
+              "dispatch_ms": 3.779,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                461,
+                474
+              ],
+              "dispatch_ms": 2.941,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                457,
+                470
+              ],
+              "dispatch_ms": 4.399,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                454,
+                468
+              ],
+              "dispatch_ms": 3.574,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                451,
+                467
+              ],
+              "dispatch_ms": 3.233,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                449,
+                466
+              ],
+              "dispatch_ms": 5.986,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                447,
+                465
+              ],
+              "dispatch_ms": 8.018,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                444,
+                464
+              ],
+              "dispatch_ms": 3.535,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                449,
+                466
+              ],
+              "dispatch_ms": 5.63,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                453,
+                468
+              ],
+              "dispatch_ms": 3.418,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                449,
+                466
+              ],
+              "dispatch_ms": 3.174,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                453,
+                468
+              ],
+              "dispatch_ms": 3.853,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 20.737
+            },
+            {
+              "pixel": [
+                449,
+                416
+              ],
+              "dispatch_ms": 2.33,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 46.25
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "Circle (Radius : 8.44751, Position : (40, 0, 0), Direction : (0, 0, 1))"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              3,
+              -3,
+              2
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 8.018
+        }
+      ]
+    },
+    {
+      "mode": "production",
+      "variant": "side",
+      "snap_preferences": [
+        [
+          "Boolean",
+          "Snap",
+          true
+        ],
+        [
+          "Boolean",
+          "SnapToObjects",
+          true
+        ]
+      ],
+      "external_geometry": [
+        "<Line segment (0,0,0) (1,0,0) >",
+        "<Line segment (0,0,0) (0,1,0) >",
+        "<Line segment (0,8,0) (30,8,0) >"
+      ],
+      "placement": "Placement [Pos=(40,0,0), Yaw-Pitch-Roll=(90,0,90)]",
+      "camera": [
+        0.5,
+        0.5,
+        0.5,
+        0.5
+      ],
+      "avoid_redundant": true,
+      "tools": [
+        {
+          "tool": "Line",
+          "moves": [
+            {
+              "pixel": [
+                413,
+                232
+              ],
+              "dispatch_ms": 1.228,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "click_ms": 41.672
+            },
+            {
+              "pixel": [
+                585,
+                326
+              ],
+              "dispatch_ms": 3.962,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                577,
+                322
+              ],
+              "dispatch_ms": 3.76,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                573,
+                318
+              ],
+              "dispatch_ms": 13.221,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                570,
+                316
+              ],
+              "dispatch_ms": 4.931,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                567,
+                315
+              ],
+              "dispatch_ms": 6.751,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                565,
+                314
+              ],
+              "dispatch_ms": 3.887,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                563,
+                313
+              ],
+              "dispatch_ms": 5.093,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                560,
+                312
+              ],
+              "dispatch_ms": 7.003,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                565,
+                314
+              ],
+              "dispatch_ms": 4.354,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                569,
+                316
+              ],
+              "dispatch_ms": 4.202,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                565,
+                314
+              ],
+              "dispatch_ms": 3.723,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                569,
+                316
+              ],
+              "dispatch_ms": 3.001,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 26.296
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (14.9671,15.9953,0) (30,8,0) >"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              2,
+              -3,
+              2
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 13.221
+        },
+        {
+          "tool": "Circle",
+          "moves": [
+            {
+              "pixel": [
+                585,
+                326
+              ],
+              "dispatch_ms": 0.981,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                577,
+                322
+              ],
+              "dispatch_ms": 1.45,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                573,
+                318
+              ],
+              "dispatch_ms": 4.949,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                570,
+                316
+              ],
+              "dispatch_ms": 1.987,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                567,
+                315
+              ],
+              "dispatch_ms": 4.136,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                565,
+                314
+              ],
+              "dispatch_ms": 6.878,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                563,
+                313
+              ],
+              "dispatch_ms": 4.122,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                560,
+                312
+              ],
+              "dispatch_ms": 4.896,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                565,
+                314
+              ],
+              "dispatch_ms": 3.275,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                569,
+                316
+              ],
+              "dispatch_ms": 3.471,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                565,
+                314
+              ],
+              "dispatch_ms": 5.041,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                569,
+                316
+              ],
+              "dispatch_ms": 4.55,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 20.873
+            },
+            {
+              "pixel": [
+                504,
+                252
+              ],
+              "dispatch_ms": 6.287,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 31.947
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "Circle (Radius : 8.5218, Position : (30, 8, 0), Direction : (0, 0, 1))"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              3,
+              -3,
+              2
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 6.878
+        }
+      ]
+    },
+    {
+      "mode": "production",
+      "variant": "projected",
+      "snap_preferences": [
+        [
+          "Boolean",
+          "Snap",
+          true
+        ],
+        [
+          "Boolean",
+          "SnapToObjects",
+          true
+        ]
+      ],
+      "external_geometry": [
+        "<Line segment (0,0,0) (1,0,0) >",
+        "<Line segment (0,0,0) (0,1,0) >",
+        "<Line segment (0,0,0) (40,0,0) >"
+      ],
+      "placement": "Placement [Pos=(0,0,8), Yaw-Pitch-Roll=(0,0,0)]",
+      "camera": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "avoid_redundant": true,
+      "tools": [
+        {
+          "tool": "Line",
+          "moves": [
+            {
+              "pixel": [
+                413,
+                425
+              ],
+              "dispatch_ms": 2.664,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "click_ms": 61.991
+            },
+            {
+              "pixel": [
+                636,
+                518
+              ],
+              "dispatch_ms": 5.971,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                628,
+                514
+              ],
+              "dispatch_ms": 6.256,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                624,
+                510
+              ],
+              "dispatch_ms": 9.632,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                621,
+                508
+              ],
+              "dispatch_ms": 8.513,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                618,
+                507
+              ],
+              "dispatch_ms": 4.563,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 7.428,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                614,
+                505
+              ],
+              "dispatch_ms": 5.554,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                611,
+                504
+              ],
+              "dispatch_ms": 4.446,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 3.593,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                620,
+                508
+              ],
+              "dispatch_ms": 8.701,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 3.949,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                620,
+                508
+              ],
+              "dispatch_ms": 6.562,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 74.052
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (40,0,0) >"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              2,
+              -3,
+              2
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 9.632
+        },
+        {
+          "tool": "Circle",
+          "moves": [
+            {
+              "pixel": [
+                636,
+                518
+              ],
+              "dispatch_ms": 1.116,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                628,
+                514
+              ],
+              "dispatch_ms": 3.391,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                624,
+                510
+              ],
+              "dispatch_ms": 4.27,
+              "preselection": [
+                "Sketch",
+                [
+                  "H_Axis"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                621,
+                508
+              ],
+              "dispatch_ms": 7.478,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                618,
+                507
+              ],
+              "dispatch_ms": 6.982,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 6.002,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                614,
+                505
+              ],
+              "dispatch_ms": 7.123,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                611,
+                504
+              ],
+              "dispatch_ms": 7.518,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 6.864,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                620,
+                508
+              ],
+              "dispatch_ms": 4.529,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                616,
+                506
+              ],
+              "dispatch_ms": 5.107,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                620,
+                508
+              ],
+              "dispatch_ms": 4.567,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 24.084
+            },
+            {
+              "pixel": [
+                555,
+                445
+              ],
+              "dispatch_ms": 2.467,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex2"
+                ]
+              ]
+            },
+            {
+              "click_ms": 42.146
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "Circle (Radius : 8.52844, Position : (40, 0, 0), Direction : (0, 0, 1))"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              3,
+              -3,
+              2
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 7.518
+        }
+      ]
+    },
+    {
+      "mode": "production",
+      "variant": "circle",
+      "snap_preferences": [
+        [
+          "Boolean",
+          "Snap",
+          true
+        ],
+        [
+          "Boolean",
+          "SnapToObjects",
+          true
+        ]
+      ],
+      "external_geometry": [
+        "<Line segment (0,0,0) (1,0,0) >",
+        "<Line segment (0,0,0) (0,1,0) >",
+        "Circle (Radius : 15, Position : (20, 15, 0), Direction : (0, 0, 1))"
+      ],
+      "placement": "Placement [Pos=(0,0,8), Yaw-Pitch-Roll=(0,0,0)]",
+      "camera": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "avoid_redundant": true,
+      "tools": [
+        {
+          "tool": "Line",
+          "moves": [
+            {
+              "pixel": [
+                332,
+                283
+              ],
+              "dispatch_ms": 1.109,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "click_ms": 32.507
+            },
+            {
+              "pixel": [
+                433,
+                366
+              ],
+              "dispatch_ms": 3.592,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                425,
+                362
+              ],
+              "dispatch_ms": 6.611,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                421,
+                358
+              ],
+              "dispatch_ms": 7.732,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                418,
+                356
+              ],
+              "dispatch_ms": 5.23,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                415,
+                355
+              ],
+              "dispatch_ms": 5.45,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                354
+              ],
+              "dispatch_ms": 3.445,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                411,
+                353
+              ],
+              "dispatch_ms": 3.334,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                408,
+                352
+              ],
+              "dispatch_ms": 5.368,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                354
+              ],
+              "dispatch_ms": 6.739,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                417,
+                356
+              ],
+              "dispatch_ms": 3.143,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                354
+              ],
+              "dispatch_ms": 3.963,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                417,
+                356
+              ],
+              "dispatch_ms": 2.182,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "click_ms": 46.507
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (12.0141,22,0) (20,15,0) >"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              2,
+              -3,
+              3
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 7.732
+        },
+        {
+          "tool": "Circle",
+          "moves": [
+            {
+              "pixel": [
+                433,
+                366
+              ],
+              "dispatch_ms": 1.071,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                425,
+                362
+              ],
+              "dispatch_ms": 1.22,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                421,
+                358
+              ],
+              "dispatch_ms": 6.172,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                418,
+                356
+              ],
+              "dispatch_ms": 3.615,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                415,
+                355
+              ],
+              "dispatch_ms": 4.458,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                354
+              ],
+              "dispatch_ms": 5.298,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                411,
+                353
+              ],
+              "dispatch_ms": 3.025,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                408,
+                352
+              ],
+              "dispatch_ms": 5.722,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                354
+              ],
+              "dispatch_ms": 7.413,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                417,
+                356
+              ],
+              "dispatch_ms": 6.16,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                354
+              ],
+              "dispatch_ms": 6.312,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                417,
+                356
+              ],
+              "dispatch_ms": 7.247,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "click_ms": 16.308
+            },
+            {
+              "pixel": [
+                352,
+                293
+              ],
+              "dispatch_ms": 3.311,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "click_ms": 63.593
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "Circle (Radius : 8.5052, Position : (20, 15, 0), Direction : (0, 0, 1))"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              3,
+              -3,
+              3
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 7.413
+        }
+      ]
+    },
+    {
+      "mode": "production",
+      "variant": "circle_isometric",
+      "snap_preferences": [
+        [
+          "Boolean",
+          "Snap",
+          true
+        ],
+        [
+          "Boolean",
+          "SnapToObjects",
+          true
+        ]
+      ],
+      "external_geometry": [
+        "<Line segment (0,0,0) (1,0,0) >",
+        "<Line segment (0,0,0) (0,1,0) >",
+        "Circle (Radius : 15, Position : (20, 15, 0), Direction : (0, 0, 1))"
+      ],
+      "placement": "Placement [Pos=(0,0,8), Yaw-Pitch-Roll=(0,0,0)]",
+      "camera": [
+        0.4247081131882081,
+        0.1759200332902716,
+        0.3398510695385579,
+        0.8204732847648121
+      ],
+      "avoid_redundant": true,
+      "tools": [
+        {
+          "tool": "Line",
+          "moves": [
+            {
+              "pixel": [
+                406,
+                259
+              ],
+              "dispatch_ms": 1.845,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "click_ms": 47.287
+            },
+            {
+              "pixel": [
+                433,
+                333
+              ],
+              "dispatch_ms": 3.743,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                425,
+                329
+              ],
+              "dispatch_ms": 5.325,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                421,
+                325
+              ],
+              "dispatch_ms": 4.192,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                418,
+                323
+              ],
+              "dispatch_ms": 10.849,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                415,
+                322
+              ],
+              "dispatch_ms": 2.973,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                321
+              ],
+              "dispatch_ms": 7.002,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                411,
+                320
+              ],
+              "dispatch_ms": 3.895,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                408,
+                319
+              ],
+              "dispatch_ms": 3.006,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                321
+              ],
+              "dispatch_ms": 3.486,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                417,
+                323
+              ],
+              "dispatch_ms": 5.353,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                321
+              ],
+              "dispatch_ms": 2.605,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                417,
+                323
+              ],
+              "dispatch_ms": 6.458,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "click_ms": 56.786
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (12.0408,21.9832,0) (20,15,0) >"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              2,
+              -3,
+              3
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 10.849
+        },
+        {
+          "tool": "Circle",
+          "moves": [
+            {
+              "pixel": [
+                433,
+                333
+              ],
+              "dispatch_ms": 1.953,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                425,
+                329
+              ],
+              "dispatch_ms": 1.241,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                421,
+                325
+              ],
+              "dispatch_ms": 3.206,
+              "preselection": [
+                "",
+                [
+                  ""
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                418,
+                323
+              ],
+              "dispatch_ms": 6.788,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                415,
+                322
+              ],
+              "dispatch_ms": 6.848,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                321
+              ],
+              "dispatch_ms": 3.423,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                411,
+                320
+              ],
+              "dispatch_ms": 4.525,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                408,
+                319
+              ],
+              "dispatch_ms": 7.66,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                321
+              ],
+              "dispatch_ms": 4.112,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                417,
+                323
+              ],
+              "dispatch_ms": 6.902,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                413,
+                321
+              ],
+              "dispatch_ms": 3.074,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "pixel": [
+                417,
+                323
+              ],
+              "dispatch_ms": 3.562,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "click_ms": 22.279
+            },
+            {
+              "pixel": [
+                413,
+                271
+              ],
+              "dispatch_ms": 5.578,
+              "preselection": [
+                "Sketch",
+                [
+                  "Vertex1"
+                ]
+              ]
+            },
+            {
+              "click_ms": 88.308
+            }
+          ],
+          "before_count": 0,
+          "geometry_count": 1,
+          "geometry": [
+            "Circle (Radius : 8.51675, Position : (20, 15, 0), Direction : (0, 0, 1))"
+          ],
+          "constraints": [
+            [
+              "Coincident",
+              0,
+              3,
+              -3,
+              3
+            ]
+          ],
+          "solve": 0,
+          "target_error_mm": 0.0,
+          "max_dispatch_ms": 7.66
+        }
+      ]
+    },
+    {
+      "tool": "Circle",
+      "committed": false,
+      "target": "converted_endpoint",
+      "moves": [
+        {
+          "pixel": [
+            413,
+            425
+          ],
+          "dispatch_ms": 1.079,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 16.156
+        },
+        {
+          "pixel": [
+            636,
+            516
+          ],
+          "dispatch_ms": 1.162,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            628,
+            511
+          ],
+          "dispatch_ms": 1.743,
+          "preselection": [
+            "Sketch",
+            [
+              "H_Axis"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            622,
+            509
+          ],
+          "dispatch_ms": 3.393,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 2.671,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            620,
+            508
+          ],
+          "dispatch_ms": 2.372,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 1.141,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 1.29,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "click_ms": 55.394
+        },
+        {
+          "pixel": [
+            555,
+            445
+          ],
+          "dispatch_ms": 1.883,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "click_ms": 125.637
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 3.872,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "click_ms": 32.041
+        },
+        {
+          "pixel": [
+            555,
+            445
+          ],
+          "dispatch_ms": 2.936,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "click_ms": 30.937
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.19739987328648567,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.22920011542737484,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.6432000081986189,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.7366000209003687,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreateCircle",
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreateCircle",
+          "geometry_count": 1,
+          "geometry": [
+            "Circle (Radius : 8.52844, Position : (40, 0, 0), Direction : (0, 0, 1))"
+          ],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        }
+      ],
+      "max_dispatch_ms": 3.872
+    },
+    {
+      "tool": "Circle",
+      "committed": false,
+      "target": "unconverted_edge",
+      "moves": [
+        {
+          "pixel": [
+            413,
+            425
+          ],
+          "dispatch_ms": 1.066,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 18.838
+        },
+        {
+          "pixel": [
+            636,
+            415
+          ],
+          "dispatch_ms": 1.168,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            628,
+            410
+          ],
+          "dispatch_ms": 1.752,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            622,
+            408
+          ],
+          "dispatch_ms": 2.625,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 1.997,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            620,
+            407
+          ],
+          "dispatch_ms": 2.186,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 1.39,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 0.839,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 2.958
+        },
+        {
+          "pixel": [
+            555,
+            344
+          ],
+          "dispatch_ms": 2.467,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 146.281
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 0.522,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 11.837
+        },
+        {
+          "pixel": [
+            555,
+            344
+          ],
+          "dispatch_ms": 2.584,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 17.385
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.3603000659495592,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.3766999579966068,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.7251000497490168,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.600000075995922,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.458300044760108,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.0935000609606504,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.838699983432889,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.3675999362021685,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.775699969381094,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.5870000459253788,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreateCircle",
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreateCircle",
+          "geometry_count": 1,
+          "geometry": [
+            "Circle (Radius : 8.50533, Position : (40.0141, 9.97183, 0), Direction : (0, 0, 1))"
+          ],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        }
+      ],
+      "max_dispatch_ms": 2.625
+    },
+    {
+      "tool": "Polyline",
+      "committed": false,
+      "target": "converted_endpoint",
+      "moves": [
+        {
+          "pixel": [
+            413,
+            425
+          ],
+          "dispatch_ms": 2.349,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 4.028
+        },
+        {
+          "pixel": [
+            636,
+            516
+          ],
+          "dispatch_ms": 2.577,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            628,
+            511
+          ],
+          "dispatch_ms": 1.963,
+          "preselection": [
+            "Sketch",
+            [
+              "H_Axis"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            622,
+            509
+          ],
+          "dispatch_ms": 1.402,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 2.42,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            620,
+            508
+          ],
+          "dispatch_ms": 1.362,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 1.306,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 1.849,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "click_ms": 104.999
+        },
+        {
+          "pixel": [
+            555,
+            445
+          ],
+          "dispatch_ms": 1.702,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "click_ms": 124.331
+        },
+        {
+          "pixel": [
+            393,
+            415
+          ],
+          "dispatch_ms": 1.193,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 3.653
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 4.38,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex2"
+            ]
+          ]
+        },
+        {
+          "click_ms": 27.087
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.3136999439448118,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.8257999327033758,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.5065000150352716,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.327700050547719,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (17.9953,8.98591,0) (40,0,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        }
+      ],
+      "max_dispatch_ms": 4.38
+    },
+    {
+      "tool": "Polyline",
+      "committed": false,
+      "target": "unconverted_edge",
+      "moves": [
+        {
+          "pixel": [
+            413,
+            425
+          ],
+          "dispatch_ms": 0.515,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 5.419
+        },
+        {
+          "pixel": [
+            636,
+            415
+          ],
+          "dispatch_ms": 0.904,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            628,
+            410
+          ],
+          "dispatch_ms": 1.539,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            622,
+            408
+          ],
+          "dispatch_ms": 1.281,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 1.105,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            620,
+            407
+          ],
+          "dispatch_ms": 1.838,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 1.832,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 2.412,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 2.922
+        },
+        {
+          "pixel": [
+            555,
+            344
+          ],
+          "dispatch_ms": 2.331,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 136.988
+        },
+        {
+          "pixel": [
+            393,
+            415
+          ],
+          "dispatch_ms": 2.122,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 2.436
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 2.008,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 23.436
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.24610012769699097,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.16319984570145607,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.8125000167638063,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.1152001097798347,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.3089999556541443,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.4813998714089394,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.706399954855442,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.3578999787569046,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.5688001401722431,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 0,
+          "geometry": [],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (17.9953,8.98591,0) (40.0141,9.97183,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        }
+      ],
+      "max_dispatch_ms": 2.412
+    },
+    {
+      "tool": "Polyline",
+      "committed": true,
+      "target": "converted_endpoint",
+      "moves": [
+        {
+          "pixel": [
+            413,
+            425
+          ],
+          "dispatch_ms": 1.05,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 4.26
+        },
+        {
+          "pixel": [
+            443,
+            476
+          ],
+          "dispatch_ms": 1.359,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 12.396
+        },
+        {
+          "pixel": [
+            636,
+            516
+          ],
+          "dispatch_ms": 1.2,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            628,
+            511
+          ],
+          "dispatch_ms": 1.579,
+          "preselection": [
+            "Sketch",
+            [
+              "H_Axis"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            622,
+            509
+          ],
+          "dispatch_ms": 2.541,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex4"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 1.602,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex4"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            620,
+            508
+          ],
+          "dispatch_ms": 1.309,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex4"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 1.265,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex4"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 1.611,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex4"
+            ]
+          ]
+        },
+        {
+          "click_ms": 102.481
+        },
+        {
+          "pixel": [
+            555,
+            445
+          ],
+          "dispatch_ms": 1.544,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex4"
+            ]
+          ]
+        },
+        {
+          "click_ms": 108.894
+        },
+        {
+          "pixel": [
+            393,
+            415
+          ],
+          "dispatch_ms": 1.506,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 3.875
+        },
+        {
+          "pixel": [
+            616,
+            506
+          ],
+          "dispatch_ms": 3.779,
+          "preselection": [
+            "Sketch",
+            [
+              "Vertex4"
+            ]
+          ]
+        },
+        {
+          "click_ms": 26.487
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.31349994242191315,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.5646999925374985,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.35149999894201756,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.24319998919963837,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (22.9249,2.93897,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (22.9249,2.93897,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (22.9249,2.93897,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (22.9249,2.93897,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 2,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (22.9249,2.93897,0) >",
+            "<Line segment (17.9953,8.98591,0) (40,0,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        }
+      ],
+      "max_dispatch_ms": 3.779
+    },
+    {
+      "tool": "Polyline",
+      "committed": true,
+      "target": "unconverted_edge",
+      "moves": [
+        {
+          "pixel": [
+            413,
+            425
+          ],
+          "dispatch_ms": 1.235,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 2.537
+        },
+        {
+          "pixel": [
+            443,
+            476
+          ],
+          "dispatch_ms": 2.378,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 32.773
+        },
+        {
+          "pixel": [
+            636,
+            415
+          ],
+          "dispatch_ms": 3.378,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            628,
+            410
+          ],
+          "dispatch_ms": 2.856,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            622,
+            408
+          ],
+          "dispatch_ms": 0.99,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 1.826,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            620,
+            407
+          ],
+          "dispatch_ms": 2.734,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 1.549,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 1.088,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 4.147
+        },
+        {
+          "pixel": [
+            555,
+            344
+          ],
+          "dispatch_ms": 2.358,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 148.065
+        },
+        {
+          "pixel": [
+            393,
+            415
+          ],
+          "dispatch_ms": 1.169,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 4.185
+        },
+        {
+          "pixel": [
+            616,
+            405
+          ],
+          "dispatch_ms": 1.36,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 20.751
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.2896999940276146,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.438699895516038,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.5278998762369156,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.2050000950694084,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.0226999875158072,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.4541000127792358,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.4079997781664133,
+          "source": "(<PartDesign::Pad>, 'Edge7')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.551499892026186,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (22.9249,2.93897,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (22.9249,2.93897,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (22.9249,2.93897,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 1,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (22.9249,2.93897,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor",
+          "priority_points": 0,
+          "origin_priority": false
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 2,
+          "geometry": [
+            "<Line segment (19.9671,8,0) (22.9249,2.93897,0) >",
+            "<Line segment (17.9953,8.98591,0) (40.0141,9.97183,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor",
+          "priority_points": 2,
+          "origin_priority": true
+        }
+      ],
+      "max_dispatch_ms": 3.378
+    }
+  ],
+  "pid": 34824,
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "source_sha256": {
+    "ui.py": "a3cc019fcd7b1bc5ba1aa09f429cc4009a5390bba14c337f1a6588d1f94631b4",
+    "sketch_snapping.py": "9a7804d5ac26416865d49ee3eeaa59fd253544a462e47fd2cab52b6fab7209dc",
+    "sketch_tools.py": "54f6c375ab886425b9a719eaef3a650e8cc436b9b05b5910e1b4f50be0d6d9b0",
+    "sketch_references.py": "eed467cbb91e0fca972424597a416b2bf55131525c50c75c9af433f082f0f206",
+    "shortcuts.py": "3387db9639bf5f1577409fe5dbae5f6cc8094ab66149cb0f862b47e479e20a7a"
+  },
+  "method": "Production selected pad face and U conversion, native Line/Circle, real Qt pointer and clicks at external endpoint; isolated hidden GUI.",
+  "lifecycle_baseline": false,
+  "check_count": 168
+}

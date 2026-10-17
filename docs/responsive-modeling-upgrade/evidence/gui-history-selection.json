@@ -1,0 +1,726 @@
+{
+  "passed": true,
+  "checks": [
+    "Shift range includes both endpoints and intervening features",
+    "Ctrl adds an independent row without selecting the gap",
+    "Ctrl toggles one row without changing the others",
+    "Tree refresh preserves the selected set",
+    "Multiple selected features stay selected natively",
+    "range-and-independent-selection.png: nonempty rendered UI",
+    "range-and-independent-selection-history.png: nonempty rendered UI",
+    "Delete removes the entire selected independent set atomically",
+    "Selected-set deletion creates one native Undo step",
+    "One Undo restores both selected features",
+    "Undo preserves the original chronological feature order",
+    "Actual dependency confirmation lists unselected consumers",
+    "Declining dependency deletion preserves native state and Undo",
+    "Actual dependency confirmation lists unselected consumers",
+    "Confirm removes selected features and their native dependents",
+    "Confirmed dependent-set deletion still creates one Undo step",
+    "One Undo restores the complete dependency chain",
+    "Dependency Undo also preserves chronological history order",
+    "Rolled-back rows are gray and italic with unchanged feature names",
+    "Actual rendered rollback text contains the inactive gray ink",
+    "gray-italic-rollback.png: nonempty rendered UI",
+    "gray-italic-rollback-history.png: nonempty rendered UI",
+    "A held row prevents deleting any part of the selected set",
+    "Selecting Origin reveals all three native plane graphics",
+    "Temporary Origin graphics do not dirty a clean document",
+    "origin-plane-graphics.png: nonempty rendered UI",
+    "origin-plane-graphics-history.png: nonempty rendered UI",
+    "Deselecting Origin restores the original native presentation",
+    "Restoring Origin graphics preserves the clean document flag",
+    "Selecting Top reveals and selects its normally hidden plane",
+    "top-plane-highlight.png: nonempty rendered UI",
+    "top-plane-highlight-history.png: nonempty rendered UI",
+    "Saving retains the selected plane highlight without a dirty flag",
+    "Deselecting Top restores plane visibility and colors",
+    "Selecting a native datum plane reveals it",
+    "datum-plane-highlight.png: nonempty rendered UI",
+    "datum-plane-highlight-history.png: nonempty rendered UI",
+    "Saving retains the selected datum highlight",
+    "Deselecting the datum restores its original presentation",
+    "Plane highlighting leaves native intent revision and Undo unchanged",
+    "Native datum presentation dirtiness is conservatively preserved",
+    "Saving after datum deselection establishes a clean edit baseline",
+    "An intervening native model edit raises the dirty flag",
+    "Deselecting a plane never clears an intervening model edit",
+    "Save while origin-plane selected persists original plane presentation",
+    "Save while datum-plane selected persists original plane presentation",
+    "Changing documents restores the previous document's plane graphics"
+  ],
+  "screens": [
+    "range-and-independent-selection.png",
+    "range-and-independent-selection-history.png",
+    "gray-italic-rollback.png",
+    "gray-italic-rollback-history.png",
+    "origin-plane-graphics.png",
+    "origin-plane-graphics-history.png",
+    "top-plane-highlight.png",
+    "top-plane-highlight-history.png",
+    "datum-plane-highlight.png",
+    "datum-plane-highlight-history.png"
+  ],
+  "source_sha256": {
+    "ui.py": "f1e695bfa60982d8a05066ff801773639d265b3ed35233a11932d055feba12e7",
+    "history_selection.py": "5878382a5c58d9ee145e3819716fdf30850221eb451c9be646e9fadae043fb73",
+    "rollback_history.py": "fdadef3e330a51c2afc7ea3a7f177ac34cc1bfc493a6fe0a88a8a2d5710db2c7",
+    "core.py": "f71e9605fba1bab29b38d157e55692d324db6c820505532915d2fd85db550669",
+    "studio.py": "6cad59d273384b823286fdd7e30ca0005801895560374cdaa8291520b6a63440",
+    "theme.py": "299154f47e49811aff4b472853a3ec3de9f3bee8655b04195072827209e4d4dd"
+  },
+  "method": "Production history tree, native document, actual Qt Shift/Ctrl/Delete and confirmation events; fresh hidden native process/profile.",
+  "limits": "Synthetic small offline fixtures. Python networking denied; C++ networking is not intercepted.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "runtime_profile": "runtime\\ci-gui\\history-selection\\run-5110b7f2105a43c9adb1f81e9d7af2f7",
+  "graphics_stages": [
+    {
+      "row": "origin",
+      "stage": "before",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "origin",
+      "stage": "immediate",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "origin",
+      "stage": "after_wait",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "before",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "immediate",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "after_wait",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "plane:XY",
+      "stage": "before",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "plane:XY",
+      "stage": "immediate",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "plane:XY",
+      "stage": "after_wait",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "before",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "immediate",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "after_wait",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "OffsetPlane",
+      "stage": "before",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "OffsetPlane",
+      "stage": "immediate",
+      "modified": true,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        true
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": true,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "OffsetPlane",
+      "stage": "after_wait",
+      "modified": true,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "before",
+      "modified": true,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "immediate",
+      "modified": true,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        true
+      ],
+      "saved": {},
+      "intent_dirty": true,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "after_wait",
+      "modified": true,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "plane:XY",
+      "stage": "before",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "plane:XY",
+      "stage": "immediate",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "plane:XY",
+      "stage": "after_wait",
+      "modified": false,
+      "token": [
+        "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "before",
+      "modified": true,
+      "token": [
+        "ab821355-1b13-4529-a14b-e699a0e12de9",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": false,
+          "token": [
+            "a3602c6c-3e0d-46a4-be36-5ddcc6982d08",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "immediate",
+      "modified": true,
+      "token": [
+        "ab821355-1b13-4529-a14b-e699a0e12de9",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "Outline",
+      "stage": "after_wait",
+      "modified": true,
+      "token": [
+        "ab821355-1b13-4529-a14b-e699a0e12de9",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "OffsetPlane",
+      "stage": "before",
+      "modified": true,
+      "token": [
+        "ab821355-1b13-4529-a14b-e699a0e12de9",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {},
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "OffsetPlane",
+      "stage": "immediate",
+      "modified": true,
+      "token": [
+        "ab821355-1b13-4529-a14b-e699a0e12de9",
+        9,
+        0,
+        259,
+        283,
+        true
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": true,
+          "token": [
+            "ab821355-1b13-4529-a14b-e699a0e12de9",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": true,
+      "generation": 283,
+      "version_clock": 259
+    },
+    {
+      "row": "OffsetPlane",
+      "stage": "after_wait",
+      "modified": true,
+      "token": [
+        "ab821355-1b13-4529-a14b-e699a0e12de9",
+        9,
+        0,
+        259,
+        283,
+        false
+      ],
+      "saved": {
+        "KurtShape1": {
+          "value": true,
+          "token": [
+            "ab821355-1b13-4529-a14b-e699a0e12de9",
+            9,
+            0,
+            259,
+            283,
+            false
+          ]
+        }
+      },
+      "intent_dirty": false,
+      "generation": 283,
+      "version_clock": 259
+    }
+  ],
+  "plane_graphics_modified_flag": {
+    "before": false,
+    "after": true
+  },
+  "native_datum_presentation_limit": "FreeCAD 1.1.4 datum ViewObject changes briefly report intent_dirty before native sync confirms unchanged model intent. Its Modified flag is preserved to avoid clearing any intervening edit. Saved files contain the original presentation.",
+  "fixture": "runtime\\ci-gui\\history-selection\\run-5110b7f2105a43c9adb1f81e9d7af2f7\\evidence\\history-selection\\history-selection.FCStd",
+  "source_unchanged": true,
+  "seconds": 16.531624799827114,
+  "check_count": 47
+}

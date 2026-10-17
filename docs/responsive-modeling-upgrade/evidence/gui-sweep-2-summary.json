@@ -1,0 +1,274 @@
+[
+  {
+    "recipe": "interface",
+    "passed": true,
+    "checks": 42,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390\\recipe-result.json",
+    "started_utc": "2026-10-06T03:02:47.5633663+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\interface\\run-75da650a37154013ad1885bc701b8390\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "presentation-scheduling",
+    "passed": true,
+    "checks": 21,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-75dd09a8d9874ae19c6b55a49b28fae0\\recipe-result.json",
+    "started_utc": "2026-10-06T03:03:27.9864857+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-75dd09a8d9874ae19c6b55a49b28fae0\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-75dd09a8d9874ae19c6b55a49b28fae0\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-75dd09a8d9874ae19c6b55a49b28fae0\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "onshape-workflows",
+    "passed": true,
+    "checks": 45,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-d72c59e3b31e46d196cd66c9c5387a49\\recipe-result.json",
+    "started_utc": "2026-10-06T03:03:48.4019706+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-d72c59e3b31e46d196cd66c9c5387a49\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-d72c59e3b31e46d196cd66c9c5387a49\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\onshape-workflows\\run-d72c59e3b31e46d196cd66c9c5387a49\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "design-surface",
+    "passed": true,
+    "checks": 423,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-cc8d987eac2e40d6963b868fc43532b2\\recipe-result.json",
+    "started_utc": "2026-10-06T03:04:31.9132530+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-cc8d987eac2e40d6963b868fc43532b2\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-cc8d987eac2e40d6963b868fc43532b2\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-cc8d987eac2e40d6963b868fc43532b2\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "ui-refinement",
+    "passed": true,
+    "checks": 106,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-38e5122f979c4a1e90384a05e12fe49a\\recipe-result.json",
+    "started_utc": "2026-10-06T03:05:07.5088943+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-38e5122f979c4a1e90384a05e12fe49a\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-38e5122f979c4a1e90384a05e12fe49a\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-38e5122f979c4a1e90384a05e12fe49a\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "sketch-plane-editor",
+    "passed": true,
+    "checks": 27,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-0e0f6d0a498e48bca322794fa6dccde7\\recipe-result.json",
+    "started_utc": "2026-10-06T03:05:41.6886301+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-0e0f6d0a498e48bca322794fa6dccde7\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-0e0f6d0a498e48bca322794fa6dccde7\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-0e0f6d0a498e48bca322794fa6dccde7\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "history-selection",
+    "passed": true,
+    "checks": 47,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-5110b7f2105a43c9adb1f81e9d7af2f7\\recipe-result.json",
+    "started_utc": "2026-10-06T03:06:16.7261794+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-5110b7f2105a43c9adb1f81e9d7af2f7\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-5110b7f2105a43c9adb1f81e9d7af2f7\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-5110b7f2105a43c9adb1f81e9d7af2f7\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "rollback-history",
+    "passed": true,
+    "checks": 46,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-fb36acfa71c9422788cc22708126ac0b\\recipe-result.json",
+    "started_utc": "2026-10-06T03:06:39.3977594+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-fb36acfa71c9422788cc22708126ac0b\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-fb36acfa71c9422788cc22708126ac0b\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-fb36acfa71c9422788cc22708126ac0b\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "part-studio",
+    "passed": true,
+    "checks": 101,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-675d55f2e02f41f09486836f7fd19f5c\\recipe-result.json",
+    "started_utc": "2026-10-06T03:07:04.8993356+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-675d55f2e02f41f09486836f7fd19f5c\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-675d55f2e02f41f09486836f7fd19f5c\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-675d55f2e02f41f09486836f7fd19f5c\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "assembly",
+    "passed": true,
+    "checks": 58,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\run-163cbd0ac68e4ba399e5742b030fc806\\recipe-result.json",
+    "started_utc": "2026-10-06T03:08:16.1129916+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\run-163cbd0ac68e4ba399e5742b030fc806\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\run-163cbd0ac68e4ba399e5742b030fc806\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly\\run-163cbd0ac68e4ba399e5742b030fc806\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "step-import",
+    "passed": true,
+    "checks": 19,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\run-bfe03aeb748f4827bbfc47c3591e9fde\\recipe-result.json",
+    "started_utc": "2026-10-06T03:08:57.5725383+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\run-bfe03aeb748f4827bbfc47c3591e9fde\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\run-bfe03aeb748f4827bbfc47c3591e9fde\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\step-import\\run-bfe03aeb748f4827bbfc47c3591e9fde\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "assembly-step",
+    "passed": true,
+    "checks": 35,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3\\recipe-result.json",
+    "started_utc": "2026-10-06T03:09:27.5318952+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "review-recovery",
+    "passed": true,
+    "checks": null,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\recipe-result.json",
+    "started_utc": "2026-10-06T03:09:47.1838877+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "messages",
+    "passed": true,
+    "checks": 34,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-1017fe04961b49a49cb64d7d8fa2067b\\recipe-result.json",
+    "started_utc": "2026-10-06T03:11:21.1102348+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-1017fe04961b49a49cb64d7d8fa2067b\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-1017fe04961b49a49cb64d7d8fa2067b\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\messages\\run-1017fe04961b49a49cb64d7d8fa2067b\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "unused-sketch-visibility",
+    "passed": true,
+    "checks": 44,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-4683876f83644c34903c2a7a28296bd4\\recipe-result.json",
+    "started_utc": "2026-10-06T03:11:38.5906416+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-4683876f83644c34903c2a7a28296bd4\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-4683876f83644c34903c2a7a28296bd4\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-4683876f83644c34903c2a7a28296bd4\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "sketch-edit-state",
+    "passed": true,
+    "checks": 45,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-5e3fe1aa2b884e03ad1cd5a27d6611e4\\recipe-result.json",
+    "started_utc": "2026-10-06T03:12:14.7437928+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-5e3fe1aa2b884e03ad1cd5a27d6611e4\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-5e3fe1aa2b884e03ad1cd5a27d6611e4\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-5e3fe1aa2b884e03ad1cd5a27d6611e4\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  },
+  {
+    "recipe": "sketch-references",
+    "passed": true,
+    "checks": 74,
+    "receipt": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-e26c36d74f044c479bbb1106c5bff97b\\recipe-result.json",
+    "started_utc": "2026-10-06T03:12:44.0055837+00:00",
+    "error": null,
+    "source_unchanged": true,
+    "changed_sources": [],
+    "inspected_logs": [
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-e26c36d74f044c479bbb1106c5bff97b\\freecad-stderr.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-e26c36d74f044c479bbb1106c5bff97b\\freecad-stdout.txt",
+      "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-e26c36d74f044c479bbb1106c5bff97b\\freecad.log"
+    ],
+    "diagnostic_matches": []
+  }
+]

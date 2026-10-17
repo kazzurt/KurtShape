@@ -1,0 +1,68 @@
+[
+  {
+    "method": "_poll",
+    "during_guard": "cancel",
+    "guard_number": 1,
+    "late_publications": [],
+    "new_worker_polled": 0,
+    "new_worker_closed": 0,
+    "new_worker_submitted": 0,
+    "returned_replacement_result_to_old_caller": false,
+    "replacement_result_preserved": true
+  },
+  {
+    "method": "_poll",
+    "during_guard": "replace",
+    "guard_number": 1,
+    "late_publications": [],
+    "new_worker_polled": 0,
+    "new_worker_closed": 0,
+    "new_worker_submitted": 0,
+    "returned_replacement_result_to_old_caller": false,
+    "replacement_result_preserved": true
+  },
+  {
+    "method": "current_result",
+    "during_guard": "cancel",
+    "guard_number": 1,
+    "late_publications": [],
+    "new_worker_polled": 0,
+    "new_worker_closed": 0,
+    "new_worker_submitted": 0,
+    "returned_replacement_result_to_old_caller": false,
+    "replacement_result_preserved": true
+  },
+  {
+    "method": "current_result",
+    "during_guard": "replace",
+    "guard_number": 1,
+    "late_publications": [],
+    "new_worker_polled": 0,
+    "new_worker_closed": 0,
+    "new_worker_submitted": 0,
+    "returned_replacement_result_to_old_caller": false,
+    "replacement_result_preserved": true
+  },
+  {
+    "method": "_start_exact",
+    "during_guard": "cancel",
+    "guard_number": 2,
+    "late_publications": [],
+    "new_worker_polled": 0,
+    "new_worker_closed": 0,
+    "new_worker_submitted": 0,
+    "returned_replacement_result_to_old_caller": false,
+    "replacement_result_preserved": true
+  },
+  {
+    "method": "_start_exact",
+    "during_guard": "replace",
+    "guard_number": 2,
+    "late_publications": [],
+    "new_worker_polled": 0,
+    "new_worker_closed": 0,
+    "new_worker_submitted": 1,
+    "returned_replacement_result_to_old_caller": false,
+    "replacement_result_preserved": true
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "recipe": "sketch-origin-snap",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-origin-snap\\run-5d8d35666d9d4f09a4fade3587eac480",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\sketch-origin-snap-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-origin-snap\\run-5d8d35666d9d4f09a4fade3587eac480\\evidence\\sketch-origin-snap\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-origin-snap\\run-5d8d35666d9d4f09a4fade3587eac480\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-origin-snap\\run-5d8d35666d9d4f09a4fade3587eac480\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-origin-snap\\run-5d8d35666d9d4f09a4fade3587eac480\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T17:17:18.1630307Z",
+  "exited_utc": "2026-10-06T17:18:21.8386125Z",
+  "pid": 60060,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T17:18:21.8791296Z"
+}

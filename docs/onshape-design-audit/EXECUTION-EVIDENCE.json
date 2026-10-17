@@ -1,0 +1,628 @@
+{
+  "schema_version": 1,
+  "milestone": "Approved Onshape-inspired native presentation execution",
+  "recorded_utc": "2026-10-05T05:00:23.036952+00:00",
+  "canonical_head": "559e034de3522c325423057b048f955405c522af",
+  "working_tree_changes": "Completed modeling upgrades plus presentation changes; uncommitted source identified by hashes",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "launch": {
+    "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\KurtShape-design-update.cmd",
+    "session_root": "runtime/design-workspace",
+    "print_only_verified": true
+  },
+  "reference": {
+    "path": "docs/onshape-design-audit/onshape-reference/onshape-user-workspace-2026-10-04.png",
+    "sha256": "4e47a76fb24b43040e98a24de8662a6ae7797df649717114e74657eaab2e1f11",
+    "pixel_size": [
+      1909,
+      913
+    ],
+    "transformed": false
+  },
+  "source_sha256": {
+    ".impeccable/design.json": "83ae512cac28f74ae5c2655faf3c92f2a8596082262ab417d170ca4e1851df80",
+    "DESIGN.md": "fbb5aed853f767f63706548a7768bda6018947f7e60b9e8b38dd11304ad34b65",
+    "launch-kurtshape.ps1": "c4c4aeed68b56f80e492182a759790e3b5c4390d89b9a4ffe7a6932d911cf482",
+    "resources/icons/adopt-copy.svg": "29c901e9b864305c2019af9e00269b0d25ff7eabfeca6b8fa3903cd02d3d56e8",
+    "resources/icons/arc.svg": "895a259b0fed65f9f1d84a295c7d4ccafd4858bfd8d3fcf34821a5e4ace325d3",
+    "resources/icons/assembly.svg": "70b1fec9424319220f048e03c18cd0dcd0bd4e9dda29c6d0837ae581b21537a0",
+    "resources/icons/axis.svg": "203835ad01ea1fcf8df1b7f612ae95d514ebad66ba4485b514ec6cc2d992cd2c",
+    "resources/icons/boolean.svg": "0a413609513bf6bae4dc25a7813a03439212c81b4fb598134b4efc31e430f911",
+    "resources/icons/build-menu.svg": "47e1669edbdd4952f46b8b321a6fa76902f7ab63bd4cb30f17c63cf8806a2a48",
+    "resources/icons/cancel.svg": "f0377df06303ea71b1ef34d792adde331269039ec81036283436cdbd60a7bd3a",
+    "resources/icons/chamfer.svg": "9e2b2d1b15728014ae1cea21724add239f5d1abcd54fa9408ed202422cd8cf6e",
+    "resources/icons/check-geometry.svg": "c7120e0cf4cf2e28177ca5d6c7deb0c52075804cafe99c4cf15617526c0859db",
+    "resources/icons/circle.svg": "47d0a1535aeb5d061bd49ba0d8cbc638680167ac9d7227245c3aa89f104bf3e4",
+    "resources/icons/circular-pattern.svg": "c6a2472bcaa92645564efa093e8c9e7055980cce5d29ae0c8603f36867564e73",
+    "resources/icons/confirm.svg": "da72aeb1b2eb56b28f038a6e176b434cee40f40c34091367c96e2d2adfbdc167",
+    "resources/icons/constraints-menu.svg": "6311f596ecc22bf76abb4079063ac394e6bbd53bea3d00cab2661c695b873459",
+    "resources/icons/construction.svg": "e53265a7e256fc48aa56b9750f6a7d120dfd67a4709d219f718e520efd8cd977",
+    "resources/icons/coordinate-system.svg": "9642c67bda3eafecbe28d943f477543c753213c825cfdeae637b3087786a0a22",
+    "resources/icons/cut-menu.svg": "d014b3ae15c7db3245f4545f0eacc3687f7499d47acca81d20c59a8fa934f458",
+    "resources/icons/dimension.svg": "97ece2ea3f5cdd4ff3cfbbec45470b87a67cf72649f612ac5839dff6d872474f",
+    "resources/icons/document-menu.svg": "befcbbe9d0c2b2fbc75d39f130e915679ecad4c144344653e2557fbb0417a3ec",
+    "resources/icons/draft.svg": "0cf27bcecb4c378004ef4a7ec3fef48e26baad2aa4a28b02cf8a8a29853f3bdc",
+    "resources/icons/edit-menu.svg": "cdebf2c8e3e1d427377583e501e0204c8ea0e10045125aed7921de5da9516bf7",
+    "resources/icons/example.svg": "4152c97aff6a8e3c07c90f610bd3321d7ef2335b3ff3833de0329b9217836eb7",
+    "resources/icons/export.svg": "46c7e4d57c383e8f1997e368cb3437508b88abdee1a6f334b019276c8102fa72",
+    "resources/icons/extrude.svg": "21362bd23b48335ef549443126393e01222a6bd1f1c88e9476e80656f0820efa",
+    "resources/icons/fillet.svg": "c984c13ac01b36e7b65e6037cb6405c0a44df1e311effce6f038481d7a7be365",
+    "resources/icons/fit.svg": "94a272911541b502ac9caddbd27f4955f63f6634d150562737d0d2cfa783e3c3",
+    "resources/icons/fixed-joint.svg": "5903c84b1cc45ed5caadbb16c251d2b1eaabc84d54ee241a5c853a69c651ed89",
+    "resources/icons/geometry-menu.svg": "66dafa576d59855a84ecab4df81633f1f351331eb5f94ad8c7b593d660324dfc",
+    "resources/icons/groove.svg": "95044a150a74798897449687b9f1527016ef67ede6399b5a1d9f3f9aa6ae5277",
+    "resources/icons/ground.svg": "a98a099d49ab3471dc38959be39b2c5d37f2920cf28e70fb15b7298a8bdeadd8",
+    "resources/icons/insert.svg": "08793a9d8763f2154f36225f496aa194a87cb704633794ca42f4afc9770311b6",
+    "resources/icons/isometric.svg": "b155497b1aaed543ea1521e171bc90d73b51edde8a35f129a9f2d3e051654687",
+    "resources/icons/line.svg": "d42a0449fa896d264b1c12943ec663db15538502dab89770096d6ba6fd2756ed",
+    "resources/icons/linear-pattern.svg": "5d3b756a63d2a41fe54eca150f403c457345d9139e0b8c2080d108e62488e645",
+    "resources/icons/loft-remove.svg": "062dbeff6f8a85b9a164fe8c99aa5026b42b90b428a5a6487c47b3d282adbfc3",
+    "resources/icons/loft.svg": "340b2040c6ebbc643c3c0146aa9d25c0976dd1f18073aa9d0b1456a3cfeed901",
+    "resources/icons/measure.svg": "22e72a88fa5be9e5a400e5a3b497edd6f56c45f5ed17c5a498cfa58cbf686bcb",
+    "resources/icons/mirror.svg": "16009dbcb5519e1d9ba24848dabb95bfe03233314207e2c4eb34570621e201d4",
+    "resources/icons/modify-menu.svg": "32ff4327156d2fc3aed69c5855a31bd9f68bce6e92e19de52681b0b0a9921185",
+    "resources/icons/more.svg": "fa8db4e3245fe9415f3da8f742aaef47bbc37753f27caa2b33b918154a711a90",
+    "resources/icons/move-face.svg": "ad344b7f9970320e5bc2e2ed7c89785b0e915e338ae023163b11e2ce3eb6df60",
+    "resources/icons/new-document.svg": "d9bf298579f94c3164bd4b205566a9ea8b66eba51bbf0ba816fb8ebfbc0a5b77",
+    "resources/icons/new-part.svg": "47e1669edbdd4952f46b8b321a6fa76902f7ab63bd4cb30f17c63cf8806a2a48",
+    "resources/icons/normal.svg": "9cc6194ca19f59218a3f59960a21560ee8363ac4cd05602fbc5e3cf09a44e094",
+    "resources/icons/open.svg": "4ab6914c0058ebe6478c6e3b8dd17128da1334f85d4e5b1e63616e32e21f1973",
+    "resources/icons/patterns-menu.svg": "5d3b756a63d2a41fe54eca150f403c457345d9139e0b8c2080d108e62488e645",
+    "resources/icons/pierce.svg": "f3087e3a80abae6b4be4f49646d1f0484e66a870faa669fa2f1e24afde5ddcd9",
+    "resources/icons/plane.svg": "fc6251a5f2cb2dc0d745e97097f19423029c303349676b4137f1c0ee24c3a186",
+    "resources/icons/point.svg": "0e95ca42d633cf78c3e3e1d524217ac98e288f4d6fb843196b36af17a3cf8319",
+    "resources/icons/polyline.svg": "c2208b40db51f9a38268398d98288ca25c91497e81c0105e993c6fcdf584229a",
+    "resources/icons/rebuild.svg": "e2a29a9e89a3beba418763866086103012bdb6613a1c0777c7f3656cd30736ba",
+    "resources/icons/recent.svg": "3d73d0e9fa85cc6e91f8dc0a7119688d729685ff4344e474ba641ecf47fe5e71",
+    "resources/icons/recovery.svg": "26557c15f657201fdca30b47b5f707e25d40c824d55a6a2a3fdae825b839bb14",
+    "resources/icons/rectangle.svg": "641fac1d8c4b5346c4e3a6f6c9af4e948e8d0f21a6a4fe03179184b7529435c4",
+    "resources/icons/redo.svg": "f56a96b6d473b0cfb80a09180fbf890b6614a1ef81bc7f5b4b21b8bec7d3c68d",
+    "resources/icons/reference-menu.svg": "a5f706d901dc50e40f552b29319ca53027be28b6a8845c34b82c2ffb9629dd1f",
+    "resources/icons/remove.svg": "d380fdf8a06af80d4cdf8c9025f79777d8dbe67e289337f2935680267a865a5d",
+    "resources/icons/revolute-joint.svg": "8b3cdbb6589324e5ec94ee41bd75cf049aaef713e35a70db5392d91625ea35c4",
+    "resources/icons/revolve.svg": "f5f97529954635389dc80a9b5828afacc1c035b40a964c075355f7bbdd49656a",
+    "resources/icons/save.svg": "16887935aa8b3d79986355d95f29dc26f436bb88f5dc59dae06c8bb0dfd29dd5",
+    "resources/icons/search.svg": "81b12f776425d4f6b2d3fd529499914d2b7559bd64d990ec7ea47998a3c3e3dc",
+    "resources/icons/settings.svg": "2a1192a50c75895e1570d4339ad29cf3469d8ace27b8677f96f283a3d311cda1",
+    "resources/icons/shape-tools-menu.svg": "0a413609513bf6bae4dc25a7813a03439212c81b4fb598134b4efc31e430f911",
+    "resources/icons/shell.svg": "e90801de9d964de50a1eb7a270617284591417544f5815d33e8a6be86f1dff4a",
+    "resources/icons/shortcuts.svg": "341d0e14e4826b9f9a27bbd782d11dde3c23c2137067c2f8ce15e9458e0b8702",
+    "resources/icons/sketch.svg": "50fff7d4e5449266daff0de9e59025741491e712526bf295233775a56cab71c1",
+    "resources/icons/slider-joint.svg": "98e4a73962ce331eaa1b38432c8df610d118b11c554ad91d18364ba493cc17f2",
+    "resources/icons/spline.svg": "412bb582c0584cb2e24b53e5bc0326bd9c7a94e51ce5468153c612524491b58a",
+    "resources/icons/split.svg": "dee618543202ecfd9bb325ed13bf822f3bee86763a071abba1b146da6c7ec162",
+    "resources/icons/sweep-remove.svg": "efe5eaa5521e6870a899be9c005a10a0c47d6169ae4d757bc899ea211aa6de9a",
+    "resources/icons/sweep.svg": "b5405efa06dc2b9e75dda833566cbf45f20e55344e67441afee89ecf656b6644",
+    "resources/icons/tools.svg": "5025a4f5898b12056aa6e0f91a862ada9881f5b19b47cffe150b6703bbe8682f",
+    "resources/icons/transform.svg": "c248940d1b1b0e77bdf86077286eeb9f1ee5dd687bd9028d318e8f3b72ad788a",
+    "resources/icons/trim.svg": "d91b57b86bce4bbe7e41eb2c8087243d61da72c692c1cb8bcae4d8315b2ad6bc",
+    "resources/icons/undo.svg": "02a1ba93c025affcfbcb1845c49287c24a6c502d5c974a9599a5ad48e065c611",
+    "src/kurtshape/__init__.py": "d1c2218eff95a6160d497cee76330d599e32231b47cd9680a05a752429c16682",
+    "src/kurtshape/assembly.py": "97d483c8dd25653c579fcb94e1625a3c7b836a9b43c2bdf92974f20800ab291c",
+    "src/kurtshape/bodies.py": "b45c1054ac6ddcfeaf8d347807a3782891ec587031c3a80025e87905b74f96fa",
+    "src/kurtshape/bridge.py": "6b920b62814b5730d0a0d05907b032b2ac321e7e90923fd91b7c38442af48835",
+    "src/kurtshape/contract.py": "5f7460aced1ee8a6d115a61783ef276960cd75a1d01f5142201f520db170dfc0",
+    "src/kurtshape/core.py": "d3782b9e31c56c240794bc8c81ed70813eec6793f673aa827c49167d5e75adc6",
+    "src/kurtshape/document_state.py": "83bb1c1a4791b4799c6bd6295be5d2dd9880b0f01fa846f59dcf8a4221e74dd3",
+    "src/kurtshape/extrusion_preview.py": "be8c1ea1212d9dcacb110ed5dc43a59768bf028e919c9be04bd67b9bdc2f73d6",
+    "src/kurtshape/feature_panel.py": "e88722990b921f9bd1da14dbf87b01b1514cfd130b0415b70565f4b1735faded",
+    "src/kurtshape/feature_tools.py": "41ddbe1ee169823b5416a710eeb932171269f7cfb8941da865ff020bb75fe6b4",
+    "src/kurtshape/general_actions.py": "dc87e63d82ecbb98fccb755bd75fc590bfcf99daf2b9462af273a99622d4bdb8",
+    "src/kurtshape/geometry.py": "afa73adfa80d977eb6832dc58e8bb0f57904cd356e8f63cc964188604c6359e9",
+    "src/kurtshape/hover_outline.py": "87884a5ed6e8748b58a5fe1c107a60df98a10f2f69c8e43a95d40055312c7ca3",
+    "src/kurtshape/modeling_geometry.py": "743eac82bfcfb3b8ada905916154afb9f8ebe34c5f6c6d329797ece32e2481de",
+    "src/kurtshape/native_content.py": "13e2b64bdd8aa7a9bb095959a20964bb786dd56bbba6ca5da92cd435e7926796",
+    "src/kurtshape/navigation.py": "f8d9885a89b36853cc448f53c292b31fc6b929e441ea48cbb8ab459b4c71140a",
+    "src/kurtshape/onshape.py": "bd9a6f1c9eeb36b05cf8d7c5f48918b5a4bd2cbdc80484c0642d28803127fdb0",
+    "src/kurtshape/presentation_icons.py": "9eae5a46153c45e3c6d1610f6da3104f9909ec5712f670ea6c48259693d8e287",
+    "src/kurtshape/quantity_field.py": "6f68c24ae5543890ad98bca1c48fc50ffea435a9ffd59e5a27dc2243c702e2c8",
+    "src/kurtshape/recovery.py": "adefe70d2d2aedc02c8ff2ab21dee014e5387165b0c81ac841215768b86b5bae",
+    "src/kurtshape/reference_tools.py": "307a5e3127489955de555f2cfd52b200edf6b28d763c2c964d095dd61895ba2d",
+    "src/kurtshape/request_ledger.py": "7a969f22a5214f2a99608496ede106cd1057b71f52b2d1060e957c77613711ef",
+    "src/kurtshape/selectors.py": "1d96e2c3b947cd4ae31dc193eee5d5333fae70908c4a2832af89578f0f922b27",
+    "src/kurtshape/settings.py": "9a759a17b399269f87a2a16b3476f194868f7cdd8c5a1473390c448d48360799",
+    "src/kurtshape/shortcuts.py": "f3266cec7f1b6316f9ca68c714e32c2ae457ab906a38ff0bb055232aeea569be",
+    "src/kurtshape/sketch_tools.py": "9e98531f5d6e2b6097f3bf8b36f89c7b16c2a78473f617a97ee198ea8a15a9d7",
+    "src/kurtshape/studio.py": "c97398676051bc9d7338d8f7ae8f511ea31d24640fdbec4c3bbc5fdaa2d59f33",
+    "src/kurtshape/theme.py": "7f48646ec9d3b863be7b074402ff94f41d440e3fdca8f3cf99916ed72fe326ff",
+    "src/kurtshape/timing.py": "28f32811de2a5c035af1e8ccd5d93b1910b21f9d7b5b23da3b2db2197e6d646d",
+    "src/kurtshape/toolbar_labels.py": "cc0a389aeff8f5d6f299cb8e2b77a767b5b8288ccb8b8610b488d2da4a00bfaf",
+    "src/kurtshape/ui.py": "32a518a192ff7cc1c05b7375161d1156fe77f39c4fb751a37ea353f674b8ea48",
+    "src/kurtshape/viewport_actions.py": "e1e347b47f784cb2a7dca98df516f2ac866d1468888855ed8b635f95c40534ce",
+    "src/kurtshape/workspace_preferences.py": "9eb74f963f368677a75a12291eec26fb40041df8ca939ac800846b1c31ec6420",
+    "tools/design-surface-validation.FCMacro": "ffcb60ea9771028f18dc93bb22beb1958d6576d6bcaebe579b3364a555b33b92",
+    "tools/generate-presentation-icons.py": "956e6c4ce3f7c60faaee9e67fa15b8485661bae0c3e7a1b95a1a0f89ee4df221",
+    "tools/messages-validation.FCMacro": "d45b63aede4129c80c5c8d83e48e23931971fa6ec87b50fc586a406c1a64abf4",
+    "tools/onshape-workflows-validation.FCMacro": "86c264b87ade2bbaf2ef4a0453f994d5ae039625c88a7036ed99c56da2511c6a",
+    "tools/run_gui_recipe.ps1": "0ea7a1accbc54ba3390cda9c4db977f469d29f0d2db762d2c46d86e85618de6c",
+    "tools/theme-presentation-contract.py": "31d5f98145bb0808509a7b42e75ddb423c8e539b38c7d64dcb5d5ac1155cdcaa",
+    "tools/u2-part-model-gui-validation.FCMacro": "6c3211067678d51cad9b08f490748a76bf4ca52bcf4493a876db79c79800d9c2",
+    "tools/ui-refinement-validation.FCMacro": "692769e6c095247ee516218879d72432d2435ccd6cea93445cf3b48119364550",
+    "../KurtShape-design-update.cmd": "770ff43b6feac7a17bd069c1a6221b9519301ef7856e2ddd777eeb5effbff184"
+  },
+  "native_regression": {
+    "counts": {
+      "tests": 244,
+      "passed": 244,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "expected_failures": 0
+    },
+    "source_unchanged_during_run": true
+  },
+  "source_differences_after_native_run": [
+    {
+      "path": "src/kurtshape/ui.py",
+      "native_run_sha256": "fd8b64f4ee5d5f8e12385adef195698eb7a082916d4df1a316fe42d0b76f179a",
+      "final_sha256": "32a518a192ff7cc1c05b7375161d1156fe77f39c4fb751a37ea353f674b8ea48"
+    }
+  ],
+  "difference_explanation": "Only two UI recovery labels changed after the frozen native run. Final design/refinement/messages recipes exercise this final UI; native model implementation hashes are identical.",
+  "gui_check_counts": {
+    "design": 420,
+    "refinement": 106,
+    "messages": 34,
+    "workflows": 45,
+    "part_studio": 99
+  },
+  "contrast_check_count": 18,
+  "raw_runs": {
+    "design": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a",
+    "refinement": "runtime/ci-gui/ui-refinement/run-7d07fff02ae64991accfefa181c111ab",
+    "messages": "runtime/ci-gui/messages/run-c822e19c23cb4452a1743b42e2b8fab0",
+    "workflows": "runtime/ci-gui/onshape-workflows/run-be6598f6d7f2406bb8037ee33afd4896",
+    "part_studio": "runtime/ci-gui/part-studio/run-d71317eb7e5b4567b2dc11385dc755a8",
+    "native": "runtime/test-tmp/checks-20261004-214235-19192"
+  },
+  "copied_evidence": [
+    {
+      "path": "validation/onshape-design/gui-result.json",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/gui-result.json",
+      "sha256": "b80c87892dad0d44f8c415b7264092f34a292034b2d4e3f9f48a4f02e90b365c"
+    },
+    {
+      "path": "validation/onshape-design/ui-refinement.json",
+      "raw_path": "runtime/ci-gui/ui-refinement/run-7d07fff02ae64991accfefa181c111ab/evidence/ui-refinement/gui-refinement.json",
+      "sha256": "a7a9ad3c85d7e648bc9cf383ae98c3ab83ba62a0b8909eba1449fabaa6f1bd1e"
+    },
+    {
+      "path": "validation/onshape-design/messages.json",
+      "raw_path": "runtime/ci-gui/messages/run-c822e19c23cb4452a1743b42e2b8fab0/evidence/messages-behavior/gui-result.json",
+      "sha256": "80c816f31803b6486e7ee8048d5cdcbb870fb71ab3c680b71790cc44d5e52a67"
+    },
+    {
+      "path": "validation/onshape-design/modeling-workflows.json",
+      "raw_path": "runtime/ci-gui/onshape-workflows/run-be6598f6d7f2406bb8037ee33afd4896/evidence/onshape-workflows/gui-result.json",
+      "sha256": "a89b208631a28c276752286dffbd4f1eedd9394227db75e9b521abff04bfb538"
+    },
+    {
+      "path": "validation/onshape-design/part-studio.json",
+      "raw_path": "runtime/ci-gui/part-studio/run-d71317eb7e5b4567b2dc11385dc755a8/evidence/u2-part-model/gui-result.json",
+      "sha256": "3cdb2f7edcf303c16b0bdef2cadae82985036483cef36a4fb0d2e62cd953243b"
+    },
+    {
+      "path": "validation/onshape-design/native-regression.json",
+      "raw_path": "runtime/test-tmp/checks-20261004-214235-19192/evidence/checks/native.json",
+      "sha256": "2fb4e3a17a81297d7d51b1ac3e66041fb9e81f0c9a83f8c59767d71768161786"
+    },
+    {
+      "path": "validation/onshape-design/native-junit.xml",
+      "raw_path": "runtime/test-tmp/checks-20261004-214235-19192/evidence/checks/junit.xml",
+      "sha256": "c8978b038d58f9e1cd54d580740ddc779a192a8d743c9a1c696b55340a29c9ca"
+    },
+    {
+      "path": "validation/onshape-design/design-run.json",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/recipe-result.json",
+      "sha256": "179854885512a965ee54bafc2d937ed57b5083d9e7a373d97ca2b360ee88deb3"
+    },
+    {
+      "path": "validation/onshape-design/refinement-run.json",
+      "raw_path": "runtime/ci-gui/ui-refinement/run-7d07fff02ae64991accfefa181c111ab/recipe-result.json",
+      "sha256": "413c7fa305e4e7c07c050ca21b1202f96d9aba393a39d51e57a774d87bd2bd7d"
+    },
+    {
+      "path": "validation/onshape-design/messages-run.json",
+      "raw_path": "runtime/ci-gui/messages/run-c822e19c23cb4452a1743b42e2b8fab0/recipe-result.json",
+      "sha256": "856fdf40bf2ea851c7fe6fbe058910995f54b0a87f9b1e1c92b503f563412a7f"
+    },
+    {
+      "path": "validation/onshape-design/model-workspace-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/model-workspace-1440.png",
+      "sha256": "cae294e5407d183a19c3d1a5d0bd1e331472c68f16b40ef9a4167e19fe693eb5"
+    },
+    {
+      "path": "validation/onshape-design/hover-label-below-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/hover-label-below-1440.png",
+      "sha256": "fd5e4cd836423d780f1dca98ab53c93c90c25cc4b7870f8df58f3d57dff51dd3"
+    },
+    {
+      "path": "validation/onshape-design/fillet-invalid-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/fillet-invalid-1440.png",
+      "sha256": "654cf8a4d5ec8c55676e133f38baeddaa5971ee81672283df389a2eb3300c240"
+    },
+    {
+      "path": "validation/onshape-design/fillet-valid-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/fillet-valid-1440.png",
+      "sha256": "0689e1fdccd59d2276d0fda22e346d025ac26019efb295e2cb6e0edb51448c07"
+    },
+    {
+      "path": "validation/onshape-design/sketch-editor-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/sketch-editor-1440.png",
+      "sha256": "6ac634f4a579f3827bb15c4420567b42687a032a09087a3b46e30f328113d0b6"
+    },
+    {
+      "path": "validation/onshape-design/extrude-invalid-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/extrude-invalid-1440.png",
+      "sha256": "046bb1d8565122b3957876035c41aae76e4c5c8bd750bd432ae1a025098970ed"
+    },
+    {
+      "path": "validation/onshape-design/extrude-valid-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/extrude-valid-1440.png",
+      "sha256": "3b275d00c33d417bdb882514dc390598912e3c174bb937fa6a3070a1eed0dff1"
+    },
+    {
+      "path": "validation/onshape-design/model-workspace-1024.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/model-workspace-1024.png",
+      "sha256": "ecff881b007f36eb066c5db465dbf2950088472b2d8de2d140ab3a54ed9bff43"
+    },
+    {
+      "path": "validation/onshape-design/hover-label-below-1024.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/hover-label-below-1024.png",
+      "sha256": "c0c9dd0cafeafbaff69bdea864428726f264d5fa1b7ac6eefa7a948e572b1d2a"
+    },
+    {
+      "path": "validation/onshape-design/fillet-editor-1024.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/fillet-editor-1024.png",
+      "sha256": "d5ea6ab5ba5a49a42a7e2d01757c4fc1df6601a847cd4ba7ac09a6ecfa4a728d"
+    },
+    {
+      "path": "validation/onshape-design/assembly-workspace-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-4771821a72834a6992f0d72e820a179a/evidence/onshape-design/assembly-workspace-1440.png",
+      "sha256": "7f948f820d744e22c9aae5dce5ef3cd9a6f5a3a14bedec46384c987b60d41bb5"
+    }
+  ],
+  "contrast_evidence": {
+    "path": "validation/onshape-design/contrast-contract.json",
+    "sha256": "a25f49c10820c5efaf84be84f9dd2b21962984adca43c49141f8857ee2dd1667"
+  },
+  "capture_method": "Private hidden native FreeCAD GUI; production QAction buttons, actual QEnterEvent/timer, reference-row clicks and native feature previews. Screens are actual main.grab plus floating QWidget.grab composites at their global positions; no fabricated model/rendering.",
+  "client_sizes": [
+    {
+      "case": "desktop",
+      "requested_logical": [
+        1440,
+        920
+      ],
+      "actual_logical": [
+        1440,
+        920
+      ],
+      "device_pixel_ratio": 1.5,
+      "available_screen_logical": [
+        1707,
+        1019
+      ]
+    },
+    {
+      "case": "narrow",
+      "requested_logical": [
+        1024,
+        768
+      ],
+      "actual_logical": [
+        1024,
+        768
+      ],
+      "device_pixel_ratio": 1.5,
+      "available_screen_logical": [
+        1707,
+        1019
+      ]
+    },
+    {
+      "case": "assembly",
+      "requested_logical": [
+        1440,
+        920
+      ],
+      "actual_logical": [
+        1440,
+        920
+      ],
+      "device_pixel_ratio": 1.5,
+      "available_screen_logical": [
+        1707,
+        1019
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "file": "model-workspace-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [],
+      "tested_hover": null
+    },
+    {
+      "file": "hover-label-below-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeToolbarLabel",
+          "x": 913,
+          "y": 87,
+          "width": 38,
+          "height": 30,
+          "text": "Fit"
+        }
+      ],
+      "tested_hover": {
+        "button_object": "",
+        "expected_command": "Fit",
+        "actual_popup_text": "Fit",
+        "button_bottom_global": [
+          915,
+          122
+        ],
+        "popup_global": [
+          913,
+          127,
+          38,
+          30
+        ],
+        "method": "No additional qWait; identity and text asserted immediately before and after real widget grabs."
+      }
+    },
+    {
+      "file": "fillet-invalid-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeStudio_fillet",
+          "x": 268,
+          "y": 98,
+          "width": 320,
+          "height": 242,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "fillet-valid-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeStudio_fillet",
+          "x": 268,
+          "y": 98,
+          "width": 320,
+          "height": 242,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "sketch-editor-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeEditor",
+          "x": 268,
+          "y": 100,
+          "width": 320,
+          "height": 186,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "extrude-invalid-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeEditor",
+          "x": 268,
+          "y": 98,
+          "width": 320,
+          "height": 253,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "extrude-valid-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeEditor",
+          "x": 268,
+          "y": 98,
+          "width": 320,
+          "height": 253,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "model-workspace-1024.png",
+      "logical_size": [
+        1024,
+        768
+      ],
+      "pixel_size": [
+        1536,
+        1152
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [],
+      "tested_hover": null
+    },
+    {
+      "file": "hover-label-below-1024.png",
+      "logical_size": [
+        1024,
+        768
+      ],
+      "pixel_size": [
+        1536,
+        1152
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeToolbarLabel",
+          "x": 4,
+          "y": 87,
+          "width": 107,
+          "height": 30,
+          "text": "Undo  (Ctrl+Z)"
+        }
+      ],
+      "tested_hover": {
+        "button_object": "",
+        "expected_command": "Undo",
+        "actual_popup_text": "Undo  (Ctrl+Z)",
+        "button_bottom_global": [
+          4,
+          122
+        ],
+        "popup_global": [
+          4,
+          127,
+          107,
+          30
+        ],
+        "method": "No additional qWait; identity and text asserted immediately before and after real widget grabs."
+      }
+    },
+    {
+      "file": "fillet-editor-1024.png",
+      "logical_size": [
+        1024,
+        768
+      ],
+      "pixel_size": [
+        1536,
+        1152
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeStudio_fillet",
+          "x": 268,
+          "y": 98,
+          "width": 320,
+          "height": 242,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "assembly-workspace-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [],
+      "tested_hover": null
+    }
+  ],
+  "fresh_finish_review": {
+    "initial_full_review": "One material P1: preview verdict below initial form scroll viewport",
+    "correction": "Persistent copyable verdict outside scrollable fields; Confirm/Cancel retained in fixed header",
+    "bounded_verdict": "Resolved; ship within the reviewed scope",
+    "corrected_states_reviewed": [
+      "fillet-invalid-1440.png",
+      "fillet-valid-1440.png",
+      "extrude-invalid-1440.png",
+      "extrude-valid-1440.png"
+    ],
+    "scope": "Same fresh reviewer scored the listed P1 only; not a renewed whole-surface audit"
+  },
+  "limits": [
+    "Hidden-window mechanics and native geometry assertions; not hands-on comfort, all-DPI or screen-reader acceptance. No screen capture of the user's running window.",
+    "Only actual 150% scaling tested; no 100%, 125% or 200% acceptance",
+    "No performance improvement, long-history or full screen-reader acceptance claimed",
+    "Earlier workflow/Part Studio recipes predate the persistent footer; the final design recipe verifies that correction"
+  ]
+}

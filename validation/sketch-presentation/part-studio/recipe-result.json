@@ -1,0 +1,18 @@
+{
+  "recipe": "part-studio",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-ebc1e1f019e04ab794f71703cdcbe8f9",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\u2-part-model-gui-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-ebc1e1f019e04ab794f71703cdcbe8f9\\evidence\\u2-part-model\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-ebc1e1f019e04ab794f71703cdcbe8f9\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-ebc1e1f019e04ab794f71703cdcbe8f9\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-ebc1e1f019e04ab794f71703cdcbe8f9\\freecad-stderr.txt",
+  "started_utc": "2026-10-05T23:03:55.5879223Z",
+  "exited_utc": "2026-10-05T23:04:43.8243700Z",
+  "pid": 78376,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "scope_warning_count": 0,
+  "finished_utc": "2026-10-05T23:04:43.8749013Z"
+}

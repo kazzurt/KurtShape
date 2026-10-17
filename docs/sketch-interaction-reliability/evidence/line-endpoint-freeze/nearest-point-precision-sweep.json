@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "timestamp_utc": "2026-10-06T19:38:59.292691+00:00",
+  "recipe": "runtime/line-endpoint-freeze-working/nearest-point-precision-sweep.py",
+  "source_sha256": {
+    "src/kurtshape/sketch_snapping.py": "9cad1ee743941f93aec40bcfaa915d97f1590399bc9a4c0aca8c67b229304d97",
+    "tests/test_sketch_snapping.py": "c664e898220ff389bcdb5daf4b71483945499a658d2a56b0f311e88c9d0ec58d"
+  },
+  "parameters": {
+    "camera_angles_degrees": [
+      0,
+      35,
+      75
+    ],
+    "gaps_model_units": [
+      0,
+      1e-07,
+      1e-06,
+      1e-05,
+      0.0001,
+      0.001,
+      0.0099,
+      0.0101,
+      0.025
+    ],
+    "distances_model_units": [
+      0.01,
+      0.45,
+      0.899
+    ],
+    "presentation_z_deltas": [
+      0,
+      0.001
+    ],
+    "viewport_framebuffer_px": [
+      200,
+      100
+    ],
+    "pointer_framebuffer_px": [
+      100,
+      50
+    ],
+    "full_aperture_framebuffer_px": 9
+  },
+  "headless_preserved_hit_checks": 162,
+  "narrowed": 20,
+  "initially_unpickable_cases": 0,
+  "misses": [],
+  "passed": true
+}

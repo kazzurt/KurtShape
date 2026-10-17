@@ -1,0 +1,38 @@
+[
+  {
+    "method": "_poll",
+    "during_guard": "cancel",
+    "late_publications": [],
+    "new_worker_polled": 0,
+    "new_worker_closed": 0,
+    "returned_replacement_result_to_old_caller": false,
+    "replacement_result_preserved": true
+  },
+  {
+    "method": "_poll",
+    "during_guard": "replace",
+    "late_publications": [],
+    "new_worker_polled": 0,
+    "new_worker_closed": 0,
+    "returned_replacement_result_to_old_caller": false,
+    "replacement_result_preserved": true
+  },
+  {
+    "method": "current_result",
+    "during_guard": "cancel",
+    "late_publications": [],
+    "new_worker_polled": 0,
+    "new_worker_closed": 0,
+    "returned_replacement_result_to_old_caller": false,
+    "replacement_result_preserved": true
+  },
+  {
+    "method": "current_result",
+    "during_guard": "replace",
+    "late_publications": [],
+    "new_worker_polled": 0,
+    "new_worker_closed": 0,
+    "returned_replacement_result_to_old_caller": false,
+    "replacement_result_preserved": true
+  }
+]

@@ -1,0 +1,221 @@
+"""Projects saved by the headless Controller open visible in their stored part colors.
+
+Such an FCStd has no GuiDocument.xml, and FreeCAD's restore then hides every
+Body and feature. The fixture is built by a separate headless bundled Python
+process, then opened here through GUI Open (Panel.operation) and through the
+real assistant bridge (loopback HTTP -> Bridge.tick -> Controller).
+"""
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import threading
+import time
+import traceback
+import zipfile
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from pivy import coin
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import navigation, ui
+import assistant_client
+from kurtshape_evidence import evidence_dir
+
+
+class HiddenWindows(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+hidden = HiddenWindows(app)
+app.installEventFilter(hidden)
+output = evidence_dir("headless-open")
+output.mkdir(parents=True, exist_ok=True)
+work = session / "headless-open"
+report = {"passed": False, "checks": [], "cases": [], "pid": os.getpid(),
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "method": "Fixture saved by tools/headless_part_fixture.py in a separate headless bundled Python; "
+                    "hidden native window opens it through Panel.operation and through the real loopback bridge.",
+          "limits": "Scene coverage is the Coin bounding box of the view after open; pixels are not compared."}
+panel = None
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition):
+    assert condition, label
+    report["checks"].append(label)
+    save()
+
+
+def build_fixtures():
+    folder = work / "fixtures"
+    folder.mkdir(parents=True, exist_ok=True)
+    python = root / "runtime" / "freecad-1.1.4" / "FreeCAD_1.1.4-Windows-x86_64-py311" / "bin" / "python.exe"
+    environment = {key: value for key, value in os.environ.items() if key not in {"PYTHONHOME", "PYTHONPATH"}}
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    completed = subprocess.run([str(python), "-B", str(root / "tools" / "headless_part_fixture.py"), str(folder)],
+                               cwd=str(root), env=environment, capture_output=True, text=True, timeout=600,
+                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    assert completed.returncode == 0, "Headless fixture failed:\n" + completed.stdout[-2000:] + completed.stderr[-4000:]
+    return json.loads(completed.stdout.strip().splitlines()[-1])
+
+
+def copy_fixture(source, name):
+    target = work / name
+    shutil.copy2(source, target)
+    return target
+
+
+def scene_box():
+    view = Gui.activeDocument().activeView()
+    action = coin.SoGetBoundingBoxAction(view.getViewer().getSoRenderManager().getViewportRegion())
+    action.apply(view.getSceneGraph())
+    box = action.getBoundingBox()
+    return None if box.isEmpty() else list(box.getMin().getValue()) + list(box.getMax().getValue())
+
+
+def settle():
+    for _ in range(3):
+        panel.tick()
+        QtTest.QTest.qWait(60)
+
+
+def check_presented(label, info, studio):
+    doc = panel.document()
+    body = doc.getObject(info["body"])
+    tip = body.Tip
+    box = scene_box()
+    shown = [obj.Name for obj in doc.Objects if obj.TypeId == "PartDesign::Body" and obj.ViewObject.Visibility]
+    case = {"label": label, "document": doc.Name, "shown_bodies": shown, "scene_box": box,
+            "part_box": info["bbox"], "body_color": list(body.ViewObject.ShapeColor),
+            "tip_color": list(tip.ViewObject.ShapeColor), "gui_modified": Gui.getDocument(doc.Name).Modified,
+            "chooser": [panel.body_choice.itemText(i) for i in range(panel.body_choice.count())],
+            "parts": [(panel.parts.topLevelItem(i).text(0), panel.parts.topLevelItem(i).checkState(0) == QtCore.Qt.Checked)
+                      for i in range(panel.parts.topLevelItemCount())],
+            "labels": {obj.Name: obj.Label for obj in doc.Objects if obj.TypeId == "PartDesign::Body"}}
+    report["cases"].append(case)
+    save()
+    check(label + ": the result Body and its Tip are shown", body.ViewObject.Visibility and tip.ViewObject.Visibility)
+    check(label + ": no other Body is shown", shown == [body.Name])
+    check(label + ": the view bounds cover the whole part", box is not None
+          and all(box[i] <= info["bbox"][i] + 1e-3 for i in range(3))
+          and all(box[i] >= info["bbox"][i] - 1e-3 for i in range(3, 6)))
+    check(label + ": opening leaves the document unmodified", not Gui.getDocument(doc.Name).Modified)
+    if studio:
+        check(label + ": stored part color is drawn", all(abs(actual - wanted) < 2 / 255 for actual, wanted
+                                                          in zip(body.ViewObject.ShapeColor[:3], info["color"])))
+        check(label + ": Parts row is the named, checked part", case["parts"] == [(info["name"], True)])
+        check(label + ": current Body keeps the exact part name", body.Label == info["name"])
+        check(label + ": Part chooser shows the exact part name",
+              panel.body_choice.itemText(panel.body_choice.findData(body.Name)) == info["name"])
+
+
+def active_body_synced():
+    active = Gui.activeDocument().activeView().getActiveObject("pdbody")
+    report.setdefault("active_bodies", []).append([getattr(active, "Name", None), getattr(panel.active_body(), "Name", None)])
+    view = Gui.activeDocument().activeView()
+    return active is not None and active == panel.active_body() and view.getNavigationType() == navigation.selected_style()
+
+
+def bridge_send(request, timeout=60):
+    """Send through the real loopback bridge while this thread ticks the panel."""
+    box = {}
+
+    def worker():
+        try:
+            box["result"] = assistant_client.send(dict(request))
+        except Exception as exc:
+            box["error"] = repr(exc)
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
+    deadline = time.monotonic() + timeout
+    while thread.is_alive() and time.monotonic() < deadline:
+        panel.tick()
+        QtTest.QTest.qWait(20)
+    thread.join(1)
+    assert "result" in box, box.get("error", "Bridge request did not complete")
+    return box["result"]
+
+
+def validate():
+    global panel
+    try:
+        work.mkdir(parents=True, exist_ok=True)
+        fixtures = build_fixtures()
+        report["fixtures"] = fixtures
+        for key in ("studio", "single_body"):
+            with zipfile.ZipFile(fixtures[key]["path"]) as archive:
+                check(f"Headless {key} fixture has no GuiDocument.xml", "GuiDocument.xml" not in archive.namelist())
+        check("Headless build gives the current Body the exact part name",
+              fixtures["studio"]["label"] == fixtures["studio"]["name"])
+        panel = ui.start()
+        panel.timer.stop()
+        panel.recovery_timer.stop()
+        QtTest.QTest.qWait(300)
+
+        opened = panel.operation("open", path=str(copy_fixture(fixtures["studio"]["path"], "gui-open.FCStd")))
+        check("GUI Open accepts the headless Part Studio", bool(opened))
+        settle()
+        check_presented("GUI Open", fixtures["studio"], True)
+        check("GUI Open activates the panel's active Body and navigation", active_body_synced())
+        # Files saved before the fix keep suffixed native labels ("Bone Mallet003").
+        current = panel.document().getObject(fixtures["studio"]["body"])
+        current.Label = fixtures["studio"]["name"] + "003"
+        panel.refresh()
+        check("Part chooser shows the part name, not a suffixed native label",
+              panel.body_choice.itemText(panel.body_choice.findData(current.Name)) == fixtures["studio"]["name"])
+        App.closeDocument(panel.document().Name)
+        settle()
+
+        result = bridge_send({"op": "open", "path": str(copy_fixture(fixtures["studio"]["path"], "bridge-open.FCStd"))})
+        check("Bridge open accepts the headless Part Studio", result.get("ok") is True)
+        settle()
+        check("Bridge open makes the opened project active",
+              panel.document() is not None and panel.document().FileName.endswith("bridge-open.FCStd"))
+        check_presented("Bridge open", fixtures["studio"], True)
+        check("Bridge open activates the panel's active Body and navigation, as GUI Open does", active_body_synced())
+        App.closeDocument(panel.document().Name)
+        settle()
+
+        opened = panel.operation("open", path=str(copy_fixture(fixtures["single_body"]["path"], "single-body.FCStd")))
+        check("GUI Open accepts the headless single-Body project", bool(opened))
+        settle()
+        check_presented("Single-Body GUI Open", fixtures["single_body"], False)
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        save()
+        if panel is not None:
+            panel.shutdown()
+            main.destroyed.disconnect(panel.shutdown)
+        for name in list(App.listDocuments()):
+            App.getDocument(name).setClosable(True)
+            App.closeDocument(name)
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(100, app.quit)
+
+
+QtCore.QTimer.singleShot(400, validate)

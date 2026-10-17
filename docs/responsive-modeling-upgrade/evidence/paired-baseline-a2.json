@@ -1,0 +1,134 @@
+{
+  "variant": "baseline",
+  "arm": "a2",
+  "source_root": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\baseline-before-upgrades",
+  "source_sha256": {
+    "src\\kurtshape\\__init__.py": "d1c2218eff95a6160d497cee76330d599e32231b47cd9680a05a752429c16682",
+    "src\\kurtshape\\assembly.py": "97d483c8dd25653c579fcb94e1625a3c7b836a9b43c2bdf92974f20800ab291c",
+    "src\\kurtshape\\bodies.py": "b45c1054ac6ddcfeaf8d347807a3782891ec587031c3a80025e87905b74f96fa",
+    "src\\kurtshape\\bridge.py": "6b920b62814b5730d0a0d05907b032b2ac321e7e90923fd91b7c38442af48835",
+    "src\\kurtshape\\contract.py": "5f7460aced1ee8a6d115a61783ef276960cd75a1d01f5142201f520db170dfc0",
+    "src\\kurtshape\\core.py": "5e9338b18f5f291d69cfe9462d84240a59884faa5fe5d2317ad18e015b8fc3bd",
+    "src\\kurtshape\\document_state.py": "83bb1c1a4791b4799c6bd6295be5d2dd9880b0f01fa846f59dcf8a4221e74dd3",
+    "src\\kurtshape\\extrusion_preview.py": "be8c1ea1212d9dcacb110ed5dc43a59768bf028e919c9be04bd67b9bdc2f73d6",
+    "src\\kurtshape\\feature_panel.py": "0d5adbd8abaf7932cda5f33fb8e4ef6a209e6ef989af584bb74e7f556230dda6",
+    "src\\kurtshape\\feature_tools.py": "eead00ec581d46d952e8972e41c03cfdb6503ebb0e1af3b8a12543acdf120906",
+    "src\\kurtshape\\general_actions.py": "dc87e63d82ecbb98fccb755bd75fc590bfcf99daf2b9462af273a99622d4bdb8",
+    "src\\kurtshape\\geometry.py": "afa73adfa80d977eb6832dc58e8bb0f57904cd356e8f63cc964188604c6359e9",
+    "src\\kurtshape\\history_selection.py": "5878382a5c58d9ee145e3819716fdf30850221eb451c9be646e9fadae043fb73",
+    "src\\kurtshape\\hover_outline.py": "bf7abaf645e2de7d2f074c93928c0bc1e1670671b4e4c3dde9291831c40a0953",
+    "src\\kurtshape\\modeling_geometry.py": "743eac82bfcfb3b8ada905916154afb9f8ebe34c5f6c6d329797ece32e2481de",
+    "src\\kurtshape\\native_content.py": "13e2b64bdd8aa7a9bb095959a20964bb786dd56bbba6ca5da92cd435e7926796",
+    "src\\kurtshape\\navigation.py": "f8d9885a89b36853cc448f53c292b31fc6b929e441ea48cbb8ab459b4c71140a",
+    "src\\kurtshape\\onshape.py": "bd9a6f1c9eeb36b05cf8d7c5f48918b5a4bd2cbdc80484c0642d28803127fdb0",
+    "src\\kurtshape\\presentation_icons.py": "9eae5a46153c45e3c6d1610f6da3104f9909ec5712f670ea6c48259693d8e287",
+    "src\\kurtshape\\quantity_field.py": "6f68c24ae5543890ad98bca1c48fc50ffea435a9ffd59e5a27dc2243c702e2c8",
+    "src\\kurtshape\\recovery.py": "adefe70d2d2aedc02c8ff2ab21dee014e5387165b0c81ac841215768b86b5bae",
+    "src\\kurtshape\\reference_tools.py": "c289557eb8b6a7e5350d14b39bda6b1a9cb4ff7cb862b02d6ff0bfa02cf8657e",
+    "src\\kurtshape\\request_ledger.py": "7a969f22a5214f2a99608496ede106cd1057b71f52b2d1060e957c77613711ef",
+    "src\\kurtshape\\rollback_history.py": "fdadef3e330a51c2afc7ea3a7f177ac34cc1bfc493a6fe0a88a8a2d5710db2c7",
+    "src\\kurtshape\\selectors.py": "4019ef5c5e070251e2a136843a3b8574a6419f5d860b3336323adb41025e02bd",
+    "src\\kurtshape\\settings.py": "9a759a17b399269f87a2a16b3476f194868f7cdd8c5a1473390c448d48360799",
+    "src\\kurtshape\\shortcuts.py": "f3266cec7f1b6316f9ca68c714e32c2ae457ab906a38ff0bb055232aeea569be",
+    "src\\kurtshape\\sketch_colors.py": "541479663a92bd1509311e9519c94350f889566e64e3b4f6cb68fcf361e51bd8",
+    "src\\kurtshape\\sketch_edit_panel.py": "82712d5edc744f4973ce7e7db717b7df06112de6d5faef53fc2bd657c22b5dee",
+    "src\\kurtshape\\sketch_history.py": "9bca3023653d2195b8c7a57686c80aea0aaeb36f3fb8edba8569d410be5b02f1",
+    "src\\kurtshape\\sketch_references.py": "91f2ee83fd7928646b5b457e3a5bbe7f213f32fa5e22d33e0b5736998dc45060",
+    "src\\kurtshape\\sketch_regions.py": "f96d8ff4569c832cb2cad6e1f3bc848e17329c5322b2db4f3e6213195977648a",
+    "src\\kurtshape\\sketch_tools.py": "54f6c375ab886425b9a719eaef3a650e8cc436b9b05b5910e1b4f50be0d6d9b0",
+    "src\\kurtshape\\studio.py": "d5fc8d681b30a8d1a1a61b6462137f66fc89a9513ed54e6a7cdc7e1b8ee72658",
+    "src\\kurtshape\\theme.py": "299154f47e49811aff4b472853a3ec3de9f3bee8655b04195072827209e4d4dd",
+    "src\\kurtshape\\timing.py": "28f32811de2a5c035af1e8ccd5d93b1910b21f9d7b5b23da3b2db2197e6d646d",
+    "src\\kurtshape\\toolbar_labels.py": "cc0a389aeff8f5d6f299cb8e2b77a767b5b8288ccb8b8610b488d2da4a00bfaf",
+    "src\\kurtshape\\ui.py": "67a278b08e48973f43e3ff7b5736078ef0f10daea5d59c464954e06e10f5e38e",
+    "src\\kurtshape\\viewport_actions.py": "e1e347b47f784cb2a7dca98df516f2ac866d1468888855ed8b635f95c40534ce",
+    "src\\kurtshape\\workspace_preferences.py": "98902015adb35a0598545d827b3cb5d0abbfca522c7ea3bfc33f85bed22c1bdd"
+  },
+  "benchmark_sha256": "4d2d1cfe79f1f080c06a398c47c4fd26688f89e3917359691e051d1b6ff9a5e4",
+  "recipe_sha256": "91549415d64a43fa26ab86a2bfc9680626e92ac91b5844ee3af00a1bbb66882a",
+  "measurement_level": false,
+  "fixtures": {
+    "plate": {
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\plate60-fd6976\\native-fixtures\\plate-benchmark.FCStd",
+      "source_sha256": "a4694f130d0fe1d6edee5c4e2b13f16d67bf2ae87a0aa409b64ad8dd9398e189",
+      "native_open_ms": 2017.6184999290854,
+      "warm_inspect_ms": {
+        "median": 21.79750008508563,
+        "p95": 21.92190010100603,
+        "worst": 21.92190010100603,
+        "samples": [
+          21.79750008508563,
+          21.735799964517355,
+          21.92190010100603
+        ]
+      },
+      "changed_inspect_ms": {
+        "median": 99.85750005580485,
+        "p95": 99.85750005580485,
+        "worst": 99.85750005580485,
+        "samples": [
+          99.85750005580485
+        ]
+      },
+      "native_change_ms": 11882.137400098145,
+      "tip_edit": {
+        "total_ms": 875.6619999185205,
+        "native_recompute_ms": 716.1547997966409,
+        "overhead_ms": 159.50720012187958,
+        "intent_signature_ms": 51.09600001014769,
+        "inspection_ms": 47.751600155606866,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02050003968179226,
+        "managed_rebuild_ms": 720.0702000409365
+      },
+      "final_volumes_mm3": {
+        "Body": 4765127.989196912
+      },
+      "source_unchanged": true
+    },
+    "studio": {
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\studio-c305e4\\native-fixtures\\studio-benchmark.FCStd",
+      "source_sha256": "83e22ee28b497e5cacbce34ee8715476984da0e71184d249c1004c7d07e6e4f4",
+      "native_open_ms": 362.3619999270886,
+      "warm_inspect_ms": {
+        "median": 957.5428001116961,
+        "p95": 995.1055999845266,
+        "worst": 995.1055999845266,
+        "samples": [
+          953.3017999492586,
+          995.1055999845266,
+          957.5428001116961
+        ]
+      },
+      "changed_inspect_ms": {
+        "median": 3276.7602000385523,
+        "p95": 3276.7602000385523,
+        "worst": 3276.7602000385523,
+        "samples": [
+          3276.7602000385523
+        ]
+      },
+      "native_change_ms": 360.2738999761641,
+      "tip_edit": {
+        "total_ms": 9673.940500011668,
+        "native_recompute_ms": 325.7392968516797,
+        "overhead_ms": 9348.201203159988,
+        "intent_signature_ms": 34.16359983384609,
+        "inspection_ms": 1107.6004998758435,
+        "selector_evaluation_ms": 3774.250400485471,
+        "auto_scope_sync_ms": 683.9024999644607,
+        "managed_rebuild_ms": 5249.717499827966
+      },
+      "final_volumes_mm3": {
+        "Part2": 1952.8761101961527,
+        "Part3": 1952.8761101961525,
+        "Part4": 1968.5840734641015,
+        "BenchExplicitAddPart": 3092.6017763138443
+      },
+      "source_unchanged": true
+    }
+  },
+  "method": "ABBA fresh processes; identical immutable saved source per fixture. Warm inspection 3 samples; real native upstream geometry change/inspection and tip edit one sample per arm. Not full benchmark or GUI latency.",
+  "passed": true,
+  "source_unchanged": true
+}

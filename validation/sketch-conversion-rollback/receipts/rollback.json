@@ -1,0 +1,17 @@
+{
+  "recipe": "rollback-history",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-858f5c1ba09747a98ef14de10ae4ebfb",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\rollback-history-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-858f5c1ba09747a98ef14de10ae4ebfb\\evidence\\rollback-history\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-858f5c1ba09747a98ef14de10ae4ebfb\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-858f5c1ba09747a98ef14de10ae4ebfb\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\rollback-history\\run-858f5c1ba09747a98ef14de10ae4ebfb\\freecad-stderr.txt",
+  "started_utc": "2026-10-05T17:50:40.1684563Z",
+  "exited_utc": "2026-10-05T17:50:56.9011049Z",
+  "pid": 74540,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-05T17:50:56.9444476Z"
+}

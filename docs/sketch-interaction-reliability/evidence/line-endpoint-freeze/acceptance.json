@@ -1,0 +1,85 @@
+{
+  "passed": true,
+  "gui": [
+    {
+      "recipe": "surface-snap",
+      "checks": 168,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\surface-snap\\run-e668522bdc8a414c9b57707f9d8838e9\\evidence\\surface-snap\\gui-result.json",
+      "macro_sha256": "8a46c696fa05691fc340b650cea09a41de5ca5436a16fa064404df33de8eacc7"
+    },
+    {
+      "recipe": "sketch-origin-snap",
+      "checks": 46,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-origin-snap\\run-1c5e1d8b763543cebbdb0da22d43f4e9\\evidence\\sketch-origin-snap\\gui-result.json",
+      "macro_sha256": "6db7a24c8c265be02c1e6f05a9a77c2372ee6509bbe4a5fc4272f66d685299f9"
+    },
+    {
+      "recipe": "sketch-references",
+      "checks": 74,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-f0483e99f12345949788d14db0f56f1f\\evidence\\sketch-references\\gui-result.json",
+      "macro_sha256": "2e065edf1c78beb026907c656024fb7466b5ebe0d5996ca79b419c4dc789ca36"
+    },
+    {
+      "recipe": "sketch-dimension-point-colors",
+      "checks": 31,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-dimension-point-colors\\run-87ea22f558a74d61a823f982be03b5b3\\evidence\\sketch-dimension-point-colors\\gui-result.json",
+      "macro_sha256": "217d95ed52bdec59e71cc18108cbbdd8810bd328ad1baf3013879c770366a5e8"
+    },
+    {
+      "recipe": "sketch-edit-state",
+      "checks": 45,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-c7ff4fd1cd9c4b2cae9771888147ac18\\evidence\\sketch-edit-state\\gui-result.json",
+      "macro_sha256": "9ffd89a4f48fe23bde7118eeaaee274e07681e3e7c490083412d1e9517f51f81"
+    },
+    {
+      "recipe": "sketch-drag",
+      "checks": 15,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-drag\\run-d6989e1c79d04ca6bada3d5d899a2580\\evidence\\sketch-drag\\gui-result.json",
+      "macro_sha256": "f23a4798f8741e589d24a53d0d659edc017a02d05738c52a8cc0ed2d0d1474c9"
+    }
+  ],
+  "original_recovery_files": [
+    {
+      "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\54e33d16-bd0a-475d-867e-a3bf6fec21d3.FCStd",
+      "sha256": "04a22a15eb296c99b8500e01c7ea024cab980222a86797ca264aa52d15a080d5",
+      "unchanged": true
+    },
+    {
+      "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\54e33d16-bd0a-475d-867e-a3bf6fec21d3.previous.FCStd",
+      "sha256": "dc6e9093a2f153f77fe560bdc81cf74fa4061a19b102839925800422d9a6900a",
+      "unchanged": true
+    }
+  ],
+  "source_sha256": {
+    "ui.py": "a16ace86503c23f34653513dbaded62d34173cc8e6c278680b3f55c3e9c58649",
+    "sketch_snapping.py": "9cad1ee743941f93aec40bcfaa915d97f1590399bc9a4c0aca8c67b229304d97",
+    "sketch_references.py": "eed467cbb91e0fca972424597a416b2bf55131525c50c75c9af433f082f0f206",
+    "shortcuts.py": "3387db9639bf5f1577409fe5dbae5f6cc8094ab66149cb0f862b47e479e20a7a",
+    "sketch_cursor.py": "71dffd82d344a5027b74812e13efa9038c62d86ef539bc23b16a27678de8ee97",
+    "responsiveness.py": "274e76ccdbef885a8c523efaee47c87f5cf035fa2bdc3b024f9fdd40d54ceee2"
+  },
+  "regression": {
+    "tests": 315,
+    "passed": 311,
+    "skipped": 4,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "recovered_models": [
+    {
+      "session": "neighbor-coincident-final-19",
+      "checks": 12,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\line-endpoint-freeze-working\\neighbor-coincident-final-19\\evidence\\line-endpoint-freeze\\gui-result.json"
+    },
+    {
+      "session": "cursor-coincident-final-20",
+      "checks": 35,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\line-endpoint-freeze-working\\cursor-coincident-final-20\\evidence\\line-endpoint-freeze\\gui-result.json"
+    }
+  ],
+  "recovered_model_checks": 47,
+  "precision_sweep_report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\line-endpoint-freeze-working\\nearest-point-precision-sweep.json",
+  "gui_checks": 426,
+  "limits": "Hidden native input verifies snapping and cursor/lifecycle behavior, not physical mouse-to-display latency. Baseline diagnostics and failed sessions are excluded from acceptance. No visible pointer test was run. Four optional performance cases are skipped."
+}

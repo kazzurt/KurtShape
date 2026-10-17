@@ -1,0 +1,524 @@
+{
+  "passed": true,
+  "checks": [
+    "A visible later unused sketch initially has its own fill",
+    "Native sketch editing starts",
+    "Editing earlier history hides the later sketch fill",
+    "Historical source guard prevents fill leaking from later children",
+    "Native planar face builder finds four closed regions",
+    "Nested holes and islands have correct native face area",
+    "Closed rectangle interior is light gray",
+    "A nested hole stays white",
+    "A nested closed island is light gray",
+    "A disjoint circle on the supporting face is light gray",
+    "An arc and diameter enclose a shaded region",
+    "Open polyline geometry has no interior fill",
+    "Construction-only loops have no interior fill",
+    "Native boundary geometry keeps its blue state color",
+    "Shading leaves model objects and native sketch intent unchanged",
+    "The presentation fill does not intercept native selection",
+    "Native viewport edge selection still works through shading",
+    "Idle ticks do not rebuild faces or rewrite the scene",
+    "Breaking a boundary removes that region while preserving independent loops",
+    "An opened boundary no longer has gray fill",
+    "Closing the boundary restores the region",
+    "Fill follows a rotated and offset sketch plane",
+    "Finish accepts the sketch",
+    "A visible finished unconsumed sketch retains shading",
+    "Finished sketch fill remains visible on its supporting face",
+    "The unshaded front finished native boundary is visible",
+    "Finished shading preserves the exact native boundary color",
+    "A finished region is shaded from the back",
+    "The unshaded back finished native boundary is visible",
+    "Back shading preserves the exact native boundary color",
+    "A hidden parent body suppresses child sketch fill",
+    "Reopened native sketch regenerates its transient shading",
+    "No saved modeling option was enabled for shading",
+    "Closing the presentation controller removes every fill node"
+  ],
+  "samples": [
+    {
+      "name": "Closed rectangle interior is light gray",
+      "point": [
+        -30,
+        0,
+        0
+      ],
+      "pixel": [
+        300,
+        531
+      ],
+      "expected": [
+        235,
+        235,
+        235
+      ],
+      "matching": 10,
+      "colors": [
+        [
+          204,
+          51,
+          51
+        ],
+        [
+          235,
+          235,
+          235
+        ]
+      ]
+    },
+    {
+      "name": "A nested hole stays white",
+      "point": [
+        -17,
+        5,
+        0
+      ],
+      "pixel": [
+        438,
+        585
+      ],
+      "expected": [
+        255,
+        255,
+        255
+      ],
+      "matching": 25,
+      "colors": [
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "A nested closed island is light gray",
+      "point": [
+        -19,
+        6,
+        0
+      ],
+      "pixel": [
+        417,
+        595
+      ],
+      "expected": [
+        235,
+        235,
+        235
+      ],
+      "matching": 25,
+      "colors": [
+        [
+          235,
+          235,
+          235
+        ]
+      ]
+    },
+    {
+      "name": "A disjoint circle on the supporting face is light gray",
+      "point": [
+        10,
+        12,
+        0
+      ],
+      "pixel": [
+        726,
+        659
+      ],
+      "expected": [
+        235,
+        235,
+        235
+      ],
+      "matching": 25,
+      "colors": [
+        [
+          235,
+          235,
+          235
+        ]
+      ]
+    },
+    {
+      "name": "An arc and diameter enclose a shaded region",
+      "point": [
+        25,
+        -6,
+        0
+      ],
+      "pixel": [
+        886,
+        468
+      ],
+      "expected": [
+        235,
+        235,
+        235
+      ],
+      "matching": 25,
+      "colors": [
+        [
+          235,
+          235,
+          235
+        ]
+      ]
+    },
+    {
+      "name": "Open polyline geometry has no interior fill",
+      "point": [
+        -30,
+        -25,
+        0
+      ],
+      "pixel": [
+        300,
+        265
+      ],
+      "expected": [
+        255,
+        255,
+        255
+      ],
+      "matching": 25,
+      "colors": [
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Construction-only loops have no interior fill",
+      "point": [
+        10,
+        -30,
+        0
+      ],
+      "pixel": [
+        726,
+        212
+      ],
+      "expected": [
+        255,
+        255,
+        255
+      ],
+      "matching": 25,
+      "colors": [
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Native boundary geometry keeps its blue state color",
+      "point": [
+        -20,
+        -10,
+        0
+      ],
+      "pixel": [
+        407,
+        425
+      ],
+      "expected": [
+        0,
+        0,
+        255
+      ],
+      "matching": 15,
+      "colors": [
+        [
+          0,
+          0,
+          255
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "An opened boundary no longer has gray fill",
+      "point": [
+        -30,
+        0,
+        0
+      ],
+      "pixel": [
+        300,
+        531
+      ],
+      "expected": [
+        255,
+        255,
+        255
+      ],
+      "matching": 10,
+      "colors": [
+        [
+          204,
+          51,
+          51
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "name": "Fill follows a rotated and offset sketch plane",
+      "point": [
+        -30,
+        0,
+        0
+      ],
+      "pixel": [
+        300,
+        477
+      ],
+      "expected": [
+        235,
+        235,
+        235
+      ],
+      "matching": 10,
+      "colors": [
+        [
+          204,
+          51,
+          51
+        ],
+        [
+          235,
+          235,
+          235
+        ]
+      ]
+    },
+    {
+      "name": "Finished sketch fill remains visible on its supporting face",
+      "point": [
+        10,
+        12,
+        0
+      ],
+      "pixel": [
+        995,
+        404
+      ],
+      "expected": [
+        235,
+        235,
+        235
+      ],
+      "matching": 25,
+      "colors": [
+        [
+          235,
+          235,
+          235
+        ]
+      ]
+    },
+    {
+      "name": "Finished shading preserves the exact native boundary color",
+      "point": [
+        16,
+        10,
+        0
+      ],
+      "pixel": [
+        1058,
+        425
+      ],
+      "expected": [
+        113,
+        169,
+        255
+      ],
+      "matching": 18,
+      "colors": [
+        [
+          113,
+          169,
+          255
+        ],
+        [
+          146,
+          152,
+          158
+        ],
+        [
+          235,
+          235,
+          235
+        ]
+      ]
+    },
+    {
+      "name": "A finished region is shaded from the back",
+      "point": [
+        -30,
+        3,
+        0
+      ],
+      "pixel": [
+        569,
+        563
+      ],
+      "expected": [
+        235,
+        235,
+        235
+      ],
+      "matching": 25,
+      "colors": [
+        [
+          235,
+          235,
+          235
+        ]
+      ]
+    },
+    {
+      "name": "Back shading preserves the exact native boundary color",
+      "point": [
+        -20,
+        -10,
+        0
+      ],
+      "pixel": [
+        675,
+        425
+      ],
+      "expected": [
+        71,
+        104,
+        237
+      ],
+      "matching": 10,
+      "colors": [
+        [
+          71,
+          104,
+          237
+        ],
+        [
+          235,
+          235,
+          235
+        ],
+        [
+          255,
+          255,
+          255
+        ]
+      ]
+    }
+  ],
+  "screens": [
+    "closed-regions-holes-arcs-open-construction.png",
+    "rotated-offset-sketch-regions.png",
+    "finished-visible-sketch-region.png",
+    "finished-sketch-regions-back-view.png"
+  ],
+  "pid": 75768,
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "method": "Isolated hidden native production Panel/timer; framebuffer pixels and native viewport selection, with no live user CAD interaction.",
+  "topology_probe": {
+    "regions": 4,
+    "area": 1047.6548547187203,
+    "edges": 12,
+    "pruned_edges": 9,
+    "wires": [
+      {
+        "count": 1,
+        "closed": true,
+        "valid": true
+      },
+      {
+        "count": 1,
+        "closed": true,
+        "valid": true
+      },
+      {
+        "count": 1,
+        "closed": true,
+        "valid": true
+      },
+      {
+        "count": 4,
+        "closed": true,
+        "valid": true
+      },
+      {
+        "count": 2,
+        "closed": true,
+        "valid": true
+      }
+    ],
+    "face_areas": [
+      821.4601836602552,
+      100.53096491487335,
+      113.09733552923258,
+      12.566370614359172
+    ]
+  },
+  "finished_native_boundaries": {
+    "front": {
+      "line_color": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "unshaded_rgb": [
+        113,
+        169,
+        255
+      ],
+      "method": "Same native view and pixel neighborhood with only the presentation switch temporarily disabled."
+    },
+    "back": {
+      "line_color": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "unshaded_rgb": [
+        71,
+        104,
+        237
+      ],
+      "method": "Same native view and pixel neighborhood with only the presentation switch temporarily disabled."
+    }
+  },
+  "project": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-regions\\run-9a41b7518c634eac9a70ccf0eb26840b\\evidence\\sketch-regions\\closed-sketch-regions.FCStd",
+  "performance": {
+    "build_ms": 14.696700032800436,
+    "total_builds": 12
+  },
+  "check_count": 34
+}

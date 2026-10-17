@@ -1,0 +1,17 @@
+{
+  "recipe": "sketch-drag",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-drag\\run-de58f48ec96d40db9734a69a6418d135",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\sketch-drag-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-drag\\run-de58f48ec96d40db9734a69a6418d135\\evidence\\sketch-drag\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-drag\\run-de58f48ec96d40db9734a69a6418d135\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-drag\\run-de58f48ec96d40db9734a69a6418d135\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-drag\\run-de58f48ec96d40db9734a69a6418d135\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T17:04:55.0312609Z",
+  "exited_utc": "2026-10-06T17:05:24.0498391Z",
+  "pid": 64200,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T17:05:24.1271788Z"
+}

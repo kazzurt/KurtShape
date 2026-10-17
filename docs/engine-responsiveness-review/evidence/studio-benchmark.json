@@ -1,0 +1,402 @@
+{
+  "passed": true,
+  "method": "Bundled native Python; real revision-checked Controller.dispatch and isolated FCStd fixtures",
+  "checks": [
+    "Native fixture geometry and expected feature/part/query counts verified",
+    "rebuild metrics measured through the current native APIs",
+    "edits metrics measured through the current native APIs",
+    "inspect metrics measured through the current native APIs",
+    "checkpoint metrics measured through the current native APIs",
+    "preview metrics measured through the current native APIs",
+    "open metrics measured through the current native APIs"
+  ],
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "559e034de3522c325423057b048f955405c522af",
+  "run_id": "2026-10-06T01:02:01.170194+00:00/86088",
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_processors": 32,
+    "platform": "Windows-10-10.0.26200-SP0"
+  },
+  "fixture": {
+    "kind": "studio",
+    "base_features": 30,
+    "base_parts": 4,
+    "selector_consumers": 11,
+    "scoped_operations": [
+      "BenchAutoCut: remove/auto",
+      "BenchExplicitAdd: add/Part1"
+    ],
+    "studio_features": 34,
+    "logical_parts": 4,
+    "objects": 162
+  },
+  "sections": {
+    "rebuild": {
+      "status": "ok",
+      "metrics": [
+        "auto_scope_sync_ms",
+        "managed_rebuild_ms",
+        "native_recompute_ms",
+        "selector_evaluation_ms",
+        "total_rebuild_ms"
+      ]
+    },
+    "edits": {
+      "status": "ok",
+      "metrics": [
+        "tip_edit.auto_scope_sync_ms",
+        "tip_edit.inspection_ms",
+        "tip_edit.intent_signature_ms",
+        "tip_edit.managed_rebuild_ms",
+        "tip_edit.native_recompute_ms",
+        "tip_edit.overhead_ms",
+        "tip_edit.selector_evaluation_ms",
+        "tip_edit.total_ms",
+        "upstream_edit.auto_scope_sync_ms",
+        "upstream_edit.inspection_ms",
+        "upstream_edit.intent_signature_ms",
+        "upstream_edit.managed_rebuild_ms",
+        "upstream_edit.native_recompute_ms",
+        "upstream_edit.overhead_ms",
+        "upstream_edit.selector_evaluation_ms",
+        "upstream_edit.total_ms"
+      ]
+    },
+    "inspect": {
+      "status": "ok",
+      "metrics": [
+        "inspect_after_change_ms",
+        "inspect_warm_ms"
+      ]
+    },
+    "checkpoint": {
+      "status": "ok",
+      "metrics": [
+        "checkpoint_ms"
+      ]
+    },
+    "preview": {
+      "status": "ok",
+      "metrics": [
+        "preview_first_ms",
+        "preview_update_ms"
+      ]
+    },
+    "open": {
+      "status": "ok",
+      "metrics": [
+        "kurtshape_open_ms",
+        "native_open_ms"
+      ]
+    }
+  },
+  "timings": {
+    "total_rebuild_ms": {
+      "median": 1248.4235998708755,
+      "p95": 1534.15139997378,
+      "worst": 1534.15139997378,
+      "samples": [
+        1248.4235998708755,
+        1534.15139997378,
+        1170.713499886915
+      ]
+    },
+    "native_recompute_ms": {
+      "median": 213.60410074703395,
+      "p95": 244.8099988978356,
+      "worst": 244.8099988978356,
+      "samples": [
+        213.60410074703395,
+        244.8099988978356,
+        187.2533003333956
+      ]
+    },
+    "selector_evaluation_ms": {
+      "median": 449.2718998808414,
+      "p95": 529.2931995354593,
+      "worst": 529.2931995354593,
+      "samples": [
+        449.2718998808414,
+        529.2931995354593,
+        414.9357001297176
+      ]
+    },
+    "auto_scope_sync_ms": {
+      "median": 19.5915000513196,
+      "p95": 21.904100198298693,
+      "worst": 21.904100198298693,
+      "samples": [
+        19.5915000513196,
+        21.904100198298693,
+        16.071000136435032
+      ]
+    },
+    "managed_rebuild_ms": {
+      "median": 731.1408999375999,
+      "p95": 839.1513999085873,
+      "worst": 839.1513999085873,
+      "samples": [
+        731.1408999375999,
+        839.1513999085873,
+        666.0488999914378
+      ]
+    },
+    "tip_edit.total_ms": {
+      "median": 3720.2742998488247,
+      "p95": 4291.4191000163555,
+      "worst": 4291.4191000163555,
+      "samples": [
+        2950.3697000909597,
+        3720.2742998488247,
+        4291.4191000163555
+      ]
+    },
+    "tip_edit.native_recompute_ms": {
+      "median": 284.52990064397454,
+      "p95": 334.8116958513856,
+      "worst": 334.8116958513856,
+      "samples": [
+        284.52990064397454,
+        228.82170137017965,
+        334.8116958513856
+      ]
+    },
+    "tip_edit.overhead_ms": {
+      "median": 3491.452598478645,
+      "p95": 3956.60740416497,
+      "worst": 3956.60740416497,
+      "samples": [
+        2665.839799446985,
+        3491.452598478645,
+        3956.60740416497
+      ]
+    },
+    "tip_edit.intent_signature_ms": {
+      "median": 11.555799981579185,
+      "p95": 15.978199895471334,
+      "worst": 15.978199895471334,
+      "samples": [
+        10.234500048682094,
+        11.555799981579185,
+        15.978199895471334
+      ]
+    },
+    "tip_edit.inspection_ms": {
+      "median": 261.25159999355674,
+      "p95": 408.6871000472456,
+      "worst": 408.6871000472456,
+      "samples": [
+        236.1603998579085,
+        261.25159999355674,
+        408.6871000472456
+      ]
+    },
+    "tip_edit.selector_evaluation_ms": {
+      "median": 1521.935899509117,
+      "p95": 1846.8476994894445,
+      "worst": 1846.8476994894445,
+      "samples": [
+        1074.6362004429102,
+        1846.8476994894445,
+        1521.935899509117
+      ]
+    },
+    "tip_edit.auto_scope_sync_ms": {
+      "median": 587.2170999646187,
+      "p95": 664.9344998877496,
+      "worst": 664.9344998877496,
+      "samples": [
+        587.2170999646187,
+        372.60590004734695,
+        664.9344998877496
+      ]
+    },
+    "tip_edit.managed_rebuild_ms": {
+      "median": 2672.4921001587063,
+      "p95": 2693.7723997980356,
+      "worst": 2693.7723997980356,
+      "samples": [
+        2088.6494999285787,
+        2672.4921001587063,
+        2693.7723997980356
+      ]
+    },
+    "upstream_edit.total_ms": {
+      "median": 3152.7217999100685,
+      "p95": 3395.599100040272,
+      "worst": 3395.599100040272,
+      "samples": [
+        3395.599100040272,
+        3094.4681998807937,
+        3152.7217999100685
+      ]
+    },
+    "upstream_edit.native_recompute_ms": {
+      "median": 237.060901010409,
+      "p95": 252.36310181207955,
+      "worst": 252.36310181207955,
+      "samples": [
+        252.36310181207955,
+        228.78499957732856,
+        237.060901010409
+      ]
+    },
+    "upstream_edit.overhead_ms": {
+      "median": 2915.6608988996595,
+      "p95": 3143.2359982281923,
+      "worst": 3143.2359982281923,
+      "samples": [
+        3143.2359982281923,
+        2865.683200303465,
+        2915.6608988996595
+      ]
+    },
+    "upstream_edit.intent_signature_ms": {
+      "median": 18.032300053164363,
+      "p95": 28.115800116211176,
+      "worst": 28.115800116211176,
+      "samples": [
+        28.115800116211176,
+        13.778899796307087,
+        18.032300053164363
+      ]
+    },
+    "upstream_edit.inspection_ms": {
+      "median": 415.4661998618394,
+      "p95": 457.1783000137657,
+      "worst": 457.1783000137657,
+      "samples": [
+        415.4661998618394,
+        457.1783000137657,
+        389.0817000064999
+      ]
+    },
+    "upstream_edit.selector_evaluation_ms": {
+      "median": 882.5405000243336,
+      "p95": 1093.4411997441202,
+      "worst": 1093.4411997441202,
+      "samples": [
+        1093.4411997441202,
+        882.5405000243336,
+        816.1630998365581
+      ]
+    },
+    "upstream_edit.auto_scope_sync_ms": {
+      "median": 53.541400004178286,
+      "p95": 58.21570008993149,
+      "worst": 58.21570008993149,
+      "samples": [
+        53.541400004178286,
+        58.21570008993149,
+        49.02599984779954
+      ]
+    },
+    "upstream_edit.managed_rebuild_ms": {
+      "median": 1295.658100163564,
+      "p95": 1543.9240999985486,
+      "worst": 1543.9240999985486,
+      "samples": [
+        1543.9240999985486,
+        1295.658100163564,
+        1238.652299856767
+      ]
+    },
+    "inspect_warm_ms": {
+      "median": 390.12970007024705,
+      "p95": 409.2588999774307,
+      "worst": 409.2588999774307,
+      "samples": [
+        409.2588999774307,
+        390.12970007024705,
+        373.48799989558756
+      ]
+    },
+    "inspect_after_change_ms": {
+      "median": 1404.8524999525398,
+      "p95": 1423.6570000648499,
+      "worst": 1423.6570000648499,
+      "samples": [
+        1381.5525001846254,
+        1404.8524999525398,
+        1423.6570000648499
+      ]
+    },
+    "checkpoint_ms": {
+      "median": 584.0837999712676,
+      "p95": 635.7686999253929,
+      "worst": 635.7686999253929,
+      "samples": [
+        528.589199995622,
+        635.7686999253929,
+        584.0837999712676
+      ]
+    },
+    "preview_first_ms": {
+      "median": 2574.5116998441517,
+      "p95": 2637.818500166759,
+      "worst": 2637.818500166759,
+      "samples": [
+        2637.818500166759,
+        2574.5116998441517,
+        2481.4359000883996
+      ]
+    },
+    "preview_update_ms": {
+      "median": 2413.7766000349075,
+      "p95": 2633.08719987981,
+      "worst": 2633.08719987981,
+      "samples": [
+        2413.7766000349075,
+        2633.08719987981,
+        2398.526099976152
+      ]
+    },
+    "native_open_ms": {
+      "median": 145.90290002524853,
+      "p95": 147.82820013351738,
+      "worst": 147.82820013351738,
+      "samples": [
+        145.1928000897169,
+        145.90290002524853,
+        147.82820013351738
+      ]
+    },
+    "kurtshape_open_ms": {
+      "median": 1063.1194999441504,
+      "p95": 1080.3818998392671,
+      "worst": 1080.3818998392671,
+      "samples": [
+        1057.5653999112546,
+        1063.1194999441504,
+        1080.3818998392671
+      ]
+    }
+  },
+  "limits": "Synthetic native fixtures; wall time includes controller work. No user comfort, Onshape parity or hosted CI claim. Profile and native geometry artifacts remain in isolated scratch.",
+  "repeat": 3,
+  "measurement_level": false,
+  "measurement_policy": "Contract3: false counts only; true volume/area/bbox; full adds solid mass center. No automatic BRepCheck. Older true baselines include the former full/check work.",
+  "add_operation_sampling": "Repeated sketch/pocket additions on the completed fixture; two undos and geometry verification outside measured operations",
+  "growth": [],
+  "scratch": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\engine-responsiveness-review-working\\studio-65d941911e0841de96e37a9b68d83d20\\native-fixtures",
+  "budgets": {
+    "evaluated": false,
+    "failed": false,
+    "reason": "Studio budget needs a recorded Q03 median for this measurement level",
+    "metrics": []
+  },
+  "seconds": 64.64531269995496
+}

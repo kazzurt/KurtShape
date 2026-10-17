@@ -1,0 +1,116 @@
+{
+  "passed": true,
+  "pid": 68776,
+  "producer_pid": 86304,
+  "started_utc": "2026-10-06T03:11:20.276584+00:00",
+  "method": "Independent isolated native process after the owned blocking recovery GUI recipe exits",
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery-proof\\run-c85a3d5e756547408f8b8d270a86fb52",
+  "producer_session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff",
+  "environment": {
+    "KURTSHAPE_SESSION_DIR": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery-proof\\run-c85a3d5e756547408f8b8d270a86fb52",
+    "FREECAD_USER_HOME": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery-proof\\run-c85a3d5e756547408f8b8d270a86fb52\\user-data",
+    "TEMP": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery-proof\\run-c85a3d5e756547408f8b8d270a86fb52\\temporary",
+    "TMP": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery-proof\\run-c85a3d5e756547408f8b8d270a86fb52\\temporary",
+    "APPDATA": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery-proof\\run-c85a3d5e756547408f8b8d270a86fb52\\appdata",
+    "LOCALAPPDATA": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery-proof\\run-c85a3d5e756547408f8b8d270a86fb52\\localappdata"
+  },
+  "producer_started_utc": "2026-10-06T03:09:47.2820144Z",
+  "producer_exited_utc": "2026-10-06T03:11:20.0481561Z",
+  "producer_exit_code": -1073740791,
+  "checks": [
+    "Verifier imports use six independent private environment roots",
+    "Fresh GUI report is bound to the owned crash PID and lifetime",
+    "Producer checkpoint UUID, private path, SHA-256 and native ZIP are verified",
+    "Original saved fixture is a fresh private native ZIP",
+    "Checkpoint reopens the same document with valid unsaved 1800 mm3 geometry",
+    "Recovered unfinished sketch contains the real one-circle draft",
+    "Recovered checkpoint has no saved native filename",
+    "Explicit Cancel restores the accepted empty sketch and preserves unsaved geometry",
+    "Original saved project independently reopens at 1200 mm3",
+    "Producer report, checkpoint pair and saved original bytes remain unchanged"
+  ],
+  "native_autosave_reopened": false,
+  "native_autosave": {
+    "available": false,
+    "verified": false,
+    "status": "NotVerified",
+    "reason": "No native autosave archive was produced; enabled preferences alone do not prove recovery"
+  },
+  "producer_report_verified": true,
+  "producer_report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\evidence\\review-followup\\recovery-crash.json",
+  "checkpoint_pair_verified": true,
+  "inputs": {
+    "manifest": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\project-recovery\\9f646530-6eed-4224-81a2-189a52fa4ae3.json",
+    "snapshot": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\project-recovery\\9f646530-6eed-4224-81a2-189a52fa4ae3.FCStd",
+    "original_file": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\review-recovery\\run-83d066ad022f47e59b32d9025b5b58ff\\saved-before-crash.FCStd",
+    "snapshot_sha256": "5508dc6a6ccda35c1a02f5a80b578bd1a00fe2481d307853716a97d88dc238ca",
+    "original_file_sha256": "1d967231f02220ff0f069cf2ee6c7a308c25900150adcfac5ef68bb11227c85b"
+  },
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1",
+    "home": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\freecad-1.1.4\\FreeCAD_1.1.4-Windows-x86_64-py311\\\\"
+  },
+  "reopened_checkpoint": true,
+  "recovered_unsaved_volume_mm3": 1799.9999999999998,
+  "recovered_draft": true,
+  "recovered_draft_geometry": 1,
+  "recovered_unsaved_native_semantics": true,
+  "explicit_cancel_restored_accepted_sketch": true,
+  "accepted_sketch_geometry": 0,
+  "cancel_preserved_unsaved_geometry": true,
+  "cancel_kept_unsaved_native_semantics": true,
+  "saved_project_reopened": true,
+  "saved_volume_mm3": 1199.9999999999998,
+  "original_file_unchanged": true,
+  "producer_files_unchanged": true,
+  "original_file_sha256": "1d967231f02220ff0f069cf2ee6c7a308c25900150adcfac5ef68bb11227c85b",
+  "timings": {
+    "intent": {
+      "samples": 4,
+      "median_ms": 0.525,
+      "p95_ms": 0.86,
+      "worst_ms": 0.86
+    },
+    "native_recompute": {
+      "samples": 5,
+      "median_ms": 0.587,
+      "p95_ms": 7.597,
+      "worst_ms": 7.597
+    },
+    "selector_evaluation": {
+      "samples": 5,
+      "median_ms": 0.0,
+      "p95_ms": 0.0,
+      "worst_ms": 0.0
+    },
+    "managed_rebuild": {
+      "samples": 5,
+      "median_ms": 0.715,
+      "p95_ms": 7.736,
+      "worst_ms": 7.736
+    },
+    "inspection": {
+      "samples": 2,
+      "median_ms": 1.663,
+      "p95_ms": 1.686,
+      "worst_ms": 1.686
+    },
+    "operation": {
+      "samples": 2,
+      "median_ms": 164.536,
+      "p95_ms": 321.417,
+      "worst_ms": 321.417
+    }
+  },
+  "completed_utc": "2026-10-06T03:11:20.909309+00:00"
+}

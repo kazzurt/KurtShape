@@ -1,0 +1,17 @@
+{
+  "recipe": "sketch-edit-state",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-683483c44c0c4cf7be0cb896786f1b42",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\sketch-edit-state-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-683483c44c0c4cf7be0cb896786f1b42\\evidence\\sketch-edit-state\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-683483c44c0c4cf7be0cb896786f1b42\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-683483c44c0c4cf7be0cb896786f1b42\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-683483c44c0c4cf7be0cb896786f1b42\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T18:12:03.6632296Z",
+  "exited_utc": "2026-10-06T18:12:29.1016400Z",
+  "pid": 15812,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T18:12:29.1038772Z"
+}

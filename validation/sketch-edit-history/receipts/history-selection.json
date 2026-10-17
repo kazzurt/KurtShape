@@ -1,0 +1,17 @@
+{
+  "recipe": "history-selection",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-12da93ad54cb435f91a6b9ebeef3a938",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\history-selection-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-12da93ad54cb435f91a6b9ebeef3a938\\evidence\\history-selection\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-12da93ad54cb435f91a6b9ebeef3a938\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-12da93ad54cb435f91a6b9ebeef3a938\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\history-selection\\run-12da93ad54cb435f91a6b9ebeef3a938\\freecad-stderr.txt",
+  "started_utc": "2026-10-05T20:34:46.9042789Z",
+  "exited_utc": "2026-10-05T20:35:03.5347280Z",
+  "pid": 26056,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-05T20:35:03.5685646Z"
+}

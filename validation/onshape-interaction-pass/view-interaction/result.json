@@ -1,0 +1,78 @@
+{
+  "passed": true,
+  "checks": [
+    "Native face hover publishes preselection and draws only line geometry",
+    "Hover and click preserve camera, document modified state, and BRep",
+    "Native left click selects the same filled face",
+    "Empty-space hover removes outline and restores native hover",
+    "Off-center horizontal orbit produces yaw without incidental roll",
+    "Recompute removes stale hover boundary without touching the source"
+  ],
+  "version": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "native_preselection_doc": "setPreselection(obj, subName, x=0, y=0, z=0, type=1) -> None\n\nSet preselected object.\n\nobj : App.DocumentObject\n    Object to preselect.\nsubName : str\n    Subelement name.\nx : float\n    Coordinate `x` of the point to preselect.\ny : float\n    Coordinate `y` of the point to preselect.\nz : float\n    Coordinate `z` of the point to preselect.\ntype : int",
+  "native_nodes": [
+    "<pivy.coin.SoSeparator; proxy of <Swig Object of type 'SoSeparator *' at 0x00000262BDCB9B60> >"
+  ],
+  "navigation": {
+    "OrbitStyle": 3,
+    "RotationMode": 2,
+    "native_type": "Gui::SolidWorksNavigationStyle"
+  },
+  "hit": {
+    "x": 25.03040313720703,
+    "y": 17.5304012298584,
+    "z": 12.0,
+    "Document": "ViewInteractionValidation",
+    "Object": "Box",
+    "Component": "Face6"
+  },
+  "hover": {
+    "object": "Box",
+    "elements": [
+      "Face6"
+    ],
+    "outline_key": [
+      "ViewInteractionValidation",
+      "Box",
+      "Face6"
+    ],
+    "native_modes": [
+      2
+    ],
+    "interior_color": "#92989e"
+  },
+  "selection": [
+    [
+      "Face6"
+    ]
+  ],
+  "selected_interior_color": "#cdf3ff",
+  "horizontal_orbit": {
+    "before": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "after": [
+      0.0,
+      -0.12823271045939946,
+      0.0,
+      0.9917441060920079
+    ],
+    "axis": [
+      0.0,
+      -1.0,
+      0.0
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "recipe": "ui-refinement",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-7d07fff02ae64991accfefa181c111ab",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\ui-refinement-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-7d07fff02ae64991accfefa181c111ab\\evidence\\ui-refinement\\gui-refinement.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-7d07fff02ae64991accfefa181c111ab\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-7d07fff02ae64991accfefa181c111ab\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\ui-refinement\\run-7d07fff02ae64991accfefa181c111ab\\freecad-stderr.txt",
+  "started_utc": "2026-10-05T04:48:01.1669936Z",
+  "exited_utc": "2026-10-05T04:48:20.2193248Z",
+  "pid": 68912,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-05T04:48:20.2540098Z"
+}

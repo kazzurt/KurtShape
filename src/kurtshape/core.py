@@ -1509,6 +1509,8 @@ class Controller:
                                 "error": {"code": assembly_error.code, "message": str(assembly_error)}, "rejected": False}
                             self._meta(doc).LastFailure = json.dumps(self.last_failures[self.identifier(doc)])
                         self._recompute(doc)
+                    # A file saved without the GUI carries no view state.
+                    studio.present(doc)
                 if recovery_record:
                     doc.FileName = ""
                     feature = recovery_record.get("sketch")
@@ -2145,6 +2147,11 @@ class Controller:
         return (obj.TypeId.startswith("PartDesign::") and obj.isDerivedFrom("PartDesign::Feature")
                 and not obj.TypeId.endswith("Python") and "Proxy" not in obj.PropertiesList)
 
+    @staticmethod
+    def _studio_tool(obj):
+        """A studio operation whose representative is a native Part tool, not a Body feature."""
+        return bool(getattr(obj, "KurtShapeStudioOperation", "")) and obj.TypeId.startswith("Part::")
+
     def delete_features_plan(self, doc, features, body=None):
         """Read-only deletion closure for the history confirmation UI."""
         if (not isinstance(features, list) or not features or len(features) > 1024
@@ -2157,6 +2164,12 @@ class Controller:
             target = doc.getObject(name)
             if target is None:
                 raise OperationError("missing_reference", "Feature ID does not exist", feature=name)
+            if self._studio_tool(target):
+                # A studio operation built as a neutral Part tool (New results) lives
+                # outside every Body; its generated Bodies are removed as helpers.
+                targets.append(target)
+                owners[name] = None
+                continue
             selected_body = self._body(doc, request, target)
             if not self._deletable_feature(target, selected_body):
                 raise OperationError("unsupported_feature", "Delete supports sketches, native datum planes and built-in PartDesign features in their Body", feature=name)
@@ -2185,6 +2198,11 @@ class Controller:
             for dependent in obj.InList:
                 if dependent == selected_body or dependent.Name == METADATA or dependent.Name in helpers:
                     continue
+                if selected_body is None:
+                    if dependent.Name in removed:
+                        continue
+                    raise OperationError("external_dependency", "A later feature depends on this operation's result",
+                                         feature=dependent.Name)
                 if dependent not in selected_body.Group:
                     leftover = getattr(dependent, "KurtShapeOperationOwner", "")
                     if leftover and doc.getObject(leftover) is None:

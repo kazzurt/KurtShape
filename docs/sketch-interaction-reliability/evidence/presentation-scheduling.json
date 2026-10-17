@@ -1,0 +1,94 @@
+{
+  "passed": true,
+  "checks": [
+    "Production native sketch editor opens",
+    "One hundred unchanged adapter passes perform no mapping, scene, membership, mesh or color work",
+    "Existing Block center proof remains black",
+    "Native material replacement is corrected without rereading sketch mapping",
+    "Geometry change rebuilds closed regions",
+    "Geometry change refreshes native color mapping",
+    "Native visibility notification restores historical edit context immediately",
+    "A failed native drawing command releases recovery deferral",
+    "Native sketch finishes",
+    "Explicit hide updates region visibility without geometry rebuild",
+    "Explicit show restores cached region mesh",
+    "Revisiting a native face reuses its boundary tessellation",
+    "Placement change invalidates cached hover geometry",
+    "Native Shape change invalidates cached hover geometry",
+    "Deleting a face source removes its cached native references",
+    "Rapid mouse moves enqueue one latest-position native pick",
+    "Coalesced mouse moves perform exactly one native pick",
+    "Native quantity property changes publish the visible depth text",
+    "Native quantity arrow steps publish the visible depth text",
+    "A paused native drawing tool defers recovery snapshot work",
+    "A held sketch drag defers recovery snapshot work",
+    "Completing an older publisher cannot allow a second native snapshot in one idle turn",
+    "A paused native drawing tool defers recovery snapshot work",
+    "A held sketch drag defers recovery snapshot work",
+    "Idle turn stops after one failed native snapshot",
+    "Presentation sources remain frozen during native validation"
+  ],
+  "pid": 59468,
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "source_sha256": {
+    "sketch_colors.py": "69ce7f5416f0496f8b2e4b4770efb03410b452b09431085399e01cf62419feb9",
+    "sketch_regions.py": "e66acabf8529a9c6ca34f57de11db2f7aac3ffe6f22286a68ddd0252e139e36a",
+    "sketch_history.py": "b3f45463fa4cc4cc68c2a839b37faae9fd90d82c3692f5dcad548172cf5e6b0d",
+    "hover_outline.py": "32f2a23455795ea90ae42cc92d0fafe7ba5d192bdd2161695762449e83b5f035",
+    "ui.py": "fe4413bfe702e8260f60529d0a20bcf14f686016adac8c592377c19a25d21c30",
+    "recovery.py": "8f48bbc111d3cbdfeeea7e0f6315b4ee79150cc4b1a8c8218731ccb20b665db2"
+  },
+  "method": "Private hidden native GUI. Work counters and geometry/render state assertions; no timing benchmark.",
+  "idle_before": {
+    "mapping": 2,
+    "searches": 4,
+    "colors": 2,
+    "membership": 9,
+    "presentation": 12,
+    "history": 3,
+    "meshes": 3,
+    "writes": 0
+  },
+  "idle_after": {
+    "mapping": 2,
+    "searches": 4,
+    "colors": 2,
+    "membership": 9,
+    "presentation": 12,
+    "history": 3,
+    "meshes": 3,
+    "writes": 0
+  },
+  "hover_view": {
+    "tracking": true,
+    "edit": "None"
+  },
+  "hover_burst": {
+    "before": 0,
+    "after": 0,
+    "pending": true,
+    "timer": true,
+    "viewport_size": [
+      1184,
+      710
+    ]
+  },
+  "native_quantity_events": {
+    "set_value": [
+      "2.00 mm"
+    ],
+    "arrow_step": [
+      "3.00 mm"
+    ]
+  },
+  "check_count": 26
+}

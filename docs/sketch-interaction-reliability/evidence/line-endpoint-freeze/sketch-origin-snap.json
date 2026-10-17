@@ -1,0 +1,770 @@
+{
+  "passed": true,
+  "checks": [
+    "Five-pixel native baseline reproduces axis-only origin snap (7, 1)",
+    "Five-pixel native baseline reproduces axis-only origin snap (1, 7)",
+    "Native circle center is exactly at origin (0, 0)",
+    "Origin is a two-coordinate coincidence (0, 0)",
+    "Circle radius remains editable (0, 0)",
+    "Stop restores original native marker pick order (0, 0)None",
+    "Native circle center is exactly at origin (7, 1)",
+    "Origin is a two-coordinate coincidence (7, 1)",
+    "Circle radius remains editable (7, 1)",
+    "Stop restores original native marker pick order (7, 1)None",
+    "Native circle center is exactly at origin (1, 7)",
+    "Origin is a two-coordinate coincidence (1, 7)",
+    "Circle radius remains editable (1, 7)",
+    "Stop restores original native marker pick order (1, 7)None",
+    "Native circle center is exactly at origin (6, 5)",
+    "Origin is a two-coordinate coincidence (6, 5)",
+    "Circle radius remains editable (6, 5)",
+    "Stop restores original native marker pick order (6, 5)None",
+    "Native circle center is exactly at origin (0, 0) oblique",
+    "Origin is a two-coordinate coincidence (0, 0) oblique",
+    "Circle radius remains editable (0, 0) oblique",
+    "Stop restores original native marker pick order (0, 0)None",
+    "Native circle center is exactly at origin (7, 1) oblique",
+    "Origin is a two-coordinate coincidence (7, 1) oblique",
+    "Circle radius remains editable (7, 1) oblique",
+    "Stop restores original native marker pick order (7, 1)None",
+    "Native circle center is exactly at origin (1, 7) oblique",
+    "Origin is a two-coordinate coincidence (1, 7) oblique",
+    "Circle radius remains editable (1, 7) oblique",
+    "Stop restores original native marker pick order (1, 7)None",
+    "Stop restores original native marker pick order (30, 25)None",
+    "Outside origin aperture center stays where clicked",
+    "Outside origin aperture no origin coincidence is added",
+    "Stop restores original native marker pick order (0, 0)Control",
+    "Native Control circle behavior is preserved",
+    "Drawing installs scoped native origin priority",
+    "Escape removes origin priority before selection",
+    "Right click removes origin priority before selection",
+    "Dimension keeps native marker pick order",
+    "Repeated native Circle keeps both centers exactly at origin",
+    "Both repeated centers have a native two-coordinate coincidence path to origin",
+    "Repeated native geometry creation retains current live marker wrapper",
+    "First radius edits independently while second radius stays free",
+    "Only the two radii were free and both centers remain anchored",
+    "Changing one radius preserves the other radius and both origin centers",
+    "Native aperture returns to previous setting after edit"
+  ],
+  "samples": [
+    {
+      "mode": "baseline",
+      "offset": [
+        0,
+        0
+      ],
+      "oblique": false,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "baseline",
+      "offset": [
+        7,
+        1
+      ],
+      "oblique": false,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "PointOnObject",
+          0,
+          3,
+          -1,
+          0
+        ]
+      ],
+      "center": [
+        0.788726,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "baseline",
+      "offset": [
+        1,
+        7
+      ],
+      "oblique": false,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "PointOnObject",
+          0,
+          3,
+          -2,
+          0
+        ]
+      ],
+      "center": [
+        0.0,
+        -0.788738,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "baseline",
+      "offset": [
+        6,
+        5
+      ],
+      "oblique": false,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [],
+      "center": [
+        0.638493,
+        0.563374,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "enhanced",
+      "offset": [
+        0,
+        0
+      ],
+      "oblique": false,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "enhanced",
+      "offset": [
+        7,
+        1
+      ],
+      "oblique": false,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "enhanced",
+      "offset": [
+        1,
+        7
+      ],
+      "oblique": false,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "enhanced",
+      "offset": [
+        6,
+        5
+      ],
+      "oblique": false,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "enhanced",
+      "offset": [
+        0,
+        0
+      ],
+      "oblique": true,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "enhanced",
+      "offset": [
+        7,
+        1
+      ],
+      "oblique": true,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "enhanced",
+      "offset": [
+        1,
+        7
+      ],
+      "oblique": true,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "enhanced",
+      "offset": [
+        30,
+        25
+      ],
+      "oblique": false,
+      "modifier": null,
+      "geometry_count": 1,
+      "constraints": [],
+      "center": [
+        3.342718,
+        -2.816911,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "baseline",
+      "offset": [
+        0,
+        0
+      ],
+      "oblique": false,
+      "modifier": "Control",
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    },
+    {
+      "mode": "enhanced",
+      "offset": [
+        0,
+        0
+      ],
+      "oblique": false,
+      "modifier": "Control",
+      "geometry_count": 1,
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "center": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fully_constrained": false,
+      "device_pixel_ratio": 1.5
+    }
+  ],
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "source_sha256": {
+    "ui.py": "a16ace86503c23f34653513dbaded62d34173cc8e6c278680b3f55c3e9c58649",
+    "sketch_snapping.py": "9cad1ee743941f93aec40bcfaa915d97f1590399bc9a4c0aca8c67b229304d97",
+    "sketch_tools.py": "54f6c375ab886425b9a719eaef3a650e8cc436b9b05b5910e1b4f50be0d6d9b0"
+  },
+  "method": "Production sketch edit, native Circle command, actual Qt clicks near origin, inspect native coincidence and radius DOF; isolated hidden GUI.",
+  "repeated_creation": [
+    {
+      "offset": [
+        7,
+        1
+      ],
+      "center_preselection": [
+        "Sketch16",
+        [
+          "RootPoint"
+        ]
+      ],
+      "center_pick_radius": 13.5,
+      "before_center": {
+        "markers": [
+          [
+            "PointSet0",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "PointSet1",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "OriginPointSet",
+            "KurtShapeNativeOriginPickPriority"
+          ]
+        ],
+        "hits": [
+          {
+            "name": "OriginPointSet",
+            "point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "distance": 10.70320444471897
+          }
+        ],
+        "priority_active": true
+      },
+      "after_center": {
+        "markers": [
+          [
+            "PointSet0",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "PointSet1",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "OriginPointSet",
+            "KurtShapeNativeOriginPickPriority"
+          ]
+        ],
+        "hits": [
+          {
+            "name": "OriginPointSet",
+            "point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "distance": 10.515729779459543
+          }
+        ],
+        "priority_active": true
+      },
+      "geometry": [
+        "Circle (Radius : 14.3065, Position : (0, 0, 0), Direction : (0, 0, 1))"
+      ],
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ]
+      ],
+      "radius_pick_radius": 13.5,
+      "after_radius": {
+        "markers": [
+          [
+            "PointSet0",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "PointSet1",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "OriginPointSet",
+            "KurtShapeNativeOriginPickPriority"
+          ]
+        ],
+        "hits": [
+          {
+            "name": "PointSet0",
+            "point": [
+              0.0,
+              0.0,
+              0.010999999940395355
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.010999999940395355
+            ],
+            "distance": 10.516153521301126
+          },
+          {
+            "name": "OriginPointSet",
+            "point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "distance": 10.515729779459543
+          }
+        ],
+        "priority_active": true
+      }
+    },
+    {
+      "offset": [
+        -6,
+        1
+      ],
+      "center_preselection": [
+        "Sketch16",
+        [
+          "Vertex1"
+        ]
+      ],
+      "center_pick_radius": 13.5,
+      "before_center": {
+        "markers": [
+          [
+            "PointSet0",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "PointSet1",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "OriginPointSet",
+            "KurtShapeNativeOriginPickPriority"
+          ]
+        ],
+        "hits": [
+          {
+            "name": "PointSet0",
+            "point": [
+              0.0,
+              0.0,
+              0.010999999940395355
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.010999999940395355
+            ],
+            "distance": 9.631220285233836
+          },
+          {
+            "name": "OriginPointSet",
+            "point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "distance": 9.629960030479875
+          }
+        ],
+        "priority_active": true
+      },
+      "after_center": {
+        "markers": [
+          [
+            "PointSet0",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "PointSet1",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "OriginPointSet",
+            "KurtShapeNativeOriginPickPriority"
+          ]
+        ],
+        "hits": [
+          {
+            "name": "PointSet0",
+            "point": [
+              0.0,
+              0.0,
+              0.014000000432133675
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.014000000432133675
+            ],
+            "distance": 9.63500503849438
+          },
+          {
+            "name": "OriginPointSet",
+            "point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "distance": 9.629960030479875
+          }
+        ],
+        "priority_active": true
+      },
+      "geometry": [
+        "Circle (Radius : 14.3065, Position : (0, 0, 0), Direction : (0, 0, 1))",
+        "Circle (Radius : 21.8402, Position : (0, 0, 0), Direction : (0, 0, 1))"
+      ],
+      "constraints": [
+        [
+          "Coincident",
+          0,
+          3,
+          -1,
+          1
+        ],
+        [
+          "Coincident",
+          1,
+          3,
+          0,
+          3
+        ]
+      ],
+      "radius_pick_radius": 13.5,
+      "after_radius": {
+        "markers": [
+          [
+            "PointSet0",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "PointSet1",
+            "KurtShapeNativePointPickPriority"
+          ],
+          [
+            "OriginPointSet",
+            "KurtShapeNativeOriginPickPriority"
+          ]
+        ],
+        "hits": [
+          {
+            "name": "PointSet0",
+            "point": [
+              0.0,
+              0.0,
+              0.010999999940395355
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.010999999940395355
+            ],
+            "distance": 9.631220285233836
+          },
+          {
+            "name": "PointSet0",
+            "point": [
+              0.0,
+              0.0,
+              0.010999999940395355
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.010999999940395355
+            ],
+            "distance": 9.631220285233836
+          },
+          {
+            "name": "OriginPointSet",
+            "point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "object_point": [
+              0.0,
+              0.0,
+              0.009999999776482582
+            ],
+            "distance": 9.629960030479875
+          }
+        ],
+        "priority_active": true
+      }
+    }
+  ],
+  "repeated_center_coincidences": [
+    [
+      [
+        0,
+        3
+      ],
+      [
+        -1,
+        1
+      ]
+    ],
+    [
+      [
+        1,
+        3
+      ],
+      [
+        0,
+        3
+      ]
+    ]
+  ],
+  "check_count": 46
+}

@@ -1,0 +1,554 @@
+{
+  "method": "Existing unmodified native benchmark, three repeats, measurement level false; serial isolated post-upgrade runs versus earlier same-day audit baseline.",
+  "limits": [
+    "These are headless Controller timings, not input-to-paint timings.",
+    "Synchronous exact preview and forced checkpoint timings do not measure the new asynchronous GUI paths.",
+    "Studio tip edits alternate sketch width 125/5 and assert auto-merge-scope migration across four/one parts; plate tip edit changes a final hole diameter.",
+    "Post-upgrade native recompute/open timings are broadly slower than historical baseline. Do not attribute historical wall-time differences wholly to code changes; see paired-source-comparison.json for fresh ABBA diagnostics on identical saved sources.",
+    "Three samples give descriptive medians, not a stable tail-latency estimate."
+  ],
+  "excluded_run": {
+    "reason": "Overlong private session path caused native saveCopy checkpoint/preview errors. Overall run failed and is excluded from accepted comparison.",
+    "path": "runtime/responsive-modeling-working/post-upgrade-benchmarks/plate-repeat3-8dc1bf585c2f4d009f4acf99223dcf4b"
+  },
+  "comparisons": [
+    {
+      "fixture": "plate60",
+      "before_run_id": "2026-10-06T00:58:33.036334+00:00/64432",
+      "after_run_id": "2026-10-06T01:49:18.627788+00:00/85960",
+      "before_passed": true,
+      "after_passed": true,
+      "repeat": 3,
+      "measurement_level": false,
+      "before_fixture": {
+        "kind": "plate",
+        "holes": 60,
+        "grid": 8,
+        "pitch_mm": 66.66666666666667,
+        "hole_diameter_mm": 30.000000000000004,
+        "objects": 132,
+        "faces": 66,
+        "expected_volume_mm3": 3811061.9901184533
+      },
+      "after_fixture": {
+        "kind": "plate",
+        "holes": 60,
+        "grid": 8,
+        "pitch_mm": 66.66666666666667,
+        "hole_diameter_mm": 30.000000000000004,
+        "objects": 132,
+        "faces": 66,
+        "expected_volume_mm3": 3811061.9901184533
+      },
+      "metrics": [
+        {
+          "metric": "tip_edit.total_ms",
+          "before_median_ms": 513.1322001107037,
+          "after_median_ms": 1137.9569999407977,
+          "ratio": 2.2176682728062937,
+          "reduction_percent": -121.76682728062937
+        },
+        {
+          "metric": "tip_edit.native_recompute_ms",
+          "before_median_ms": 426.9006000831723,
+          "after_median_ms": 921.6898998711258,
+          "ratio": 2.159026948408024,
+          "reduction_percent": -115.9026948408024
+        },
+        {
+          "metric": "tip_edit.overhead_ms",
+          "before_median_ms": 84.99290002509952,
+          "after_median_ms": 208.84920004755259,
+          "ratio": 2.4572546646352422,
+          "reduction_percent": -145.7254664635242
+        },
+        {
+          "metric": "tip_edit.intent_signature_ms",
+          "before_median_ms": 25.259600020945072,
+          "after_median_ms": 73.89690005220473,
+          "ratio": 2.925497632224183,
+          "reduction_percent": -192.54976322241828
+        },
+        {
+          "metric": "tip_edit.inspection_ms",
+          "before_median_ms": 22.236499935388565,
+          "after_median_ms": 64.1662001144141,
+          "ratio": 2.8856249994764673,
+          "reduction_percent": -188.56249994764673
+        },
+        {
+          "metric": "tip_edit.selector_evaluation_ms",
+          "before_median_ms": 0.0,
+          "after_median_ms": 0.0,
+          "ratio": "NaN",
+          "reduction_percent": "NaN"
+        },
+        {
+          "metric": "tip_edit.auto_scope_sync_ms",
+          "before_median_ms": 0.0072999391704797745,
+          "after_median_ms": 0.04069996066391468,
+          "ratio": 5.575383535865786,
+          "reduction_percent": -457.5383535865786
+        },
+        {
+          "metric": "tip_edit.managed_rebuild_ms",
+          "before_median_ms": 428.48090012557805,
+          "after_median_ms": 929.5371999032795,
+          "ratio": 2.169378377497931,
+          "reduction_percent": -116.93783774979312
+        },
+        {
+          "metric": "upstream_edit.total_ms",
+          "before_median_ms": 8859.393700025976,
+          "after_median_ms": 15885.39749989286,
+          "ratio": 1.793056956013399,
+          "reduction_percent": -79.3056956013399
+        },
+        {
+          "metric": "upstream_edit.native_recompute_ms",
+          "before_median_ms": 8767.606400186196,
+          "after_median_ms": 15695.379999931902,
+          "ratio": 1.7901556346779643,
+          "reduction_percent": -79.01556346779644
+        },
+        {
+          "metric": "upstream_edit.overhead_ms",
+          "before_median_ms": 67.01859994791448,
+          "after_median_ms": 200.463900109753,
+          "ratio": 2.9911681274384954,
+          "reduction_percent": -199.11681274384955
+        },
+        {
+          "metric": "upstream_edit.intent_signature_ms",
+          "before_median_ms": 22.398100001737475,
+          "after_median_ms": 57.70000000484288,
+          "ratio": 2.576111366605513,
+          "reduction_percent": -157.61113666055132
+        },
+        {
+          "metric": "upstream_edit.inspection_ms",
+          "before_median_ms": 21.2612000759691,
+          "after_median_ms": 60.08749990724027,
+          "ratio": 2.826157493111378,
+          "reduction_percent": -182.61574931113782
+        },
+        {
+          "metric": "upstream_edit.selector_evaluation_ms",
+          "before_median_ms": 0.0,
+          "after_median_ms": 0.0,
+          "ratio": "NaN",
+          "reduction_percent": "NaN"
+        },
+        {
+          "metric": "upstream_edit.auto_scope_sync_ms",
+          "before_median_ms": 0.008300179615616798,
+          "after_median_ms": 0.013800105080008507,
+          "ratio": 1.6626272826727257,
+          "reduction_percent": -66.26272826727258
+        },
+        {
+          "metric": "upstream_edit.managed_rebuild_ms",
+          "before_median_ms": 8769.16110003367,
+          "after_median_ms": 15700.337199959904,
+          "ratio": 1.790403554098193,
+          "reduction_percent": -79.04035540981931
+        },
+        {
+          "metric": "add_sketch.total_ms",
+          "before_median_ms": 413.4059001225978,
+          "after_median_ms": 667.1442000661045,
+          "ratio": 1.6137752264016048,
+          "reduction_percent": -61.37752264016048
+        },
+        {
+          "metric": "add_sketch.native_recompute_ms",
+          "before_median_ms": 268.4566001407802,
+          "after_median_ms": 417.72789997048676,
+          "ratio": 1.5560351272847373,
+          "reduction_percent": -55.603512728473724
+        },
+        {
+          "metric": "add_sketch.overhead_ms",
+          "before_median_ms": 144.9492999818176,
+          "after_median_ms": 249.41630009561777,
+          "ratio": 1.7207140712435622,
+          "reduction_percent": -72.07140712435623
+        },
+        {
+          "metric": "add_sketch.intent_signature_ms",
+          "before_median_ms": 47.06900008022785,
+          "after_median_ms": 70.24369994178414,
+          "ratio": 1.4923558992554682,
+          "reduction_percent": -49.23558992554682
+        },
+        {
+          "metric": "add_sketch.inspection_ms",
+          "before_median_ms": 45.28219997882843,
+          "after_median_ms": 76.49400015361607,
+          "ratio": 1.6892730518698436,
+          "reduction_percent": -68.92730518698436
+        },
+        {
+          "metric": "add_sketch.selector_evaluation_ms",
+          "before_median_ms": 0.0,
+          "after_median_ms": 0.0,
+          "ratio": "NaN",
+          "reduction_percent": "NaN"
+        },
+        {
+          "metric": "add_sketch.auto_scope_sync_ms",
+          "before_median_ms": 0.023700064048171043,
+          "after_median_ms": 0.04109996370971203,
+          "ratio": 1.7341709974359227,
+          "reduction_percent": -73.41709974359227
+        },
+        {
+          "metric": "add_sketch.managed_rebuild_ms",
+          "before_median_ms": 274.740899913013,
+          "after_median_ms": 426.82529985904694,
+          "ratio": 1.5535557319430275,
+          "reduction_percent": -55.35557319430276
+        },
+        {
+          "metric": "add_pocket.total_ms",
+          "before_median_ms": 1886.1525000538677,
+          "after_median_ms": 2995.446899905801,
+          "ratio": 1.5881255093743758,
+          "reduction_percent": -58.81255093743758
+        },
+        {
+          "metric": "add_pocket.native_recompute_ms",
+          "before_median_ms": 1668.325599981472,
+          "after_median_ms": 2616.976900026202,
+          "ratio": 1.5686247936585436,
+          "reduction_percent": -56.862479365854355
+        },
+        {
+          "metric": "add_pocket.overhead_ms",
+          "before_median_ms": 215.5174999497831,
+          "after_median_ms": 391.3854998536408,
+          "ratio": 1.8160265405121907,
+          "reduction_percent": -81.60265405121908
+        },
+        {
+          "metric": "add_pocket.intent_signature_ms",
+          "before_median_ms": 24.283000035211444,
+          "after_median_ms": 51.16859986446798,
+          "ratio": 2.1071778524182023,
+          "reduction_percent": -110.71778524182024
+        },
+        {
+          "metric": "add_pocket.inspection_ms",
+          "before_median_ms": 22.589100059121847,
+          "after_median_ms": 61.24829989857972,
+          "ratio": 2.7114094735193603,
+          "reduction_percent": -171.14094735193603
+        },
+        {
+          "metric": "add_pocket.selector_evaluation_ms",
+          "before_median_ms": 0.0,
+          "after_median_ms": 0.0,
+          "ratio": "NaN",
+          "reduction_percent": "NaN"
+        },
+        {
+          "metric": "add_pocket.auto_scope_sync_ms",
+          "before_median_ms": 0.02410006709396839,
+          "after_median_ms": 0.07809977978467941,
+          "ratio": 3.2406457409500624,
+          "reduction_percent": -224.06457409500624
+        },
+        {
+          "metric": "add_pocket.managed_rebuild_ms",
+          "before_median_ms": 1675.442900042981,
+          "after_median_ms": 2630.2007001359016,
+          "ratio": 1.5698539771593696,
+          "reduction_percent": -56.985397715936955
+        },
+        {
+          "metric": "inspect_warm_ms",
+          "before_median_ms": 37.53480012528598,
+          "after_median_ms": 55.10680004954338,
+          "ratio": 1.4681522178246451,
+          "reduction_percent": -46.81522178246451
+        },
+        {
+          "metric": "inspect_after_change_ms",
+          "before_median_ms": 48.38729999028146,
+          "after_median_ms": 112.17119987122715,
+          "ratio": 2.3181950613850453,
+          "reduction_percent": -131.81950613850452
+        },
+        {
+          "metric": "checkpoint_ms",
+          "before_median_ms": 1683.6528999265283,
+          "after_median_ms": 3268.7892999965698,
+          "ratio": 1.9414864549214472,
+          "reduction_percent": -94.14864549214472
+        },
+        {
+          "metric": "preview_first_ms",
+          "before_median_ms": 8995.939899934456,
+          "after_median_ms": 15670.791399898008,
+          "ratio": 1.7419848925415993,
+          "reduction_percent": -74.19848925415992
+        },
+        {
+          "metric": "preview_update_ms",
+          "before_median_ms": 7175.073900027201,
+          "after_median_ms": 13331.131600076333,
+          "ratio": 1.8579782990145641,
+          "reduction_percent": -85.79782990145641
+        },
+        {
+          "metric": "native_open_ms",
+          "before_median_ms": 1918.4409000445157,
+          "after_median_ms": 2858.2804000470787,
+          "ratio": 1.4898975516945843,
+          "reduction_percent": -48.98975516945843
+        },
+        {
+          "metric": "kurtshape_open_ms",
+          "before_median_ms": 1761.717100162059,
+          "after_median_ms": 3116.99300003238,
+          "ratio": 1.7692925837784343,
+          "reduction_percent": -76.92925837784344
+        }
+      ]
+    },
+    {
+      "fixture": "studio",
+      "before_run_id": "2026-10-06T01:02:01.170194+00:00/86088",
+      "after_run_id": "2026-10-06T01:54:15.833733+00:00/21076",
+      "before_passed": true,
+      "after_passed": true,
+      "repeat": 3,
+      "measurement_level": false,
+      "before_fixture": {
+        "kind": "studio",
+        "base_features": 30,
+        "base_parts": 4,
+        "selector_consumers": 11,
+        "scoped_operations": [
+          "BenchAutoCut: remove/auto",
+          "BenchExplicitAdd: add/Part1"
+        ],
+        "studio_features": 34,
+        "logical_parts": 4,
+        "objects": 162
+      },
+      "after_fixture": {
+        "kind": "studio",
+        "base_features": 30,
+        "base_parts": 4,
+        "selector_consumers": 11,
+        "scoped_operations": [
+          "BenchAutoCut: remove/auto",
+          "BenchExplicitAdd: add/Part1"
+        ],
+        "studio_features": 34,
+        "logical_parts": 4,
+        "objects": 162
+      },
+      "metrics": [
+        {
+          "metric": "total_rebuild_ms",
+          "before_median_ms": 1248.4235998708755,
+          "after_median_ms": 1122.886700090021,
+          "ratio": 0.8994436665617032,
+          "reduction_percent": 10.055633343829683
+        },
+        {
+          "metric": "native_recompute_ms",
+          "before_median_ms": 213.60410074703395,
+          "after_median_ms": 421.52050021104515,
+          "ratio": 1.9733726962023141,
+          "reduction_percent": -97.33726962023141
+        },
+        {
+          "metric": "selector_evaluation_ms",
+          "before_median_ms": 449.2718998808414,
+          "after_median_ms": 471.75880055874586,
+          "ratio": 1.050051874341281,
+          "reduction_percent": -5.0051874341281
+        },
+        {
+          "metric": "auto_scope_sync_ms",
+          "before_median_ms": 19.5915000513196,
+          "after_median_ms": 35.059799905866385,
+          "ratio": 1.7895413732500236,
+          "reduction_percent": -78.95413732500236
+        },
+        {
+          "metric": "managed_rebuild_ms",
+          "before_median_ms": 731.1408999375999,
+          "after_median_ms": 949.6008001733571,
+          "ratio": 1.2987931604625071,
+          "reduction_percent": -29.879316046250715
+        },
+        {
+          "metric": "tip_edit.total_ms",
+          "before_median_ms": 3720.2742998488247,
+          "after_median_ms": 2959.6472000703216,
+          "ratio": 0.7955454252904385,
+          "reduction_percent": 20.445457470956153
+        },
+        {
+          "metric": "tip_edit.native_recompute_ms",
+          "before_median_ms": 284.52990064397454,
+          "after_median_ms": 591.1212998908013,
+          "ratio": 2.0775366615351167,
+          "reduction_percent": -107.75366615351167
+        },
+        {
+          "metric": "tip_edit.overhead_ms",
+          "before_median_ms": 3491.452598478645,
+          "after_median_ms": 2368.5259001795202,
+          "ratio": 0.6783783635532026,
+          "reduction_percent": 32.162163644679744
+        },
+        {
+          "metric": "tip_edit.intent_signature_ms",
+          "before_median_ms": 11.555799981579185,
+          "after_median_ms": 31.192900147289038,
+          "ratio": 2.6993284927926124,
+          "reduction_percent": -169.93284927926123
+        },
+        {
+          "metric": "tip_edit.inspection_ms",
+          "before_median_ms": 261.25159999355674,
+          "after_median_ms": 71.01029995828867,
+          "ratio": 0.27180809595057026,
+          "reduction_percent": 72.81919040494299
+        },
+        {
+          "metric": "tip_edit.selector_evaluation_ms",
+          "before_median_ms": 1521.935899509117,
+          "after_median_ms": 1214.136800263077,
+          "ratio": 0.7977581714543188,
+          "reduction_percent": 20.224182854568117
+        },
+        {
+          "metric": "tip_edit.auto_scope_sync_ms",
+          "before_median_ms": 587.2170999646187,
+          "after_median_ms": 1186.8469996843487,
+          "ratio": 2.02113834858668,
+          "reduction_percent": -102.11383485866801
+        },
+        {
+          "metric": "tip_edit.managed_rebuild_ms",
+          "before_median_ms": 2672.4921001587063,
+          "after_median_ms": 2820.619999896735,
+          "ratio": 1.0554268802999387,
+          "reduction_percent": -5.54268802999387
+        },
+        {
+          "metric": "upstream_edit.total_ms",
+          "before_median_ms": 3152.7217999100685,
+          "after_median_ms": 1802.4738000240177,
+          "ratio": 0.5717199024904238,
+          "reduction_percent": 42.82800975095762
+        },
+        {
+          "metric": "upstream_edit.native_recompute_ms",
+          "before_median_ms": 237.060901010409,
+          "after_median_ms": 498.8502012565732,
+          "ratio": 2.104312432503028,
+          "reduction_percent": -110.43124325030278
+        },
+        {
+          "metric": "upstream_edit.overhead_ms",
+          "before_median_ms": 2915.6608988996595,
+          "after_median_ms": 1279.1272005997598,
+          "ratio": 0.4387091794805388,
+          "reduction_percent": 56.12908205194612
+        },
+        {
+          "metric": "upstream_edit.intent_signature_ms",
+          "before_median_ms": 18.032300053164363,
+          "after_median_ms": 46.07110004872084,
+          "ratio": 2.5549208871242213,
+          "reduction_percent": -155.49208871242212
+        },
+        {
+          "metric": "upstream_edit.inspection_ms",
+          "before_median_ms": 415.4661998618394,
+          "after_median_ms": 105.27059994637966,
+          "ratio": 0.25337945657525623,
+          "reduction_percent": 74.66205434247438
+        },
+        {
+          "metric": "upstream_edit.selector_evaluation_ms",
+          "before_median_ms": 882.5405000243336,
+          "after_median_ms": 800.9451003745198,
+          "ratio": 0.9075448666122813,
+          "reduction_percent": 9.245513338771872
+        },
+        {
+          "metric": "upstream_edit.auto_scope_sync_ms",
+          "before_median_ms": 53.541400004178286,
+          "after_median_ms": 107.31679992750287,
+          "ratio": 2.0043704482723284,
+          "reduction_percent": -100.43704482723284
+        },
+        {
+          "metric": "upstream_edit.managed_rebuild_ms",
+          "before_median_ms": 1295.658100163564,
+          "after_median_ms": 1404.905900126323,
+          "ratio": 1.0843183861151082,
+          "reduction_percent": -8.431838611510823
+        },
+        {
+          "metric": "inspect_warm_ms",
+          "before_median_ms": 390.12970007024705,
+          "after_median_ms": 98.11419993638992,
+          "ratio": 0.2514912346297229,
+          "reduction_percent": 74.85087653702772
+        },
+        {
+          "metric": "inspect_after_change_ms",
+          "before_median_ms": 1404.8524999525398,
+          "after_median_ms": 529.1251000016928,
+          "ratio": 0.37664103528275616,
+          "reduction_percent": 62.33589647172438
+        },
+        {
+          "metric": "checkpoint_ms",
+          "before_median_ms": 584.0837999712676,
+          "after_median_ms": 377.5228001177311,
+          "ratio": 0.6463504040624005,
+          "reduction_percent": 35.36495959375995
+        },
+        {
+          "metric": "preview_first_ms",
+          "before_median_ms": 2574.5116998441517,
+          "after_median_ms": 2352.590500144288,
+          "ratio": 0.9138006637478875,
+          "reduction_percent": 8.619933625211251
+        },
+        {
+          "metric": "preview_update_ms",
+          "before_median_ms": 2413.7766000349075,
+          "after_median_ms": 2177.2539999801666,
+          "ratio": 0.9020113957309387,
+          "reduction_percent": 9.798860426906131
+        },
+        {
+          "metric": "native_open_ms",
+          "before_median_ms": 145.90290002524853,
+          "after_median_ms": 452.25610001944005,
+          "ratio": 3.0997060369682647,
+          "reduction_percent": -209.9706036968265
+        },
+        {
+          "metric": "kurtshape_open_ms",
+          "before_median_ms": 1063.1194999441504,
+          "after_median_ms": 805.866900132969,
+          "ratio": 0.7580209940418778,
+          "reduction_percent": 24.197900595812214
+        }
+      ]
+    }
+  ],
+  "fresh_paired_evidence": "paired-source-comparison.json"
+}

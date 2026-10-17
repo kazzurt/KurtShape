@@ -1,0 +1,363 @@
+{
+  "method": "Fresh-process ABBA diagnostic; baseline a1, current b1, current b2, baseline a2; immutable common saved sources, same exact benchmark functions, measure false.",
+  "recipe": "runtime/responsive-modeling-working/paired-native-diagnostic.py",
+  "import_provenance": "Recipe asserts resolved kurtshape.core.__file__ lies in selected source_root/src before measuring. Per-arm source roots, source hashes, specimen hashes and unchanged checks are retained.",
+  "limits": [
+    "Warm inspection has six samples per variant across two arms; changed inspection and edits have two samples per variant, one per arm.",
+    "Changed inspection follows a real native upstream length increase and recompute; native recompute time is outside the changed-inspection sample.",
+    "Studio tip edit shrinks automatic cut scope from four parts to one, with assertions; plate tip edit increases the final hole diameter by 0.1mm.",
+    "This diagnostic does not measure asynchronous GUI previews, input-to-paint, forced checkpoint, or the complete original fixture build.",
+    "The existing baseline code was loaded from the captured working-tree copy; no production files were edited."
+  ],
+  "fixtures": {
+    "plate": {
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\plate60-fd6976\\native-fixtures\\plate-benchmark.FCStd",
+      "source_sha256": "a4694f130d0fe1d6edee5c4e2b13f16d67bf2ae87a0aa409b64ad8dd9398e189",
+      "matching_final_volumes_mm3": {
+        "Body": 4765127.989196912
+      },
+      "metrics": {
+        "warm_inspect_ms": {
+          "baseline_median_ms": 35.117150051519275,
+          "current_median_ms": 19.057450001128018,
+          "reduction_percent": 45.73178639733171,
+          "baseline_samples": [
+            52.613799925893545,
+            48.31240000203252,
+            78.7094000261277,
+            21.79750008508563,
+            21.735799964517355,
+            21.92190010100603
+          ],
+          "current_samples": [
+            18.81049992516637,
+            19.166700076311827,
+            18.877600086852908,
+            18.94819992594421,
+            19.359800033271313,
+            21.62229991517961
+          ]
+        },
+        "changed_inspect_ms": {
+          "baseline_median_ms": 113.79780003335327,
+          "current_median_ms": 151.41839999705553,
+          "reduction_percent": -33.05916278932981,
+          "baseline_samples": [
+            127.73810001090169,
+            99.85750005580485
+          ],
+          "current_samples": [
+            200.30990010127425,
+            102.52689989283681
+          ]
+        },
+        "native_open_ms": {
+          "baseline_median_ms": 1984.8488999996334,
+          "current_median_ms": 1956.3587000593543,
+          "reduction_percent": 1.4353838189035129,
+          "baseline_samples": [
+            1952.0793000701815,
+            2017.6184999290854
+          ],
+          "current_samples": [
+            1923.012400045991,
+            1989.7050000727177
+          ]
+        },
+        "native_change_ms": {
+          "baseline_median_ms": 13151.171450153925,
+          "current_median_ms": 13391.458200057968,
+          "reduction_percent": -1.8271128987618068,
+          "baseline_samples": [
+            14420.205500209704,
+            11882.137400098145
+          ],
+          "current_samples": [
+            14751.898400019854,
+            12031.018000096083
+          ]
+        },
+        "tip_edit.total_ms": {
+          "baseline_median_ms": 1072.5541999563575,
+          "current_median_ms": 1077.1808500867337,
+          "reduction_percent": -0.43136748991934315,
+          "baseline_samples": [
+            1269.4463999941945,
+            875.6619999185205
+          ],
+          "current_samples": [
+            1297.2917000297457,
+            857.0700001437217
+          ]
+        },
+        "tip_edit.native_recompute_ms": {
+          "baseline_median_ms": 886.594699928537,
+          "current_median_ms": 870.3245000215247,
+          "reduction_percent": 1.8351339014685886,
+          "baseline_samples": [
+            1057.0346000604331,
+            716.1547997966409
+          ],
+          "current_samples": [
+            1037.4767000321299,
+            703.1723000109196
+          ]
+        },
+        "tip_edit.overhead_ms": {
+          "baseline_median_ms": 185.95950002782047,
+          "current_median_ms": 206.85635006520897,
+          "reduction_percent": -11.237312443979587,
+          "baseline_samples": [
+            212.41179993376136,
+            159.50720012187958
+          ],
+          "current_samples": [
+            259.8149999976158,
+            153.89770013280213
+          ]
+        },
+        "tip_edit.intent_signature_ms": {
+          "baseline_median_ms": 52.42979992181063,
+          "current_median_ms": 75.04239992704242,
+          "reduction_percent": -43.1292891427286,
+          "baseline_samples": [
+            53.76359983347356,
+            51.09600001014769
+          ],
+          "current_samples": [
+            107.17129986733198,
+            42.91349998675287
+          ]
+        },
+        "tip_edit.inspection_ms": {
+          "baseline_median_ms": 52.65180009882897,
+          "current_median_ms": 61.01465004030615,
+          "reduction_percent": -15.883312490322954,
+          "baseline_samples": [
+            57.55200004205108,
+            47.751600155606866
+          ],
+          "current_samples": [
+            72.4617000669241,
+            49.56760001368821
+          ]
+        },
+        "tip_edit.selector_evaluation_ms": {
+          "baseline_median_ms": 0.0,
+          "current_median_ms": 0.0,
+          "reduction_percent": null,
+          "baseline_samples": [
+            0.0,
+            0.0
+          ],
+          "current_samples": [
+            0.0,
+            0.0
+          ]
+        },
+        "tip_edit.auto_scope_sync_ms": {
+          "baseline_median_ms": 0.017450074665248394,
+          "current_median_ms": 0.013949931599199772,
+          "reduction_percent": 20.05804062843991,
+          "baseline_samples": [
+            0.014400109648704529,
+            0.02050003968179226
+          ],
+          "current_samples": [
+            0.011999858543276787,
+            0.015900004655122757
+          ]
+        },
+        "tip_edit.managed_rebuild_ms": {
+          "baseline_median_ms": 891.1193000385538,
+          "current_median_ms": 874.7933499980718,
+          "reduction_percent": 1.8320723207067346,
+          "baseline_samples": [
+            1062.168400036171,
+            720.0702000409365
+          ],
+          "current_samples": [
+            1042.9521999321878,
+            706.6345000639558
+          ]
+        }
+      }
+    },
+    "studio": {
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\studio-c305e4\\native-fixtures\\studio-benchmark.FCStd",
+      "source_sha256": "83e22ee28b497e5cacbce34ee8715476984da0e71184d249c1004c7d07e6e4f4",
+      "matching_final_volumes_mm3": {
+        "Part2": 1952.8761101961527,
+        "Part3": 1952.8761101961525,
+        "Part4": 1968.5840734641015,
+        "BenchExplicitAddPart": 3092.6017763138443
+      },
+      "metrics": {
+        "warm_inspect_ms": {
+          "baseline_median_ms": 1124.0862999111414,
+          "current_median_ms": 86.90875011961907,
+          "reduction_percent": 92.26849841275629,
+          "baseline_samples": [
+            1253.0669998377562,
+            1348.4223000705242,
+            1445.437500020489,
+            953.3017999492586,
+            995.1055999845266,
+            957.5428001116961
+          ],
+          "current_samples": [
+            117.00209998525679,
+            130.58290001936257,
+            80.45020001009107,
+            85.91910009272397,
+            86.60130016505718,
+            87.21620007418096
+          ]
+        },
+        "changed_inspect_ms": {
+          "baseline_median_ms": 3588.1695999996737,
+          "current_median_ms": 616.8917000759393,
+          "reduction_percent": 82.80762146594198,
+          "baseline_samples": [
+            3899.578999960795,
+            3276.7602000385523
+          ],
+          "current_samples": [
+            691.1040002014488,
+            542.6793999504298
+          ]
+        },
+        "native_open_ms": {
+          "baseline_median_ms": 374.33659995440394,
+          "current_median_ms": 464.7170000243932,
+          "reduction_percent": -24.144152637224913,
+          "baseline_samples": [
+            386.31119998171926,
+            362.3619999270886
+          ],
+          "current_samples": [
+            533.4093000274152,
+            396.02470002137125
+          ]
+        },
+        "native_change_ms": {
+          "baseline_median_ms": 386.3963499898091,
+          "current_median_ms": 416.22755012940615,
+          "reduction_percent": -7.720362819261584,
+          "baseline_samples": [
+            412.5188000034541,
+            360.2738999761641
+          ],
+          "current_samples": [
+            471.8747001606971,
+            360.5804000981152
+          ]
+        },
+        "tip_edit.total_ms": {
+          "baseline_median_ms": 11033.955750055611,
+          "current_median_ms": 2983.847349998541,
+          "reduction_percent": 72.95759184113547,
+          "baseline_samples": [
+            12393.971000099555,
+            9673.940500011668
+          ],
+          "current_samples": [
+            3181.6783999092877,
+            2786.0163000877947
+          ]
+        },
+        "tip_edit.native_recompute_ms": {
+          "baseline_median_ms": 304.9294484080747,
+          "current_median_ms": 343.65260193590075,
+          "reduction_percent": -12.69905341382589,
+          "baseline_samples": [
+            284.11959996446967,
+            325.7392968516797
+          ],
+          "current_samples": [
+            385.65460150130093,
+            301.65060237050056
+          ]
+        },
+        "tip_edit.overhead_ms": {
+          "baseline_median_ms": 10729.026301647536,
+          "current_median_ms": 2640.1947480626404,
+          "reduction_percent": 75.39203769444376,
+          "baseline_samples": [
+            12109.851400135085,
+            9348.201203159988
+          ],
+          "current_samples": [
+            2796.0237984079868,
+            2484.365697717294
+          ]
+        },
+        "tip_edit.intent_signature_ms": {
+          "baseline_median_ms": 39.03279989026487,
+          "current_median_ms": 40.72525002993643,
+          "reduction_percent": -4.3359690937612605,
+          "baseline_samples": [
+            43.901999946683645,
+            34.16359983384609
+          ],
+          "current_samples": [
+            32.63660008087754,
+            48.81389997899532
+          ]
+        },
+        "tip_edit.inspection_ms": {
+          "baseline_median_ms": 1213.6827498907223,
+          "current_median_ms": 113.97255002520978,
+          "reduction_percent": 90.60936228718158,
+          "baseline_samples": [
+            1319.7649999056011,
+            1107.6004998758435
+          ],
+          "current_samples": [
+            113.97549998946488,
+            113.96960006095469
+          ]
+        },
+        "tip_edit.selector_evaluation_ms": {
+          "baseline_median_ms": 4464.213499915786,
+          "current_median_ms": 1563.4362001437694,
+          "reduction_percent": 64.97846260773005,
+          "baseline_samples": [
+            5154.176599346101,
+            3774.250400485471
+          ],
+          "current_samples": [
+            1699.9944997951388,
+            1426.8779004924
+          ]
+        },
+        "tip_edit.auto_scope_sync_ms": {
+          "baseline_median_ms": 668.3735999977216,
+          "current_median_ms": 631.6818998893723,
+          "reduction_percent": 5.4896991904638925,
+          "baseline_samples": [
+            652.8447000309825,
+            683.9024999644607
+          ],
+          "current_samples": [
+            675.6054998841137,
+            587.7582998946309
+          ]
+        },
+        "tip_edit.managed_rebuild_ms": {
+          "baseline_median_ms": 5936.90509989392,
+          "current_median_ms": 2608.3601500140503,
+          "reduction_percent": 56.06532181117976,
+          "baseline_samples": [
+            6624.092699959874,
+            5249.717499827966
+          ],
+          "current_samples": [
+            2828.972600167617,
+            2387.7476998604834
+          ]
+        }
+      }
+    }
+  }
+}

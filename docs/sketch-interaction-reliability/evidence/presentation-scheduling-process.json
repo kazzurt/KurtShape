@@ -1,0 +1,17 @@
+{
+  "recipe": "presentation-scheduling",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-4f6a8bd4446745e2a00a6b8b18e04f2d",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\presentation-scheduling-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-4f6a8bd4446745e2a00a6b8b18e04f2d\\evidence\\presentation-scheduling\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-4f6a8bd4446745e2a00a6b8b18e04f2d\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-4f6a8bd4446745e2a00a6b8b18e04f2d\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-4f6a8bd4446745e2a00a6b8b18e04f2d\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T17:09:00.8422585Z",
+  "exited_utc": "2026-10-06T17:09:17.9990292Z",
+  "pid": 59468,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T17:09:18.0019197Z"
+}

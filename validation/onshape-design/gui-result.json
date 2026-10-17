@@ -1,0 +1,977 @@
+{
+  "passed": true,
+  "checks": [
+    "Desktop shell remains usable at actual platform dimensions",
+    "Fixture is a valid native 4800 mm3 solid",
+    "Model: named accessible icon-only action Undo",
+    "Model: rendered icon Undo",
+    "Model: delayed label registered Undo",
+    "Model: named accessible icon-only action Redo",
+    "Model: rendered icon Redo",
+    "Model: delayed label registered Redo",
+    "Model: named accessible icon-only action New part",
+    "Model: rendered icon New part",
+    "Model: delayed label registered New part",
+    "Model: named accessible icon-only action Sketch",
+    "Model: rendered icon Sketch",
+    "Model: delayed label registered Sketch",
+    "Model: named accessible icon-only action Extrude",
+    "Model: rendered icon Extrude",
+    "Model: delayed label registered Extrude",
+    "Model: named accessible icon-only action Remove",
+    "Model: rendered icon Remove",
+    "Model: delayed label registered Remove",
+    "Model: named accessible icon-only action Revolve",
+    "Model: rendered icon Revolve",
+    "Model: delayed label registered Revolve",
+    "Model: named accessible icon-only action Sweep",
+    "Model: rendered icon Sweep",
+    "Model: delayed label registered Sweep",
+    "Model: named accessible icon-only action Loft",
+    "Model: rendered icon Loft",
+    "Model: delayed label registered Loft",
+    "Model: named accessible icon-only action Fillet",
+    "Model: rendered icon Fillet",
+    "Model: delayed label registered Fillet",
+    "Model: named accessible icon-only action Chamfer",
+    "Model: rendered icon Chamfer",
+    "Model: delayed label registered Chamfer",
+    "Model: named accessible icon-only action Shell",
+    "Model: rendered icon Shell",
+    "Model: delayed label registered Shell",
+    "Model: named accessible icon-only action Draft",
+    "Model: rendered icon Draft",
+    "Model: delayed label registered Draft",
+    "Model: named accessible icon-only action Move face",
+    "Model: rendered icon Move face",
+    "Model: delayed label registered Move face",
+    "Model: named accessible icon-only action Linear pattern",
+    "Model: rendered icon Linear pattern",
+    "Model: delayed label registered Linear pattern",
+    "Model: named accessible icon-only action Circular pattern",
+    "Model: rendered icon Circular pattern",
+    "Model: delayed label registered Circular pattern",
+    "Model: named accessible icon-only action Mirror",
+    "Model: rendered icon Mirror",
+    "Model: delayed label registered Mirror",
+    "Model: named accessible icon-only action Boolean",
+    "Model: rendered icon Boolean",
+    "Model: delayed label registered Boolean",
+    "Model: named accessible icon-only action Plane",
+    "Model: rendered icon Plane",
+    "Model: delayed label registered Plane",
+    "Model: named accessible icon-only action Boolean parts",
+    "Model: rendered icon Boolean parts",
+    "Model: delayed label registered Boolean parts",
+    "Model: named accessible icon-only action Split",
+    "Model: rendered icon Split",
+    "Model: delayed label registered Split",
+    "Model: named accessible icon-only action Transform",
+    "Model: rendered icon Transform",
+    "Model: delayed label registered Transform",
+    "Model: named accessible icon-only action More",
+    "Model: rendered icon More",
+    "Model: delayed label registered More",
+    "Model: named accessible icon-only action Rebuild",
+    "Model: rendered icon Rebuild",
+    "Model: delayed label registered Rebuild",
+    "Model: named accessible icon-only action Check geometry",
+    "Model: rendered icon Check geometry",
+    "Model: delayed label registered Check geometry",
+    "Model: named accessible icon-only action Fit",
+    "Model: rendered icon Fit",
+    "Model: delayed label registered Fit",
+    "Model: named accessible icon-only action Normal",
+    "Model: rendered icon Normal",
+    "Model: delayed label registered Normal",
+    "Model: named accessible icon-only action 3D",
+    "Model: rendered icon 3D",
+    "Model: delayed label registered 3D",
+    "Model: named accessible icon-only action Show planes",
+    "Model: rendered icon Show planes",
+    "Model: delayed label registered Show planes",
+    "Document: named accessible icon-only action Document",
+    "Document: rendered icon Document",
+    "Document: delayed label registered Document",
+    "Document: named accessible icon-only action Save",
+    "Document: rendered icon Save",
+    "Document: delayed label registered Save",
+    "Document: named accessible icon-only action Help",
+    "Document: rendered icon Help",
+    "Document: delayed label registered Help",
+    "Document: named accessible icon-only action Settings",
+    "Document: rendered icon Settings",
+    "Document: delayed label registered Settings",
+    "Sketch: named accessible icon-only action Undo",
+    "Sketch: rendered icon Undo",
+    "Sketch: delayed label registered Undo",
+    "Sketch: named accessible icon-only action Redo",
+    "Sketch: rendered icon Redo",
+    "Sketch: delayed label registered Redo",
+    "Sketch: named accessible icon-only action Line",
+    "Sketch: rendered icon Line",
+    "Sketch: delayed label registered Line",
+    "Sketch: named accessible icon-only action Rectangle",
+    "Sketch: rendered icon Rectangle",
+    "Sketch: delayed label registered Rectangle",
+    "Sketch: named accessible icon-only action Circle",
+    "Sketch: rendered icon Circle",
+    "Sketch: delayed label registered Circle",
+    "Sketch: named accessible icon-only action Arc",
+    "Sketch: rendered icon Arc",
+    "Sketch: delayed label registered Arc",
+    "Sketch: named accessible icon-only action Spline",
+    "Sketch: rendered icon Spline",
+    "Sketch: delayed label registered Spline",
+    "Sketch: named accessible icon-only action Point",
+    "Sketch: rendered icon Point",
+    "Sketch: delayed label registered Point",
+    "Sketch: named accessible icon-only action Dimension",
+    "Sketch: rendered icon Dimension",
+    "Sketch: delayed label registered Dimension",
+    "Sketch: named accessible icon-only action Trim",
+    "Sketch: rendered icon Trim",
+    "Sketch: delayed label registered Trim",
+    "Sketch: named accessible icon-only action Construction",
+    "Sketch: rendered icon Construction",
+    "Sketch: delayed label registered Construction",
+    "Sketch: named accessible icon-only action Geometry",
+    "Sketch: rendered icon Geometry",
+    "Sketch: delayed label registered Geometry",
+    "Sketch: named accessible icon-only action Constraints",
+    "Sketch: rendered icon Constraints",
+    "Sketch: delayed label registered Constraints",
+    "Sketch: named accessible icon-only action Edit",
+    "Sketch: rendered icon Edit",
+    "Sketch: delayed label registered Edit",
+    "Sketch: named accessible icon-only action Pierce",
+    "Sketch: rendered icon Pierce",
+    "Sketch: delayed label registered Pierce",
+    "Sketch: named accessible icon-only action Extrude",
+    "Sketch: rendered icon Extrude",
+    "Sketch: delayed label registered Extrude",
+    "Sketch: named accessible icon-only action Revolve",
+    "Sketch: rendered icon Revolve",
+    "Sketch: delayed label registered Revolve",
+    "Sketch: named accessible icon-only action Normal",
+    "Sketch: rendered icon Normal",
+    "Sketch: delayed label registered Normal",
+    "Sketch: named accessible icon-only action 3D",
+    "Sketch: rendered icon 3D",
+    "Sketch: delayed label registered 3D",
+    "Sketch: named accessible icon-only action Finish sketch",
+    "Sketch: rendered icon Finish sketch",
+    "Sketch: delayed label registered Finish sketch",
+    "Sketch: named accessible icon-only action Cancel sketch",
+    "Sketch: rendered icon Cancel sketch",
+    "Sketch: delayed label registered Cancel sketch",
+    "Assembly: named accessible icon-only action Undo",
+    "Assembly: rendered icon Undo",
+    "Assembly: delayed label registered Undo",
+    "Assembly: named accessible icon-only action Redo",
+    "Assembly: rendered icon Redo",
+    "Assembly: delayed label registered Redo",
+    "Assembly: named accessible icon-only action Create Assembly",
+    "Assembly: rendered icon Create Assembly",
+    "Assembly: delayed label registered Create Assembly",
+    "Assembly: named accessible icon-only action Insert",
+    "Assembly: rendered icon Insert",
+    "Assembly: delayed label registered Insert",
+    "Assembly: named accessible icon-only action Ground",
+    "Assembly: rendered icon Ground",
+    "Assembly: delayed label registered Ground",
+    "Assembly: named accessible icon-only action Fixed",
+    "Assembly: rendered icon Fixed",
+    "Assembly: delayed label registered Fixed",
+    "Assembly: named accessible icon-only action Revolute",
+    "Assembly: rendered icon Revolute",
+    "Assembly: delayed label registered Revolute",
+    "Assembly: named accessible icon-only action Slider",
+    "Assembly: rendered icon Slider",
+    "Assembly: delayed label registered Slider",
+    "Assembly: named accessible icon-only action Move",
+    "Assembly: rendered icon Move",
+    "Assembly: delayed label registered Move",
+    "Assembly: named accessible icon-only action Edit",
+    "Assembly: rendered icon Edit",
+    "Assembly: delayed label registered Edit",
+    "Assembly: named accessible icon-only action Solve",
+    "Assembly: rendered icon Solve",
+    "Assembly: delayed label registered Solve",
+    "Assembly: named accessible icon-only action Joints",
+    "Assembly: rendered icon Joints",
+    "Assembly: delayed label registered Joints",
+    "Assembly: named accessible icon-only action Fit",
+    "Assembly: rendered icon Fit",
+    "Assembly: delayed label registered Fit",
+    "Assembly: named accessible icon-only action 3D",
+    "Assembly: rendered icon 3D",
+    "Assembly: delayed label registered 3D",
+    "Every toolbar label uses the requested 350 ms delay",
+    "Model row exposes dense command set without adding default Hole",
+    "Document menu: preserved menu action New",
+    "Document menu: usable menu symbol New",
+    "Document menu: preserved menu action Open",
+    "Document menu: usable menu symbol Open",
+    "Document menu: preserved menu action Export",
+    "Document menu: usable menu symbol Export",
+    "Document menu: preserved menu action Recent projects",
+    "Document menu: preserved menu action Recovery",
+    "Document menu: preserved menu action Adopt copy",
+    "Document menu: usable menu symbol Adopt copy",
+    "Model toolsets: preserved menu action Build",
+    "Model toolsets/Build: preserved menu action Extrude",
+    "Model toolsets/Build: usable menu symbol Extrude",
+    "Model toolsets/Build: preserved menu action Revolve",
+    "Model toolsets/Build: usable menu symbol Revolve",
+    "Model toolsets/Build: preserved menu action Sweep",
+    "Model toolsets/Build: usable menu symbol Sweep",
+    "Model toolsets/Build: preserved menu action Loft",
+    "Model toolsets/Build: usable menu symbol Loft",
+    "Model toolsets/Build: preserved menu action Helical sweep",
+    "Model toolsets/Build: usable menu symbol Helical sweep",
+    "Model toolsets/Build: preserved menu action Additive primitives",
+    "Model toolsets/Build: usable menu symbol Additive primitives",
+    "Model toolsets: preserved menu action Cut",
+    "Model toolsets/Cut: preserved menu action Extrude remove",
+    "Model toolsets/Cut: usable menu symbol Extrude remove",
+    "Model toolsets/Cut: preserved menu action Revolve remove",
+    "Model toolsets/Cut: usable menu symbol Revolve remove",
+    "Model toolsets/Cut: preserved menu action Sweep remove",
+    "Model toolsets/Cut: usable menu symbol Sweep remove",
+    "Model toolsets/Cut: preserved menu action Loft remove",
+    "Model toolsets/Cut: usable menu symbol Loft remove",
+    "Model toolsets/Cut: preserved menu action Helical remove",
+    "Model toolsets/Cut: usable menu symbol Helical remove",
+    "Model toolsets/Cut: preserved menu action Subtractive primitives",
+    "Model toolsets/Cut: usable menu symbol Subtractive primitives",
+    "Model toolsets/Cut: preserved menu action Hole",
+    "Model toolsets/Cut: usable menu symbol Hole",
+    "Model toolsets: preserved menu action Modify",
+    "Model toolsets/Modify: preserved menu action Fillet",
+    "Model toolsets/Modify: usable menu symbol Fillet",
+    "Model toolsets/Modify: preserved menu action Chamfer",
+    "Model toolsets/Modify: usable menu symbol Chamfer",
+    "Model toolsets/Modify: preserved menu action Shell",
+    "Model toolsets/Modify: usable menu symbol Shell",
+    "Model toolsets/Modify: preserved menu action Draft",
+    "Model toolsets/Modify: usable menu symbol Draft",
+    "Model toolsets/Modify: preserved menu action Move face",
+    "Model toolsets/Modify: usable menu symbol Move face",
+    "Model toolsets/Modify: preserved menu action Boolean",
+    "Model toolsets/Modify: usable menu symbol Boolean",
+    "Model toolsets: preserved menu action Patterns",
+    "Model toolsets/Patterns: preserved menu action Mirror",
+    "Model toolsets/Patterns: usable menu symbol Mirror",
+    "Model toolsets/Patterns: preserved menu action Linear pattern",
+    "Model toolsets/Patterns: usable menu symbol Linear pattern",
+    "Model toolsets/Patterns: preserved menu action Circular pattern",
+    "Model toolsets/Patterns: usable menu symbol Circular pattern",
+    "Model toolsets/Patterns: preserved menu action Multiple transforms",
+    "Model toolsets/Patterns: usable menu symbol Multiple transforms",
+    "Model toolsets: preserved menu action Reference",
+    "Model toolsets/Reference: preserved menu action Plane",
+    "Model toolsets/Reference: usable menu symbol Plane",
+    "Model toolsets/Reference: preserved menu action Axis",
+    "Model toolsets/Reference: usable menu symbol Axis",
+    "Model toolsets/Reference: preserved menu action Point",
+    "Model toolsets/Reference: usable menu symbol Point",
+    "Model toolsets/Reference: preserved menu action Coordinate system",
+    "Model toolsets/Reference: usable menu symbol Coordinate system",
+    "Model toolsets/Reference: preserved menu action Shape binder",
+    "Model toolsets/Reference: usable menu symbol Shape binder",
+    "Model toolsets/Reference: preserved menu action Subshape binder",
+    "Model toolsets/Reference: usable menu symbol Subshape binder",
+    "Model toolsets: preserved menu action Shape tools",
+    "Model toolsets/Shape tools: preserved menu action Part extrude",
+    "Model toolsets/Shape tools: usable menu symbol Part extrude",
+    "Model toolsets/Shape tools: preserved menu action Part revolve",
+    "Model toolsets/Shape tools: usable menu symbol Part revolve",
+    "Model toolsets/Shape tools: preserved menu action Part sweep",
+    "Model toolsets/Shape tools: usable menu symbol Part sweep",
+    "Model toolsets/Shape tools: preserved menu action Part loft",
+    "Model toolsets/Shape tools: usable menu symbol Part loft",
+    "Model toolsets/Shape tools: preserved menu action Part Boolean",
+    "Model toolsets/Shape tools: usable menu symbol Part Boolean",
+    "Model toolsets/Shape tools: preserved menu action Offset surface",
+    "Model toolsets/Shape tools: usable menu symbol Offset surface",
+    "Model toolsets/Shape tools: preserved menu action Offset wire",
+    "Model toolsets/Shape tools: usable menu symbol Offset wire",
+    "Model toolsets/Shape tools: preserved menu action Ruled surface",
+    "Model toolsets/Shape tools: usable menu symbol Ruled surface",
+    "Model toolsets/Shape tools: preserved menu action Part thickness",
+    "Model toolsets/Shape tools: usable menu symbol Part thickness",
+    "Model toolsets/Shape tools: preserved menu action Intersect shapes",
+    "Model toolsets/Shape tools: usable menu symbol Intersect shapes",
+    "Model toolsets/Shape tools: preserved menu action Check geometry",
+    "Model toolsets/Shape tools: usable menu symbol Check geometry",
+    "Mapped icon usable: Sketch",
+    "Mapped icon usable: Extrude",
+    "Mapped icon usable: Revolve",
+    "Mapped icon usable: Fillet",
+    "Mapped icon usable: Mirror",
+    "Mapped icon usable: Plane",
+    "Mapped icon usable: Fit",
+    "Mapped icon usable: 3D",
+    "Mapped icon usable: More",
+    "Move face keeps distinct icon despite sharing the Pad command",
+    "History and parts use independent native splitter",
+    "Both split regions remain available",
+    "model-workspace-1440 native capture saved",
+    "Actual Enter event delivered to Document",
+    "Document menu symbol: hover waits before showing label",
+    "Document menu symbol: delayed shaded label visible",
+    "Document menu symbol: label below symbol and screen bounded",
+    "Document menu symbol: readable command text with no focus takeover",
+    "Actual Enter event delivered to Fit",
+    "Fit: hover waits before showing label",
+    "Fit: delayed shaded label visible",
+    "Fit: label below symbol and screen bounded",
+    "Fit: readable command text with no focus takeover",
+    "Hover leaves search text, action names, focus, selection and native geometry unchanged",
+    "hover-label-below-1440: capture shows the tested hovered symbol",
+    "hover-label-below-1440: raster capture retains the tested hover state",
+    "hover-label-below-1440 native capture saved",
+    "Label hides on Leave",
+    "Actual Enter event delivered to Fit",
+    "Fit click: hover waits before showing label",
+    "Fit click: delayed shaded label visible",
+    "Fit click: label below symbol and screen bounded",
+    "Fit click: readable command text with no focus takeover",
+    "Label hides on click and stays dismissed",
+    "Presentation click does not mutate source geometry",
+    "Actual Enter event delivered to Fit",
+    "Menu dismissal: hover waits before showing label",
+    "Menu dismissal: delayed shaded label visible",
+    "Menu dismissal: label below symbol and screen bounded",
+    "Menu dismissal: readable command text with no focus takeover",
+    "Opening a native toolset menu hides hover label",
+    "Actual Enter event delivered to Screen boundary label",
+    "Screen-edge probe genuinely requires horizontal clamping",
+    "Actual screen-edge label clamps inside available screen",
+    "Actual Enter event delivered to Fit",
+    "Document switch: hover waits before showing label",
+    "Document switch: delayed shaded label visible",
+    "Document switch: label below symbol and screen bounded",
+    "Document switch: readable command text with no focus takeover",
+    "Real active-document switch hides the hover label",
+    "Document-switch presentation preserves original plate",
+    "Fillet: bounded modeless floating editor",
+    "Fillet: native header owns accessible Confirm and Cancel",
+    "Active reference picker is explicit and empty rows collapse",
+    "Missing Fillet edges produces an invalid preview",
+    "Invalid Fillet cannot be accepted from header",
+    "Invalid Fillet: copyable verdict stays outside the scrollable fields",
+    "Invalid Fillet: complete verdict is visible within bounded editor",
+    "fillet-invalid-1440 native capture saved",
+    "Selected native edge produces valid Fillet preview",
+    "Valid Fillet enables header Confirm",
+    "Valid Fillet: copyable verdict stays outside the scrollable fields",
+    "Valid Fillet: complete verdict is visible within bounded editor",
+    "Fillet preview preserves source BRep, revision and undo count",
+    "fillet-valid-1440 native capture saved",
+    "Reference row offers an accessible per-row removal symbol",
+    "Per-row click removes the reference and native selection",
+    "Reference picker can be repopulated after removal",
+    "Reference Clear all removes references and collapses rows",
+    "Header Cancel closes Fillet without a model mutation",
+    "Native sketch edit exposes sketch toolbar",
+    "Sketch: bounded modeless floating editor",
+    "Sketch: native header owns accessible Confirm and Cancel",
+    "Sketch header Confirm and Cancel are usable",
+    "Actual Enter event delivered to Line",
+    "Sketch Line symbol: hover waits before showing label",
+    "Sketch Line symbol: delayed shaded label visible",
+    "Sketch Line symbol: label below symbol and screen bounded",
+    "Sketch Line symbol: readable command text with no focus takeover",
+    "sketch-editor-1440 native capture saved",
+    "Sketch header Cancel restores native sketch geometry",
+    "Extrude: bounded modeless floating editor",
+    "Extrude: native header owns accessible Confirm and Cancel",
+    "Missing end face produces invalid Extrude preview",
+    "Invalid Extrude disables header Confirm",
+    "Invalid Extrude: copyable verdict stays outside the scrollable fields",
+    "Invalid Extrude: complete verdict is visible within bounded editor",
+    "extrude-invalid-1440 native capture saved",
+    "Corrected depth produces valid Extrude preview",
+    "Valid Extrude enables header Confirm without committing source",
+    "Valid Extrude: copyable verdict stays outside the scrollable fields",
+    "Valid Extrude: complete verdict is visible within bounded editor",
+    "extrude-valid-1440 native capture saved",
+    "Extrude Cancel preserves native source data",
+    "Narrow shell keeps requested 1024 by 768 dimensions",
+    "Narrow model row preserves every original command name and action",
+    "model-workspace-1024 native capture saved",
+    "Actual Enter event delivered to Undo",
+    "Narrow Undo symbol: hover waits before showing label",
+    "Narrow Undo symbol: delayed shaded label visible",
+    "Narrow Undo symbol: label below symbol and screen bounded",
+    "Narrow Undo symbol: readable command text with no focus takeover",
+    "hover-label-below-1024: capture shows the tested hovered symbol",
+    "hover-label-below-1024: raster capture retains the tested hover state",
+    "hover-label-below-1024 native capture saved",
+    "Narrow Fillet: bounded modeless floating editor",
+    "Narrow Fillet: native header owns accessible Confirm and Cancel",
+    "Narrow floating feature stays within available screen",
+    "fillet-editor-1024 native capture saved",
+    "Native assembly context exposes its icon toolbar",
+    "Actual Enter event delivered to Insert",
+    "Assembly Insert symbol: hover waits before showing label",
+    "Assembly Insert symbol: delayed shaded label visible",
+    "Assembly Insert symbol: label below symbol and screen bounded",
+    "Assembly Insert symbol: readable command text with no focus takeover",
+    "assembly-workspace-1440 native capture saved"
+  ],
+  "screens": [
+    {
+      "file": "model-workspace-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [],
+      "tested_hover": null
+    },
+    {
+      "file": "hover-label-below-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeToolbarLabel",
+          "x": 913,
+          "y": 87,
+          "width": 38,
+          "height": 30,
+          "text": "Fit"
+        }
+      ],
+      "tested_hover": {
+        "button_object": "",
+        "expected_command": "Fit",
+        "actual_popup_text": "Fit",
+        "button_bottom_global": [
+          915,
+          122
+        ],
+        "popup_global": [
+          913,
+          127,
+          38,
+          30
+        ],
+        "method": "No additional qWait; identity and text asserted immediately before and after real widget grabs."
+      }
+    },
+    {
+      "file": "fillet-invalid-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeStudio_fillet",
+          "x": 268,
+          "y": 98,
+          "width": 320,
+          "height": 242,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "fillet-valid-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeStudio_fillet",
+          "x": 268,
+          "y": 98,
+          "width": 320,
+          "height": 242,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "sketch-editor-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeEditor",
+          "x": 268,
+          "y": 100,
+          "width": 320,
+          "height": 186,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "extrude-invalid-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeEditor",
+          "x": 268,
+          "y": 98,
+          "width": 320,
+          "height": 253,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "extrude-valid-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeEditor",
+          "x": 268,
+          "y": 98,
+          "width": 320,
+          "height": 253,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "model-workspace-1024.png",
+      "logical_size": [
+        1024,
+        768
+      ],
+      "pixel_size": [
+        1536,
+        1152
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [],
+      "tested_hover": null
+    },
+    {
+      "file": "hover-label-below-1024.png",
+      "logical_size": [
+        1024,
+        768
+      ],
+      "pixel_size": [
+        1536,
+        1152
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeToolbarLabel",
+          "x": 4,
+          "y": 87,
+          "width": 107,
+          "height": 30,
+          "text": "Undo  (Ctrl+Z)"
+        }
+      ],
+      "tested_hover": {
+        "button_object": "",
+        "expected_command": "Undo",
+        "actual_popup_text": "Undo  (Ctrl+Z)",
+        "button_bottom_global": [
+          4,
+          122
+        ],
+        "popup_global": [
+          4,
+          127,
+          107,
+          30
+        ],
+        "method": "No additional qWait; identity and text asserted immediately before and after real widget grabs."
+      }
+    },
+    {
+      "file": "fillet-editor-1024.png",
+      "logical_size": [
+        1024,
+        768
+      ],
+      "pixel_size": [
+        1536,
+        1152
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [
+        {
+          "object": "KurtShapeStudio_fillet",
+          "x": 268,
+          "y": 98,
+          "width": 320,
+          "height": 242,
+          "text": null
+        }
+      ],
+      "tested_hover": null
+    },
+    {
+      "file": "assembly-workspace-1440.png",
+      "logical_size": [
+        1440,
+        920
+      ],
+      "pixel_size": [
+        2160,
+        1380
+      ],
+      "device_pixel_ratio": 1.5,
+      "floating_overlays": [],
+      "tested_hover": null
+    }
+  ],
+  "toolbars": [
+    {
+      "name": "Model",
+      "commands": [
+        "Undo",
+        "Redo",
+        "New part",
+        "Sketch",
+        "Extrude",
+        "Remove",
+        "Revolve",
+        "Sweep",
+        "Loft",
+        "Fillet",
+        "Chamfer",
+        "Shell",
+        "Draft",
+        "Move face",
+        "Linear pattern",
+        "Circular pattern",
+        "Mirror",
+        "Boolean",
+        "Plane",
+        "Boolean parts",
+        "Split",
+        "Transform",
+        "More",
+        "Rebuild",
+        "Check geometry",
+        "Fit",
+        "Normal",
+        "3D",
+        "Show planes"
+      ],
+      "icon_size": 20
+    },
+    {
+      "name": "Document",
+      "commands": [
+        "Document",
+        "Save",
+        "Help",
+        "Settings"
+      ],
+      "icon_size": 20
+    },
+    {
+      "name": "Sketch",
+      "commands": [
+        "Undo",
+        "Redo",
+        "Line",
+        "Rectangle",
+        "Circle",
+        "Arc",
+        "Spline",
+        "Point",
+        "Dimension",
+        "Trim",
+        "Construction",
+        "Geometry",
+        "Constraints",
+        "Edit",
+        "Pierce",
+        "Extrude",
+        "Revolve",
+        "Normal",
+        "3D",
+        "Finish sketch",
+        "Cancel sketch"
+      ],
+      "icon_size": 20
+    },
+    {
+      "name": "Assembly",
+      "commands": [
+        "Undo",
+        "Redo",
+        "Create Assembly",
+        "Insert",
+        "Ground",
+        "Fixed",
+        "Revolute",
+        "Slider",
+        "Move",
+        "Edit",
+        "Solve",
+        "Joints",
+        "Fit",
+        "3D"
+      ],
+      "icon_size": 20
+    }
+  ],
+  "method": "Private hidden native FreeCAD GUI; production QAction buttons, actual QEnterEvent/timer, reference-row clicks and native feature previews. Screens are actual main.grab plus floating QWidget.grab composites at their global positions; no fabricated model/rendering.",
+  "limits": "Hidden-window mechanics and native geometry assertions; not hands-on comfort, all-DPI or screen-reader acceptance. No screen capture of the user's running window.",
+  "client_sizes": [
+    {
+      "case": "desktop",
+      "requested_logical": [
+        1440,
+        920
+      ],
+      "actual_logical": [
+        1440,
+        920
+      ],
+      "device_pixel_ratio": 1.5,
+      "available_screen_logical": [
+        1707,
+        1019
+      ]
+    },
+    {
+      "case": "narrow",
+      "requested_logical": [
+        1024,
+        768
+      ],
+      "actual_logical": [
+        1024,
+        768
+      ],
+      "device_pixel_ratio": 1.5,
+      "available_screen_logical": [
+        1707,
+        1019
+      ]
+    },
+    {
+      "case": "assembly",
+      "requested_logical": [
+        1440,
+        920
+      ],
+      "actual_logical": [
+        1440,
+        920
+      ],
+      "device_pixel_ratio": 1.5,
+      "available_screen_logical": [
+        1707,
+        1019
+      ]
+    }
+  ],
+  "background_evidence": {
+    "native_view_background_color_methods": [],
+    "parameter_path": "User parameter:BaseApp/Preferences/View",
+    "read_defaults": {
+      "Simple": false,
+      "Gradient": true,
+      "BackgroundColor": 0,
+      "BackgroundColor2": 0,
+      "BackgroundColor3": 0,
+      "BackgroundColor4": 0
+    },
+    "values_with_those_defaults": {
+      "Simple": true,
+      "Gradient": false,
+      "BackgroundColor": 4160223231,
+      "BackgroundColor2": 0,
+      "BackgroundColor3": 0,
+      "BackgroundColor4": 0
+    },
+    "stored_entries": [
+      [
+        "Boolean",
+        "Gradient",
+        false
+      ],
+      [
+        "Boolean",
+        "Simple",
+        true
+      ],
+      [
+        "Unsigned Long",
+        "BackgroundColor",
+        4160223231
+      ]
+    ],
+    "method": "Native view dir() and read-only preference inspection; a missing key is a supplied read default, not a verified engine default."
+  },
+  "screen_clamp": {
+    "popup_visible": true,
+    "popup_text": "Screen boundary label",
+    "popup": [
+      1551,
+      175,
+      152,
+      30
+    ],
+    "probe_requested_global": [
+      1677,
+      140
+    ],
+    "probe_actual_global": [
+      1677,
+      140,
+      30,
+      30
+    ],
+    "probe_anchor_global": [
+      1677,
+      170
+    ],
+    "probe_window": true,
+    "unclamped_x": 1616,
+    "unclamped_right": 1767,
+    "available": [
+      4,
+      4,
+      1699,
+      1011
+    ],
+    "main_position": [
+      0,
+      40
+    ],
+    "main_global_origin": [
+      0,
+      40
+    ],
+    "screen_name": "NE180QDM-NZ2",
+    "device_pixel_ratio": 1.5,
+    "method": "Hidden owned frameless no-focus QToolButton placed at the actual screen's right edge; real Enter event and production timer."
+  },
+  "verdicts": [
+    {
+      "state": "Invalid Fillet",
+      "text": "Select one or more edges in the model.",
+      "bounds": [
+        0,
+        208,
+        320,
+        34
+      ],
+      "editor": [
+        320,
+        242
+      ],
+      "required_height": 34
+    },
+    {
+      "state": "Valid Fillet",
+      "text": "Preview \u00b7 valid current parts",
+      "bounds": [
+        0,
+        208,
+        320,
+        34
+      ],
+      "editor": [
+        320,
+        242
+      ],
+      "required_height": 34
+    },
+    {
+      "state": "Invalid Extrude",
+      "text": "Select an end face for Up to face.",
+      "bounds": [
+        0,
+        219,
+        320,
+        34
+      ],
+      "editor": [
+        320,
+        253
+      ],
+      "required_height": 34
+    },
+    {
+      "state": "Valid Extrude",
+      "text": "Preview \u00b7 added material",
+      "bounds": [
+        0,
+        219,
+        320,
+        34
+      ],
+      "editor": [
+        320,
+        253
+      ],
+      "required_height": 34
+    }
+  ],
+  "narrow_overflow": {
+    "hidden_commands": [],
+    "extension_visible": true
+  }
+}

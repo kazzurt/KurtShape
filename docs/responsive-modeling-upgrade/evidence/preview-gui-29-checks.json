@@ -1,0 +1,69 @@
+{
+  "passed": true,
+  "checks": [
+    "saveCopy alone preserves clean/dirty source and GUI state: False",
+    "saveCopy alone preserves clean/dirty source and GUI state: True",
+    "Profile preview is visible immediately and cannot authorize acceptance",
+    "Depth changes reuse the provisional Coin mesh before snapshot work",
+    "Debounce evaluates only the latest depth",
+    "Coin overlay is attached without a document object",
+    "Preview preserves live UUID/revision/history/modified/visibility/selection/camera",
+    "Ghost cannot steal surface/profile selection",
+    "Equivalent focus-out quantity text preserves a valid result and ghost synchronously",
+    "Equivalent units never start another native evaluation",
+    "Changing to invalid text clears the old ghost immediately",
+    "Invalid depth has readable failure data and no live mutation",
+    "Native face-attached blind cut draws removed material",
+    "Removal x-ray is confined to its non-testing, non-writing Coin ghost",
+    "Through-all changes the actual cut geometry",
+    "Cut preview preserves every captured live invariant",
+    "An exact job starts independently of Qt input",
+    "New input cannot accept the in-flight older exact proposal",
+    "Latest-wins queue drops intermediate exact verdicts",
+    "Qt timers remain live while exact native geometry runs",
+    "Queued previews preserve every captured live invariant",
+    "Cancel disposes clone snapshots and Coin children",
+    "Cancel retains the unchanged live solid",
+    "Closing the custom feature editor clears the preview",
+    "Acceptance creates one normal controller transaction matching preview",
+    "A newer accepted revision invalidates the existing ghost",
+    "Document activation clears the previous document overlay",
+    "Closing the source document releases preview resources",
+    "Window cleanup stops both preview timers"
+  ],
+  "method": "Separate hidden FreeCAD 1.1.4 GUI; native BRep plus transient Coin geometry",
+  "initial_preview": {
+    "valid": true,
+    "error": null,
+    "milliseconds": 54.78540016338229,
+    "evaluations": 1
+  },
+  "invariant_differences": [],
+  "preview_timings_ms": {
+    "initial_pad": 54.78540016338229,
+    "blind_cut": 29.584300005808473,
+    "through_all_cut": 33.320399932563305
+  },
+  "latest_wins": {
+    "latest_valid": true,
+    "latest_proposal": {
+      "op": "pad",
+      "profile": "Profile",
+      "length": 11.0,
+      "reversed": false,
+      "body": "Body"
+    },
+    "latest_error": null,
+    "exact_events": [
+      {
+        "op": "pad",
+        "profile": "Profile",
+        "length": 11.0,
+        "reversed": false,
+        "body": "Body"
+      }
+    ]
+  },
+  "worker_interval_heartbeat_count": 14,
+  "worker_interval_largest_heartbeat_gap_ms": 47.81890008598566
+}

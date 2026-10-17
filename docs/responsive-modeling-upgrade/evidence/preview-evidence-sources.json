@@ -1,0 +1,127 @@
+{
+  "files": [
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-native-nine-checks.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\test-tmp\\preview-final-responsive-development\\preview-test-result.json",
+      "sha256": "f5ac48dd9edbeef6db438a2ca9adef4419d54fbb977fb76b3314bb5b10454d94"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-gui-29-checks.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-49d8d87657714791853e0e5b7e76f6ff\\evidence\\ui-refinement-preview\\gui-result.json",
+      "sha256": "9335eaa938d89696e1439facec21f583c40bd8b568d2a25bf1cf6489d56acc41"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-gui-29-process-receipt.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-49d8d87657714791853e0e5b7e76f6ff\\recipe-result.json",
+      "sha256": "6f4e8c48781d45e8c8c5cab7b978c95bfd221e59931b1fb86c4da5a21d8af78c"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\plate60-async-preview-benchmark.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\responsiveness-preview\\run-455c9b4b8de64f39abb7b0cee2e8e925\\evidence\\responsiveness-preview\\gui-result.json",
+      "sha256": "dfd832c2bf0f30eaa19e67993f5ca694c90bddc2185f2062769f7f76bcaaae1f"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\plate60-async-preview-process-receipt.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\responsiveness-preview\\run-455c9b4b8de64f39abb7b0cee2e8e925\\recipe-result.json",
+      "sha256": "4e1a1fb494d9f08704ba7993f4cf963e59bd652b15196a725c18f444156e5324"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-normalization-regression-before.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\test-tmp\\preview-normalization-before\\preview-test-result.json",
+      "sha256": "dc120c1e7d2502770d03083aba1db21f720d280710a4c72755a416b577193d2d"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-camera-reentrancy-before.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\snapshot-camera-reentrancy-before-verified.json",
+      "sha256": "107bd661d72a8bad67f4caa29db22db16d08c4c24ec70b06538b16639388e95d"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-camera-reentrancy-after.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\snapshot-camera-reentrancy-after.json",
+      "sha256": "5e8d6ca6bc9b85f8044e2b696012567b594890993a4f92582f020a51b829c619"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-final-native-ten-checks.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\test-tmp\\preview-final-guard-development\\preview-test-result.json",
+      "sha256": "abb7f74b1879f724334881bc0681a0865dffe850bc2d91ded50c70b1ab3c2454"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-final-gui-29-checks.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-3e8b5bea8f16492299530c2838207d93\\evidence\\ui-refinement-preview\\gui-result.json",
+      "sha256": "b3964b6d1732552b0a46a1e549c5d9ac8a38f9cbd6649f7bf0b4dccf42d07277"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-final-gui-29-process-receipt.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-3e8b5bea8f16492299530c2838207d93\\recipe-result.json",
+      "sha256": "cf2d82925c44005aca9400e5f3d46f3ce9aa6707a2e04870415ed11303441cfa"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-guard-cancellation-before.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\preview-guard-cancellation-before.json",
+      "sha256": "fb5e5f21567b23d791a97fdee73e3c5cc01b2b67d21909ed25e168fa82124218"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-guard-cancellation-after.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\preview-guard-cancellation-after.json",
+      "sha256": "bf47a43af895bb97bfcf7190b8680ac6c27706f5d976b56430b99792e38c4d3e"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-postsnapshot-native-eleven-checks.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\test-tmp\\preview-final-postsnapshot-development\\preview-test-result.json",
+      "sha256": "da3f60af45cba6e5baa61c38d1e2fd9e5392698ebcca5f5f4ceee98b743d2280"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-postsnapshot-gui-29-checks.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-bf0281a7a4d9409baeaf3185d8ca9486\\evidence\\ui-refinement-preview\\gui-result.json",
+      "sha256": "0175e0ecef4b2d76c8708beceabeb34f195fcd0b11de0757a1a6cfbf6402ecf0"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-postsnapshot-gui-29-process-receipt.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-bf0281a7a4d9409baeaf3185d8ca9486\\recipe-result.json",
+      "sha256": "86c670ca90e06b9bd1a396e48c0357511fbd0056c81eda571513aa226c5962c0"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-all-guard-sites-before.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\preview-all-guard-sites-before.json",
+      "sha256": "eaf6d088871abf632a028800e3af5429e80290001d202bcf26a84167c0eb356b"
+    },
+    {
+      "copy": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\docs\\responsive-modeling-upgrade\\evidence\\preview-all-guard-sites-after.json",
+      "original": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\responsive-modeling-working\\preview-all-guard-sites-after.json",
+      "sha256": "3de9320cde5edff5a052e878a1bb23df7f52a5b3c9c7aac2e934e4d6bf9c500f"
+    }
+  ],
+  "benchmark_source_matches_recorded_nine_check_source": true,
+  "source_version_note": "Plate60 timings and the nine-check native report describe the earlier recorded source. Later preview native-guard identity, recovery scheduling, and selection fixes are covered by separate final acceptance reports. No large preview performance rerun was performed after those safety fixes.",
+  "fixture": {
+    "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\engine-responsiveness-review-working\\plate-af242086d2844fa299e1d0247a14e298\\native-fixtures\\plate-benchmark.FCStd",
+    "sha256": "0bbb463be6d03cf179da8ec3e77a58cc2f59ad52f16755136eee71f00215615a"
+  },
+  "screenshots": [
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\responsiveness-preview\\run-455c9b4b8de64f39abb7b0cee2e8e925\\evidence\\responsiveness-preview\\plate-provisional.png",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\responsiveness-preview\\run-455c9b4b8de64f39abb7b0cee2e8e925\\evidence\\responsiveness-preview\\plate-exact.png",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-49d8d87657714791853e0e5b7e76f6ff\\evidence\\ui-refinement-preview\\provisional-extrusion.png",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-49d8d87657714791853e0e5b7e76f6ff\\evidence\\ui-refinement-preview\\exact-extrusion.png",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-bf0281a7a4d9409baeaf3185d8ca9486\\evidence\\ui-refinement-preview\\provisional-extrusion.png",
+    "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-bf0281a7a4d9409baeaf3185d8ca9486\\evidence\\ui-refinement-preview\\exact-extrusion.png"
+  ],
+  "reproduce_from_repository_root": [
+    ".\\tools\\run_gui_recipe.ps1 -Recipe extrusion-preview -TimeoutSeconds 180",
+    ".\\tools\\run_gui_recipe.ps1 -Recipe responsiveness-preview -Holes 60 -Repeat 3 -PreviewSource 'C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\engine-responsiveness-review-working\\plate-af242086d2844fa299e1d0247a14e298\\native-fixtures\\plate-benchmark.FCStd' -TimeoutSeconds 600",
+    "Focused native runner: runtime/responsive-modeling-working/run-preview-final-tests.py through tools/validation-session.ps1; full suite includes the same nine tests."
+  ],
+  "limits": [
+    "Three trials are not reliable percentile estimates.",
+    "Schedule/redraw timings are not physical-display input-to-present latency.",
+    "Initial native snapshot and accepted commit still use the GUI thread.",
+    "The standalone adapter excludes the full application's other timers and UI work.",
+    "Image captures are outside the timed first-preview and depth-update trials."
+  ],
+  "observed_failures_preserved_in_place": [
+    "runtime/ci-gui/extrusion-preview/run-2802c21fa88d4f4bba464903173939b5 (latest-wins assertion; no detailed error retained)",
+    "runtime/ci-gui/responsiveness-preview/run-fe64026e4da341cea863ce230930bb6a (first exact assertion; detailed error not retained)",
+    "runtime/ci-gui/responsiveness-preview/run-f6c8436d99884be49684a5fd40e27abe (Windows result JSON permission denial, fixed with bounded poll retry)"
+  ],
+  "final_preview_native_and_gui_source_match": true,
+  "final_preview_gui": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-bf0281a7a4d9409baeaf3185d8ca9486\\recipe-result.json"
+}

@@ -1,0 +1,164 @@
+{
+  "passed": true,
+  "checks": [
+    "EmptyBodySketch enters native managed editing",
+    "EmptyBodySketch accepts native Finish",
+    "EmptyBodySketch is visible and selectable after Finish",
+    "Empty native Body container is visible after Finish",
+    "Actual viewport click selects accepted sketch in an empty Body",
+    "Unused sketch remains visible after explicit rebuild",
+    "Explicitly hidden sketch stays hidden during rebuild",
+    "Explicitly hidden sketch reopens for cancellation",
+    "Cancel preserves explicit sketch hiding",
+    "Explicitly hidden sketch reopens for acceptance",
+    "Finish explicitly reveals the accepted unused sketch",
+    "Native extrusion accepts through the production feature editor",
+    "Pad consumes its native sketch profile",
+    "Accepting extrusion hides the consumed profile",
+    "BesideSolid enters native managed editing",
+    "BesideSolid accepts native Finish",
+    "BesideSolid is visible and selectable after Finish",
+    "Finish retains the existing native solid Tip",
+    "Consumed earlier profile remains hidden",
+    "Actual viewport click selects accepted sketch beside an existing solid",
+    "Studio source Body retains a visible unconsumed sketch",
+    "TiplessSketch enters native managed editing",
+    "TiplessSketch accepts native Finish",
+    "TiplessSketch is visible and selectable after Finish",
+    "Studio recompute keeps an empty Body Tip empty after Finish",
+    "Actual viewport click selects unused sketch in a studio Body with no Tip",
+    "FutureSketch enters native managed editing",
+    "FutureSketch accepts native Finish",
+    "FutureSketch is visible and selectable after Finish",
+    "Earlier unused sketch reopens with historical isolation",
+    "Earlier visible unused sketch Body stays available while later sketch is hidden",
+    "Cancel restores historical visibility exactly",
+    "Later sketch editing retains prior visible sketches in empty Bodies",
+    "Cancel preserves prior empty-Body sketch visibility",
+    "Another sketch using an edge does not consume the original sketch",
+    "Referenced unused sketch remains selectable outside sketch edit mode",
+    "Reveal helper supports existing standalone native sketches",
+    "Standalone native sketch is visible and selectable after Finish",
+    "Actual viewport click selects an accepted standalone native sketch",
+    "Explicit hidden later sketch is retained by studio rebuild",
+    "Saved unused sketch reopens visible and selectable",
+    "Saved explicit sketch hide survives reopen",
+    "Actual viewport click selects an unused sketch after save and reopen",
+    "Missing sketch helper is a harmless no-op"
+  ],
+  "selections": [
+    {
+      "label": "Actual viewport click selects accepted sketch in an empty Body",
+      "target": "EmptyBodySketch",
+      "pixel": [
+        782,
+        189
+      ],
+      "objects": [
+        {
+          "name": "EmptyBodySketch",
+          "elements": [
+            "Edge1"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Actual viewport click selects accepted sketch beside an existing solid",
+      "target": "BesideSolid",
+      "pixel": [
+        930,
+        317
+      ],
+      "objects": [
+        {
+          "name": "BesideSolid",
+          "elements": [
+            "Edge1"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Actual viewport click selects unused sketch in a studio Body with no Tip",
+      "target": "TiplessSketch",
+      "pixel": [
+        957,
+        351
+      ],
+      "objects": [
+        {
+          "name": "TiplessSketch",
+          "elements": [
+            "Edge1"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Referenced unused sketch remains selectable outside sketch edit mode",
+      "target": "BesideSolid",
+      "pixel": [
+        544,
+        351
+      ],
+      "objects": [
+        {
+          "name": "BesideSolid",
+          "elements": [
+            "Edge1"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Actual viewport click selects an accepted standalone native sketch",
+      "target": "Standalone",
+      "pixel": [
+        961,
+        357
+      ],
+      "objects": [
+        {
+          "name": "Standalone",
+          "elements": [
+            "Edge1"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Actual viewport click selects an unused sketch after save and reopen",
+      "target": "BesideSolid",
+      "pixel": [
+        473,
+        357
+      ],
+      "objects": [
+        {
+          "name": "BesideSolid",
+          "elements": [
+            "Edge1"
+          ]
+        }
+      ]
+    }
+  ],
+  "screens": [
+    "accepted-unused-sketches.png"
+  ],
+  "pid": 57988,
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "method": "Production Panel Finish/Cancel and actual Qt viewport clicks in an isolated hidden native GUI.",
+  "project": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\unused-sketch-visibility\\run-3d9d060e233d4fbdb61118094889a9d3\\evidence\\unused-sketch-visibility\\accepted-unused-sketches.FCStd",
+  "check_count": 44
+}

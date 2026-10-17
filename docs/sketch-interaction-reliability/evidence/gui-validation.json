@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "recipe_count": 9,
+  "check_count": 305.0,
+  "recipes": [
+    {
+      "recipe": "sketch-drag",
+      "checks": 15,
+      "passed": true,
+      "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-drag\\run-de58f48ec96d40db9734a69a6418d135",
+      "report_sha256": "e552c047178858f6498a379ef73e5ad26adf8196ae4e125e24ecc5c5039b16a5"
+    },
+    {
+      "recipe": "startup-view",
+      "checks": 10,
+      "passed": true,
+      "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\startup-view\\run-d68d630367604525907b730ac5e9da27",
+      "report_sha256": "18e4b83ad509d823c0298ffc6a70136c42e7b4034ddd1d598226176e92650b26"
+    },
+    {
+      "recipe": "sketch-origin-snap",
+      "checks": 43,
+      "passed": true,
+      "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-origin-snap\\run-5d8d35666d9d4f09a4fade3587eac480",
+      "report_sha256": "119942b122bae665d8c70f5de92c65f672b0c89c9c6ab5f9dd37a516e3f911f2"
+    },
+    {
+      "recipe": "sketch-plane-editor",
+      "checks": 27,
+      "passed": true,
+      "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-plane-editor\\run-f6d8a03e8f2a4d15b48add331c775400",
+      "report_sha256": "7a72f4edd66bcfaf38d43b3548085976af3337b4cf3b5ef78eb61679a60eaa87"
+    },
+    {
+      "recipe": "sketch-regions",
+      "checks": 34,
+      "passed": true,
+      "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-regions\\run-9a41b7518c634eac9a70ccf0eb26840b",
+      "report_sha256": "ba39c29f91834e17ece6abc9199314f85afdb67a64183f1100a7dec77ae0978d"
+    },
+    {
+      "recipe": "sketch-edit-state",
+      "checks": 45,
+      "passed": true,
+      "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-e2385483507948c09647f81cf00e1553",
+      "report_sha256": "04eea3ba8b648269223afccf163f9e8e4c09e463ea000b95ec8b16b41860f9b1"
+    },
+    {
+      "recipe": "presentation-scheduling",
+      "checks": 26,
+      "passed": true,
+      "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\presentation-scheduling\\run-4f6a8bd4446745e2a00a6b8b18e04f2d",
+      "report_sha256": "edebb7313dd620596035ee7ca64e0444234da80814bf0f418b5701e0cc6b52e7"
+    },
+    {
+      "recipe": "sketch-references",
+      "checks": 74,
+      "passed": true,
+      "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-a04ed894323248ff96e57696d81fae8c",
+      "report_sha256": "088faa1a8377ef8ce593030af9a37317cb5597a764b0262583bfa8a1a41fbe27"
+    },
+    {
+      "recipe": "sketch-dimension-point-colors",
+      "checks": 31,
+      "passed": true,
+      "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-dimension-point-colors\\run-c99d90b85d37417ca8ad66d39afb348e",
+      "report_sha256": "717af774fe10ea86b9aac4e46388b368afbd3b720ea6a190f2c4586392b050ce"
+    }
+  ],
+  "method": "Private hidden native GUI processes; final drag timing ran before the headless suite. Other GUI correctness recipes ran concurrently with headless regression."
+}

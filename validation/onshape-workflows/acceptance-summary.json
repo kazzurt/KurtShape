@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "accepted_utc": "2026-10-05T02:50:58.1070996Z",
+  "project_root": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape",
+  "runtime": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "regression": {
+    "tests": 244,
+    "passed": 244,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "source_unchanged": true,
+  "regression_report": "native-regression.json",
+  "gui_checks": 170.0,
+  "gui": [
+    {
+      "recipe": "onshape-workflows",
+      "passed": true,
+      "checks": 45,
+      "scope_warning_count": 0,
+      "recipe_result": "runtime/ci-gui/onshape-workflows/run-21c3628f94474345a4668783fe293a27/recipe-result.json",
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\validation\\onshape-workflows\\gui-result.json"
+    },
+    {
+      "recipe": "part-studio",
+      "passed": true,
+      "checks": 99,
+      "scope_warning_count": 0,
+      "recipe_result": "runtime/ci-gui/part-studio/run-36b83a4d84a54cbea0c05552891346fa/recipe-result.json",
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\part-studio\\run-36b83a4d84a54cbea0c05552891346fa\\evidence\\u2-part-model\\gui-result.json"
+    },
+    {
+      "recipe": "extrusion-preview",
+      "passed": true,
+      "checks": 20,
+      "scope_warning_count": null,
+      "recipe_result": "runtime/ci-gui/extrusion-preview/run-168e1eda3b9b4184a36329109002fec8/recipe-result.json",
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-168e1eda3b9b4184a36329109002fec8\\evidence\\ui-refinement-preview\\gui-result.json"
+    },
+    {
+      "recipe": "view-interaction",
+      "passed": true,
+      "checks": 6,
+      "scope_warning_count": null,
+      "recipe_result": "runtime/ci-gui/view-interaction/run-153cca0b93444d75ac634b2cac57a8ea/recipe-result.json",
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\view-interaction\\run-153cca0b93444d75ac634b2cac57a8ea\\evidence\\view-interaction\\result.json"
+    }
+  ],
+  "original_sources_unchanged": true,
+  "source_geometry_report": "runtime/test-tmp/checks-20261004-194441-70988/evidence/source-geometry.json",
+  "review": "Independent source, dependency, desktop and compact-frame reviews passed",
+  "limitations": [
+    "Move face supports parallel planar offsets; general translation, rotation and adjacent-surface retrimming remain future work.",
+    "Physical orbit comfort requires feedback from use on actual parts."
+  ],
+  "launcher_project_relative": "../KurtShape-workflow-update.cmd"
+}

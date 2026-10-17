@@ -1,0 +1,17 @@
+{
+  "recipe": "assembly-step",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\assembly-step-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3\\evidence\\assembly-step-import\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\assembly-step\\run-4d8c98efbd47407d9620d88d27815ad3\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T03:09:27.5872635Z",
+  "exited_utc": "2026-10-06T03:09:47.0890177Z",
+  "pid": 60480,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T03:09:47.0914234Z"
+}

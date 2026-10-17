@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "milestone": "Saved dark native appearance compatibility repair",
+  "recorded_utc": "2026-10-05T06:29:21.815611+00:00",
+  "source_sha256": {
+    "src/kurtshape/__init__.py": "d1c2218eff95a6160d497cee76330d599e32231b47cd9680a05a752429c16682",
+    "src/kurtshape/assembly.py": "97d483c8dd25653c579fcb94e1625a3c7b836a9b43c2bdf92974f20800ab291c",
+    "src/kurtshape/bodies.py": "b45c1054ac6ddcfeaf8d347807a3782891ec587031c3a80025e87905b74f96fa",
+    "src/kurtshape/bridge.py": "6b920b62814b5730d0a0d05907b032b2ac321e7e90923fd91b7c38442af48835",
+    "src/kurtshape/contract.py": "5f7460aced1ee8a6d115a61783ef276960cd75a1d01f5142201f520db170dfc0",
+    "src/kurtshape/core.py": "d3782b9e31c56c240794bc8c81ed70813eec6793f673aa827c49167d5e75adc6",
+    "src/kurtshape/document_state.py": "83bb1c1a4791b4799c6bd6295be5d2dd9880b0f01fa846f59dcf8a4221e74dd3",
+    "src/kurtshape/extrusion_preview.py": "be8c1ea1212d9dcacb110ed5dc43a59768bf028e919c9be04bd67b9bdc2f73d6",
+    "src/kurtshape/feature_panel.py": "e88722990b921f9bd1da14dbf87b01b1514cfd130b0415b70565f4b1735faded",
+    "src/kurtshape/feature_tools.py": "41ddbe1ee169823b5416a710eeb932171269f7cfb8941da865ff020bb75fe6b4",
+    "src/kurtshape/general_actions.py": "dc87e63d82ecbb98fccb755bd75fc590bfcf99daf2b9462af273a99622d4bdb8",
+    "src/kurtshape/geometry.py": "afa73adfa80d977eb6832dc58e8bb0f57904cd356e8f63cc964188604c6359e9",
+    "src/kurtshape/hover_outline.py": "87884a5ed6e8748b58a5fe1c107a60df98a10f2f69c8e43a95d40055312c7ca3",
+    "src/kurtshape/modeling_geometry.py": "743eac82bfcfb3b8ada905916154afb9f8ebe34c5f6c6d329797ece32e2481de",
+    "src/kurtshape/native_content.py": "13e2b64bdd8aa7a9bb095959a20964bb786dd56bbba6ca5da92cd435e7926796",
+    "src/kurtshape/navigation.py": "f8d9885a89b36853cc448f53c292b31fc6b929e441ea48cbb8ab459b4c71140a",
+    "src/kurtshape/onshape.py": "bd9a6f1c9eeb36b05cf8d7c5f48918b5a4bd2cbdc80484c0642d28803127fdb0",
+    "src/kurtshape/presentation_icons.py": "9eae5a46153c45e3c6d1610f6da3104f9909ec5712f670ea6c48259693d8e287",
+    "src/kurtshape/quantity_field.py": "6f68c24ae5543890ad98bca1c48fc50ffea435a9ffd59e5a27dc2243c702e2c8",
+    "src/kurtshape/recovery.py": "adefe70d2d2aedc02c8ff2ab21dee014e5387165b0c81ac841215768b86b5bae",
+    "src/kurtshape/reference_tools.py": "307a5e3127489955de555f2cfd52b200edf6b28d763c2c964d095dd61895ba2d",
+    "src/kurtshape/request_ledger.py": "7a969f22a5214f2a99608496ede106cd1057b71f52b2d1060e957c77613711ef",
+    "src/kurtshape/selectors.py": "1d96e2c3b947cd4ae31dc193eee5d5333fae70908c4a2832af89578f0f922b27",
+    "src/kurtshape/settings.py": "9a759a17b399269f87a2a16b3476f194868f7cdd8c5a1473390c448d48360799",
+    "src/kurtshape/shortcuts.py": "f3266cec7f1b6316f9ca68c714e32c2ae457ab906a38ff0bb055232aeea569be",
+    "src/kurtshape/sketch_tools.py": "9e98531f5d6e2b6097f3bf8b36f89c7b16c2a78473f617a97ee198ea8a15a9d7",
+    "src/kurtshape/studio.py": "c97398676051bc9d7338d8f7ae8f511ea31d24640fdbec4c3bbc5fdaa2d59f33",
+    "src/kurtshape/theme.py": "5c8922046e23951195202d93c494a7007677cc3b30cc0105d4970b2fa8dffd69",
+    "src/kurtshape/timing.py": "28f32811de2a5c035af1e8ccd5d93b1910b21f9d7b5b23da3b2db2197e6d646d",
+    "src/kurtshape/toolbar_labels.py": "cc0a389aeff8f5d6f299cb8e2b77a767b5b8288ccb8b8610b488d2da4a00bfaf",
+    "src/kurtshape/ui.py": "32a518a192ff7cc1c05b7375161d1156fe77f39c4fb751a37ea353f674b8ea48",
+    "src/kurtshape/viewport_actions.py": "e1e347b47f784cb2a7dca98df516f2ac866d1468888855ed8b635f95c40534ce",
+    "src/kurtshape/workspace_preferences.py": "98902015adb35a0598545d827b3cb5d0abbfca522c7ea3bfc33f85bed22c1bdd",
+    "tools/theme-startup-validation.FCMacro": "bad4ed7ef0c802f72e4f428ccf9e8f9edb7dc5e1ed7c4b5e1c3c5c3507d07036",
+    "tools/run_gui_recipe.ps1": "c1990203c77ff33f39362c4172f4e17a52975af72185848c2a23669958a58308",
+    "DESIGN.md": "bf5a4f5f5b27cc8e47da20e42d9c00214352170ba03d40f7838b5dcc09fdecb7",
+    ".impeccable/design.json": "b291d7e00cb26a6dc3e8046e23c40d924db9a0f9564ff1755ca15ff1477dd91c",
+    "docs/onshape-design-audit/THEME-REPAIR.md": "db6b67042327826964b1b3b0eabbef2f5c8746a37bebb631bae8cb87fc4a199e"
+  },
+  "source_changes_from_execution": [
+    "src/kurtshape/theme.py",
+    "src/kurtshape/workspace_preferences.py"
+  ],
+  "model_engine_source_unchanged_from_execution": true,
+  "baseline_execution_manifest_sha256": "752468c8b5342099c34299866768a9eb729e190abfdf026be066f76ae1a12b80",
+  "raw_runs": {
+    "theme": "runtime/ci-gui/theme-startup/run-c826992ba5ed4776a6e9fd8110294a1f",
+    "design": "runtime/ci-gui/design-surface/run-b3ecff7f2813424c91a3b3fa37373c11",
+    "messages": "runtime/ci-gui/messages/run-5caaded4cf324541af3b5b17675c82e7",
+    "refinement": "runtime/ci-gui/ui-refinement/run-715fae7ca55147318d4393896ffe33c6"
+  },
+  "copied_evidence": [
+    {
+      "path": "validation/onshape-theme-repair/theme-startup.json",
+      "raw_path": "runtime/ci-gui/theme-startup/run-c826992ba5ed4776a6e9fd8110294a1f/evidence/theme-startup/gui-result.json",
+      "sha256": "8f5b34c4b28fee2f3aa21cef3f7779dbc2171950b07354f610c0d7c445ddb112"
+    },
+    {
+      "path": "validation/onshape-theme-repair/theme-run.json",
+      "raw_path": "runtime/ci-gui/theme-startup/run-c826992ba5ed4776a6e9fd8110294a1f/recipe-result.json",
+      "sha256": "f88db83865a8a32eb18681f080f6d6428121e081b9b27ca81387ef0318a31354"
+    },
+    {
+      "path": "validation/onshape-theme-repair/design-surface.json",
+      "raw_path": "runtime/ci-gui/design-surface/run-b3ecff7f2813424c91a3b3fa37373c11/evidence/onshape-design/gui-result.json",
+      "sha256": "b80c87892dad0d44f8c415b7264092f34a292034b2d4e3f9f48a4f02e90b365c"
+    },
+    {
+      "path": "validation/onshape-theme-repair/design-run.json",
+      "raw_path": "runtime/ci-gui/design-surface/run-b3ecff7f2813424c91a3b3fa37373c11/recipe-result.json",
+      "sha256": "8dfd6e8ed74c309647cd9b7f0c62ef16c0685b8f51f07d3725bd9d272c878504"
+    },
+    {
+      "path": "validation/onshape-theme-repair/messages.json",
+      "raw_path": "runtime/ci-gui/messages/run-5caaded4cf324541af3b5b17675c82e7/evidence/messages-behavior/gui-result.json",
+      "sha256": "ceb3267aa98393adfd626d93ed68b9407bddf8707564866598e9f9718c11a422"
+    },
+    {
+      "path": "validation/onshape-theme-repair/messages-run.json",
+      "raw_path": "runtime/ci-gui/messages/run-5caaded4cf324541af3b5b17675c82e7/recipe-result.json",
+      "sha256": "fa7a483db2d42299691aa79c99cc590d69203e5a4e6518d3d59b8b9556258ac3"
+    },
+    {
+      "path": "validation/onshape-theme-repair/ui-refinement.json",
+      "raw_path": "runtime/ci-gui/ui-refinement/run-715fae7ca55147318d4393896ffe33c6/evidence/ui-refinement/gui-refinement.json",
+      "sha256": "e00ddec352148f9cf29f747e28ee39299f5ced23c2d9f7659c9058ee79a39c43"
+    },
+    {
+      "path": "validation/onshape-theme-repair/refinement-run.json",
+      "raw_path": "runtime/ci-gui/ui-refinement/run-715fae7ca55147318d4393896ffe33c6/recipe-result.json",
+      "sha256": "82004cc5af60de45ac782f8d2f2c61b2ff0a6f7f713192998b0c299ae7442d98"
+    },
+    {
+      "path": "validation/onshape-theme-repair/light-shell-after-dark-profile.png",
+      "raw_path": "runtime/ci-gui/theme-startup/run-c826992ba5ed4776a6e9fd8110294a1f/evidence/theme-startup/light-shell-after-dark-profile.png",
+      "sha256": "bab2b0d5871c9b19eb458f2a83db5839797e76729ff38bd25ed8de57847c5089"
+    },
+    {
+      "path": "validation/onshape-theme-repair/native-sketch-readable.png",
+      "raw_path": "runtime/ci-gui/theme-startup/run-c826992ba5ed4776a6e9fd8110294a1f/evidence/theme-startup/native-sketch-readable.png",
+      "sha256": "afb55e23f84d2df2e18c58133746d9bed1bd2013f9b1e51be2588272d04e14e9"
+    },
+    {
+      "path": "validation/onshape-theme-repair/native-report-readable.png",
+      "raw_path": "runtime/ci-gui/theme-startup/run-c826992ba5ed4776a6e9fd8110294a1f/evidence/theme-startup/native-report-readable.png",
+      "sha256": "1980c280f3d1653a908d012d835a1c4d568ebbb930945d183132343e882c3b1a"
+    },
+    {
+      "path": "validation/onshape-theme-repair/appearance-settings.png",
+      "raw_path": "runtime/ci-gui/theme-startup/run-c826992ba5ed4776a6e9fd8110294a1f/evidence/theme-startup/appearance-settings.png",
+      "sha256": "128f5c0ef115a0f0cdd79e444747988c82ae97e50e615916f87c6855856927a5"
+    },
+    {
+      "path": "validation/onshape-theme-repair/model-workspace-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-b3ecff7f2813424c91a3b3fa37373c11/evidence/onshape-design/model-workspace-1440.png",
+      "sha256": "cae294e5407d183a19c3d1a5d0bd1e331472c68f16b40ef9a4167e19fe693eb5"
+    },
+    {
+      "path": "validation/onshape-theme-repair/hover-label-below-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-b3ecff7f2813424c91a3b3fa37373c11/evidence/onshape-design/hover-label-below-1440.png",
+      "sha256": "fd5e4cd836423d780f1dca98ab53c93c90c25cc4b7870f8df58f3d57dff51dd3"
+    },
+    {
+      "path": "validation/onshape-theme-repair/sketch-editor-1440.png",
+      "raw_path": "runtime/ci-gui/design-surface/run-b3ecff7f2813424c91a3b3fa37373c11/evidence/onshape-design/sketch-editor-1440.png",
+      "sha256": "6ac634f4a579f3827bb15c4420567b42687a032a09087a3b46e30f328113d0b6"
+    }
+  ],
+  "bundled_preference_pack_sha256": {
+    "FreeCAD Dark": "621983c5ff7d1a4c0313569de2aafe09b7c9a32bec38f256f2fe3fc013408ce8",
+    "FreeCAD Light": "2b5b512cc4db8c64058e3eee077322b2345967dfdb4d54ff83afe495f6cca170"
+  },
+  "check_counts": {
+    "theme": 30,
+    "design": 420,
+    "messages": 34,
+    "refinement": 106
+  },
+  "refinement_scope": "106 checks precede the final report-only rehighlight addition; theme/design/messages exercise final repair source",
+  "theme_snapshots": [
+    {
+      "state": "native startup",
+      "native_theme": "FreeCAD Dark",
+      "app_css_length": 70183,
+      "main_css_length": 0,
+      "window_text": "#000000",
+      "window": "#f0f0f0",
+      "edited_edge": "0xf1f3f5ff",
+      "cursor_text": "0xadb5bdff",
+      "report_text": "0xd4d4d4ff"
+    },
+    {
+      "state": "before light correction",
+      "native_theme": "FreeCAD Dark",
+      "app_css_length": 70183,
+      "main_css_length": 0,
+      "window_text": "#000000",
+      "window": "#f0f0f0",
+      "edited_edge": "0xf1f3f5ff",
+      "cursor_text": "0xadb5bdff",
+      "report_text": "0xd4d4d4ff"
+    },
+    {
+      "state": "immediately after shell",
+      "native_theme": "FreeCAD Light",
+      "app_css_length": 9985,
+      "main_css_length": 0,
+      "window_text": "#2d3338",
+      "window": "#f5f6f7",
+      "edited_edge": "0x495057ff",
+      "cursor_text": "0x212529ff",
+      "report_text": "0x2d3338ff"
+    },
+    {
+      "state": "after native deferred startup",
+      "native_theme": "FreeCAD Light",
+      "app_css_length": 9985,
+      "main_css_length": 0,
+      "window_text": "#2d3338",
+      "window": "#f5f6f7",
+      "edited_edge": "0x495057ff",
+      "cursor_text": "0x212529ff",
+      "report_text": "0x2d3338ff"
+    },
+    {
+      "state": "final",
+      "native_theme": "FreeCAD Light",
+      "app_css_length": 9985,
+      "main_css_length": 0,
+      "window_text": "#2d3338",
+      "window": "#f5f6f7",
+      "edited_edge": "0x495057ff",
+      "cursor_text": "0x212529ff",
+      "report_text": "0x2d3338ff"
+    }
+  ],
+  "screens": [
+    {
+      "file": "light-shell-after-dark-profile.png",
+      "device_pixel_ratio": 1.5,
+      "logical_size": [
+        1440,
+        917
+      ]
+    },
+    {
+      "file": "native-sketch-readable.png",
+      "device_pixel_ratio": 1.5,
+      "logical_size": [
+        1440,
+        917
+      ]
+    },
+    {
+      "file": "native-report-readable.png",
+      "device_pixel_ratio": 1.5,
+      "logical_size": [
+        660,
+        268
+      ]
+    },
+    {
+      "file": "appearance-settings.png",
+      "device_pixel_ratio": 1.5,
+      "logical_size": [
+        360,
+        208
+      ]
+    }
+  ],
+  "minimum_retained_report_contrast": 5.540268693809315,
+  "native_report_format_colors": [
+    "#2d3338",
+    "#8c6005",
+    "#bd3039"
+  ],
+  "review": {
+    "finding": "Retained native warning layouts remained pale despite new report colors",
+    "correction": "Verified native QSyntaxHighlighter.rehighlight after preference changes, retaining native severity metadata",
+    "bounded_verdict": "P2 resolved; ship within this bounded repair scope"
+  },
+  "limits": [
+    "Native palette/fragment/render checks at actual desktop DPI; no inspection or manipulation of the user's running window",
+    "Actual scaling 150%; other DPI settings untested",
+    "Sketch capture demonstrates Tasks/chrome; sketch text recovery is preference contrast evidence, not rendered dimension acceptance",
+    "User's existing process retains its old code until save/close/relaunch; no live user window inspected or changed"
+  ]
+}

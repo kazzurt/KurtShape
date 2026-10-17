@@ -1,0 +1,17 @@
+{
+  "recipe": "extrusion-preview",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-49d8d87657714791853e0e5b7e76f6ff",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\extrusion-preview-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-49d8d87657714791853e0e5b7e76f6ff\\evidence\\ui-refinement-preview\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-49d8d87657714791853e0e5b7e76f6ff\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-49d8d87657714791853e0e5b7e76f6ff\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\extrusion-preview\\run-49d8d87657714791853e0e5b7e76f6ff\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T02:15:24.1442276Z",
+  "exited_utc": "2026-10-06T02:15:46.5815865Z",
+  "pid": 17896,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T02:15:46.6092632Z"
+}

@@ -1,0 +1,51 @@
+{
+  "sketch-plane-editor": {
+    "checks": 27,
+    "passed": true,
+    "report": "sketch-plane-editor/gui-result.json",
+    "receipt": "receipts/sketch-plane-editor.json",
+    "original_session": "runtime/ci-gui/sketch-plane-editor/run-18aec27dfb8449ca9ec21a8f820e5446"
+  },
+  "sketch-edit-state": {
+    "checks": 45,
+    "passed": true,
+    "report": "sketch-edit-state/gui-result.json",
+    "receipt": "receipts/sketch-edit-state.json",
+    "original_session": "runtime/ci-gui/sketch-edit-state/run-f379ddcb9fb04740af4db9f82c54929d"
+  },
+  "history-selection": {
+    "checks": 47,
+    "passed": true,
+    "report": "history-selection/gui-result.json",
+    "receipt": "receipts/history-selection.json",
+    "original_session": "runtime/ci-gui/history-selection/run-12da93ad54cb435f91a6b9ebeef3a938"
+  },
+  "rollback-history": {
+    "checks": 46,
+    "passed": true,
+    "report": "rollback-history/gui-result.json",
+    "receipt": "receipts/rollback-history.json",
+    "original_session": "runtime/ci-gui/rollback-history/run-d11831fa727a47ce983faf2e6d534186"
+  },
+  "sketch-references": {
+    "checks": 67,
+    "passed": true,
+    "report": "sketch-references/gui-result.json",
+    "receipt": "receipts/sketch-references.json",
+    "original_session": "runtime/ci-gui/sketch-references/run-ab89664d615c451cb6e3456d5e0fb4a2"
+  },
+  "part-studio": {
+    "checks": 99,
+    "passed": true,
+    "report": "part-studio/gui-result.json",
+    "receipt": "receipts/part-studio.json",
+    "original_session": "runtime/ci-gui/part-studio/run-afe096c1882742a0aa6a895182f6877f"
+  },
+  "onshape-workflows": {
+    "checks": 45,
+    "passed": true,
+    "report": "onshape-workflows/gui-result.json",
+    "receipt": "receipts/onshape-workflows.json",
+    "original_session": "runtime/ci-gui/onshape-workflows/run-e96cf8c7b6fc42b29c6a99d429762dde"
+  }
+}

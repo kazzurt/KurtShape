@@ -182,6 +182,38 @@ class HistoryLifecycleTests(unittest.TestCase):
         self.assertEqual(self.orphans(), [])
         self.assertAlmostEqual(self.volume(), self.plate_volume)
 
+    def studio_turned_part(self):
+        """A New revolve (a Part tool outside every Body) consumed by a scoped Intersect."""
+        self.objects_before_turn = {obj.Name for obj in self.doc.Objects}
+        self.call("sketch_rectangle", id="TurnProfile", plane="XZ", x=3, width=2, height=5)
+        self.call("revolve", id="Turn", profile="TurnProfile", angle="360 deg", operation="new")
+        part = self.state["studio"]["parts"][-1]["id"]
+        self.call("sketch_rectangle", id="TrimProfile", plane="XY", x=-10, y=-4, width=20, height=8)
+        self.call("pad", id="Trim", profile="TrimProfile", length=10, operation="intersect", merge_scope=[part])
+        self.trimmed_volume = self.volume()
+
+    def test_new_part_tool_operation_is_deletable_with_its_consumers(self):
+        self.studio_turned_part()
+        self.assertEqual(self.doc.Turn.TypeId, "Part::Revolution")
+        self.reject("external_dependency", "delete_features", features=["Turn"])
+        plan = self.core.delete_features_plan(self.doc, ["Trim", "TrimProfile", "Turn", "TurnProfile"])
+        self.assertIn("Turn", plan["selected"])
+        self.call("delete_features", features=["Trim", "TrimProfile", "Turn", "TurnProfile"])
+        self.assertEqual(self.orphans(), [])
+        self.assertEqual(studio.order(self.doc), [])
+        self.assertEqual({obj.Name for obj in self.doc.Objects}, self.objects_before_turn)
+        self.call("undo")
+        self.assertAlmostEqual(self.volume(), self.trimmed_volume)
+
+    def test_new_part_tool_operation_is_deletable_alone(self):
+        self.objects_before_turn = {obj.Name for obj in self.doc.Objects}
+        self.call("sketch_rectangle", id="TurnProfile", plane="XZ", x=3, width=2, height=5)
+        self.call("revolve", id="Turn", profile="TurnProfile", angle="360 deg", operation="new")
+        self.call("delete_features", features=["Turn"])
+        self.assertEqual(self.orphans(), [])
+        self.assertEqual({obj.Name for obj in self.doc.Objects}, self.objects_before_turn | {"TurnProfile"})
+        self.assertAlmostEqual(self.volume(), 0)
+
     def test_operation_with_a_surviving_consumer_is_kept(self):
         self.studio_cut()
         self.call("sketch_circle", id="Second", x=15, y=5, diameter=2, plane="XY")

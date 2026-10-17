@@ -1,0 +1,1927 @@
+{
+  "passed": true,
+  "method": "Bundled native Python; real revision-checked Controller.dispatch and isolated FCStd fixtures",
+  "checks": [
+    "Native fixture geometry and expected feature/part/query counts verified",
+    "edits metrics measured through the current native APIs",
+    "inspect metrics measured through the current native APIs",
+    "checkpoint metrics measured through the current native APIs",
+    "preview metrics measured through the current native APIs",
+    "open metrics measured through the current native APIs"
+  ],
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "559e034de3522c325423057b048f955405c522af",
+  "run_id": "2026-10-06T00:58:33.036334+00:00/64432",
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_processors": 32,
+    "platform": "Windows-10-10.0.26200-SP0"
+  },
+  "fixture": {
+    "kind": "plate",
+    "holes": 60,
+    "grid": 8,
+    "pitch_mm": 66.66666666666667,
+    "hole_diameter_mm": 30.000000000000004,
+    "objects": 132,
+    "faces": 66,
+    "expected_volume_mm3": 3811061.9901184533
+  },
+  "sections": {
+    "edits": {
+      "status": "ok",
+      "metrics": [
+        "add_pocket.auto_scope_sync_ms",
+        "add_pocket.inspection_ms",
+        "add_pocket.intent_signature_ms",
+        "add_pocket.managed_rebuild_ms",
+        "add_pocket.native_recompute_ms",
+        "add_pocket.overhead_ms",
+        "add_pocket.selector_evaluation_ms",
+        "add_pocket.total_ms",
+        "add_sketch.auto_scope_sync_ms",
+        "add_sketch.inspection_ms",
+        "add_sketch.intent_signature_ms",
+        "add_sketch.managed_rebuild_ms",
+        "add_sketch.native_recompute_ms",
+        "add_sketch.overhead_ms",
+        "add_sketch.selector_evaluation_ms",
+        "add_sketch.total_ms",
+        "tip_edit.auto_scope_sync_ms",
+        "tip_edit.inspection_ms",
+        "tip_edit.intent_signature_ms",
+        "tip_edit.managed_rebuild_ms",
+        "tip_edit.native_recompute_ms",
+        "tip_edit.overhead_ms",
+        "tip_edit.selector_evaluation_ms",
+        "tip_edit.total_ms",
+        "upstream_edit.auto_scope_sync_ms",
+        "upstream_edit.inspection_ms",
+        "upstream_edit.intent_signature_ms",
+        "upstream_edit.managed_rebuild_ms",
+        "upstream_edit.native_recompute_ms",
+        "upstream_edit.overhead_ms",
+        "upstream_edit.selector_evaluation_ms",
+        "upstream_edit.total_ms"
+      ]
+    },
+    "inspect": {
+      "status": "ok",
+      "metrics": [
+        "inspect_after_change_ms",
+        "inspect_warm_ms"
+      ]
+    },
+    "checkpoint": {
+      "status": "ok",
+      "metrics": [
+        "checkpoint_ms"
+      ]
+    },
+    "preview": {
+      "status": "ok",
+      "metrics": [
+        "preview_first_ms",
+        "preview_update_ms"
+      ]
+    },
+    "open": {
+      "status": "ok",
+      "metrics": [
+        "kurtshape_open_ms",
+        "native_open_ms"
+      ]
+    }
+  },
+  "timings": {
+    "tip_edit.total_ms": {
+      "median": 513.1322001107037,
+      "p95": 515.6616000458598,
+      "worst": 515.6616000458598,
+      "samples": [
+        493.55709995143116,
+        515.6616000458598,
+        513.1322001107037
+      ]
+    },
+    "tip_edit.native_recompute_ms": {
+      "median": 426.9006000831723,
+      "p95": 445.57689991779625,
+      "worst": 445.57689991779625,
+      "samples": [
+        408.56419992633164,
+        445.57689991779625,
+        426.9006000831723
+      ]
+    },
+    "tip_edit.overhead_ms": {
+      "median": 84.99290002509952,
+      "p95": 86.23160002753139,
+      "worst": 86.23160002753139,
+      "samples": [
+        84.99290002509952,
+        70.08470012806356,
+        86.23160002753139
+      ]
+    },
+    "tip_edit.intent_signature_ms": {
+      "median": 25.259600020945072,
+      "p95": 34.88779999315739,
+      "worst": 34.88779999315739,
+      "samples": [
+        25.242599891498685,
+        25.259600020945072,
+        34.88779999315739
+      ]
+    },
+    "tip_edit.inspection_ms": {
+      "median": 22.236499935388565,
+      "p95": 23.456400027498603,
+      "worst": 23.456400027498603,
+      "samples": [
+        23.456400027498603,
+        22.236499935388565,
+        20.75770008377731
+      ]
+    },
+    "tip_edit.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "tip_edit.auto_scope_sync_ms": {
+      "median": 0.0072999391704797745,
+      "p95": 0.012299977242946625,
+      "worst": 0.012299977242946625,
+      "samples": [
+        0.012299977242946625,
+        0.006700167432427406,
+        0.0072999391704797745
+      ]
+    },
+    "tip_edit.managed_rebuild_ms": {
+      "median": 428.48090012557805,
+      "p95": 447.2618999425322,
+      "worst": 447.2618999425322,
+      "samples": [
+        410.0339999422431,
+        447.2618999425322,
+        428.48090012557805
+      ]
+    },
+    "upstream_edit.total_ms": {
+      "median": 8859.393700025976,
+      "p95": 9332.68989995122,
+      "worst": 9332.68989995122,
+      "samples": [
+        9332.68989995122,
+        8141.433299984783,
+        8859.393700025976
+      ]
+    },
+    "upstream_edit.native_recompute_ms": {
+      "median": 8767.606400186196,
+      "p95": 9266.005699988455,
+      "worst": 9266.005699988455,
+      "samples": [
+        9266.005699988455,
+        8074.414700036868,
+        8767.606400186196
+      ]
+    },
+    "upstream_edit.overhead_ms": {
+      "median": 67.01859994791448,
+      "p95": 91.78729983977973,
+      "worst": 91.78729983977973,
+      "samples": [
+        66.68419996276498,
+        67.01859994791448,
+        91.78729983977973
+      ]
+    },
+    "upstream_edit.intent_signature_ms": {
+      "median": 22.398100001737475,
+      "p95": 32.464300049468875,
+      "worst": 32.464300049468875,
+      "samples": [
+        22.398100001737475,
+        22.392099956050515,
+        32.464300049468875
+      ]
+    },
+    "upstream_edit.inspection_ms": {
+      "median": 21.2612000759691,
+      "p95": 29.914299957454205,
+      "worst": 29.914299957454205,
+      "samples": [
+        19.983300007879734,
+        21.2612000759691,
+        29.914299957454205
+      ]
+    },
+    "upstream_edit.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "upstream_edit.auto_scope_sync_ms": {
+      "median": 0.008300179615616798,
+      "p95": 0.01109996810555458,
+      "worst": 0.01109996810555458,
+      "samples": [
+        0.008300179615616798,
+        0.006800051778554916,
+        0.01109996810555458
+      ]
+    },
+    "upstream_edit.managed_rebuild_ms": {
+      "median": 8769.16110003367,
+      "p95": 9267.652400070801,
+      "worst": 9267.652400070801,
+      "samples": [
+        9267.652400070801,
+        8075.925700133666,
+        8769.16110003367
+      ]
+    },
+    "add_sketch.total_ms": {
+      "median": 413.4059001225978,
+      "p95": 439.37189993448555,
+      "worst": 439.37189993448555,
+      "samples": [
+        263.6871999129653,
+        413.4059001225978,
+        439.37189993448555
+      ]
+    },
+    "add_sketch.native_recompute_ms": {
+      "median": 268.4566001407802,
+      "p95": 282.1076000109315,
+      "worst": 282.1076000109315,
+      "samples": [
+        192.50390003435314,
+        268.4566001407802,
+        282.1076000109315
+      ]
+    },
+    "add_sketch.overhead_ms": {
+      "median": 144.9492999818176,
+      "p95": 157.26429992355406,
+      "worst": 157.26429992355406,
+      "samples": [
+        71.18329987861216,
+        144.9492999818176,
+        157.26429992355406
+      ]
+    },
+    "add_sketch.intent_signature_ms": {
+      "median": 47.06900008022785,
+      "p95": 47.38639993593097,
+      "worst": 47.38639993593097,
+      "samples": [
+        21.572900004684925,
+        47.06900008022785,
+        47.38639993593097
+      ]
+    },
+    "add_sketch.inspection_ms": {
+      "median": 45.28219997882843,
+      "p95": 55.154900066554546,
+      "worst": 55.154900066554546,
+      "samples": [
+        20.47699992544949,
+        45.28219997882843,
+        55.154900066554546
+      ]
+    },
+    "add_sketch.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "add_sketch.auto_scope_sync_ms": {
+      "median": 0.023700064048171043,
+      "p95": 0.06060022860765457,
+      "worst": 0.06060022860765457,
+      "samples": [
+        0.02150004729628563,
+        0.06060022860765457,
+        0.023700064048171043
+      ]
+    },
+    "add_sketch.managed_rebuild_ms": {
+      "median": 274.740899913013,
+      "p95": 286.20730014517903,
+      "worst": 286.20730014517903,
+      "samples": [
+        196.3386998977512,
+        274.740899913013,
+        286.20730014517903
+      ]
+    },
+    "add_pocket.total_ms": {
+      "median": 1886.1525000538677,
+      "p95": 1942.274799803272,
+      "worst": 1942.274799803272,
+      "samples": [
+        1886.1525000538677,
+        1942.274799803272,
+        1490.3114999178797
+      ]
+    },
+    "add_pocket.native_recompute_ms": {
+      "median": 1668.325599981472,
+      "p95": 1752.0643998868763,
+      "worst": 1752.0643998868763,
+      "samples": [
+        1668.325599981472,
+        1752.0643998868763,
+        1274.7939999680966
+      ]
+    },
+    "add_pocket.overhead_ms": {
+      "median": 215.5174999497831,
+      "p95": 217.8269000723958,
+      "worst": 217.8269000723958,
+      "samples": [
+        217.8269000723958,
+        190.21039991639555,
+        215.5174999497831
+      ]
+    },
+    "add_pocket.intent_signature_ms": {
+      "median": 24.283000035211444,
+      "p95": 29.55810003913939,
+      "worst": 29.55810003913939,
+      "samples": [
+        22.65519998036325,
+        24.283000035211444,
+        29.55810003913939
+      ]
+    },
+    "add_pocket.inspection_ms": {
+      "median": 22.589100059121847,
+      "p95": 25.844200048595667,
+      "worst": 25.844200048595667,
+      "samples": [
+        22.589100059121847,
+        20.694399951025844,
+        25.844200048595667
+      ]
+    },
+    "add_pocket.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "add_pocket.auto_scope_sync_ms": {
+      "median": 0.02410006709396839,
+      "p95": 0.026900088414549828,
+      "worst": 0.026900088414549828,
+      "samples": [
+        0.02410006709396839,
+        0.026900088414549828,
+        0.01930026337504387
+      ]
+    },
+    "add_pocket.managed_rebuild_ms": {
+      "median": 1675.442900042981,
+      "p95": 1757.1908000390977,
+      "worst": 1757.1908000390977,
+      "samples": [
+        1675.442900042981,
+        1757.1908000390977,
+        1280.3325997665524
+      ]
+    },
+    "inspect_warm_ms": {
+      "median": 37.53480012528598,
+      "p95": 44.26490003243089,
+      "worst": 44.26490003243089,
+      "samples": [
+        44.26490003243089,
+        37.53480012528598,
+        26.658300077542663
+      ]
+    },
+    "inspect_after_change_ms": {
+      "median": 48.38729999028146,
+      "p95": 60.143900103867054,
+      "worst": 60.143900103867054,
+      "samples": [
+        44.48199993930757,
+        48.38729999028146,
+        60.143900103867054
+      ]
+    },
+    "checkpoint_ms": {
+      "median": 1683.6528999265283,
+      "p95": 1930.7340998202562,
+      "worst": 1930.7340998202562,
+      "samples": [
+        1930.7340998202562,
+        1571.215400006622,
+        1683.6528999265283
+      ]
+    },
+    "preview_first_ms": {
+      "median": 8995.939899934456,
+      "p95": 9694.588999962434,
+      "worst": 9694.588999962434,
+      "samples": [
+        8995.939899934456,
+        8171.048799995333,
+        9694.588999962434
+      ]
+    },
+    "preview_update_ms": {
+      "median": 7175.073900027201,
+      "p95": 7506.60919980146,
+      "worst": 7506.60919980146,
+      "samples": [
+        7506.60919980146,
+        7175.073900027201,
+        7060.386100085452
+      ]
+    },
+    "native_open_ms": {
+      "median": 1918.4409000445157,
+      "p95": 2000.5426001735032,
+      "worst": 2000.5426001735032,
+      "samples": [
+        1797.6789998356253,
+        2000.5426001735032,
+        1918.4409000445157
+      ]
+    },
+    "kurtshape_open_ms": {
+      "median": 1761.717100162059,
+      "p95": 1956.3726000487804,
+      "worst": 1956.3726000487804,
+      "samples": [
+        1956.3726000487804,
+        1759.4747000839561,
+        1761.717100162059
+      ]
+    }
+  },
+  "limits": "Synthetic native fixtures; wall time includes controller work. No user comfort, Onshape parity or hosted CI claim. Profile and native geometry artifacts remain in isolated scratch.",
+  "repeat": 3,
+  "measurement_level": false,
+  "measurement_policy": "Contract3: false counts only; true volume/area/bbox; full adds solid mass center. No automatic BRepCheck. Older true baselines include the former full/check work.",
+  "add_operation_sampling": "Repeated sketch/pocket additions on the completed fixture; two undos and geometry verification outside measured operations",
+  "growth": [
+    {
+      "holes": 1,
+      "add_sketch": {
+        "total_ms": 10.70999982766807,
+        "native_recompute_ms": 1.9086000975221395,
+        "overhead_ms": 8.801399730145931,
+        "intent_signature_ms": 1.3099000789225101,
+        "inspection_ms": 2.7526000048965216,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.017600134015083313,
+        "managed_rebuild_ms": 2.1949000656604767
+      },
+      "add_pocket": {
+        "total_ms": 145.10249998420477,
+        "native_recompute_ms": 127.47419974766672,
+        "overhead_ms": 17.628300236538053,
+        "intent_signature_ms": 1.4762000646442175,
+        "inspection_ms": 4.123999970033765,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.027499860152602196,
+        "managed_rebuild_ms": 128.72439995408058
+      }
+    },
+    {
+      "holes": 2,
+      "add_sketch": {
+        "total_ms": 17.638999968767166,
+        "native_recompute_ms": 4.795000189915299,
+        "overhead_ms": 12.843999778851867,
+        "intent_signature_ms": 2.203600015491247,
+        "inspection_ms": 3.1210000161081553,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.025399960577487946,
+        "managed_rebuild_ms": 5.5513998959213495
+      },
+      "add_pocket": {
+        "total_ms": 60.948300175368786,
+        "native_recompute_ms": 38.49299973808229,
+        "overhead_ms": 22.455300437286496,
+        "intent_signature_ms": 3.742299973964691,
+        "inspection_ms": 5.7929998729377985,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.026999739930033684,
+        "managed_rebuild_ms": 39.586300030350685
+      }
+    },
+    {
+      "holes": 3,
+      "add_sketch": {
+        "total_ms": 28.69420009665191,
+        "native_recompute_ms": 5.333799868822098,
+        "overhead_ms": 23.360400227829814,
+        "intent_signature_ms": 4.309399984776974,
+        "inspection_ms": 6.113299867138267,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.031099887564778328,
+        "managed_rebuild_ms": 6.323900073766708
+      },
+      "add_pocket": {
+        "total_ms": 70.21399983204901,
+        "native_recompute_ms": 43.51760004647076,
+        "overhead_ms": 26.69639978557825,
+        "intent_signature_ms": 4.660000093281269,
+        "inspection_ms": 6.5431001130491495,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04359986633062363,
+        "managed_rebuild_ms": 45.14459986239672
+      }
+    },
+    {
+      "holes": 4,
+      "add_sketch": {
+        "total_ms": 30.113199958577752,
+        "native_recompute_ms": 6.233700085431337,
+        "overhead_ms": 23.879499873146415,
+        "intent_signature_ms": 5.250800168141723,
+        "inspection_ms": 6.560700014233589,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.11000013910233974,
+        "managed_rebuild_ms": 7.322200108319521
+      },
+      "add_pocket": {
+        "total_ms": 88.3812999818474,
+        "native_recompute_ms": 57.47520015574992,
+        "overhead_ms": 30.90609982609749,
+        "intent_signature_ms": 5.304299993440509,
+        "inspection_ms": 8.376700105145574,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03660004585981369,
+        "managed_rebuild_ms": 59.26989996805787
+      }
+    },
+    {
+      "holes": 5,
+      "add_sketch": {
+        "total_ms": 29.611200094223022,
+        "native_recompute_ms": 7.018400123342872,
+        "overhead_ms": 22.59279997088015,
+        "intent_signature_ms": 4.919299855828285,
+        "inspection_ms": 6.716399919241667,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.016999896615743637,
+        "managed_rebuild_ms": 7.824199972674251
+      },
+      "add_pocket": {
+        "total_ms": 63.72929993085563,
+        "native_recompute_ms": 41.91270028240979,
+        "overhead_ms": 21.816599648445845,
+        "intent_signature_ms": 2.2519000340253115,
+        "inspection_ms": 6.0159999411553144,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.01769978553056717,
+        "managed_rebuild_ms": 42.93720005080104
+      }
+    },
+    {
+      "holes": 6,
+      "add_sketch": {
+        "total_ms": 21.5035998262465,
+        "native_recompute_ms": 5.740299820899963,
+        "overhead_ms": 15.763300005346537,
+        "intent_signature_ms": 2.93230009265244,
+        "inspection_ms": 6.025600014254451,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.021100277081131935,
+        "managed_rebuild_ms": 6.595900049433112
+      },
+      "add_pocket": {
+        "total_ms": 74.22190019860864,
+        "native_recompute_ms": 53.51380002684891,
+        "overhead_ms": 20.708100171759725,
+        "intent_signature_ms": 2.8804000467061996,
+        "inspection_ms": 4.110600100830197,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02719997428357601,
+        "managed_rebuild_ms": 55.089100264012814
+      }
+    },
+    {
+      "holes": 7,
+      "add_sketch": {
+        "total_ms": 23.608900140970945,
+        "native_recompute_ms": 5.761000094935298,
+        "overhead_ms": 17.847900046035647,
+        "intent_signature_ms": 3.618899965658784,
+        "inspection_ms": 5.137700121849775,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.012599863111972809,
+        "managed_rebuild_ms": 6.466600112617016
+      },
+      "add_pocket": {
+        "total_ms": 100.25739995762706,
+        "native_recompute_ms": 67.42959981784225,
+        "overhead_ms": 32.82780013978481,
+        "intent_signature_ms": 6.909700110554695,
+        "inspection_ms": 7.632399909198284,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02759997732937336,
+        "managed_rebuild_ms": 69.27639991044998
+      }
+    },
+    {
+      "holes": 8,
+      "add_sketch": {
+        "total_ms": 29.096500016748905,
+        "native_recompute_ms": 10.506399907171726,
+        "overhead_ms": 18.59010010957718,
+        "intent_signature_ms": 3.504800144582987,
+        "inspection_ms": 4.637900041416287,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.054099829867482185,
+        "managed_rebuild_ms": 11.869099689647555
+      },
+      "add_pocket": {
+        "total_ms": 109.79769984260201,
+        "native_recompute_ms": 79.13440023548901,
+        "overhead_ms": 30.663299607113004,
+        "intent_signature_ms": 7.093100110068917,
+        "inspection_ms": 4.724700003862381,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04810001701116562,
+        "managed_rebuild_ms": 81.6426002420485
+      }
+    },
+    {
+      "holes": 9,
+      "add_sketch": {
+        "total_ms": 25.136600015684962,
+        "native_recompute_ms": 7.264000130817294,
+        "overhead_ms": 17.872599884867668,
+        "intent_signature_ms": 3.5887002013623714,
+        "inspection_ms": 6.471300031989813,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.0129002146422863,
+        "managed_rebuild_ms": 8.001700043678284
+      },
+      "add_pocket": {
+        "total_ms": 134.42869996652007,
+        "native_recompute_ms": 93.5042998753488,
+        "overhead_ms": 40.924400091171265,
+        "intent_signature_ms": 8.260600036010146,
+        "inspection_ms": 10.089199990034103,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04389975219964981,
+        "managed_rebuild_ms": 96.0276999976486
+      }
+    },
+    {
+      "holes": 10,
+      "add_sketch": {
+        "total_ms": 46.673799864947796,
+        "native_recompute_ms": 14.36590007506311,
+        "overhead_ms": 32.30789978988469,
+        "intent_signature_ms": 6.789200007915497,
+        "inspection_ms": 10.404800064861774,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.026999972760677338,
+        "managed_rebuild_ms": 15.84519981406629
+      },
+      "add_pocket": {
+        "total_ms": 108.9355000294745,
+        "native_recompute_ms": 82.53520005382597,
+        "overhead_ms": 26.400299975648522,
+        "intent_signature_ms": 5.703300004824996,
+        "inspection_ms": 4.597399849444628,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.01600012183189392,
+        "managed_rebuild_ms": 83.79649999551475
+      }
+    },
+    {
+      "holes": 11,
+      "add_sketch": {
+        "total_ms": 30.70200001820922,
+        "native_recompute_ms": 8.882000111043453,
+        "overhead_ms": 21.819999907165766,
+        "intent_signature_ms": 6.984000094234943,
+        "inspection_ms": 5.877699935808778,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.011200085282325745,
+        "managed_rebuild_ms": 9.584099752828479
+      },
+      "add_pocket": {
+        "total_ms": 134.40080010332167,
+        "native_recompute_ms": 89.56049988046288,
+        "overhead_ms": 44.84030022285879,
+        "intent_signature_ms": 9.175700135529041,
+        "inspection_ms": 11.572200106456876,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04300009459257126,
+        "managed_rebuild_ms": 92.32660033740103
+      }
+    },
+    {
+      "holes": 12,
+      "add_sketch": {
+        "total_ms": 46.55750002712011,
+        "native_recompute_ms": 14.572399901226163,
+        "overhead_ms": 31.98510012589395,
+        "intent_signature_ms": 9.435399901121855,
+        "inspection_ms": 5.896700080484152,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.020800158381462097,
+        "managed_rebuild_ms": 16.378900269046426
+      },
+      "add_pocket": {
+        "total_ms": 159.1523999813944,
+        "native_recompute_ms": 112.39399993792176,
+        "overhead_ms": 46.75840004347265,
+        "intent_signature_ms": 11.046499945223331,
+        "inspection_ms": 11.534399818629026,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.025300076231360435,
+        "managed_rebuild_ms": 114.39700005576015
+      }
+    },
+    {
+      "holes": 13,
+      "add_sketch": {
+        "total_ms": 38.15599996596575,
+        "native_recompute_ms": 14.362199930474162,
+        "overhead_ms": 23.793800035491586,
+        "intent_signature_ms": 5.94900012947619,
+        "inspection_ms": 6.845299853011966,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.012999866157770157,
+        "managed_rebuild_ms": 15.463299816474319
+      },
+      "add_pocket": {
+        "total_ms": 136.08770002610981,
+        "native_recompute_ms": 99.62170012295246,
+        "overhead_ms": 36.46599990315735,
+        "intent_signature_ms": 5.249299807474017,
+        "inspection_ms": 8.557500084862113,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.023099826648831367,
+        "managed_rebuild_ms": 101.93239990621805
+      }
+    },
+    {
+      "holes": 14,
+      "add_sketch": {
+        "total_ms": 31.889700097963214,
+        "native_recompute_ms": 11.761300265789032,
+        "overhead_ms": 20.128399832174182,
+        "intent_signature_ms": 5.582599900662899,
+        "inspection_ms": 5.267400061711669,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.011699972674250603,
+        "managed_rebuild_ms": 12.856499990448356
+      },
+      "add_pocket": {
+        "total_ms": 128.41180013492703,
+        "native_recompute_ms": 94.27310014143586,
+        "overhead_ms": 34.13869999349117,
+        "intent_signature_ms": 5.309900036081672,
+        "inspection_ms": 9.97150014154613,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.024999957531690598,
+        "managed_rebuild_ms": 95.94840020872653
+      }
+    },
+    {
+      "holes": 15,
+      "add_sketch": {
+        "total_ms": 53.38350008241832,
+        "native_recompute_ms": 21.173099987208843,
+        "overhead_ms": 32.21040009520948,
+        "intent_signature_ms": 6.864800117909908,
+        "inspection_ms": 10.259200120344758,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.041499966755509377,
+        "managed_rebuild_ms": 23.319999920204282
+      },
+      "add_pocket": {
+        "total_ms": 181.02250015363097,
+        "native_recompute_ms": 136.9686999823898,
+        "overhead_ms": 44.053800171241164,
+        "intent_signature_ms": 7.133000064641237,
+        "inspection_ms": 7.000899873673916,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.035999808460474014,
+        "managed_rebuild_ms": 139.42419993691146
+      }
+    },
+    {
+      "holes": 16,
+      "add_sketch": {
+        "total_ms": 48.44099981710315,
+        "native_recompute_ms": 19.10519995726645,
+        "overhead_ms": 29.335799859836698,
+        "intent_signature_ms": 10.93590003438294,
+        "inspection_ms": 6.280099973082542,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.017800135537981987,
+        "managed_rebuild_ms": 20.678799832239747
+      },
+      "add_pocket": {
+        "total_ms": 191.8808000627905,
+        "native_recompute_ms": 140.501799993217,
+        "overhead_ms": 51.37900006957352,
+        "intent_signature_ms": 10.228700004518032,
+        "inspection_ms": 13.183000031858683,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.030599767342209816,
+        "managed_rebuild_ms": 142.54099992103875
+      }
+    },
+    {
+      "holes": 17,
+      "add_sketch": {
+        "total_ms": 61.14790006540716,
+        "native_recompute_ms": 22.577099967747927,
+        "overhead_ms": 38.57080009765923,
+        "intent_signature_ms": 10.866000084206462,
+        "inspection_ms": 9.251800132915378,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.019300030544400215,
+        "managed_rebuild_ms": 24.2979999165982
+      },
+      "add_pocket": {
+        "total_ms": 214.1332000028342,
+        "native_recompute_ms": 163.16169989295304,
+        "overhead_ms": 50.97150010988116,
+        "intent_signature_ms": 6.445699837058783,
+        "inspection_ms": 10.825099889189005,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.022799940779805183,
+        "managed_rebuild_ms": 165.32859997823834
+      }
+    },
+    {
+      "holes": 18,
+      "add_sketch": {
+        "total_ms": 52.89040016941726,
+        "native_recompute_ms": 20.90239990502596,
+        "overhead_ms": 31.988000264391303,
+        "intent_signature_ms": 9.05890017747879,
+        "inspection_ms": 8.407499874010682,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.020600156858563423,
+        "managed_rebuild_ms": 22.3213997669518
+      },
+      "add_pocket": {
+        "total_ms": 190.12789987027645,
+        "native_recompute_ms": 137.7931002061814,
+        "overhead_ms": 52.334799664095044,
+        "intent_signature_ms": 8.358900202438235,
+        "inspection_ms": 17.82029983587563,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03060000017285347,
+        "managed_rebuild_ms": 139.75309999659657
+      }
+    },
+    {
+      "holes": 19,
+      "add_sketch": {
+        "total_ms": 59.47279999963939,
+        "native_recompute_ms": 29.02180003002286,
+        "overhead_ms": 30.450999969616532,
+        "intent_signature_ms": 7.330399937927723,
+        "inspection_ms": 7.368199992924929,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.028399983420968056,
+        "managed_rebuild_ms": 31.213999958708882
+      },
+      "add_pocket": {
+        "total_ms": 180.047299945727,
+        "native_recompute_ms": 138.7514998205006,
+        "overhead_ms": 41.29580012522638,
+        "intent_signature_ms": 7.856499869376421,
+        "inspection_ms": 7.5397000182420015,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.0183002557605505,
+        "managed_rebuild_ms": 140.5652998946607
+      }
+    },
+    {
+      "holes": 20,
+      "add_sketch": {
+        "total_ms": 66.02400005795062,
+        "native_recompute_ms": 29.11169989965856,
+        "overhead_ms": 36.912300158292055,
+        "intent_signature_ms": 7.559400051832199,
+        "inspection_ms": 15.262700151652098,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.01919991336762905,
+        "managed_rebuild_ms": 30.61699983663857
+      },
+      "add_pocket": {
+        "total_ms": 238.06609981693327,
+        "native_recompute_ms": 174.1933999583125,
+        "overhead_ms": 63.87269985862076,
+        "intent_signature_ms": 12.614900013431907,
+        "inspection_ms": 12.214899994432926,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.031200004741549492,
+        "managed_rebuild_ms": 177.2563997656107
+      }
+    },
+    {
+      "holes": 21,
+      "add_sketch": {
+        "total_ms": 53.48500004038215,
+        "native_recompute_ms": 25.79950005747378,
+        "overhead_ms": 27.685499982908368,
+        "intent_signature_ms": 6.69379997998476,
+        "inspection_ms": 9.866799926385283,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.012500211596488953,
+        "managed_rebuild_ms": 27.20909984782338
+      },
+      "add_pocket": {
+        "total_ms": 225.15349998138845,
+        "native_recompute_ms": 166.9006000738591,
+        "overhead_ms": 58.252899907529354,
+        "intent_signature_ms": 10.990899987518787,
+        "inspection_ms": 10.29699994251132,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.040400074794888496,
+        "managed_rebuild_ms": 169.48749986477196
+      }
+    },
+    {
+      "holes": 22,
+      "add_sketch": {
+        "total_ms": 82.73259992711246,
+        "native_recompute_ms": 39.14760006591678,
+        "overhead_ms": 43.58499986119568,
+        "intent_signature_ms": 11.831900104880333,
+        "inspection_ms": 13.996199937537313,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.032400013878941536,
+        "managed_rebuild_ms": 41.66799993254244
+      },
+      "add_pocket": {
+        "total_ms": 386.4801998715848,
+        "native_recompute_ms": 302.385299699381,
+        "overhead_ms": 84.09490017220378,
+        "intent_signature_ms": 13.638900127261877,
+        "inspection_ms": 16.26070006750524,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02769986167550087,
+        "managed_rebuild_ms": 305.84310041740537
+      }
+    },
+    {
+      "holes": 23,
+      "add_sketch": {
+        "total_ms": 83.91259983181953,
+        "native_recompute_ms": 41.61499999463558,
+        "overhead_ms": 42.29759983718395,
+        "intent_signature_ms": 10.882699862122536,
+        "inspection_ms": 11.782400077208877,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.014400109648704529,
+        "managed_rebuild_ms": 43.729899916797876
+      },
+      "add_pocket": {
+        "total_ms": 392.45279994793236,
+        "native_recompute_ms": 300.7851999718696,
+        "overhead_ms": 91.66759997606277,
+        "intent_signature_ms": 18.569599837064743,
+        "inspection_ms": 16.36729994788766,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.05020014941692352,
+        "managed_rebuild_ms": 305.4052998777479
+      }
+    },
+    {
+      "holes": 24,
+      "add_sketch": {
+        "total_ms": 107.17279999516904,
+        "native_recompute_ms": 50.36819982342422,
+        "overhead_ms": 56.80460017174482,
+        "intent_signature_ms": 11.499300133436918,
+        "inspection_ms": 23.16330000758171,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.038700178265571594,
+        "managed_rebuild_ms": 53.2196001149714
+      },
+      "add_pocket": {
+        "total_ms": 332.58350007236004,
+        "native_recompute_ms": 257.88350007496774,
+        "overhead_ms": 74.6999999973923,
+        "intent_signature_ms": 14.758900040760636,
+        "inspection_ms": 8.983599953353405,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02910010516643524,
+        "managed_rebuild_ms": 261.1320000141859
+      }
+    },
+    {
+      "holes": 25,
+      "add_sketch": {
+        "total_ms": 81.09300001524389,
+        "native_recompute_ms": 37.7040000166744,
+        "overhead_ms": 43.38899999856949,
+        "intent_signature_ms": 9.656500071287155,
+        "inspection_ms": 20.44490003027022,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.01209997572004795,
+        "managed_rebuild_ms": 39.26429990679026
+      },
+      "add_pocket": {
+        "total_ms": 324.4276999030262,
+        "native_recompute_ms": 234.07560004852712,
+        "overhead_ms": 90.3520998544991,
+        "intent_signature_ms": 19.307199865579605,
+        "inspection_ms": 20.415700040757656,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.019700033590197563,
+        "managed_rebuild_ms": 236.47479992359877
+      }
+    },
+    {
+      "holes": 26,
+      "add_sketch": {
+        "total_ms": 92.24609984084964,
+        "native_recompute_ms": 44.903599889948964,
+        "overhead_ms": 47.342499950900674,
+        "intent_signature_ms": 14.119300059974194,
+        "inspection_ms": 12.465599924325943,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02319994382560253,
+        "managed_rebuild_ms": 47.05719999037683
+      },
+      "add_pocket": {
+        "total_ms": 335.3313999250531,
+        "native_recompute_ms": 261.48149999789894,
+        "overhead_ms": 73.84989992715418,
+        "intent_signature_ms": 11.75649999640882,
+        "inspection_ms": 12.002700008451939,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.021499814465641975,
+        "managed_rebuild_ms": 264.5893997978419
+      }
+    },
+    {
+      "holes": 27,
+      "add_sketch": {
+        "total_ms": 95.62229993753135,
+        "native_recompute_ms": 54.70540001988411,
+        "overhead_ms": 40.91689991764724,
+        "intent_signature_ms": 12.099199928343296,
+        "inspection_ms": 9.91629995405674,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.014400109648704529,
+        "managed_rebuild_ms": 56.522900238633156
+      },
+      "add_pocket": {
+        "total_ms": 327.67000002786517,
+        "native_recompute_ms": 261.9542002212256,
+        "overhead_ms": 65.71579980663955,
+        "intent_signature_ms": 10.307300137355924,
+        "inspection_ms": 11.031500063836575,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.024800188839435577,
+        "managed_rebuild_ms": 264.70680022612214
+      }
+    },
+    {
+      "holes": 28,
+      "add_sketch": {
+        "total_ms": 85.8169998973608,
+        "native_recompute_ms": 43.39340003207326,
+        "overhead_ms": 42.42359986528754,
+        "intent_signature_ms": 12.937299907207489,
+        "inspection_ms": 14.10800009034574,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.019999919459223747,
+        "managed_rebuild_ms": 45.3620997723192
+      },
+      "add_pocket": {
+        "total_ms": 399.80829996056855,
+        "native_recompute_ms": 328.50910001434386,
+        "overhead_ms": 71.29919994622469,
+        "intent_signature_ms": 10.81389980390668,
+        "inspection_ms": 11.433999985456467,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03350013867020607,
+        "managed_rebuild_ms": 332.2331001982093
+      }
+    },
+    {
+      "holes": 29,
+      "add_sketch": {
+        "total_ms": 83.5634998511523,
+        "native_recompute_ms": 44.652799842879176,
+        "overhead_ms": 38.910700008273125,
+        "intent_signature_ms": 13.060200028121471,
+        "inspection_ms": 11.19769993238151,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.011999858543276787,
+        "managed_rebuild_ms": 46.18419986218214
+      },
+      "add_pocket": {
+        "total_ms": 396.3749997783452,
+        "native_recompute_ms": 313.0582997109741,
+        "overhead_ms": 83.31670006737113,
+        "intent_signature_ms": 16.574400011450052,
+        "inspection_ms": 15.721600037068129,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02350006252527237,
+        "managed_rebuild_ms": 316.6476001497358
+      }
+    },
+    {
+      "holes": 30,
+      "add_sketch": {
+        "total_ms": 132.23260012455285,
+        "native_recompute_ms": 71.18949992582202,
+        "overhead_ms": 61.043100198730826,
+        "intent_signature_ms": 21.028799936175346,
+        "inspection_ms": 14.408599818125367,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.018499791622161865,
+        "managed_rebuild_ms": 73.62479995936155
+      },
+      "add_pocket": {
+        "total_ms": 493.8716001342982,
+        "native_recompute_ms": 390.6695998739451,
+        "overhead_ms": 103.20200026035309,
+        "intent_signature_ms": 21.71000000089407,
+        "inspection_ms": 14.544000150635839,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.07090019062161446,
+        "managed_rebuild_ms": 394.77650029584765
+      }
+    },
+    {
+      "holes": 31,
+      "add_sketch": {
+        "total_ms": 105.17330002039671,
+        "native_recompute_ms": 61.3943999633193,
+        "overhead_ms": 43.77890005707741,
+        "intent_signature_ms": 14.044699957594275,
+        "inspection_ms": 12.498300056904554,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.013300217688083649,
+        "managed_rebuild_ms": 63.44870012253523
+      },
+      "add_pocket": {
+        "total_ms": 501.7723999917507,
+        "native_recompute_ms": 410.9383001923561,
+        "overhead_ms": 90.83409979939461,
+        "intent_signature_ms": 12.646199902519584,
+        "inspection_ms": 16.846900107339025,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.035999808460474014,
+        "managed_rebuild_ms": 415.49320006743073
+      }
+    },
+    {
+      "holes": 32,
+      "add_sketch": {
+        "total_ms": 180.41430017910898,
+        "native_recompute_ms": 90.96249984577298,
+        "overhead_ms": 89.451800333336,
+        "intent_signature_ms": 28.619199991226196,
+        "inspection_ms": 28.275000164285302,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.039499951526522636,
+        "managed_rebuild_ms": 95.06439999677241
+      },
+      "add_pocket": {
+        "total_ms": 595.9252000320703,
+        "native_recompute_ms": 477.3860997520387,
+        "overhead_ms": 118.53910028003156,
+        "intent_signature_ms": 20.042199874296784,
+        "inspection_ms": 18.807800021022558,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03320001997053623,
+        "managed_rebuild_ms": 482.0552999153733
+      }
+    },
+    {
+      "holes": 33,
+      "add_sketch": {
+        "total_ms": 119.71129989251494,
+        "native_recompute_ms": 69.58299991674721,
+        "overhead_ms": 50.12829997576773,
+        "intent_signature_ms": 13.252299977466464,
+        "inspection_ms": 15.14960010536015,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.021900050342082977,
+        "managed_rebuild_ms": 72.52919976599514
+      },
+      "add_pocket": {
+        "total_ms": 662.1156001929194,
+        "native_recompute_ms": 534.2174002435058,
+        "overhead_ms": 127.89819994941354,
+        "intent_signature_ms": 24.422800168395042,
+        "inspection_ms": 27.228000108152628,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.05349982529878616,
+        "managed_rebuild_ms": 539.2012000083923
+      }
+    },
+    {
+      "holes": 34,
+      "add_sketch": {
+        "total_ms": 156.722100218758,
+        "native_recompute_ms": 91.87930007465184,
+        "overhead_ms": 64.84280014410615,
+        "intent_signature_ms": 17.621699953451753,
+        "inspection_ms": 22.143600042909384,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.038800062611699104,
+        "managed_rebuild_ms": 95.87089996784925
+      },
+      "add_pocket": {
+        "total_ms": 690.6432001851499,
+        "native_recompute_ms": 584.5083997119218,
+        "overhead_ms": 106.1348004732281,
+        "intent_signature_ms": 13.458200031891465,
+        "inspection_ms": 16.944999806582928,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03060000017285347,
+        "managed_rebuild_ms": 588.7213002424687
+      }
+    },
+    {
+      "holes": 35,
+      "add_sketch": {
+        "total_ms": 135.7555000577122,
+        "native_recompute_ms": 86.57639985904098,
+        "overhead_ms": 49.17910019867122,
+        "intent_signature_ms": 14.552900101989508,
+        "inspection_ms": 15.068300068378448,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.01400010660290718,
+        "managed_rebuild_ms": 89.63420009240508
+      },
+      "add_pocket": {
+        "total_ms": 580.005600117147,
+        "native_recompute_ms": 475.7223001215607,
+        "overhead_ms": 104.28329999558628,
+        "intent_signature_ms": 14.611000195145607,
+        "inspection_ms": 17.10660010576248,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.033700140193104744,
+        "managed_rebuild_ms": 479.9145001452416
+      }
+    },
+    {
+      "holes": 36,
+      "add_sketch": {
+        "total_ms": 120.27840013615787,
+        "native_recompute_ms": 75.88170003145933,
+        "overhead_ms": 44.39670010469854,
+        "intent_signature_ms": 12.542399810627103,
+        "inspection_ms": 12.798600131645799,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.0371001660823822,
+        "managed_rebuild_ms": 79.12359992042184
+      },
+      "add_pocket": {
+        "total_ms": 621.1776998825371,
+        "native_recompute_ms": 521.5225999709219,
+        "overhead_ms": 99.65509991161525,
+        "intent_signature_ms": 18.850099993869662,
+        "inspection_ms": 13.976499903947115,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.041999854147434235,
+        "managed_rebuild_ms": 526.4551001600921
+      }
+    },
+    {
+      "holes": 37,
+      "add_sketch": {
+        "total_ms": 190.85919996723533,
+        "native_recompute_ms": 106.1504001263529,
+        "overhead_ms": 84.70879984088242,
+        "intent_signature_ms": 25.998299941420555,
+        "inspection_ms": 28.085700003430247,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02059992402791977,
+        "managed_rebuild_ms": 109.34399999678135
+      },
+      "add_pocket": {
+        "total_ms": 709.1600000858307,
+        "native_recompute_ms": 586.862200172618,
+        "overhead_ms": 122.29779991321266,
+        "intent_signature_ms": 21.789199905470014,
+        "inspection_ms": 27.30150008574128,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.031400006264448166,
+        "managed_rebuild_ms": 591.4604000281543
+      }
+    },
+    {
+      "holes": 38,
+      "add_sketch": {
+        "total_ms": 137.659200001508,
+        "native_recompute_ms": 84.14539997465909,
+        "overhead_ms": 53.51380002684891,
+        "intent_signature_ms": 12.135800207033753,
+        "inspection_ms": 15.29589993879199,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.01309998333454132,
+        "managed_rebuild_ms": 87.13800017721951
+      },
+      "add_pocket": {
+        "total_ms": 653.8114999420941,
+        "native_recompute_ms": 535.1313999854028,
+        "overhead_ms": 118.68009995669127,
+        "intent_signature_ms": 22.32589991763234,
+        "inspection_ms": 19.812299869954586,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.027100322768092155,
+        "managed_rebuild_ms": 539.7557001560926
+      }
+    },
+    {
+      "holes": 39,
+      "add_sketch": {
+        "total_ms": 183.89589991420507,
+        "native_recompute_ms": 99.52929965220392,
+        "overhead_ms": 84.36660026200116,
+        "intent_signature_ms": 23.040100000798702,
+        "inspection_ms": 32.95539994724095,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.021300045773386955,
+        "managed_rebuild_ms": 102.01819986104965
+      },
+      "add_pocket": {
+        "total_ms": 925.5327999126166,
+        "native_recompute_ms": 803.7215999793261,
+        "overhead_ms": 121.81119993329048,
+        "intent_signature_ms": 19.62120016105473,
+        "inspection_ms": 14.044699957594275,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.041499966755509377,
+        "managed_rebuild_ms": 808.4529000334442
+      }
+    },
+    {
+      "holes": 40,
+      "add_sketch": {
+        "total_ms": 149.55319999717176,
+        "native_recompute_ms": 98.47429976798594,
+        "overhead_ms": 51.07890022918582,
+        "intent_signature_ms": 14.33249982073903,
+        "inspection_ms": 16.372299985960126,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.013200100511312485,
+        "managed_rebuild_ms": 100.63429991714656
+      },
+      "add_pocket": {
+        "total_ms": 945.3662999439985,
+        "native_recompute_ms": 791.6274999734014,
+        "overhead_ms": 153.73879997059703,
+        "intent_signature_ms": 26.41419996507466,
+        "inspection_ms": 30.173399951308966,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.06780005060136318,
+        "managed_rebuild_ms": 799.0200999192894
+      }
+    },
+    {
+      "holes": 41,
+      "add_sketch": {
+        "total_ms": 183.43090009875596,
+        "native_recompute_ms": 119.20779990032315,
+        "overhead_ms": 64.2231001984328,
+        "intent_signature_ms": 18.63249996677041,
+        "inspection_ms": 18.281300086528063,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.01300009898841381,
+        "managed_rebuild_ms": 121.74809980206192
+      },
+      "add_pocket": {
+        "total_ms": 1036.6099001839757,
+        "native_recompute_ms": 888.8025998603553,
+        "overhead_ms": 147.80730032362044,
+        "intent_signature_ms": 20.439899992197752,
+        "inspection_ms": 28.447099961340427,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.05249981768429279,
+        "managed_rebuild_ms": 896.7018001712859
+      }
+    },
+    {
+      "holes": 42,
+      "add_sketch": {
+        "total_ms": 267.29359989985824,
+        "native_recompute_ms": 160.9120003413409,
+        "overhead_ms": 106.38159955851734,
+        "intent_signature_ms": 35.11369996704161,
+        "inspection_ms": 31.715699937194586,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.021500280126929283,
+        "managed_rebuild_ms": 164.61999993771315
+      },
+      "add_pocket": {
+        "total_ms": 1007.2977000381798,
+        "native_recompute_ms": 826.2000000104308,
+        "overhead_ms": 181.09770002774894,
+        "intent_signature_ms": 29.888099990785122,
+        "inspection_ms": 33.554699970409274,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.034899916499853134,
+        "managed_rebuild_ms": 832.4729998130351
+      }
+    },
+    {
+      "holes": 43,
+      "add_sketch": {
+        "total_ms": 260.01440011896193,
+        "native_recompute_ms": 152.03600004315376,
+        "overhead_ms": 107.97840007580817,
+        "intent_signature_ms": 37.1354001108557,
+        "inspection_ms": 32.60059980675578,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.029999995604157448,
+        "managed_rebuild_ms": 156.32650000043213
+      },
+      "add_pocket": {
+        "total_ms": 1094.7716000955552,
+        "native_recompute_ms": 891.5997000876814,
+        "overhead_ms": 203.17190000787377,
+        "intent_signature_ms": 31.63990005850792,
+        "inspection_ms": 26.496399892494082,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.08539995178580284,
+        "managed_rebuild_ms": 899.8159999027848
+      }
+    },
+    {
+      "holes": 44,
+      "add_sketch": {
+        "total_ms": 238.99069987237453,
+        "native_recompute_ms": 150.4404000006616,
+        "overhead_ms": 88.55029987171292,
+        "intent_signature_ms": 25.81709995865822,
+        "inspection_ms": 31.872999854385853,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.030100112780928612,
+        "managed_rebuild_ms": 153.78379984758794
+      },
+      "add_pocket": {
+        "total_ms": 1149.3077999912202,
+        "native_recompute_ms": 959.7736999858171,
+        "overhead_ms": 189.53410000540316,
+        "intent_signature_ms": 30.227100010961294,
+        "inspection_ms": 29.799100011587143,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.07469998672604561,
+        "managed_rebuild_ms": 967.5720001105219
+      }
+    },
+    {
+      "holes": 45,
+      "add_sketch": {
+        "total_ms": 307.3567000683397,
+        "native_recompute_ms": 180.11819990351796,
+        "overhead_ms": 127.23850016482174,
+        "intent_signature_ms": 33.69190008379519,
+        "inspection_ms": 50.43790000490844,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04229997284710407,
+        "managed_rebuild_ms": 184.82810002751648
+      },
+      "add_pocket": {
+        "total_ms": 1239.6610998548567,
+        "native_recompute_ms": 1053.5479001700878,
+        "overhead_ms": 186.11319968476892,
+        "intent_signature_ms": 38.341599982231855,
+        "inspection_ms": 27.814200147986412,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.060900114476680756,
+        "managed_rebuild_ms": 1061.0518001485616
+      }
+    },
+    {
+      "holes": 46,
+      "add_sketch": {
+        "total_ms": 229.02279999107122,
+        "native_recompute_ms": 165.69940000772476,
+        "overhead_ms": 63.32339998334646,
+        "intent_signature_ms": 15.510700177401304,
+        "inspection_ms": 19.215399865061045,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.07520010694861412,
+        "managed_rebuild_ms": 169.80189993046224
+      },
+      "add_pocket": {
+        "total_ms": 990.7754000741988,
+        "native_recompute_ms": 821.5717000421137,
+        "overhead_ms": 169.20370003208518,
+        "intent_signature_ms": 34.353299997746944,
+        "inspection_ms": 18.943100003525615,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.05869986489415169,
+        "managed_rebuild_ms": 827.5821998249739
+      }
+    },
+    {
+      "holes": 47,
+      "add_sketch": {
+        "total_ms": 187.0745001360774,
+        "native_recompute_ms": 121.76480004563928,
+        "overhead_ms": 65.30970009043813,
+        "intent_signature_ms": 16.120499931275845,
+        "inspection_ms": 25.819299975410104,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.013499986380338669,
+        "managed_rebuild_ms": 124.3106999900192
+      },
+      "add_pocket": {
+        "total_ms": 888.8052999973297,
+        "native_recompute_ms": 728.8862999994308,
+        "overhead_ms": 159.91899999789894,
+        "intent_signature_ms": 29.643400106579065,
+        "inspection_ms": 19.28930007852614,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03900006413459778,
+        "managed_rebuild_ms": 735.2163002360612
+      }
+    },
+    {
+      "holes": 48,
+      "add_sketch": {
+        "total_ms": 274.2556999437511,
+        "native_recompute_ms": 169.7420000564307,
+        "overhead_ms": 104.5136998873204,
+        "intent_signature_ms": 30.94210010021925,
+        "inspection_ms": 41.43330012448132,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03739981912076473,
+        "managed_rebuild_ms": 174.75979984737933
+      },
+      "add_pocket": {
+        "total_ms": 1329.8808000981808,
+        "native_recompute_ms": 1100.6213002838194,
+        "overhead_ms": 229.25949981436133,
+        "intent_signature_ms": 39.35910016298294,
+        "inspection_ms": 36.96940001100302,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04639988765120506,
+        "managed_rebuild_ms": 1108.694800408557
+      }
+    },
+    {
+      "holes": 49,
+      "add_sketch": {
+        "total_ms": 222.321999957785,
+        "native_recompute_ms": 153.4163998439908,
+        "overhead_ms": 68.90560011379421,
+        "intent_signature_ms": 19.97649995610118,
+        "inspection_ms": 20.334099885076284,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.062200240790843964,
+        "managed_rebuild_ms": 157.36089972779155
+      },
+      "add_pocket": {
+        "total_ms": 1193.3492000680417,
+        "native_recompute_ms": 1031.4044002443552,
+        "overhead_ms": 161.94479982368648,
+        "intent_signature_ms": 21.268900018185377,
+        "inspection_ms": 29.419700149446726,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.028600217774510384,
+        "managed_rebuild_ms": 1035.7900001108646
+      }
+    },
+    {
+      "holes": 50,
+      "add_sketch": {
+        "total_ms": 354.63340021669865,
+        "native_recompute_ms": 216.73749992623925,
+        "overhead_ms": 137.8959002904594,
+        "intent_signature_ms": 42.515299981459975,
+        "inspection_ms": 48.71989996172488,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04710000939667225,
+        "managed_rebuild_ms": 222.55360009148717
+      },
+      "add_pocket": {
+        "total_ms": 1388.608899898827,
+        "native_recompute_ms": 1147.17060001567,
+        "overhead_ms": 241.43829988315701,
+        "intent_signature_ms": 44.58070010878146,
+        "inspection_ms": 34.1115000192076,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.0629001297056675,
+        "managed_rebuild_ms": 1155.0765000283718
+      }
+    },
+    {
+      "holes": 51,
+      "add_sketch": {
+        "total_ms": 237.1958999428898,
+        "native_recompute_ms": 161.2961001228541,
+        "overhead_ms": 75.8997998200357,
+        "intent_signature_ms": 24.74460005760193,
+        "inspection_ms": 19.673400092869997,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02150004729628563,
+        "managed_rebuild_ms": 164.81059999205172
+      },
+      "add_pocket": {
+        "total_ms": 1256.5623000264168,
+        "native_recompute_ms": 1107.9022001940757,
+        "overhead_ms": 148.66009983234107,
+        "intent_signature_ms": 19.694100134074688,
+        "inspection_ms": 22.67559990286827,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03469991497695446,
+        "managed_rebuild_ms": 1113.4464000351727
+      }
+    },
+    {
+      "holes": 52,
+      "add_sketch": {
+        "total_ms": 234.86199998296797,
+        "native_recompute_ms": 162.82070009037852,
+        "overhead_ms": 72.04129989258945,
+        "intent_signature_ms": 22.214500000700355,
+        "inspection_ms": 19.17019998654723,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.013699987903237343,
+        "managed_rebuild_ms": 166.09559976495802
+      },
+      "add_pocket": {
+        "total_ms": 1205.9695001225919,
+        "native_recompute_ms": 1033.7929998058826,
+        "overhead_ms": 172.17650031670928,
+        "intent_signature_ms": 31.06039995327592,
+        "inspection_ms": 22.068799939006567,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.05079992115497589,
+        "managed_rebuild_ms": 1039.1394002363086
+      }
+    },
+    {
+      "holes": 53,
+      "add_sketch": {
+        "total_ms": 258.89039994217455,
+        "native_recompute_ms": 174.66749995946884,
+        "overhead_ms": 84.22289998270571,
+        "intent_signature_ms": 28.204099973663688,
+        "inspection_ms": 21.260400069877505,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.019500264897942543,
+        "managed_rebuild_ms": 178.35880001075566
+      },
+      "add_pocket": {
+        "total_ms": 1428.0689998995513,
+        "native_recompute_ms": 1209.166799671948,
+        "overhead_ms": 218.90220022760332,
+        "intent_signature_ms": 34.58039998076856,
+        "inspection_ms": 46.748399967327714,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.0420999713242054,
+        "managed_rebuild_ms": 1215.5891000293195
+      }
+    },
+    {
+      "holes": 54,
+      "add_sketch": {
+        "total_ms": 291.9516998808831,
+        "native_recompute_ms": 206.1348999850452,
+        "overhead_ms": 85.8167998958379,
+        "intent_signature_ms": 27.279699919745326,
+        "inspection_ms": 19.01619997806847,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.01940014772117138,
+        "managed_rebuild_ms": 210.38060006685555
+      },
+      "add_pocket": {
+        "total_ms": 1523.9368001930416,
+        "native_recompute_ms": 1326.8968001939356,
+        "overhead_ms": 197.03999999910593,
+        "intent_signature_ms": 25.87129990570247,
+        "inspection_ms": 28.829700080677867,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04239962436258793,
+        "managed_rebuild_ms": 1333.0351999029517
+      }
+    },
+    {
+      "holes": 55,
+      "add_sketch": {
+        "total_ms": 404.3218002188951,
+        "native_recompute_ms": 273.74439989216626,
+        "overhead_ms": 130.57740032672882,
+        "intent_signature_ms": 47.481799963861704,
+        "inspection_ms": 44.50579988770187,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04409998655319214,
+        "managed_rebuild_ms": 279.4471997767687
+      },
+      "add_pocket": {
+        "total_ms": 1532.2918000165373,
+        "native_recompute_ms": 1329.4675997458398,
+        "overhead_ms": 202.82420027069747,
+        "intent_signature_ms": 28.68980006314814,
+        "inspection_ms": 24.900900200009346,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.026599736884236336,
+        "managed_rebuild_ms": 1335.661900229752
+      }
+    },
+    {
+      "holes": 56,
+      "add_sketch": {
+        "total_ms": 374.7533999849111,
+        "native_recompute_ms": 255.8435001410544,
+        "overhead_ms": 118.90989984385669,
+        "intent_signature_ms": 37.658700020983815,
+        "inspection_ms": 36.684100050479174,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.0475000124424696,
+        "managed_rebuild_ms": 260.83160005509853
+      },
+      "add_pocket": {
+        "total_ms": 1568.667400162667,
+        "native_recompute_ms": 1294.737999793142,
+        "overhead_ms": 273.92940036952496,
+        "intent_signature_ms": 43.23019995354116,
+        "inspection_ms": 42.25609987042844,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04989979788661003,
+        "managed_rebuild_ms": 1304.3678998947144
+      }
+    },
+    {
+      "holes": 57,
+      "add_sketch": {
+        "total_ms": 391.1904999986291,
+        "native_recompute_ms": 280.13619990088046,
+        "overhead_ms": 111.05430009774864,
+        "intent_signature_ms": 33.341400092467666,
+        "inspection_ms": 26.263199979439378,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.022300053387880325,
+        "managed_rebuild_ms": 285.81789997406304
+      },
+      "add_pocket": {
+        "total_ms": 1564.1656999941915,
+        "native_recompute_ms": 1273.2334001921117,
+        "overhead_ms": 290.9322998020798,
+        "intent_signature_ms": 52.96100000850856,
+        "inspection_ms": 47.05350007861853,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.038400059565901756,
+        "managed_rebuild_ms": 1280.948399566114
+      }
+    },
+    {
+      "holes": 58,
+      "add_sketch": {
+        "total_ms": 314.4539000932127,
+        "native_recompute_ms": 222.0172001980245,
+        "overhead_ms": 92.43669989518821,
+        "intent_signature_ms": 26.82050014846027,
+        "inspection_ms": 23.447899846360087,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02230028621852398,
+        "managed_rebuild_ms": 227.52860002219677
+      },
+      "add_pocket": {
+        "total_ms": 1419.1187000833452,
+        "native_recompute_ms": 1252.7907001785934,
+        "overhead_ms": 166.32799990475178,
+        "intent_signature_ms": 23.920699954032898,
+        "inspection_ms": 21.299999905750155,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02339971251785755,
+        "managed_rebuild_ms": 1257.5041998643428
+      }
+    },
+    {
+      "holes": 59,
+      "add_sketch": {
+        "total_ms": 267.9709999356419,
+        "native_recompute_ms": 193.98959982208908,
+        "overhead_ms": 73.98140011355281,
+        "intent_signature_ms": 23.23279995471239,
+        "inspection_ms": 22.782500134781003,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.019200146198272705,
+        "managed_rebuild_ms": 198.0178002268076
+      },
+      "add_pocket": {
+        "total_ms": 1906.609500059858,
+        "native_recompute_ms": 1678.3877001143992,
+        "overhead_ms": 228.22179994545877,
+        "intent_signature_ms": 39.589500054717064,
+        "inspection_ms": 32.03939995728433,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.041800085455179214,
+        "managed_rebuild_ms": 1684.8761001601815
+      }
+    },
+    {
+      "holes": 60,
+      "add_sketch": {
+        "total_ms": 349.0705001167953,
+        "native_recompute_ms": 252.10369983687997,
+        "overhead_ms": 96.96680027991533,
+        "intent_signature_ms": 28.334499802440405,
+        "inspection_ms": 28.434199979528785,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.021300045773386955,
+        "managed_rebuild_ms": 256.8902000784874
+      },
+      "add_pocket": {
+        "total_ms": 1431.1794000677764,
+        "native_recompute_ms": 1256.195399677381,
+        "overhead_ms": 174.98400039039552,
+        "intent_signature_ms": 20.476500038057566,
+        "inspection_ms": 20.507500041276217,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.026799971237778664,
+        "managed_rebuild_ms": 1261.9186001829803
+      }
+    }
+  ],
+  "scratch": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\engine-responsiveness-review-working\\plate-af242086d2844fa299e1d0247a14e298\\native-fixtures",
+  "budgets": {
+    "evaluated": false,
+    "phase": "phase0",
+    "failed": false,
+    "reason": "Insufficient samples: thresholds require at least five samples per metric",
+    "metrics": [
+      {
+        "name": "tip_edit.overhead_ms",
+        "median_ms": 84.99290002509952,
+        "target_ms": 150,
+        "best_ms": null,
+        "regression_limit_ms": null,
+        "target_open": false,
+        "confirmation_ms": null,
+        "suspected_regression": false,
+        "failed": false,
+        "available": true,
+        "samples": 3,
+        "best_samples": 0,
+        "confirmation_samples": 0
+      },
+      {
+        "name": "inspect_after_change_ms",
+        "median_ms": 48.38729999028146,
+        "target_ms": 20,
+        "best_ms": null,
+        "regression_limit_ms": null,
+        "target_open": true,
+        "confirmation_ms": null,
+        "suspected_regression": false,
+        "failed": false,
+        "available": true,
+        "samples": 3,
+        "best_samples": 0,
+        "confirmation_samples": 0
+      }
+    ]
+  },
+  "seconds": 182.50005059991963
+}

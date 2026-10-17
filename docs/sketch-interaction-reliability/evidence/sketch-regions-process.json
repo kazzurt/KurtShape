@@ -1,0 +1,17 @@
+{
+  "recipe": "sketch-regions",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-regions\\run-9a41b7518c634eac9a70ccf0eb26840b",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\sketch-regions-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-regions\\run-9a41b7518c634eac9a70ccf0eb26840b\\evidence\\sketch-regions\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-regions\\run-9a41b7518c634eac9a70ccf0eb26840b\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-regions\\run-9a41b7518c634eac9a70ccf0eb26840b\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-regions\\run-9a41b7518c634eac9a70ccf0eb26840b\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T17:08:05.2971550Z",
+  "exited_utc": "2026-10-06T17:08:33.5762479Z",
+  "pid": 75768,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T17:08:33.5793646Z"
+}

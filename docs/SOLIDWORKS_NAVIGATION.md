@@ -13,11 +13,46 @@ Verified on 2026-10-02 against the bundled FreeCAD 1.1.4 Windows runtime, revisi
 | Double middle click | Fit the current view without changing orientation or leaving the sketch |
 | Middle click on an entity | Recenter the view on the picked point |
 | Begin orbit over a face/edge/vertex | Use the picked scene point as pivot |
-| Begin orbit over empty space | Use a point on the camera's focal plane |
+| Begin orbit over empty space | Use the visible model's bounding-box center |
 
 The mappings follow [SolidWorks middle mouse documentation](https://help.solidworks.com/2024/english/SolidWorks/sldworks/r_Middle_Mouse_Button.htm) and [SolidWorks' navigation explanation](https://blogs.solidworks.com/products/solidworks/how-do-i-manipulate-my-model-view-let-me-count-the-ways/). [SolidWorks' shortcuts guide](https://blogs.solidworks.com/products/solidworks/shortcuts-for-solidworks-beginners/) specifies double wheel click for fit. Selection itself does not move the camera or override the hover pivot.
 
+The October 4 follow-up makes orbit predictable without changing those button
+mappings. FreeCAD's native Classic Trackball (`OrbitStyle=3`) maps horizontal
+movement to camera-relative yaw and vertical movement to pitch, avoiding
+incidental roll near viewport edges. `RotationMode=2` retains a picked surface
+pivot and uses model-center rotation over empty space. `ResetCursorPosition`
+is false so the pointer is not repeatedly warped during a drag. This is an
+interaction refinement, not a claim of identical Onshape camera sensitivity.
+The [native implementation](https://raw.githubusercontent.com/FreeCAD/FreeCAD/main/src/Gui/Navigation/NavigationStyle.cpp)
+defines these orbit and pivot modes; [Onshape's view-navigation documentation](https://cad.onshape.com/help/Content/View/view_navigation_and_the_view_cube.htm)
+describes its mouse controls and floor-down option.
+
+Face hover now draws a transient blue boundary, including inner hole boundaries.
+`hover_outline.py` disables the native unified-selection hover renderer only
+while the pointer is over a face, and publishes a normal native preselection
+notification (`type=0`) so shortcuts and selection gates retain the same
+reference. The default scripted notification (`type=1`) bypasses that rendering
+switch and must not be used here. Edge/vertex hover and clicked face selection
+remain native. The overlay is unpickable, respects depth, and never changes
+model or view-provider properties. Leaving the face, orbiting or recomputing
+clears it and restores the native mode.
+
 ## Implementation contract
+
+The October 6 startup correction opens the application maximized on the Windows
+primary monitor. `startup.maximize_on_primary_screen()` clears restored window
+state and explicitly assigns the primary screen before maximizing; a previously
+saved secondary-monitor position no longer wins. Qt handles DPI and taskbar
+space. Screen geometry is copied before moving the window because native
+mixed-DPI transitions can recreate the `QScreen` wrappers.
+
+New empty parts use `navigation.reset_new_document_view()`: orthographic
+isometric view, a 100 mm vertical frame, and a focal point at world origin.
+Only the New command uses this reset. Existing normal/isometric commands still
+preserve the current focus and zoom, and creating a new part preserves the old
+document's camera. Fitting an empty scene or visible origin-plane labels is not
+used to choose the initial camera.
 
 `src/kurtshape/navigation.py` uses FreeCAD's native `Gui::SolidWorksNavigationStyle`, verified by `getNavigationType()`. FreeCAD [implements the modifier mappings in this class](https://raw.githubusercontent.com/FreeCAD/FreeCAD/main/src/Gui/Navigation/SolidWorksNavigationStyle.cpp). A Qt application event filter supplies double middle fit only inside native 3D viewport widgets. Other widgets and mouse events retain their normal handling.
 
@@ -38,8 +73,29 @@ setup on a reopened project leaves `Gui.Document.Modified` false.
 
 ## Evidence and reproducibility
 
+Run `tools/run_gui_recipe.ps1 -Recipe startup-view -TimeoutSeconds 120` for the
+startup regression. Its 10 checks cover a window initially placed on the second
+monitor, primary-screen/maximized native state, origin projection to the center
+of the viewport for startup and New, a 100 mm span, and preservation of existing
+document/navigation cameras. The hidden test does not measure visible desktop
+coverage: `WA_DontShowOnScreen` retains the restore rectangle while Qt reports
+the maximized window state. The focused native navigation suite additionally
+checks that a camera starting far from the origin at a 25000 mm span resets.
+
 `tests/test_navigation.py` has five passing geometric tests covering oblique rays, translated/tilted planes, direction scaling, native ray delegation, and edge-on/non-finite rejection. `tools/navigation-validation.FCMacro` sends QtTest presses/releases and direct Qt movement/wheel events to FreeCAD's native viewport. Its 16 checks cover picked-face pivot, 3D sketch entry, controls and double middle fit inside Sketcher, perspective projection on a tilted plane, and the tilted sketch's normal view. `validation/navigation-test-result.json` records camera quaternions, positions, scale, native style, runtime revision, and assertions. `validation/navigation-sketch-3d.png` captures a native sketch remaining in edit from an isometric view.
 
 Run the macro using the bundled `bin/freecad.exe` with `-u` and `-s` pointing to independent config files under `runtime/navigation-validation`; set `KURTSHAPE_ROOT`, `FREECAD_USER_HOME`, `TEMP`, `TMP`, `APPDATA`, and `LOCALAPPDATA` under that directory. Launch the helper with PowerShell `Start-Process -WindowStyle Hidden`. The macro additionally uses `WA_DontShowOnScreen` and closes only its own documents/window.
 
 The script proves camera behavior and projection calculations in the installed native viewport. Physical mouse comfort, driver behavior, and the combined KurtShape workflow still need a hands-on check. This does not claim exact SolidWorks camera sensitivity or every optional SolidWorks mouse mode; Alt roll and Ctrl+Alt camera-view motion are outside this pass's declared controls.
+
+The October 4 targeted recipe is `tools/validate-view-interaction.ps1`, which
+launches `tools/view-interaction-validation.FCMacro` in a separate hidden GUI
+with fresh configuration. Its report and actual Qt viewport captures are under
+the printed session's `evidence/view-interaction/`. Six checks verify unchanged
+gray face interior on hover (`#92989e`), cyan native filled selection on click
+(`#cdf3ff`), native preselection, cleanup on recompute, and yaw with no roll
+when dragging far from the viewport center. Camera, document modified state
+and BRep remain unchanged through hover and click. Use `QWidget.grab()` for
+native highlight evidence: FreeCAD's `saveImage()` omits native hover/selection
+rendering. Eight focused geometry tests cover sketch projection and curved,
+placed and holed face boundaries.

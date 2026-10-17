@@ -1,0 +1,1413 @@
+{
+  "passed": true,
+  "method": "Hidden FreeCAD GUI; Qt events synthesized inside this process; native fixture through Panel.operation",
+  "checks": [
+    "Qt shell started using the isolated profile",
+    "Real native plate volume and feature geometry verified",
+    "Repeated real Panel refresh retains every stable history row",
+    "shell measured inside the hidden GUI process",
+    "Recent input defers the native recovery snapshot",
+    "gui_checkpoint measured inside the hidden GUI process",
+    "event_filters measured inside the hidden GUI process",
+    "edits metrics measured through the current native APIs",
+    "inspect metrics measured through the current native APIs",
+    "checkpoint metrics measured through the current native APIs",
+    "preview metrics measured through the current native APIs"
+  ],
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "base_commit": "559e034de3522c325423057b048f955405c522af",
+  "run_id": "2026-10-06T03:13:44.244630+00:00/78688",
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_processors": 32,
+    "platform": "Windows-10-10.0.26200"
+  },
+  "fixture": {
+    "kind": "plate",
+    "holes": 20,
+    "grid": 5,
+    "pitch_mm": 100.0,
+    "hole_diameter_mm": 45.0,
+    "objects": 52,
+    "faces": 26,
+    "expected_volume_mm3": 3938296.49258884
+  },
+  "sections": {
+    "startup": {
+      "status": "ok",
+      "metrics": [
+        "startup_ms"
+      ]
+    },
+    "shell": {
+      "status": "ok",
+      "metrics": [
+        "panel_refresh_ms",
+        "tick_after_refresh_flag_ms",
+        "tick_idle_ms"
+      ]
+    },
+    "gui_checkpoint": {
+      "status": "ok",
+      "metrics": [
+        "checkpoint_projects_idle_ms",
+        "checkpoint_projects_native_snapshot_ms"
+      ]
+    },
+    "event_filters": {
+      "status": "ok",
+      "metrics": [
+        "app_event_filters_with_ms",
+        "app_event_filters_without_ms"
+      ]
+    },
+    "edits": {
+      "status": "ok",
+      "metrics": [
+        "add_pocket.auto_scope_sync_ms",
+        "add_pocket.inspection_ms",
+        "add_pocket.intent_signature_ms",
+        "add_pocket.managed_rebuild_ms",
+        "add_pocket.native_recompute_ms",
+        "add_pocket.overhead_ms",
+        "add_pocket.selector_evaluation_ms",
+        "add_pocket.total_ms",
+        "add_sketch.auto_scope_sync_ms",
+        "add_sketch.inspection_ms",
+        "add_sketch.intent_signature_ms",
+        "add_sketch.managed_rebuild_ms",
+        "add_sketch.native_recompute_ms",
+        "add_sketch.overhead_ms",
+        "add_sketch.selector_evaluation_ms",
+        "add_sketch.total_ms",
+        "tip_edit.auto_scope_sync_ms",
+        "tip_edit.inspection_ms",
+        "tip_edit.intent_signature_ms",
+        "tip_edit.managed_rebuild_ms",
+        "tip_edit.native_recompute_ms",
+        "tip_edit.overhead_ms",
+        "tip_edit.selector_evaluation_ms",
+        "tip_edit.total_ms",
+        "upstream_edit.auto_scope_sync_ms",
+        "upstream_edit.inspection_ms",
+        "upstream_edit.intent_signature_ms",
+        "upstream_edit.managed_rebuild_ms",
+        "upstream_edit.native_recompute_ms",
+        "upstream_edit.overhead_ms",
+        "upstream_edit.selector_evaluation_ms",
+        "upstream_edit.total_ms"
+      ]
+    },
+    "inspect": {
+      "status": "ok",
+      "metrics": [
+        "inspect_after_change_ms",
+        "inspect_warm_ms"
+      ]
+    },
+    "checkpoint": {
+      "status": "ok",
+      "metrics": [
+        "checkpoint_ms"
+      ]
+    },
+    "preview": {
+      "status": "ok",
+      "metrics": [
+        "preview_first_ms",
+        "preview_update_ms"
+      ]
+    }
+  },
+  "timings": {
+    "startup_ms": {
+      "median": 9747.991400072351,
+      "p95": 9747.991400072351,
+      "worst": 9747.991400072351,
+      "samples": [
+        9747.991400072351
+      ]
+    },
+    "panel_refresh_ms": {
+      "median": 10.524099925532937,
+      "p95": 11.459400178864598,
+      "worst": 11.459400178864598,
+      "samples": [
+        11.459400178864598,
+        10.524099925532937,
+        6.056200014427304
+      ]
+    },
+    "tick_idle_ms": {
+      "median": 0.019799917936325073,
+      "p95": 0.026799971237778664,
+      "worst": 0.19440008327364922,
+      "samples": [
+        0.06820005364716053,
+        0.02719997428357601,
+        0.0241999514400959,
+        0.02210005186498165,
+        0.02259993925690651,
+        0.037700170651078224,
+        0.019900035113096237,
+        0.019300030544400215,
+        0.020300038158893585,
+        0.02059992402791977,
+        0.02059992402791977,
+        0.02050003968179226,
+        0.02040015533566475,
+        0.020399922505021095,
+        0.02059992402791977,
+        0.02050003968179226,
+        0.021900050342082977,
+        0.020200153812766075,
+        0.02019992098212242,
+        0.019799917936325073,
+        0.01950003206729889,
+        0.0200001522898674,
+        0.0195999164134264,
+        0.019300030544400215,
+        0.0200001522898674,
+        0.019999919459223747,
+        0.0195999164134264,
+        0.01950003206729889,
+        0.019799917936325073,
+        0.019799917936325073,
+        0.02340017817914486,
+        0.02010003663599491,
+        0.020600156858563423,
+        0.020200153812766075,
+        0.02050003968179226,
+        0.019900035113096237,
+        0.02019992098212242,
+        0.019999919459223747,
+        0.01850002445280552,
+        0.018399907276034355,
+        0.01819990575313568,
+        0.018499791622161865,
+        0.01819990575313568,
+        0.017700018361210823,
+        0.017900019884109497,
+        0.022899825125932693,
+        0.021300045773386955,
+        0.01810002140700817,
+        0.017700018361210823,
+        0.018099788576364517,
+        0.01759990118443966,
+        0.01759990118443966,
+        0.01750001683831215,
+        0.017700018361210823,
+        0.01759990118443966,
+        0.017499784007668495,
+        0.017900019884109497,
+        0.017800135537981987,
+        0.01750001683831215,
+        0.017399899661540985,
+        0.017700018361210823,
+        0.01719989813864231,
+        0.01750001683831215,
+        0.02059992402791977,
+        0.01910002902150154,
+        0.019999919459223747,
+        0.01810002140700817,
+        0.018200138583779335,
+        0.01750001683831215,
+        0.017399899661540985,
+        0.017799902707338333,
+        0.01759990118443966,
+        0.017600134015083313,
+        0.01750001683831215,
+        0.0171000137925148,
+        0.016900012269616127,
+        0.01750001683831215,
+        0.018300022929906845,
+        0.017900019884109497,
+        0.017799902707338333,
+        0.017900019884109497,
+        0.01810002140700817,
+        0.017900019884109497,
+        0.01819990575313568,
+        0.01819990575313568,
+        0.19440008327364922,
+        0.0420999713242054,
+        0.030800001695752144,
+        0.028399983420968056,
+        0.02769986167550087,
+        0.02619996666908264,
+        0.025700079277157784,
+        0.025900080800056458,
+        0.025399960577487946,
+        0.024999957531690598,
+        0.02510007470846176,
+        0.02519995905458927,
+        0.02500019036233425,
+        0.024700071662664413,
+        0.024900073185563087,
+        0.024200184270739555,
+        0.024399952962994576,
+        0.024399952962994576,
+        0.024600187316536903,
+        0.024399952962994576,
+        0.023900065571069717,
+        0.023999949917197227,
+        0.024200184270739555,
+        0.0241999514400959,
+        0.025900080800056458,
+        0.02550007775425911,
+        0.025900080800056458,
+        0.025799963623285294,
+        0.026399968191981316,
+        0.026300083845853806,
+        0.026099849492311478,
+        0.02559996210038662,
+        0.025900080800056458,
+        0.02559996210038662,
+        0.026999972760677338,
+        0.026499852538108826,
+        0.025799963623285294,
+        0.026099849492311478,
+        0.026799971237778664,
+        0.0266998540610075,
+        0.026200199499726295,
+        0.02559996210038662,
+        0.025799963623285294,
+        0.026300083845853806,
+        0.026700086891651154,
+        0.025999965146183968,
+        0.02610008232295513,
+        0.02640020102262497,
+        0.026300083845853806,
+        0.026499852538108826,
+        0.025799963623285294,
+        0.025200191885232925,
+        0.025999965146183968,
+        0.0241999514400959,
+        0.01840014010667801,
+        0.018300022929906845,
+        0.018700025975704193,
+        0.01850002445280552,
+        0.018900027498602867,
+        0.019300030544400215,
+        0.01950003206729889,
+        0.019900035113096237,
+        0.019799917936325073,
+        0.019900035113096237,
+        0.01900014467537403,
+        0.018499791622161865,
+        0.01810002140700817,
+        0.03700004890561104,
+        0.02050003968179226,
+        0.019200146198272705,
+        0.019200146198272705,
+        0.018800143152475357,
+        0.018999911844730377,
+        0.01850002445280552,
+        0.018800143152475357,
+        0.018600141629576683,
+        0.018800143152475357,
+        0.01919991336762905,
+        0.019200146198272705,
+        0.01940014772117138,
+        0.018800143152475357,
+        0.019399914890527725,
+        0.01910002902150154,
+        0.018700025975704193,
+        0.018800143152475357,
+        0.01859990879893303,
+        0.018900027498602867,
+        0.01940014772117138,
+        0.022399937734007835,
+        0.01840014010667801,
+        0.01910002902150154,
+        0.01950003206729889,
+        0.01919991336762905,
+        0.02240017056465149,
+        0.0195999164134264,
+        0.01969980075955391,
+        0.02119992859661579,
+        0.01919991336762905,
+        0.018799910321831703,
+        0.02040015533566475,
+        0.019600149244070053,
+        0.019300030544400215,
+        0.019600149244070053,
+        0.02110004425048828,
+        0.018799910321831703,
+        0.01919991336762905,
+        0.019300030544400215,
+        0.019300030544400215,
+        0.021099811419844627,
+        0.019300030544400215,
+        0.019399914890527725,
+        0.019600149244070053,
+        0.019900035113096237,
+        0.0195999164134264,
+        0.019399914890527725
+      ]
+    },
+    "tick_after_refresh_flag_ms": {
+      "median": 12.755699921399355,
+      "p95": 23.421299876645207,
+      "worst": 23.421299876645207,
+      "samples": [
+        10.012899991124868,
+        12.755699921399355,
+        23.421299876645207
+      ]
+    },
+    "checkpoint_projects_native_snapshot_ms": {
+      "median": 250.33009983599186,
+      "p95": 274.2864000611007,
+      "worst": 274.2864000611007,
+      "samples": [
+        274.2864000611007,
+        250.33009983599186,
+        239.40619989298284
+      ]
+    },
+    "checkpoint_projects_idle_ms": {
+      "median": 5.023299949243665,
+      "p95": 7.651499938219786,
+      "worst": 12.205400038510561,
+      "samples": [
+        5.877800052985549,
+        6.049999967217445,
+        4.812599858269095,
+        5.280300043523312,
+        6.269100122153759,
+        4.981799982488155,
+        12.205400038510561,
+        4.998600110411644,
+        4.871100187301636,
+        7.651499938219786,
+        5.016400013118982,
+        4.744699923321605,
+        4.650000017136335,
+        5.0969000440090895,
+        4.670300055295229,
+        4.949799971655011,
+        5.030199885368347,
+        4.763099830597639,
+        5.084100179374218,
+        6.563599919900298
+      ]
+    },
+    "app_event_filters_with_ms": {
+      "median": 802.450800081715,
+      "p95": 849.8745998367667,
+      "worst": 849.8745998367667,
+      "samples": [
+        849.8745998367667,
+        766.2882001604885,
+        802.450800081715
+      ]
+    },
+    "app_event_filters_without_ms": {
+      "median": 333.97270017303526,
+      "p95": 348.0019001290202,
+      "worst": 348.0019001290202,
+      "samples": [
+        289.59579998627305,
+        333.97270017303526,
+        348.0019001290202
+      ]
+    },
+    "tip_edit.total_ms": {
+      "median": 364.5067000761628,
+      "p95": 380.4055000655353,
+      "worst": 380.4055000655353,
+      "samples": [
+        352.0651999861002,
+        364.5067000761628,
+        380.4055000655353
+      ]
+    },
+    "tip_edit.native_recompute_ms": {
+      "median": 255.36449998617172,
+      "p95": 262.99309986643493,
+      "worst": 262.99309986643493,
+      "samples": [
+        262.99309986643493,
+        217.0268998015672,
+        255.36449998617172
+      ]
+    },
+    "tip_edit.overhead_ms": {
+      "median": 125.04100007936358,
+      "p95": 147.47980027459562,
+      "worst": 147.47980027459562,
+      "samples": [
+        89.07210011966527,
+        147.47980027459562,
+        125.04100007936358
+      ]
+    },
+    "tip_edit.intent_signature_ms": {
+      "median": 14.775200048461556,
+      "p95": 22.752499906346202,
+      "worst": 22.752499906346202,
+      "samples": [
+        14.024700038135052,
+        22.752499906346202,
+        14.775200048461556
+      ]
+    },
+    "tip_edit.inspection_ms": {
+      "median": 51.423300290480256,
+      "p95": 52.59239999577403,
+      "worst": 52.59239999577403,
+      "samples": [
+        31.975799705833197,
+        52.59239999577403,
+        51.423300290480256
+      ]
+    },
+    "tip_edit.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "tip_edit.auto_scope_sync_ms": {
+      "median": 0.016900012269616127,
+      "p95": 0.018600141629576683,
+      "worst": 0.018600141629576683,
+      "samples": [
+        0.016800127923488617,
+        0.016900012269616127,
+        0.018600141629576683
+      ]
+    },
+    "tip_edit.managed_rebuild_ms": {
+      "median": 256.99990009889007,
+      "p95": 264.5974000915885,
+      "worst": 264.5974000915885,
+      "samples": [
+        264.5974000915885,
+        218.9951001200825,
+        256.99990009889007
+      ]
+    },
+    "upstream_edit.total_ms": {
+      "median": 1435.3444001171738,
+      "p95": 1483.3938002120703,
+      "worst": 1483.3938002120703,
+      "samples": [
+        1483.3938002120703,
+        1158.5788999218494,
+        1435.3444001171738
+      ]
+    },
+    "upstream_edit.native_recompute_ms": {
+      "median": 1337.277099955827,
+      "p95": 1351.3346000108868,
+      "worst": 1351.3346000108868,
+      "samples": [
+        1351.3346000108868,
+        1065.4734000563622,
+        1337.277099955827
+      ]
+    },
+    "upstream_edit.overhead_ms": {
+      "median": 98.0673001613468,
+      "p95": 132.05920020118356,
+      "worst": 132.05920020118356,
+      "samples": [
+        132.05920020118356,
+        93.10549986548722,
+        98.0673001613468
+      ]
+    },
+    "upstream_edit.intent_signature_ms": {
+      "median": 15.029599890112877,
+      "p95": 22.830599918961525,
+      "worst": 22.830599918961525,
+      "samples": [
+        22.830599918961525,
+        15.029599890112877,
+        10.05859998986125
+      ]
+    },
+    "upstream_edit.inspection_ms": {
+      "median": 36.051300121471286,
+      "p95": 59.056899743154645,
+      "worst": 59.056899743154645,
+      "samples": [
+        59.056899743154645,
+        35.919600166380405,
+        36.051300121471286
+      ]
+    },
+    "upstream_edit.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "upstream_edit.auto_scope_sync_ms": {
+      "median": 0.01850002445280552,
+      "p95": 0.031299889087677,
+      "worst": 0.031299889087677,
+      "samples": [
+        0.01850002445280552,
+        0.017900019884109497,
+        0.031299889087677
+      ]
+    },
+    "upstream_edit.managed_rebuild_ms": {
+      "median": 1338.9022001065314,
+      "p95": 1353.5478999838233,
+      "worst": 1353.5478999838233,
+      "samples": [
+        1353.5478999838233,
+        1067.0002999249846,
+        1338.9022001065314
+      ]
+    },
+    "add_sketch.total_ms": {
+      "median": 247.6525001693517,
+      "p95": 250.28829998336732,
+      "worst": 250.28829998336732,
+      "samples": [
+        224.15720019489527,
+        250.28829998336732,
+        247.6525001693517
+      ]
+    },
+    "add_sketch.native_recompute_ms": {
+      "median": 124.33520006015897,
+      "p95": 126.36390002444386,
+      "worst": 126.36390002444386,
+      "samples": [
+        113.44759981147945,
+        124.33520006015897,
+        126.36390002444386
+      ]
+    },
+    "add_sketch.overhead_ms": {
+      "median": 121.28860014490783,
+      "p95": 125.95309992320836,
+      "worst": 125.95309992320836,
+      "samples": [
+        110.70960038341582,
+        125.95309992320836,
+        121.28860014490783
+      ]
+    },
+    "add_sketch.intent_signature_ms": {
+      "median": 16.915000043809414,
+      "p95": 17.91649986989796,
+      "worst": 17.91649986989796,
+      "samples": [
+        16.915000043809414,
+        9.125699987635016,
+        17.91649986989796
+      ]
+    },
+    "add_sketch.inspection_ms": {
+      "median": 39.574099937453866,
+      "p95": 58.307799976319075,
+      "worst": 58.307799976319075,
+      "samples": [
+        39.574099937453866,
+        58.307799976319075,
+        39.04419997707009
+      ]
+    },
+    "add_sketch.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "add_sketch.auto_scope_sync_ms": {
+      "median": 0.0679998192936182,
+      "p95": 0.17950008623301983,
+      "worst": 0.17950008623301983,
+      "samples": [
+        0.0679998192936182,
+        0.038699712604284286,
+        0.17950008623301983
+      ]
+    },
+    "add_sketch.managed_rebuild_ms": {
+      "median": 127.89829983375967,
+      "p95": 130.56709989905357,
+      "worst": 130.56709989905357,
+      "samples": [
+        117.58270021528006,
+        127.89829983375967,
+        130.56709989905357
+      ]
+    },
+    "add_pocket.total_ms": {
+      "median": 821.9085999298841,
+      "p95": 865.4771000146866,
+      "worst": 865.4771000146866,
+      "samples": [
+        821.9085999298841,
+        865.4771000146866,
+        665.5324001330882
+      ]
+    },
+    "add_pocket.native_recompute_ms": {
+      "median": 684.0852000750601,
+      "p95": 714.2535001039505,
+      "worst": 714.2535001039505,
+      "samples": [
+        684.0852000750601,
+        714.2535001039505,
+        525.0060998369008
+      ]
+    },
+    "add_pocket.overhead_ms": {
+      "median": 140.5263002961874,
+      "p95": 151.22359991073608,
+      "worst": 151.22359991073608,
+      "samples": [
+        137.82339985482395,
+        151.22359991073608,
+        140.5263002961874
+      ]
+    },
+    "add_pocket.intent_signature_ms": {
+      "median": 16.243600053712726,
+      "p95": 16.885300166904926,
+      "worst": 16.885300166904926,
+      "samples": [
+        16.243600053712726,
+        16.885300166904926,
+        15.58670005761087
+      ]
+    },
+    "add_pocket.inspection_ms": {
+      "median": 35.02339986152947,
+      "p95": 37.65509999357164,
+      "worst": 37.65509999357164,
+      "samples": [
+        37.65509999357164,
+        33.39200001209974,
+        35.02339986152947
+      ]
+    },
+    "add_pocket.selector_evaluation_ms": {
+      "median": 0.0,
+      "p95": 0.0,
+      "worst": 0.0,
+      "samples": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "add_pocket.auto_scope_sync_ms": {
+      "median": 0.07639988325536251,
+      "p95": 0.09999983012676239,
+      "worst": 0.09999983012676239,
+      "samples": [
+        0.07639988325536251,
+        0.09999983012676239,
+        0.054900068789720535
+      ]
+    },
+    "add_pocket.managed_rebuild_ms": {
+      "median": 690.4826001264155,
+      "p95": 723.859999794513,
+      "worst": 723.859999794513,
+      "samples": [
+        690.4826001264155,
+        723.859999794513,
+        530.745199881494
+      ]
+    },
+    "inspect_warm_ms": {
+      "median": 16.452900134027004,
+      "p95": 24.16080003604293,
+      "worst": 24.16080003604293,
+      "samples": [
+        15.99779981188476,
+        16.452900134027004,
+        24.16080003604293
+      ]
+    },
+    "inspect_after_change_ms": {
+      "median": 16.85340004041791,
+      "p95": 41.552500100806355,
+      "worst": 41.552500100806355,
+      "samples": [
+        16.85340004041791,
+        41.552500100806355,
+        8.461100049316883
+      ]
+    },
+    "checkpoint_ms": {
+      "median": 528.5221000667661,
+      "p95": 561.7762999609113,
+      "worst": 561.7762999609113,
+      "samples": [
+        561.7762999609113,
+        513.576400000602,
+        528.5221000667661
+      ]
+    },
+    "preview_first_ms": {
+      "median": 2040.9580999985337,
+      "p95": 2348.8527999725193,
+      "worst": 2348.8527999725193,
+      "samples": [
+        2348.8527999725193,
+        2040.9580999985337,
+        1973.9596000872552
+      ]
+    },
+    "preview_update_ms": {
+      "median": 1631.4976001158357,
+      "p95": 1734.591000014916,
+      "worst": 1734.591000014916,
+      "samples": [
+        1631.4976001158357,
+        1734.591000014916,
+        1429.3442000634968
+      ]
+    }
+  },
+  "limits": "Synthetic native fixtures; wall time includes controller work. No user comfort, Onshape parity or hosted CI claim. Profile and native geometry artifacts remain in isolated scratch.",
+  "gui_process_pid": 78688,
+  "repeat": 3,
+  "measurement_level": false,
+  "measurement_policy": "Contract3: false counts only; true volume/area/bbox; full adds solid mass center. No automatic BRepCheck. Older true baselines include the former full/check work.",
+  "growth": [
+    {
+      "holes": 1,
+      "add_sketch": {
+        "total_ms": 51.37269990518689,
+        "native_recompute_ms": 14.176199678331614,
+        "overhead_ms": 37.19650022685528,
+        "intent_signature_ms": 1.4603999443352222,
+        "inspection_ms": 7.401299895718694,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.035700155422091484,
+        "managed_rebuild_ms": 14.905400108546019
+      },
+      "add_pocket": {
+        "total_ms": 109.25219999626279,
+        "native_recompute_ms": 57.233700063079596,
+        "overhead_ms": 52.01849993318319,
+        "intent_signature_ms": 2.4199001491069794,
+        "inspection_ms": 7.77290016412735,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.08379993960261345,
+        "managed_rebuild_ms": 59.1726996935904
+      }
+    },
+    {
+      "holes": 2,
+      "add_sketch": {
+        "total_ms": 92.33599994331598,
+        "native_recompute_ms": 31.379099935293198,
+        "overhead_ms": 60.956900008022785,
+        "intent_signature_ms": 3.34420008584857,
+        "inspection_ms": 14.80709994211793,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.058099860325455666,
+        "managed_rebuild_ms": 33.08710013516247
+      },
+      "add_pocket": {
+        "total_ms": 128.23229981586337,
+        "native_recompute_ms": 68.76869988627732,
+        "overhead_ms": 59.46359992958605,
+        "intent_signature_ms": 4.7067999839782715,
+        "inspection_ms": 11.419599875807762,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.08990010246634483,
+        "managed_rebuild_ms": 71.20629982091486
+      }
+    },
+    {
+      "holes": 3,
+      "add_sketch": {
+        "total_ms": 59.841200010851026,
+        "native_recompute_ms": 21.452000131830573,
+        "overhead_ms": 38.38919987902045,
+        "intent_signature_ms": 2.9970998875796795,
+        "inspection_ms": 8.425400126725435,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.044700223952531815,
+        "managed_rebuild_ms": 22.508699912577868
+      },
+      "add_pocket": {
+        "total_ms": 138.5550000704825,
+        "native_recompute_ms": 76.97060005739331,
+        "overhead_ms": 61.58440001308918,
+        "intent_signature_ms": 5.478200037032366,
+        "inspection_ms": 11.09290006570518,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04820013418793678,
+        "managed_rebuild_ms": 78.78320012241602
+      }
+    },
+    {
+      "holes": 4,
+      "add_sketch": {
+        "total_ms": 65.43409987352788,
+        "native_recompute_ms": 22.017800249159336,
+        "overhead_ms": 43.41629962436855,
+        "intent_signature_ms": 4.3750000186264515,
+        "inspection_ms": 10.045800125226378,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.02769986167550087,
+        "managed_rebuild_ms": 23.02270010113716
+      },
+      "add_pocket": {
+        "total_ms": 130.87420002557337,
+        "native_recompute_ms": 82.08049973472953,
+        "overhead_ms": 48.793700290843844,
+        "intent_signature_ms": 3.9133999962359667,
+        "inspection_ms": 11.273999931290746,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04169996827840805,
+        "managed_rebuild_ms": 83.7411000393331
+      }
+    },
+    {
+      "holes": 5,
+      "add_sketch": {
+        "total_ms": 77.2019000723958,
+        "native_recompute_ms": 29.07359995879233,
+        "overhead_ms": 48.12830011360347,
+        "intent_signature_ms": 4.188299877569079,
+        "inspection_ms": 12.886099983006716,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.029999995604157448,
+        "managed_rebuild_ms": 30.221700202673674
+      },
+      "add_pocket": {
+        "total_ms": 168.07550005614758,
+        "native_recompute_ms": 104.91269989870489,
+        "overhead_ms": 63.16280015744269,
+        "intent_signature_ms": 2.6705998461693525,
+        "inspection_ms": 14.069399796426296,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.06540026515722275,
+        "managed_rebuild_ms": 106.87459982000291
+      }
+    },
+    {
+      "holes": 6,
+      "add_sketch": {
+        "total_ms": 114.93559996597469,
+        "native_recompute_ms": 40.79009988345206,
+        "overhead_ms": 74.14550008252263,
+        "intent_signature_ms": 5.328099941834807,
+        "inspection_ms": 23.414100287482142,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03920006565749645,
+        "managed_rebuild_ms": 42.48059983365238
+      },
+      "add_pocket": {
+        "total_ms": 207.10060000419617,
+        "native_recompute_ms": 147.27760036475956,
+        "overhead_ms": 59.8229996394366,
+        "intent_signature_ms": 5.594300106167793,
+        "inspection_ms": 13.864399865269661,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.07589999586343765,
+        "managed_rebuild_ms": 150.01900005154312
+      }
+    },
+    {
+      "holes": 7,
+      "add_sketch": {
+        "total_ms": 104.42209988832474,
+        "native_recompute_ms": 38.50660007447004,
+        "overhead_ms": 65.9154998138547,
+        "intent_signature_ms": 5.484800087288022,
+        "inspection_ms": 17.35229999758303,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.031899893656373024,
+        "managed_rebuild_ms": 40.130699751898646
+      },
+      "add_pocket": {
+        "total_ms": 238.62459999509156,
+        "native_recompute_ms": 146.78049995563924,
+        "overhead_ms": 91.84410003945231,
+        "intent_signature_ms": 7.601300021633506,
+        "inspection_ms": 23.33949995227158,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.06599980406463146,
+        "managed_rebuild_ms": 149.9122001696378
+      }
+    },
+    {
+      "holes": 8,
+      "add_sketch": {
+        "total_ms": 94.16099986992776,
+        "native_recompute_ms": 34.48910010047257,
+        "overhead_ms": 59.671899769455194,
+        "intent_signature_ms": 6.4796998631209135,
+        "inspection_ms": 20.279199816286564,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.039700185880064964,
+        "managed_rebuild_ms": 36.03910002857447
+      },
+      "add_pocket": {
+        "total_ms": 246.25020008534193,
+        "native_recompute_ms": 141.66590035893023,
+        "overhead_ms": 104.5842997264117,
+        "intent_signature_ms": 14.436099911108613,
+        "inspection_ms": 17.65200006775558,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.060999998822808266,
+        "managed_rebuild_ms": 144.98319989070296
+      }
+    },
+    {
+      "holes": 9,
+      "add_sketch": {
+        "total_ms": 110.46670004725456,
+        "native_recompute_ms": 42.6901001483202,
+        "overhead_ms": 67.77659989893436,
+        "intent_signature_ms": 7.67620000988245,
+        "inspection_ms": 19.770999904721975,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.029299873858690262,
+        "managed_rebuild_ms": 44.39480020664632
+      },
+      "add_pocket": {
+        "total_ms": 285.27319990098476,
+        "native_recompute_ms": 189.15749969892204,
+        "overhead_ms": 96.11570020206273,
+        "intent_signature_ms": 11.111400090157986,
+        "inspection_ms": 16.5049999486655,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.06399978883564472,
+        "managed_rebuild_ms": 198.8538997247815
+      }
+    },
+    {
+      "holes": 10,
+      "add_sketch": {
+        "total_ms": 109.36020012013614,
+        "native_recompute_ms": 46.13210028037429,
+        "overhead_ms": 63.22809983976185,
+        "intent_signature_ms": 7.2685000486671925,
+        "inspection_ms": 17.20999996177852,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.05810009315609932,
+        "managed_rebuild_ms": 48.11060009524226
+      },
+      "add_pocket": {
+        "total_ms": 256.38250005431473,
+        "native_recompute_ms": 183.81419987417758,
+        "overhead_ms": 72.56830018013716,
+        "intent_signature_ms": 7.78160011395812,
+        "inspection_ms": 19.26730014383793,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.044999876990914345,
+        "managed_rebuild_ms": 186.67039996944368
+      }
+    },
+    {
+      "holes": 11,
+      "add_sketch": {
+        "total_ms": 125.50359987653792,
+        "native_recompute_ms": 56.12500011920929,
+        "overhead_ms": 69.37859975732863,
+        "intent_signature_ms": 9.18729999102652,
+        "inspection_ms": 20.463300170376897,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.035899924114346504,
+        "managed_rebuild_ms": 58.355299988761544
+      },
+      "add_pocket": {
+        "total_ms": 782.8846001066267,
+        "native_recompute_ms": 670.6713000312448,
+        "overhead_ms": 112.213300075382,
+        "intent_signature_ms": 11.211200151592493,
+        "inspection_ms": 30.274600023403764,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.2615998964756727,
+        "managed_rebuild_ms": 676.7529002390802
+      }
+    },
+    {
+      "holes": 12,
+      "add_sketch": {
+        "total_ms": 189.47900016792119,
+        "native_recompute_ms": 115.8475000411272,
+        "overhead_ms": 73.63150012679398,
+        "intent_signature_ms": 18.014900153502822,
+        "inspection_ms": 14.622400049120188,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.08700019679963589,
+        "managed_rebuild_ms": 119.62459981441498
+      },
+      "add_pocket": {
+        "total_ms": 367.7366999909282,
+        "native_recompute_ms": 281.5187000669539,
+        "overhead_ms": 86.21799992397428,
+        "intent_signature_ms": 8.682399988174438,
+        "inspection_ms": 19.748599966987967,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04770001396536827,
+        "managed_rebuild_ms": 285.3413000702858
+      }
+    },
+    {
+      "holes": 13,
+      "add_sketch": {
+        "total_ms": 125.48970011994243,
+        "native_recompute_ms": 56.59450008533895,
+        "overhead_ms": 68.89520003460348,
+        "intent_signature_ms": 9.656700072810054,
+        "inspection_ms": 21.276399726048112,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.031499890610575676,
+        "managed_rebuild_ms": 58.87969979085028
+      },
+      "add_pocket": {
+        "total_ms": 373.331599868834,
+        "native_recompute_ms": 285.06030002608895,
+        "overhead_ms": 88.27129984274507,
+        "intent_signature_ms": 9.6151998732239,
+        "inspection_ms": 21.958000026643276,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04260009154677391,
+        "managed_rebuild_ms": 288.573200115934
+      }
+    },
+    {
+      "holes": 14,
+      "add_sketch": {
+        "total_ms": 135.30359999276698,
+        "native_recompute_ms": 61.438099946826696,
+        "overhead_ms": 73.86550004594028,
+        "intent_signature_ms": 10.490099899470806,
+        "inspection_ms": 24.606999941170216,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.0320998951792717,
+        "managed_rebuild_ms": 63.79009992815554
+      },
+      "add_pocket": {
+        "total_ms": 466.8562998995185,
+        "native_recompute_ms": 372.19870020635426,
+        "overhead_ms": 94.65759969316423,
+        "intent_signature_ms": 11.789300013333559,
+        "inspection_ms": 23.444199934601784,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04650000482797623,
+        "managed_rebuild_ms": 375.81970007158816
+      }
+    },
+    {
+      "holes": 15,
+      "add_sketch": {
+        "total_ms": 166.9526998884976,
+        "native_recompute_ms": 81.39629987999797,
+        "overhead_ms": 85.55640000849962,
+        "intent_signature_ms": 10.879599954932928,
+        "inspection_ms": 28.745200019329786,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.07209996692836285,
+        "managed_rebuild_ms": 85.06760001182556
+      },
+      "add_pocket": {
+        "total_ms": 470.5307998228818,
+        "native_recompute_ms": 349.4327999651432,
+        "overhead_ms": 121.09799985773861,
+        "intent_signature_ms": 13.579200021922588,
+        "inspection_ms": 28.011699905619025,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.07070018909871578,
+        "managed_rebuild_ms": 354.3011003639549
+      }
+    },
+    {
+      "holes": 16,
+      "add_sketch": {
+        "total_ms": 231.75709997303784,
+        "native_recompute_ms": 81.24519977718592,
+        "overhead_ms": 150.51190019585192,
+        "intent_signature_ms": 26.652600150555372,
+        "inspection_ms": 40.691500063985586,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03319978713989258,
+        "managed_rebuild_ms": 84.68420011922717
+      },
+      "add_pocket": {
+        "total_ms": 468.9859999343753,
+        "native_recompute_ms": 362.555299885571,
+        "overhead_ms": 106.43070004880428,
+        "intent_signature_ms": 12.132399948313832,
+        "inspection_ms": 25.479499949142337,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.06740004755556583,
+        "managed_rebuild_ms": 367.5883000250906
+      }
+    },
+    {
+      "holes": 17,
+      "add_sketch": {
+        "total_ms": 199.20270005241036,
+        "native_recompute_ms": 93.89880020171404,
+        "overhead_ms": 105.30389985069633,
+        "intent_signature_ms": 15.141500160098076,
+        "inspection_ms": 30.438799876719713,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03609992563724518,
+        "managed_rebuild_ms": 97.09809999912977
+      },
+      "add_pocket": {
+        "total_ms": 552.330199861899,
+        "native_recompute_ms": 408.5103999823332,
+        "overhead_ms": 143.81979987956583,
+        "intent_signature_ms": 21.201099967584014,
+        "inspection_ms": 38.526499876752496,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04849978722631931,
+        "managed_rebuild_ms": 413.5398000944406
+      }
+    },
+    {
+      "holes": 18,
+      "add_sketch": {
+        "total_ms": 281.52440022677183,
+        "native_recompute_ms": 106.03390005417168,
+        "overhead_ms": 175.49050017260015,
+        "intent_signature_ms": 36.50539997033775,
+        "inspection_ms": 72.11679988540709,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.04109996370971203,
+        "managed_rebuild_ms": 109.78380031883717
+      },
+      "add_pocket": {
+        "total_ms": 596.2296999059618,
+        "native_recompute_ms": 466.31160005927086,
+        "overhead_ms": 129.9180998466909,
+        "intent_signature_ms": 24.710600031539798,
+        "inspection_ms": 32.29480003938079,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.044700223952531815,
+        "managed_rebuild_ms": 470.6112004350871
+      }
+    },
+    {
+      "holes": 19,
+      "add_sketch": {
+        "total_ms": 215.57640004903078,
+        "native_recompute_ms": 88.79429986700416,
+        "overhead_ms": 126.78210018202662,
+        "intent_signature_ms": 25.031300028786063,
+        "inspection_ms": 33.40100008063018,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.03210012800991535,
+        "managed_rebuild_ms": 91.83060005307198
+      },
+      "add_pocket": {
+        "total_ms": 597.5830999668688,
+        "native_recompute_ms": 435.0880002602935,
+        "overhead_ms": 162.49509970657527,
+        "intent_signature_ms": 13.787500094622374,
+        "inspection_ms": 58.84560011327267,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.08180015720427036,
+        "managed_rebuild_ms": 441.84089987538755
+      }
+    },
+    {
+      "holes": 20,
+      "add_sketch": {
+        "total_ms": 197.6259001530707,
+        "native_recompute_ms": 101.22720012441278,
+        "overhead_ms": 96.39870002865791,
+        "intent_signature_ms": 13.959600124508142,
+        "inspection_ms": 31.728000147268176,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.05000014789402485,
+        "managed_rebuild_ms": 104.99879997223616
+      },
+      "add_pocket": {
+        "total_ms": 629.2179001029581,
+        "native_recompute_ms": 473.18190010264516,
+        "overhead_ms": 156.03600000031292,
+        "intent_signature_ms": 22.011399967595935,
+        "inspection_ms": 40.51330010406673,
+        "selector_evaluation_ms": 0.0,
+        "auto_scope_sync_ms": 0.07029995322227478,
+        "managed_rebuild_ms": 480.14239966869354
+      }
+    }
+  ],
+  "model": {
+    "objects": 52,
+    "tree_items": 46
+  },
+  "app_event_filters": {
+    "count": 6,
+    "classes": [
+      "Panel",
+      "WorkspacePreferences",
+      "Filter",
+      "Monitor",
+      "DoubleMiddleFit",
+      "NativePaletteFilter"
+    ],
+    "events_per_sample": 3000,
+    "us_per_event_with": 267.4836000272383,
+    "us_per_event_without": 111.32423339101176
+  },
+  "screenshot": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\bench-gui\\run-02318f6407774eeaa479cd8b8212ae3e\\evidence\\perf\\bench-gui-working\\plate-viewport.png",
+  "controller_timings": {
+    "input_to_command_started": {
+      "samples": 62,
+      "median_ms": 0.002,
+      "p95_ms": 0.004,
+      "worst_ms": 0.006
+    },
+    "native_recompute": {
+      "samples": 147,
+      "median_ms": 44.465,
+      "p95_ms": 331.188,
+      "worst_ms": 1351.335
+    },
+    "selector_evaluation": {
+      "samples": 147,
+      "median_ms": 0.0,
+      "p95_ms": 0.0,
+      "worst_ms": 0.0
+    },
+    "managed_rebuild": {
+      "samples": 147,
+      "median_ms": 44.639,
+      "p95_ms": 333.514,
+      "worst_ms": 1353.548
+    },
+    "intent": {
+      "samples": 112,
+      "median_ms": 15.196,
+      "p95_ms": 28.269,
+      "worst_ms": 158.523
+    },
+    "inspection": {
+      "samples": 176,
+      "median_ms": 16.553,
+      "p95_ms": 48.415,
+      "worst_ms": 178.851
+    },
+    "operation": {
+      "samples": 176,
+      "median_ms": 33.907,
+      "p95_ms": 593.825,
+      "worst_ms": 1429.153
+    },
+    "input_to_ui_updated": {
+      "samples": 62,
+      "median_ms": 217.643,
+      "p95_ms": 1049.451,
+      "worst_ms": 1473.313
+    },
+    "input_to_command_finished": {
+      "samples": 62,
+      "median_ms": 226.041,
+      "p95_ms": 1154.671,
+      "worst_ms": 1483.286
+    },
+    "command_new": {
+      "samples": 1,
+      "median_ms": 1154.666,
+      "p95_ms": 1154.666,
+      "worst_ms": 1154.666
+    },
+    "input_to_paint_event": {
+      "samples": 1,
+      "median_ms": 1176.791,
+      "p95_ms": 1176.791,
+      "worst_ms": 1176.791
+    },
+    "event_loop_delay": {
+      "samples": 129,
+      "median_ms": 140.629,
+      "p95_ms": 1384.29,
+      "worst_ms": 6866.776
+    },
+    "recovery_snapshot_gui": {
+      "samples": 33,
+      "median_ms": 5.073,
+      "p95_ms": 274.235,
+      "worst_ms": 453.925
+    },
+    "command_sketch_rectangle": {
+      "samples": 1,
+      "median_ms": 100.634,
+      "p95_ms": 100.634,
+      "worst_ms": 100.634
+    },
+    "command_pad": {
+      "samples": 1,
+      "median_ms": 49.379,
+      "p95_ms": 49.379,
+      "worst_ms": 49.379
+    },
+    "command_sketch_circle": {
+      "samples": 24,
+      "median_ms": 130.335,
+      "p95_ms": 253.262,
+      "worst_ms": 281.435
+    },
+    "command_pocket": {
+      "samples": 23,
+      "median_ms": 373.261,
+      "p95_ms": 821.828,
+      "worst_ms": 865.339
+    },
+    "command_undo": {
+      "samples": 6,
+      "median_ms": 197.436,
+      "p95_ms": 258.447,
+      "worst_ms": 258.447
+    },
+    "command_set_parameter": {
+      "samples": 6,
+      "median_ms": 769.389,
+      "p95_ms": 1483.29,
+      "worst_ms": 1483.29
+    },
+    "native_reference_reconciliation": {
+      "samples": 3,
+      "median_ms": 0.67,
+      "p95_ms": 2.054,
+      "worst_ms": 2.054
+    },
+    "native_scope_validation": {
+      "samples": 3,
+      "median_ms": 0.003,
+      "p95_ms": 0.007,
+      "worst_ms": 0.007
+    }
+  },
+  "seconds": 44.273945699911565
+}

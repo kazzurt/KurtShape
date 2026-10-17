@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "source_sha256": {
+    "ui.py": "a3cc019fcd7b1bc5ba1aa09f429cc4009a5390bba14c337f1a6588d1f94631b4",
+    "sketch_snapping.py": "9a7804d5ac26416865d49ee3eeaa59fd253544a462e47fd2cab52b6fab7209dc",
+    "sketch_tools.py": "54f6c375ab886425b9a719eaef3a650e8cc436b9b05b5910e1b4f50be0d6d9b0",
+    "sketch_references.py": "eed467cbb91e0fca972424597a416b2bf55131525c50c75c9af433f082f0f206",
+    "shortcuts.py": "3387db9639bf5f1577409fe5dbae5f6cc8094ab66149cb0f862b47e479e20a7a"
+  },
+  "gui": [
+    {
+      "recipe": "surface-snap",
+      "checks": 168,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\surface-snap\\run-61ac2cf3e4884ba4a9ac1bc3f005035d\\evidence\\surface-snap\\gui-result.json",
+      "macro_sha256": "8a46c696fa05691fc340b650cea09a41de5ca5436a16fa064404df33de8eacc7",
+      "error_log_matches": []
+    },
+    {
+      "recipe": "sketch-origin-snap",
+      "checks": 46,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-origin-snap\\run-f8bcbf5c0ae94d7f81df7b590854e8a3\\evidence\\sketch-origin-snap\\gui-result.json",
+      "macro_sha256": "c51a5fe20d84dc063613d6b7b8cbeaf5844e2724dcf0526af230f161d7d184e4",
+      "error_log_matches": []
+    },
+    {
+      "recipe": "sketch-references",
+      "checks": 74,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-references\\run-d54c4925899e4479a6d96afd9dab8949\\evidence\\sketch-references\\gui-result.json",
+      "macro_sha256": "2e065edf1c78beb026907c656024fb7466b5ebe0d5996ca79b419c4dc789ca36",
+      "error_log_matches": []
+    },
+    {
+      "recipe": "sketch-dimension-point-colors",
+      "checks": 31,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-dimension-point-colors\\run-c99e90e8a48b4342bf61a67ed53ec4e2\\evidence\\sketch-dimension-point-colors\\gui-result.json",
+      "macro_sha256": "217d95ed52bdec59e71cc18108cbbdd8810bd328ad1baf3013879c770366a5e8",
+      "error_log_matches": []
+    },
+    {
+      "recipe": "sketch-edit-state",
+      "checks": 45,
+      "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\sketch-edit-state\\run-683483c44c0c4cf7be0cb896786f1b42\\evidence\\sketch-edit-state\\gui-result.json",
+      "macro_sha256": "9ffd89a4f48fe23bde7118eeaaee274e07681e3e7c490083412d1e9517f51f81",
+      "error_log_matches": []
+    }
+  ],
+  "original_recovery_files": [
+    {
+      "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\ec053a01-f86d-4d2b-9e8f-5768996590f8.FCStd",
+      "sha256": "fdde623cf7f47e701782d0ab7c8e95b114d5b3b237becd98db89d4093fe40df7",
+      "unchanged": true
+    },
+    {
+      "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\ec053a01-f86d-4d2b-9e8f-5768996590f8.previous.FCStd",
+      "sha256": "4194f1988a2f8bcc33d805dd877cdb020e5f7742d1ac5b916b6e0d748a767ddb",
+      "unchanged": true
+    }
+  ],
+  "recovered_model_checks": 42,
+  "regression": {
+    "tests": 292,
+    "passed": 288,
+    "skipped": 4,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "gui_checks": 406,
+  "surface_max_pointer_dispatch_ms": 13.221,
+  "limits": "Hidden native Qt input is not physical mouse-to-display latency. No multi-second blocked event-loop stall was reproduced. Baseline diagnostics are separate from acceptance counts. Four optional performance regressions were skipped."
+}

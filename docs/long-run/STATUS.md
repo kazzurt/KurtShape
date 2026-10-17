@@ -1,14 +1,16 @@
+PAUSED: pilot complete
+
 # Long run status
 
 Program: C:\Users\Kurtz\Documents\KURT\CADkz\Claude\prompts\2026-10-03_codex_long-run-program.md
 Program SHA-256 when last read: 5253C586CF649C8C16531F9F42A7278258CB0F2968B4DA9FAB02C925F02E1D1C, 2026-10-04 14:44 America/Los_Angeles
 Revision 2 applied: 2026-10-04 14:44 America/Los_Angeles
 Pilot: Q03 only; started 2026-10-04 14:41:47; deadline 2026-10-04 18:41:47 America/Los_Angeles
-Updated: 2026-10-04 15:43 America/Los_Angeles
-State: IN PROGRESS Q03 since 2026-10-04 14:44 America/Los_Angeles
-Last green commit: c311f60 (tag longrun/Q25)
+Updated: 2026-10-04 15:51 America/Los_Angeles
+State: PAUSED; pilot complete, Q03 tagged; no other increment started
+Last green commit: 559e034 (tag longrun/Q03)
 Green copy: still at longrun/Q24a (660acc5); updater refused because process inventory access was denied
-Free disk: 153.33 GiB
+Free disk: 133.35 GiB
 
 ## Queue
 
@@ -19,15 +21,15 @@ Free disk: 153.33 GiB
 | Q00b | Foundation: CI, GUI runner, benchmarks, lint | DONE | d2e1b35 | 150/7/22 +405 | Full18:17 pass+exact carrier;77 images;67 five-repeat metrics; green update refused safely |
 | Q02a | Keyboard registry, keymap, chords and palette | PARKED | d8cdb1b WIP | 147/7/59 +405 | Three GUI failures; hidden combo popup blocker, no Q02a tag |
 | Q02b | Native shortcut audit and behavior bindings | BLOCKED | | | Needs parked Q02a; completes Q02 |
-| Q03 | Fast build status | VERIFIED | | 187/7/22 +415 | Full/CI/GUI/paired bench/profile passed; commit and tag next |
-| Q04 | Operation registry | READY | | | Q03 verified; deferred for this pilot |
+| Q03 | Fast build status | DONE | 559e034 | 187/7/22 +415 | Full/CI/GUI/paired bench/profile passed; open target in Q27; pilot complete |
+| Q04 | Operation registry | READY | | | Q03 landed; deferred for this pilot |
 | Q05 | Sketch operations | BLOCKED | | | Needs Q04 |
 | Q06 | Agent read access | BLOCKED | | | Needs Q03/Q04 |
-| Q07 | Preview engine | READY | | | Q03 verified; deferred for this pilot |
+| Q07 | Preview engine | READY | | | Q03 landed; deferred for this pilot |
 | Q08 | Feature framework, first six features | BLOCKED | | | Needs Q02/Q04/Q07 |
 | Q09 | Idle recovery | PARKED | 8e4d230 resumed WIP | Native183/7/22+405 | Three resumed failures; copied-profile3/86 exact unrelated XML assertion; no Q09 tag/GUI/bench |
 | Q10 | Remaining schema features | BLOCKED | | | Needs Q08 |
-| Q11 | Incremental intent and summaries | READY | | | Q03 verified; deferred for this pilot |
+| Q11 | Incremental intent and summaries | READY | | | Q03 landed; deferred for this pilot |
 | Q12 | Feature list | BLOCKED | | | Needs Q08/Q11 |
 | Q13 | Variables | BLOCKED | | | Needs Q08 |
 | Q14 | Event-driven shell | BLOCKED | | | Needs Q09/Q11 |
@@ -50,6 +52,8 @@ Free disk: 153.33 GiB
 
 ## Questions for Kurt (answer in NOTES.md or in the chat)
 
+Review requested for Q03 (commit 559e034). The pilot does not wait for this review.
+
 | # | Since | Question | Options, with the default I took | Blocks |
 |---|---|---|---|---|
 | 1 | Start | Projects/history D4, atlas question 9: snapshot store or branches/merges, formal releases? | Draft: snapshot store, optionally on Git; parked | U6/G10 |
@@ -65,7 +69,7 @@ Free disk: 153.33 GiB
 
 ## Try this (newest first)
 
-### Q03 fast status (verified; tag next)
+### Q03 fast status (559e034)
 
 1. Open a project saved by an older build: true-hasher files rebuild once on first open; other engine/build mismatches ask for one Rebuild while retaining the solid. The Q03 recipe and stored-open tests cover both paths.
 2. Change an extrusion depth, then use Check geometry twice; status becomes checked and the second check reuses its verdict. The Q03 recipe preserves revision and history.
@@ -137,7 +141,6 @@ Q03 recorded both policies:134 medians/670 samples. Initial timings varied broad
 | Q | Branch | Cause | What to try next |
 |---|---|---|---|
 | Q02a | longrun/parked-Q02a-keyboard-registry | Hidden combo popup never becomes active | Drive combo API and signal; keep resulting context assertions |
-| Q03 | longrun/parked-Q03-fast-status-resumed | New bounded-cache test expects eviction after lowering limits | Evict with while in check and memo; resume under Revision 2 |
 | Q09 | longrun/parked-Q09-idle-recovery-resumed | XML declaration encoding case changes | Use WriteTo and test PowerShell 5.1 and 7 |
 | Q24c | longrun/parked-Q24c-hidden-controls-display | Display evaluation and stale-doc sweep remain | Wait until all other rows are done, parked or blocked |
 | Q26 | longrun/parked-Q26-preview-recompute | Set aside immediately by Revision 2 | Reconsider after Q07 if clone preview remains |
@@ -165,3 +168,4 @@ Own recipe report: kurtshape-problem-20261003-204924-ac7dc9ee.json came from the
 - 2026-10-04 15:13: First plate GUI-policy benchmark passed all39 metrics but warm inspect/checkpoint/first preview exceed target and historical best threshold; paired API run and required confirmation remain before commit.
 - 2026-10-04 15:33: Independent plate confirmation reproduces no historical-threshold regression; changed inspection41.166ms remains open. Studio profile identifies body enumeration, ownership matching and native recompute; API-true rebuild budget4467.629ms enforced. Final standing scripts start.
 - 2026-10-04 15:43: Final full checks187/7/22+415 and local CI passed; unchanged source/tree; small evidence packaged. Review found0 production issues and1 export-documentation correction. Commit/tag Q03 next; NOTES has no new instruction.
+- 2026-10-04 15:51: Q03 committed and tagged longrun/Q03 at559e034. Green updater check refused process inventory access; green remains Q24a. Cleared45 registered Q03 scratch directories, retaining baseline files/session/ledgers. PAUSED: pilot complete; N01/Q02a/Q09 and every other increment were not started.

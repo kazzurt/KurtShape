@@ -1,0 +1,95 @@
+{
+  "passed": true,
+  "source_unchanged_at_collection": true,
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "regression": {
+    "tests": 261,
+    "passed": 261,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "gui_checks": 354,
+  "gui": [
+    {
+      "recipe": "sketch-dimension-point-colors",
+      "passed": true,
+      "checks": 31,
+      "source_session": "runtime/ci-gui/sketch-dimension-point-colors/run-baac91cfc981482694025f29840229cd",
+      "report": "sketch-dimension-point-colors/gui-result.json",
+      "recipe_sha256": "217d95ed52bdec59e71cc18108cbbdd8810bd328ad1baf3013879c770366a5e8"
+    },
+    {
+      "recipe": "sketch-regions",
+      "passed": true,
+      "checks": 34,
+      "source_session": "runtime/ci-gui/sketch-regions/run-88a3db1bcc354c95b1a5a767175b633f",
+      "report": "sketch-regions/gui-result.json",
+      "recipe_sha256": "d77bf2f4c0f514791cb4bd8544d4936c31cd6e0690aaf9bb574915db38fd48c2"
+    },
+    {
+      "recipe": "unused-sketch-visibility",
+      "passed": true,
+      "checks": 44,
+      "source_session": "runtime/ci-gui/unused-sketch-visibility/run-3d9d060e233d4fbdb61118094889a9d3",
+      "report": "unused-sketch-visibility/gui-result.json",
+      "recipe_sha256": "6413f0803938f138835ac882f4e959fdf2383d4f21e0c56028c82811ed34c61a"
+    },
+    {
+      "recipe": "sketch-references",
+      "passed": true,
+      "checks": 74,
+      "source_session": "runtime/ci-gui/sketch-references/run-cf252e308cd44b3791c6b2d2cb24ebc7",
+      "report": "sketch-references/gui-result.json",
+      "recipe_sha256": "2e065edf1c78beb026907c656024fb7466b5ebe0d5996ca79b419c4dc789ca36"
+    },
+    {
+      "recipe": "sketch-edit-state",
+      "passed": true,
+      "checks": 45,
+      "source_session": "runtime/ci-gui/sketch-edit-state/run-1fbc3e6404b34f6f9d39e4145a36770f",
+      "report": "sketch-edit-state/gui-result.json",
+      "recipe_sha256": "9ffd89a4f48fe23bde7118eeaaee274e07681e3e7c490083412d1e9517f51f81"
+    },
+    {
+      "recipe": "sketch-plane-editor",
+      "passed": true,
+      "checks": 27,
+      "source_session": "runtime/ci-gui/sketch-plane-editor/run-d53b919b94cd405b8a085ed99ff33feb",
+      "report": "sketch-plane-editor/gui-result.json",
+      "recipe_sha256": "f980601fa84d7058f3040279c221a46214e16636631bdd2333aecdceb4dc280c"
+    },
+    {
+      "recipe": "part-studio",
+      "passed": true,
+      "checks": 99,
+      "source_session": "runtime/ci-gui/part-studio/run-ebc1e1f019e04ab794f71703cdcbe8f9",
+      "report": "part-studio/gui-result.json",
+      "recipe_sha256": "1a5f7812175ea18af0786520f53be913527d621e3ce5bc80a33706805f10b489"
+    }
+  ],
+  "reproduction": [
+    ".\\run-checks.ps1 -Full",
+    ".\\tools\\run_gui_recipe.ps1 -Recipe <recipe>",
+    "bundled python -B validation/sketch-presentation/collect-acceptance.py validation/sketch-presentation/input-sessions.json"
+  ],
+  "limits": [
+    "Pinned FreeCAD endpoint diagnosis collapses point identities; endpoints fixed only through unsupported indirect constraints may remain blue.",
+    "Native errors keep geometry red while dimension labels remain black.",
+    "GUI verification uses isolated hidden native processes, not the user's live CAD session."
+  ],
+  "superseded_run": "checks-20261005-155316-77700 passed all cases but failed the source-stability gate during the fill depth repair; excluded."
+}

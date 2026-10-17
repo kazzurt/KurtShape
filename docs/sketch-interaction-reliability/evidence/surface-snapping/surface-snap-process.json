@@ -1,0 +1,17 @@
+{
+  "recipe": "surface-snap",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\surface-snap\\run-61ac2cf3e4884ba4a9ac1bc3f005035d",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\surface-snap-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\surface-snap\\run-61ac2cf3e4884ba4a9ac1bc3f005035d\\evidence\\surface-snap\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\surface-snap\\run-61ac2cf3e4884ba4a9ac1bc3f005035d\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\surface-snap\\run-61ac2cf3e4884ba4a9ac1bc3f005035d\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\surface-snap\\run-61ac2cf3e4884ba4a9ac1bc3f005035d\\freecad-stderr.txt",
+  "started_utc": "2026-10-06T18:05:29.7265538Z",
+  "exited_utc": "2026-10-06T18:07:05.2802301Z",
+  "pid": 34824,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-06T18:07:05.3328669Z"
+}

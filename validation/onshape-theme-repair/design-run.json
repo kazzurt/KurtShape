@@ -1,0 +1,17 @@
+{
+  "recipe": "design-surface",
+  "passed": true,
+  "session": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-b3ecff7f2813424c91a3b3fa37373c11",
+  "macro": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\design-surface-validation.FCMacro",
+  "report": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-b3ecff7f2813424c91a3b3fa37373c11\\evidence\\onshape-design\\gui-result.json",
+  "log": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-b3ecff7f2813424c91a3b3fa37373c11\\freecad.log",
+  "stdout": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-b3ecff7f2813424c91a3b3fa37373c11\\freecad-stdout.txt",
+  "stderr": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\design-surface\\run-b3ecff7f2813424c91a3b3fa37373c11\\freecad-stderr.txt",
+  "started_utc": "2026-10-05T06:23:28.0511443Z",
+  "exited_utc": "2026-10-05T06:23:49.4499325Z",
+  "pid": 40376,
+  "exit_code": 0,
+  "timed_out": false,
+  "method": "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+  "finished_utc": "2026-10-05T06:23:49.4796132Z"
+}

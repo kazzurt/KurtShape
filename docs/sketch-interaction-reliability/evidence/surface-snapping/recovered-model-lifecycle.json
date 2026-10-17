@@ -1,0 +1,1985 @@
+{
+  "passed": true,
+  "checks": [
+    "continuous_Circle_False_converted_endpoint recovery sketch enters edit",
+    "continuous_Circle_False_converted_endpoint right-click completely leaves drawing",
+    "continuous_Circle_False_converted_endpoint subsequent selection clicks never continue drawing",
+    "continuous_Circle_False_converted_endpoint restarted tool receives all clicks",
+    "continuous_Circle_False_converted_endpoint restarted tool creates one geometry",
+    "continuous_Circle_False_converted_endpoint restarted tool snaps exactly to external endpoint",
+    "continuous_Circle_False_converted_endpoint snap is a native coincidence",
+    "continuous_Circle_False_converted_endpoint hover remains within responsiveness bound",
+    "continuous_Circle_False_unconverted_edge recovery sketch enters edit",
+    "continuous_Circle_False_unconverted_edge right-click completely leaves drawing",
+    "continuous_Circle_False_unconverted_edge subsequent selection clicks never continue drawing",
+    "continuous_Circle_False_unconverted_edge restarted tool receives all clicks",
+    "continuous_Circle_False_unconverted_edge restarted tool creates one geometry",
+    "continuous_Circle_False_unconverted_edge hover remains within responsiveness bound",
+    "continuous_Polyline_False_converted_endpoint recovery sketch enters edit",
+    "continuous_Polyline_False_converted_endpoint right-click completely leaves drawing",
+    "continuous_Polyline_False_converted_endpoint subsequent selection clicks never continue drawing",
+    "continuous_Polyline_False_converted_endpoint restarted tool receives all clicks",
+    "continuous_Polyline_False_converted_endpoint restarted tool creates one geometry",
+    "continuous_Polyline_False_converted_endpoint restarted tool snaps exactly to external endpoint",
+    "continuous_Polyline_False_converted_endpoint snap is a native coincidence",
+    "continuous_Polyline_False_converted_endpoint hover remains within responsiveness bound",
+    "continuous_Polyline_False_unconverted_edge recovery sketch enters edit",
+    "continuous_Polyline_False_unconverted_edge right-click completely leaves drawing",
+    "continuous_Polyline_False_unconverted_edge subsequent selection clicks never continue drawing",
+    "continuous_Polyline_False_unconverted_edge restarted tool receives all clicks",
+    "continuous_Polyline_False_unconverted_edge restarted tool creates one geometry",
+    "continuous_Polyline_False_unconverted_edge hover remains within responsiveness bound",
+    "continuous_Polyline_True_converted_endpoint recovery sketch enters edit",
+    "continuous_Polyline_True_converted_endpoint right-click completely leaves drawing",
+    "continuous_Polyline_True_converted_endpoint subsequent selection clicks never continue drawing",
+    "continuous_Polyline_True_converted_endpoint restarted tool receives all clicks",
+    "continuous_Polyline_True_converted_endpoint restarted tool creates one geometry",
+    "continuous_Polyline_True_converted_endpoint restarted tool snaps exactly to external endpoint",
+    "continuous_Polyline_True_converted_endpoint snap is a native coincidence",
+    "continuous_Polyline_True_converted_endpoint hover remains within responsiveness bound",
+    "continuous_Polyline_True_unconverted_edge recovery sketch enters edit",
+    "continuous_Polyline_True_unconverted_edge right-click completely leaves drawing",
+    "continuous_Polyline_True_unconverted_edge subsequent selection clicks never continue drawing",
+    "continuous_Polyline_True_unconverted_edge restarted tool receives all clicks",
+    "continuous_Polyline_True_unconverted_edge restarted tool creates one geometry",
+    "continuous_Polyline_True_unconverted_edge hover remains within responsiveness bound"
+  ],
+  "cases": [
+    {
+      "tool": "Circle",
+      "committed": false,
+      "target": "converted_endpoint",
+      "moves": [
+        {
+          "pixel": [
+            427,
+            473
+          ],
+          "dispatch_ms": 4.942,
+          "preselection": [
+            "Sketch2",
+            [
+              "V_Axis"
+            ]
+          ]
+        },
+        {
+          "click_ms": 23.272
+        },
+        {
+          "pixel": [
+            659,
+            564
+          ],
+          "dispatch_ms": 1.946,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            651,
+            559
+          ],
+          "dispatch_ms": 2.104,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            645,
+            557
+          ],
+          "dispatch_ms": 2.461,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 1.783,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            643,
+            556
+          ],
+          "dispatch_ms": 2.335,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 1.314,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 2.056,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "click_ms": 111.304
+        },
+        {
+          "pixel": [
+            577,
+            493
+          ],
+          "dispatch_ms": 1.362,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "click_ms": 72.157
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 4.68,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "click_ms": 25.729
+        },
+        {
+          "pixel": [
+            577,
+            493
+          ],
+          "dispatch_ms": 4.016,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "click_ms": 39.022
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.5163999740034342,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.25180005468428135,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreateCircle",
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreateCircle",
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "Circle (Radius : 8.56838, Position : (20.885, -18.8875, 0), Direction : (0, 0, 1))"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        }
+      ],
+      "max_dispatch_ms": 4.942
+    },
+    {
+      "tool": "Circle",
+      "committed": false,
+      "target": "unconverted_edge",
+      "moves": [
+        {
+          "pixel": [
+            427,
+            473
+          ],
+          "dispatch_ms": 3.607,
+          "preselection": [
+            "Sketch2",
+            [
+              "V_Axis"
+            ]
+          ]
+        },
+        {
+          "click_ms": 21.7
+        },
+        {
+          "pixel": [
+            659,
+            463
+          ],
+          "dispatch_ms": 1.387,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            651,
+            458
+          ],
+          "dispatch_ms": 1.319,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            645,
+            456
+          ],
+          "dispatch_ms": 1.12,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 1.702,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            643,
+            455
+          ],
+          "dispatch_ms": 1.341,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 1.384,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 1.514,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 1.405
+        },
+        {
+          "pixel": [
+            577,
+            392
+          ],
+          "dispatch_ms": 1.444,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 105.073
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 1.476,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 16.319
+        },
+        {
+          "pixel": [
+            577,
+            392
+          ],
+          "dispatch_ms": 3.271,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 30.261
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.2918001264333725,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.20899996161460876,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.8185999467968941,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.667699845507741,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.6206999532878399,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.4719998687505722,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.4051998257637024,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreateCircle",
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreateCircle",
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "Circle (Radius : 8.55218, Position : (20.905, -8.91918, 0), Direction : (0, 0, 1))"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        }
+      ],
+      "max_dispatch_ms": 3.607
+    },
+    {
+      "tool": "Polyline",
+      "committed": false,
+      "target": "converted_endpoint",
+      "moves": [
+        {
+          "pixel": [
+            427,
+            473
+          ],
+          "dispatch_ms": 3.218,
+          "preselection": [
+            "Sketch2",
+            [
+              "V_Axis"
+            ]
+          ]
+        },
+        {
+          "click_ms": 4.421
+        },
+        {
+          "pixel": [
+            659,
+            564
+          ],
+          "dispatch_ms": 1.268,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            651,
+            559
+          ],
+          "dispatch_ms": 2.661,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            645,
+            557
+          ],
+          "dispatch_ms": 3.329,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 3.299,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            643,
+            556
+          ],
+          "dispatch_ms": 2.85,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 1.755,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 1.435,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "click_ms": 99.654
+        },
+        {
+          "pixel": [
+            577,
+            493
+          ],
+          "dispatch_ms": 4.154,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "click_ms": 139.51
+        },
+        {
+          "pixel": [
+            407,
+            463
+          ],
+          "dispatch_ms": 2.601,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 8.278
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 8.051,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex8"
+            ]
+          ]
+        },
+        {
+          "click_ms": 17.892
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.3527998924255371,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.2530000638216734,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.5814000032842159,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.7096000481396914,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (-1.96819,-9.90509,0) (20.885,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        }
+      ],
+      "max_dispatch_ms": 8.051
+    },
+    {
+      "tool": "Polyline",
+      "committed": false,
+      "target": "unconverted_edge",
+      "moves": [
+        {
+          "pixel": [
+            427,
+            473
+          ],
+          "dispatch_ms": 3.79,
+          "preselection": [
+            "Sketch2",
+            [
+              "V_Axis"
+            ]
+          ]
+        },
+        {
+          "click_ms": 3.923
+        },
+        {
+          "pixel": [
+            659,
+            463
+          ],
+          "dispatch_ms": 3.1,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            651,
+            458
+          ],
+          "dispatch_ms": 2.102,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            645,
+            456
+          ],
+          "dispatch_ms": 1.649,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 1.02,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            643,
+            455
+          ],
+          "dispatch_ms": 2.194,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 1.2,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 1.129,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 9.156
+        },
+        {
+          "pixel": [
+            577,
+            392
+          ],
+          "dispatch_ms": 1.364,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 122.712
+        },
+        {
+          "pixel": [
+            407,
+            463
+          ],
+          "dispatch_ms": 1.055,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 3.68
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 2.639,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 24.548
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.3339999821037054,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.20529981702566147,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.5702001508325338,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.5101999267935753,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.9934999980032444,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.5394998006522655,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.5809001158922911,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.3651999868452549,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.48649986274540424,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.6708998698741198,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 4,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (-1.96819,-9.90509,0) (20.905,-8.91918,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        }
+      ],
+      "max_dispatch_ms": 3.79
+    },
+    {
+      "tool": "Polyline",
+      "committed": true,
+      "target": "converted_endpoint",
+      "moves": [
+        {
+          "pixel": [
+            427,
+            473
+          ],
+          "dispatch_ms": 2.957,
+          "preselection": [
+            "Sketch2",
+            [
+              "V_Axis"
+            ]
+          ]
+        },
+        {
+          "click_ms": 5.115
+        },
+        {
+          "pixel": [
+            457,
+            524
+          ],
+          "dispatch_ms": 6.194,
+          "preselection": [
+            "Sketch2",
+            [
+              "Edge4"
+            ]
+          ]
+        },
+        {
+          "click_ms": 39.569
+        },
+        {
+          "pixel": [
+            659,
+            564
+          ],
+          "dispatch_ms": 1.294,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            651,
+            559
+          ],
+          "dispatch_ms": 1.042,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            645,
+            557
+          ],
+          "dispatch_ms": 1.795,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex10"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 1.208,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex10"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            643,
+            556
+          ],
+          "dispatch_ms": 3.761,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex10"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 2.497,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex10"
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 2.072,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex10"
+            ]
+          ]
+        },
+        {
+          "click_ms": 107.959
+        },
+        {
+          "pixel": [
+            577,
+            493
+          ],
+          "dispatch_ms": 1.648,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex10"
+            ]
+          ]
+        },
+        {
+          "click_ms": 106.08
+        },
+        {
+          "pixel": [
+            407,
+            463
+          ],
+          "dispatch_ms": 1.432,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 5.347
+        },
+        {
+          "pixel": [
+            639,
+            554
+          ],
+          "dispatch_ms": 5.69,
+          "preselection": [
+            "Sketch2",
+            [
+              "Vertex10"
+            ]
+          ]
+        },
+        {
+          "click_ms": 29.025
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.22320006974041462,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.3280998207628727,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.3679001238197088,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.6522000767290592,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (0,-10.891,0) (2.96733,-15.9244,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (0,-10.891,0) (2.96733,-15.9244,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (0,-10.891,0) (2.96733,-15.9244,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (0,-10.891,0) (2.96733,-15.9244,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 6,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (0,-10.891,0) (2.96733,-15.9244,0) >",
+            "<Line segment (-1.96819,-9.90509,0) (20.885,-18.8875,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        }
+      ],
+      "max_dispatch_ms": 6.194
+    },
+    {
+      "tool": "Polyline",
+      "committed": true,
+      "target": "unconverted_edge",
+      "moves": [
+        {
+          "pixel": [
+            427,
+            473
+          ],
+          "dispatch_ms": 3.201,
+          "preselection": [
+            "Sketch2",
+            [
+              "V_Axis"
+            ]
+          ]
+        },
+        {
+          "click_ms": 4.171
+        },
+        {
+          "pixel": [
+            457,
+            524
+          ],
+          "dispatch_ms": 3.88,
+          "preselection": [
+            "Sketch2",
+            [
+              "Edge4"
+            ]
+          ]
+        },
+        {
+          "click_ms": 39.676
+        },
+        {
+          "pixel": [
+            659,
+            463
+          ],
+          "dispatch_ms": 1.163,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            651,
+            458
+          ],
+          "dispatch_ms": 0.534,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            645,
+            456
+          ],
+          "dispatch_ms": 2.608,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 0.916,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            643,
+            455
+          ],
+          "dispatch_ms": 3.968,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 2.38,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 1.433,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 1.705
+        },
+        {
+          "pixel": [
+            577,
+            392
+          ],
+          "dispatch_ms": 3.321,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 78.366
+        },
+        {
+          "pixel": [
+            407,
+            463
+          ],
+          "dispatch_ms": 2.7,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 3.501
+        },
+        {
+          "pixel": [
+            639,
+            453
+          ],
+          "dispatch_ms": 2.46,
+          "preselection": [
+            "",
+            [
+              ""
+            ]
+          ]
+        },
+        {
+          "click_ms": 14.299
+        }
+      ],
+      "hit_calls": [
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.13649999164044857,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.19329995848238468,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.6805001758038998,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.8638000581413507,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 1.281500095501542,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.7428000681102276,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.7136000785976648,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.560699962079525,
+          "source": "(<PartDesign::Pad>, 'Edge10')"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.26950007304549217,
+          "source": "None"
+        },
+        {
+          "native_tool": null,
+          "elapsed_ms": 0.3972998820245266,
+          "source": "None"
+        }
+      ],
+      "states": [
+        {
+          "stage": "first_point",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (0,-10.891,0) (2.96733,-15.9244,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        },
+        {
+          "stage": "after_right_click",
+          "native_tool": null,
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (0,-10.891,0) (2.96733,-15.9244,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "target_point_click",
+          "native_tool": null,
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (0,-10.891,0) (2.96733,-15.9244,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "finish_click",
+          "native_tool": null,
+          "geometry_count": 5,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (0,-10.891,0) (2.96733,-15.9244,0) >"
+          ],
+          "cursor": "CursorShape.ArrowCursor"
+        },
+        {
+          "stage": "restart_and_complete",
+          "native_tool": "Sketcher_CreatePolyline",
+          "geometry_count": 6,
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >",
+            "<Line segment (0,-10.891,0) (2.96733,-15.9244,0) >",
+            "<Line segment (-1.96819,-9.90509,0) (20.905,-8.91918,0) >"
+          ],
+          "cursor": "CursorShape.BitmapCursor"
+        }
+      ],
+      "max_dispatch_ms": 3.968
+    }
+  ],
+  "pid": 21320,
+  "engine": [
+    "1",
+    "1",
+    "4",
+    "20260928 (Git shallow)",
+    "Unknown",
+    "2026/09/28 13:46:34",
+    "(HEAD detached at 4fd3bf320)",
+    "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+  ],
+  "source_sha256": {
+    "ui.py": "a3cc019fcd7b1bc5ba1aa09f429cc4009a5390bba14c337f1a6588d1f94631b4",
+    "sketch_snapping.py": "9a7804d5ac26416865d49ee3eeaa59fd253544a462e47fd2cab52b6fab7209dc",
+    "sketch_tools.py": "54f6c375ab886425b9a719eaef3a650e8cc436b9b05b5910e1b4f50be0d6d9b0",
+    "sketch_references.py": "eed467cbb91e0fca972424597a416b2bf55131525c50c75c9af433f082f0f206",
+    "shortcuts.py": "3387db9639bf5f1577409fe5dbae5f6cc8094ab66149cb0f862b47e479e20a7a"
+  },
+  "method": "Production selected pad face and U conversion, native Line/Circle, real Qt pointer and clicks at external endpoint; isolated hidden GUI.",
+  "lifecycle_baseline": false,
+  "recovery_inputs": [
+    {
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\ec053a01-f86d-4d2b-9e8f-5768996590f8.FCStd",
+      "sha256": "fdde623cf7f47e701782d0ab7c8e95b114d5b3b237becd98db89d4093fe40df7",
+      "objects": [
+        {
+          "name": "Sketch",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "<Line segment (-20.885,18.8875,0) (-20.885,-18.8875,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >",
+            "<Line segment (20.885,-18.8875,0) (20.885,18.8875,0) >",
+            "<Line segment (20.885,18.8875,0) (-20.885,18.8875,0) >",
+            "<Point (-0,0,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch2",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,6), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch3",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 21.3627, Position : (12.3803, 0, 0), Direction : (0, 0, 1))"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,-18.8875,0), Yaw-Pitch-Roll=(0,0,90)]"
+        }
+      ]
+    },
+    {
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\ec053a01-f86d-4d2b-9e8f-5768996590f8.FCStd",
+      "sha256": "fdde623cf7f47e701782d0ab7c8e95b114d5b3b237becd98db89d4093fe40df7",
+      "objects": [
+        {
+          "name": "Sketch",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "<Line segment (-20.885,18.8875,0) (-20.885,-18.8875,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >",
+            "<Line segment (20.885,-18.8875,0) (20.885,18.8875,0) >",
+            "<Line segment (20.885,18.8875,0) (-20.885,18.8875,0) >",
+            "<Point (-0,0,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch2",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,6), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch3",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 21.3627, Position : (12.3803, 0, 0), Direction : (0, 0, 1))"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,-18.8875,0), Yaw-Pitch-Roll=(0,0,90)]"
+        }
+      ]
+    },
+    {
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\ec053a01-f86d-4d2b-9e8f-5768996590f8.FCStd",
+      "sha256": "fdde623cf7f47e701782d0ab7c8e95b114d5b3b237becd98db89d4093fe40df7",
+      "objects": [
+        {
+          "name": "Sketch",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "<Line segment (-20.885,18.8875,0) (-20.885,-18.8875,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >",
+            "<Line segment (20.885,-18.8875,0) (20.885,18.8875,0) >",
+            "<Line segment (20.885,18.8875,0) (-20.885,18.8875,0) >",
+            "<Point (-0,0,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch2",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,6), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch3",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 21.3627, Position : (12.3803, 0, 0), Direction : (0, 0, 1))"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,-18.8875,0), Yaw-Pitch-Roll=(0,0,90)]"
+        }
+      ]
+    },
+    {
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\ec053a01-f86d-4d2b-9e8f-5768996590f8.FCStd",
+      "sha256": "fdde623cf7f47e701782d0ab7c8e95b114d5b3b237becd98db89d4093fe40df7",
+      "objects": [
+        {
+          "name": "Sketch",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "<Line segment (-20.885,18.8875,0) (-20.885,-18.8875,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >",
+            "<Line segment (20.885,-18.8875,0) (20.885,18.8875,0) >",
+            "<Line segment (20.885,18.8875,0) (-20.885,18.8875,0) >",
+            "<Point (-0,0,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch2",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,6), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch3",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 21.3627, Position : (12.3803, 0, 0), Direction : (0, 0, 1))"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,-18.8875,0), Yaw-Pitch-Roll=(0,0,90)]"
+        }
+      ]
+    },
+    {
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\ec053a01-f86d-4d2b-9e8f-5768996590f8.FCStd",
+      "sha256": "fdde623cf7f47e701782d0ab7c8e95b114d5b3b237becd98db89d4093fe40df7",
+      "objects": [
+        {
+          "name": "Sketch",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "<Line segment (-20.885,18.8875,0) (-20.885,-18.8875,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >",
+            "<Line segment (20.885,-18.8875,0) (20.885,18.8875,0) >",
+            "<Line segment (20.885,18.8875,0) (-20.885,18.8875,0) >",
+            "<Point (-0,0,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch2",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,6), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch3",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 21.3627, Position : (12.3803, 0, 0), Direction : (0, 0, 1))"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,-18.8875,0), Yaw-Pitch-Roll=(0,0,90)]"
+        }
+      ]
+    },
+    {
+      "source": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\project-recovery\\ec053a01-f86d-4d2b-9e8f-5768996590f8.FCStd",
+      "sha256": "fdde623cf7f47e701782d0ab7c8e95b114d5b3b237becd98db89d4093fe40df7",
+      "objects": [
+        {
+          "name": "Sketch",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "<Line segment (-20.885,18.8875,0) (-20.885,-18.8875,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >",
+            "<Line segment (20.885,-18.8875,0) (20.885,18.8875,0) >",
+            "<Line segment (20.885,18.8875,0) (-20.885,18.8875,0) >",
+            "<Point (-0,0,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch2",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 4.76812, Position : (-11.9268, 9.26902, 0), Direction : (0, 0, 1))",
+            "Circle (Radius : 4.91849, Position : (9.78837, -8.19273, 0), Direction : (0, 0, 1))",
+            "<Line segment (-20.885,-18.8875,0) (-4.82664,-14.2471,0) >",
+            "<Line segment (-4.82664,-14.2471,0) (16.7357,-18.8875,0) >"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >",
+            "<Line segment (-20.885,-18.8875,0) (20.885,-18.8875,0) >"
+          ],
+          "placement": "Placement [Pos=(0,0,6), Yaw-Pitch-Roll=(0,0,0)]"
+        },
+        {
+          "name": "Sketch3",
+          "type": "Sketcher::SketchObject",
+          "geometry": [
+            "Circle (Radius : 21.3627, Position : (12.3803, 0, 0), Direction : (0, 0, 1))"
+          ],
+          "external": [
+            "<Line segment (0,0,0) (1,0,0) >",
+            "<Line segment (0,0,0) (0,1,0) >"
+          ],
+          "placement": "Placement [Pos=(0,-18.8875,0), Yaw-Pitch-Roll=(0,0,90)]"
+        }
+      ]
+    }
+  ],
+  "check_count": 42
+}

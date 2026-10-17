@@ -1,0 +1,186 @@
+{
+  "passed": true,
+  "method": "WCAG sRGB relative luminance of literal theme tokens; native rendering and DPI remain separate checks",
+  "checks": [
+    {
+      "name": "Primary text",
+      "foreground_token": "ink",
+      "background_token": "surface",
+      "foreground": "#2d3338",
+      "background": "#ffffff",
+      "contrast": 12.788,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Chrome text",
+      "foreground_token": "ink",
+      "background_token": "chrome",
+      "foreground": "#2d3338",
+      "background": "#f5f6f7",
+      "contrast": 11.818,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Idle footer",
+      "foreground_token": "muted",
+      "background_token": "chrome",
+      "foreground": "#59636c",
+      "background": "#f5f6f7",
+      "contrast": 5.665,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Secondary text",
+      "foreground_token": "muted",
+      "background_token": "surface",
+      "foreground": "#59636c",
+      "background": "#ffffff",
+      "contrast": 6.13,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Placeholder",
+      "foreground_token": "placeholder",
+      "background_token": "surface",
+      "foreground": "#65717c",
+      "background": "#ffffff",
+      "contrast": 4.992,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Disabled input",
+      "foreground_token": "disabled_ink",
+      "background_token": "disabled",
+      "foreground": "#646f78",
+      "background": "#f1f3f5",
+      "contrast": 4.619,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Disabled chrome text",
+      "foreground_token": "disabled_ink",
+      "background_token": "chrome",
+      "foreground": "#646f78",
+      "background": "#f5f6f7",
+      "contrast": 4.749,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Selection text",
+      "foreground_token": "selection_ink",
+      "background_token": "selection",
+      "foreground": "#204f79",
+      "background": "#e6f1fa",
+      "contrast": 7.462,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Active picker text",
+      "foreground_token": "selection_ink",
+      "background_token": "active_field_fill",
+      "foreground": "#204f79",
+      "background": "#e6f1fa",
+      "contrast": 7.462,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Confirm action text",
+      "foreground_token": "surface",
+      "background_token": "accent",
+      "foreground": "#ffffff",
+      "background": "#185fa5",
+      "contrast": 6.524,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Pressed confirm text",
+      "foreground_token": "surface",
+      "background_token": "accent_pressed",
+      "foreground": "#ffffff",
+      "background": "#124b83",
+      "contrast": 8.899,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Shaded hover label",
+      "foreground_token": "surface",
+      "background_token": "tooltip",
+      "foreground": "#ffffff",
+      "background": "#353a40",
+      "contrast": 11.471,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Error feedback",
+      "foreground_token": "error",
+      "background_token": "chrome",
+      "foreground": "#bd3039",
+      "background": "#f5f6f7",
+      "contrast": 5.324,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Warning feedback",
+      "foreground_token": "warning",
+      "background_token": "chrome",
+      "foreground": "#8c6005",
+      "background": "#f5f6f7",
+      "contrast": 5.12,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Success feedback",
+      "foreground_token": "success",
+      "background_token": "chrome",
+      "foreground": "#247a43",
+      "background": "#f5f6f7",
+      "contrast": 4.926,
+      "minimum": 4.5,
+      "passed": true
+    },
+    {
+      "name": "Interactive field boundary",
+      "foreground_token": "border",
+      "background_token": "surface",
+      "foreground": "#8a949e",
+      "background": "#ffffff",
+      "contrast": 3.084,
+      "minimum": 3.0,
+      "passed": true
+    },
+    {
+      "name": "Focus boundary",
+      "foreground_token": "accent",
+      "background_token": "surface",
+      "foreground": "#185fa5",
+      "background": "#ffffff",
+      "contrast": 6.524,
+      "minimum": 3.0,
+      "passed": true
+    },
+    {
+      "name": "Active picker boundary",
+      "foreground_token": "accent",
+      "background_token": "active_field_fill",
+      "foreground": "#185fa5",
+      "background": "#e6f1fa",
+      "contrast": 5.693,
+      "minimum": 3.0,
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "task": "Close Onshape design alignment plan",
+  "audit_date": "2026-10-04",
+  "timezone": "America/Los_Angeles",
+  "captured_at_utc": "2026-10-05T02:03:51.2959359Z",
+  "canonical_git_head_at_capture": "559e034de3522c325423057b048f955405c522af",
+  "frozen_source": false,
+  "limitation": "Concurrent workflow edits; hashes identify read-time snapshot, not final validated build. Reports were read, not rerun by this audit.",
+  "user_direction": "Closely match Onshape layout, density, colors and editing feel; dense icon-only modeling/sketch toolbars, no adjacent command labels or visible category headings.",
+  "assessment_a": "/root/design_assessment",
+  "assessment_b": "/root/implementation_evidence",
+  "assessment_independence": "A completed before B findings entered parent synthesis",
+  "detector": {
+    "target": "src/kurtshape",
+    "exit_code": 0,
+    "result": [],
+    "coverage": "HTML/CSS detector does not establish native Python Qt quality"
+  },
+  "observed_workflow_report": {
+    "passed": true,
+    "check_count": 44
+  },
+  "official_references": [
+    "https://cad.onshape.com/help/Content/Document/document_toolbar.htm",
+    "https://cad.onshape.com/help/Content/Resources/Images/icons/titleTB-docpage.png",
+    "https://cad.onshape.com/help/Content/PartStudio/part_studios.htm",
+    "https://cad.onshape.com/help/Content/Resources/Images/concepts/partstudioannotatedmodeling3.png",
+    "https://cad.onshape.com/help/Content/PartStudio/feature_basics.htm",
+    "https://cad.onshape.com/help/Content/Resources/Images/feature-tools/extrudedialog1-03.png",
+    "https://cad.onshape.com/help/Content/Home/colors.htm",
+    "https://cad.onshape.com/help/Content/PartStudio/features_and_parts_lists.htm",
+    "https://cad.onshape.com/help/Content/Home/selection.htm",
+    "https://cad.onshape.com/help/Content/Sketch/sketch_basics.htm",
+    "https://cad.onshape.com/help/Content/Home/context_menus.htm",
+    "https://cad.onshape.com/help/Content/View/view_navigation_and_the_view_cube.htm",
+    "https://cad.onshape.com/help/Content/Home/search_tools.htm",
+    "https://cad.onshape.com/help/Content/Home/keyboard_shortcuts_and_hotkeys.htm"
+  ],
+  "files": [
+    {
+      "path": "src/kurtshape/theme.py",
+      "sha256": "F910F5B85D175330C642C9CCF20DD442763BC7C9E6DADC2105B0CCEE11ACC920",
+      "last_write_utc": "2026-10-03T04:04:54.6905508Z",
+      "bytes": 15319
+    },
+    {
+      "path": "src/kurtshape/ui.py",
+      "sha256": "19F3D8719FBEA70756B354553818891F1B01C8E31D3A2B262B35301D762C3394",
+      "last_write_utc": "2026-10-05T01:51:31.8202775Z",
+      "bytes": 165742
+    },
+    {
+      "path": "src/kurtshape/feature_panel.py",
+      "sha256": "F932B518953AD0FEE34D5791E454D868DD40CE6ED1B66055DB408D2293B90B09",
+      "last_write_utc": "2026-10-05T01:50:24.5040528Z",
+      "bytes": 3141
+    },
+    {
+      "path": "src/kurtshape/quantity_field.py",
+      "sha256": "6F68C24AE5543890AD98BCA1C48FC50FFEA435A9FFD59E5A27DC2243C702E2C8",
+      "last_write_utc": "2026-10-02T17:46:30.2170752Z",
+      "bytes": 1345
+    },
+    {
+      "path": "src/kurtshape/workspace_preferences.py",
+      "sha256": "9EB74F963F368677A75A12291EEC26FB40041DF8CA939AC800846B1C31EC6420",
+      "last_write_utc": "2026-10-03T02:50:19.0578707Z",
+      "bytes": 3083
+    },
+    {
+      "path": "src/kurtshape/hover_outline.py",
+      "sha256": "87884A5ED6E8748B58A5FE1C107A60DF98A10F2F69C8E43A95D40055312C7CA3",
+      "last_write_utc": "2026-10-05T01:34:58.2774944Z",
+      "bytes": 7763
+    },
+    {
+      "path": "src/kurtshape/navigation.py",
+      "sha256": "F8D9885A89B36853CC448F53C292B31FC6B929E441EA48CBB8AB459B4C71140A",
+      "last_write_utc": "2026-10-05T01:30:10.6240259Z",
+      "bytes": 10889
+    },
+    {
+      "path": "src/kurtshape/feature_tools.py",
+      "sha256": "F9828FB32A3AD2C012F52A371F9C64409DBCCB7D683977348E42ADCD9B585164",
+      "last_write_utc": "2026-10-05T01:27:08.7957581Z",
+      "bytes": 19604
+    },
+    {
+      "path": "src/kurtshape/extrusion_preview.py",
+      "sha256": "BE8C1EA1212D9DCACB110ED5DC43A59768BF028E919C9BE04BD67B9BDC2F73D6",
+      "last_write_utc": "2026-10-05T01:45:58.1192265Z",
+      "bytes": 25697
+    },
+    {
+      "path": "src/kurtshape/shortcuts.py",
+      "sha256": "D30BA9E81E6CC689314B29F3E9B82935AF20B7EDDA9740A1ECB09D2521618BDD",
+      "last_write_utc": "2026-10-04T01:04:18.255762Z",
+      "bytes": 19428
+    },
+    {
+      "path": "docs/onshape-workflows/IMPLEMENTATION.md",
+      "sha256": "F26F018650F2A2EA7A23EB9220D79961B97F70B230E81FFEFD9C09B329B4E47D",
+      "last_write_utc": "2026-10-05T01:54:50.0541034Z",
+      "bytes": 5217
+    },
+    {
+      "path": "docs/long-run/STATUS.md",
+      "sha256": "D6709B0C5092CCD38405B070CE5D637BB959F57BB3D3BA4610D0E2FF0218FC41",
+      "last_write_utc": "2026-10-04T22:51:33.4228601Z",
+      "bytes": 16977
+    },
+    {
+      "path": "validation/onshape-workflows/gui-result.json",
+      "sha256": "F127AF3CBD54A6EF1B39394865EDDE355386F51B7A0CEF2B8F009376BD34676B",
+      "last_write_utc": "2026-10-05T01:53:57.6072337Z",
+      "bytes": 4972
+    },
+    {
+      "path": "validation/onshape-workflows/fillet-pick-after-command.png",
+      "sha256": "98053567491192C1643BD9E5E834F8FBB95769F1632FDD44C6FB81AA3C674993",
+      "last_write_utc": "2026-10-05T01:53:44.7113814Z",
+      "bytes": 149756
+    },
+    {
+      "path": "validation/onshape-workflows/compact-workspace.png",
+      "sha256": "02205932DB925516246D50294A6F00BF607008007EB865B2978AAD33F179391E",
+      "last_write_utc": "2026-10-05T01:53:57.5056117Z",
+      "bytes": 113195
+    },
+    {
+      "path": "validation/onshape-workflows/plane-editor.png",
+      "sha256": "5FE5BDFF6A782F6A5AA1CFF63754332322AE098FBA4D9B688F91C920DF43653F",
+      "last_write_utc": "2026-10-05T01:53:46.8586276Z",
+      "bytes": 136613
+    },
+    {
+      "path": "validation/onshape-workflows/revolve-profile-line-axis.png",
+      "sha256": "D4A31FE4A77E8DEFFF1305775769126913467C49C30548A58BDCCD2A8B3A0945",
+      "last_write_utc": "2026-10-05T01:53:53.3569318Z",
+      "bytes": 132373
+    },
+    {
+      "path": "validation/onshape-interaction-pass/view-interaction/result.json",
+      "sha256": "19538F784581CC1EFA95906BDAE254B40ADC206CEFC2664AA43CDF70AF180C9F",
+      "last_write_utc": "2026-10-05T01:35:22.2824743Z",
+      "bytes": 2124
+    },
+    {
+      "path": "validation/appearance-pass/verification-summary.json",
+      "sha256": "E8EF7610AE0C39B36F5AD8BC0DE218344F533A99F15F38A88BD78E39CDB19D97",
+      "last_write_utc": "2026-10-02T16:03:33.929252Z",
+      "bytes": 5933
+    }
+  ],
+  "toolbar_revision": {
+    "date": "2026-10-04",
+    "timezone": "America/Los_Angeles",
+    "recorded_at_utc": "2026-10-05T03:54:18.5398920Z",
+    "trigger": "User-supplied actual Onshape workspace screenshot and explicit request for toolbar symbols without adjacent labels",
+    "reference": "onshape-reference/onshape-user-workspace-2026-10-04.png",
+    "original_attachment": "C:/Users/Kurtz/AppData/Local/Temp/codex-clipboard-41a31ed9-62e8-42f5-9462-9935736f0093.png",
+    "sha256": "4E47A76FB24B43040E98A24DE8662A6AE7797DF649717114E74657EAAB2E1F11",
+    "image_pixels": [
+      1909,
+      913
+    ],
+    "transformation": "None: archived reference is a byte-for-byte copy",
+    "design_change": "Dense icon-only modeling/sketch row; no group headings or text More; tool names and shortcuts via tooltips, menus, search and accessible names; original QAction names retained",
+    "source_snapshot": "Original application audit snapshot retained; application source not re-audited or edited for this revision"
+  }
+}
