@@ -239,9 +239,9 @@ class Controller:
     READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
                     "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}
-    MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line", "add_arc",
+    MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline",
                  "pad", "pocket", "edit_extrusion", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "repair_orphan_helpers", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS
-    EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "add_arc", "set_parameter", "set_expression", "set_sketch_support", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
+    EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline", "set_parameter", "set_expression", "set_sketch_support", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
     CREATE_OPS = {"new", "open", "recover", "import_step"}
     OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
     ARGS = {
@@ -253,6 +253,7 @@ class Controller:
         "add_circle": {"sketch", "x", "y", "diameter", "construction"},
         "add_line": {"sketch", "x1", "y1", "x2", "y2", "construction"},
         "add_arc": {"sketch", "cx", "cy", "radius", "start_angle", "end_angle", "x1", "y1", "x2", "y2", "construction"},
+        "add_polyline": {"sketch", "points", "closed", "construction"},
         "begin_sketch_edit": {"feature"}, "finish_sketch_edit": {"cancel"},
         "set_sketch_support": {"sketch", "plane", "support"},
         "pad": {"id","profile","length","reversed","source_feature_id","source_feature_name"},
@@ -1540,7 +1541,7 @@ class Controller:
                 if op == "orphan_helpers":
                     return {"ok": True, "result": {"groups": studio.orphan_groups(doc)}}
                 if op == "resolve_selector":
-                    return {"ok": True, "result": {"matches": native_selectors.resolve(doc, request.get("selector"))}}
+                    return {"ok": True, "result": {"matches": native_selectors.resolve(doc, request.get("selector"), detail=True)}}
                 if op == "preview":
                     return {"ok": True, "result": self._preview(doc, request)}
                 if not self.is_managed(doc) and op not in self.READ_OPS | {"adopt"}:
@@ -2270,6 +2271,98 @@ class Controller:
         self._dimension(sk, Sketcher.Constraint("Angle", i, sweep), "Sweep")
         self._require_fixed(sk, i, before, expected, "arc")
 
+    POLYLINE_POINT_LIMIT = 1000
+
+    def _add_polyline(self, sk, req):
+        """Connected line segments: a native Coincident at every shared vertex, each vertex positioned once."""
+        closed = req.get("closed", False)
+        if not isinstance(closed, bool):
+            raise OperationError("invalid_argument", "closed must be boolean")
+        construction = self._construction(req)
+        raw, limit = req.get("points"), self.POLYLINE_POINT_LIMIT
+        if not isinstance(raw, (list, tuple)) or not 2 <= len(raw) <= limit:
+            raise OperationError("invalid_argument", f"points requires 2 to {limit} [x, y] pairs")
+        points = []
+        for k, item in enumerate(raw):
+            if not isinstance(item, (list, tuple)) or len(item) != 2:
+                raise OperationError("invalid_argument", "Each polyline point must be an [x, y] pair", point=k + 1)
+            points.append(App.Vector(number(item[0], f"point {k + 1} x"), number(item[1], f"point {k + 1} y"), 0))
+        count = len(points)
+        if closed and count < 3:
+            raise OperationError("invalid_argument", "A closed polyline needs at least 3 points")
+        # A vertex on an endpoint of fixed, non-construction geometry joins it
+        # natively at its exact location; construction polylines never join.
+        anchors = [] if construction else self._anchor_points(sk, lambda curve: True)
+        joins = [self._anchor(anchors, point) for point in points]
+        points = [point if join is None else sk.getPoint(*join) for point, join in zip(points, joins)]
+        tolerance = self.ENDPOINT_TOLERANCE
+        # Coordinate noise near an axis becomes an axis constraint, not a ~1e-15 dimension.
+        points = [point if join is not None else App.Vector(0 if abs(point.x) <= tolerance else point.x,
+                                                             0 if abs(point.y) <= tolerance else point.y, 0)
+                  for point, join in zip(points, joins)]
+        order = sorted(range(count), key=lambda k: points[k].x)
+        for n, a in enumerate(order):
+            for b in order[n + 1:]:
+                if points[b].x - points[a].x > tolerance:
+                    break
+                if points[a].distanceToPoint(points[b]) <= tolerance:
+                    pair = sorted((a + 1, b + 1))
+                    hint = ("; use closed=true instead of repeating the first point"
+                            if pair == [1, count] and not closed and count >= 4 else "")
+                    raise OperationError("invalid_argument", "Polyline points must be distinct" + hint, points=pair)
+        segments = count if closed else count - 1
+        for k in range(segments):
+            first, second = joins[k], joins[(k + 1) % count]
+            if first is not None and second is not None and first[0] == second[0] and first[0] >= 0                     and isinstance(sk.Geometry[first[0]], Part.LineSegment):
+                raise OperationError("invalid_argument", "Polyline segment would duplicate an existing sketch line",
+                                     points=[k + 1, (k + 1) % count + 1])
+        for k in range(count) if closed else range(1, count - 1):
+            incoming, outgoing = points[k] - points[k - 1], points[(k + 1) % count] - points[k]
+            if incoming.dot(outgoing) < 0 and incoming.cross(outgoing).Length <= 1e-9 * incoming.Length * outgoing.Length:
+                raise OperationError("invalid_argument", "Polyline doubles back on itself", point=k + 1)
+        before = self._solver_report(sk)
+        # Geometry and constraints go in as one batch each: Python addConstraint
+        # solves the whole sketch per call, which is quadratic for long polylines.
+        lines = list(sk.addGeometry([Part.LineSegment(points[k], points[(k + 1) % count]) for k in range(segments)],
+                                    construction))
+        constraints = [Sketcher.Constraint("Coincident", lines[k], 2, lines[(k + 1) % segments], 1)
+                       for k in range(segments if closed else segments - 1)]
+        names = {c.Name for c in sk.Constraints if c.Name}
+        # One suffix for the whole polyline, so P3X_2 and P3Y_2 always name the same
+        # vertex even where a zero coordinate takes an axis constraint instead.
+        suffix, n = "", 2
+        while any(f"P{k + 1}{axis}{suffix}" in names for k in range(count) for axis in "XY"):
+            suffix, n = f"_{n}", n + 1
+        # Vertex k is the start of segment k; an open polyline's last vertex ends the last segment.
+        # Free vertices are positioned as _position_constraints does.
+        for k, (point, join) in enumerate(zip(points, joins)):
+            geometry, pos = (lines[k], 1) if k < segments else (lines[-1], 2)
+            if join is not None:
+                constraints.append(Sketcher.Constraint("Coincident", geometry, pos, *join))
+                continue
+            if point.x == 0 and point.y == 0:
+                constraints.append(Sketcher.Constraint("Coincident", geometry, pos, -1, 1))
+                continue
+            for kind, value, axis, name in (("DistanceX", point.x, -2, f"P{k + 1}X{suffix}"),
+                                            ("DistanceY", point.y, -1, f"P{k + 1}Y{suffix}")):
+                if value == 0:
+                    constraints.append(Sketcher.Constraint("PointOnObject", geometry, pos, axis))
+                    continue
+                dimension = Sketcher.Constraint(kind, geometry, pos, value)
+                dimension.Name = name
+                constraints.append(dimension)
+        sk.addConstraint(constraints)
+        ends = [{1: points[k], 2: points[(k + 1) % count]} for k in range(segments)]
+        self._require_fixed(sk, lines[0], before, ends[0], "polyline")
+        dependent = {index for index, _ in sk.getGeometryWithDependentParameters()}
+        for k, line in enumerate(lines[1:], 1):
+            if line in dependent:
+                raise OperationError("constraint_conflict", "New polyline is not fully constrained", dof=sk.DoF)
+            for pos, point in ends[k].items():
+                if sk.getPoint(line, pos).distanceToPoint(point) > 1e-5:
+                    raise OperationError("constraint_conflict", "The sketch solver moved the new polyline",
+                                         point=(k + pos - 1) % count + 1)
+
     @staticmethod
     def _deletable_feature(obj, body):
         if obj == body or obj not in body.Group:
@@ -2502,7 +2595,7 @@ class Controller:
                 sk.setExpression("Constraints.CenterY", f"{rectangle.Name}.Constraints.Height / 2")
             if sk.solve()!=0:
                 raise OperationError("constraint_conflict", "Circle solver failed")
-        elif op in {"add_rectangle", "add_circle", "add_line", "add_arc"}:
+        elif op in {"add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline"}:
             sk = self._profile(doc, req["sketch"])
             getattr(self, "_" + op)(sk, req)
             if sk.solve() != 0:

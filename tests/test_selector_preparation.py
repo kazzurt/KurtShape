@@ -57,13 +57,15 @@ class SelectorPreparationTests(unittest.TestCase):
         self.assertEqual(index.counts["selector_membership_builds"] - before.get("selector_membership_builds", 0), 1)
         self.assertEqual(index.counts["selector_literal_reads"] - before.get("selector_literal_reads", 0), 2)
 
-    def test_vertex_literal_preserves_existing_native_summary_error(self):
+    def test_vertex_literal_summary_matches_full_preparation(self):
+        # Vertex rows used to fail (Part.Vertex has no CenterOfMass); lazy and
+        # full preparation must now agree on the same summary.
         query = {"feature": "Pad", "subelement": "Vertex1"}
-        with self.assertRaises(AttributeError) as lazy:
-            selectors.resolve(self.doc, query)
-        with self.assertRaises(AttributeError) as full:
-            selectors._resolve_full(self.doc, query)
-        self.assertEqual(str(lazy.exception), str(full.exception))
+        lazy = selectors.resolve(self.doc, query)
+        full = selectors._resolve_full(self.doc, query)
+        self.assertEqual(lazy, full)
+        point = self.doc.Pad.Shape.getElement("Vertex1").Point
+        self.assertAlmostEqual(App.Vector(*lazy[0]["summary"]["center_mm"]).distanceToPoint(point), 0, places=9)
 
     def test_global_rows_are_lazy_and_owner_maps_wait_for_creator_lineage(self):
         index = document_index.get(self.doc)

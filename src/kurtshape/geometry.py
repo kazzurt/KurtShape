@@ -41,7 +41,8 @@ def scalar(shape, field):
     if field == "center_of_mass":
         if shape.Solids:
             return center_of_mass(shape)
-        point = shape.CenterOfMass
+        # A Vertex has no CenterOfMass; vertex selector rows used to fail here.
+        point = shape.Point if shape.ShapeType == "Vertex" else shape.CenterOfMass
         return [point.x, point.y, point.z]
     return float(getattr(shape, {"volume": "Volume", "area": "Area", "length": "Length"}[field]))
 

@@ -25,11 +25,23 @@ _ENTITY = {"face": ("Faces", "Face"), "edge": ("Edges", "Edge"), "vertex": ("Ver
 _SCHEMA = {
     "created_by": {"kind", "feature", "entity_type", "cap"},
     "owned_by": {"kind", "part", "body", "entity_type"}, "all": {"kind", "entity_type"},
-    "geometry": {"kind", "query", "geometry"}, "union": {"kind", "queries"},
+    "geometry": {"kind", "query", "geometry", "radius", "major_radius", "minor_radius", "tolerance"},
+    "union": {"kind", "queries"},
     "intersection": {"kind", "queries"}, "subtraction": {"kind", "query", "subtract"},
     "adjacent": {"kind", "query", "entity_type", "adjacency"}, "tangent": {"kind", "query"},
     "parallel": {"kind", "query", "direction", "allow_antiparallel"}, "closest": {"kind", "query", "point"},
 }
+# Geometry-filter parameters: selector key -> geometry carrying it -> native
+# primitive attribute. Cone radius is OCCT's reference radius (at its location).
+_PARAMETERS = {
+    "radius": {"circle": "Radius", "cylinder": "Radius", "sphere": "Radius", "cone": "Radius"},
+    "major_radius": {"torus": "MajorRadius", "ellipse": "MajorRadius"},
+    "minor_radius": {"torus": "MinorRadius", "ellipse": "MinorRadius"},
+}
+PARAMETER_TOLERANCE = 1e-6
+# A face summary point must clear the face boundary, so a closest selector at
+# it cannot tie with an adjacent face or edge.
+_POINT_CLEARANCE = 1e-6
 _evaluation_milliseconds = 0.0
 _refresh_milliseconds = 0.0
 _rebuild_metrics = {}
@@ -51,6 +63,14 @@ def _row_scalar(row, field):
     shape, obj = row["_shape"], row["_object"]
     key = (row["entity_type"], row["subelement"], field, _shape_frame(shape))
     def compute():
+        if field in _PARAMETERS:
+            attribute = _PARAMETERS[field].get(_geometry(row))
+            if attribute is None:
+                return None
+            primitive = shape.Surface if row["entity_type"] == "face" else shape.Curve
+            return float(getattr(primitive, attribute))
+        if field == "point":
+            return tuple(_element_point(row))
         value = geometry.scalar(shape, field)
         return tuple(value) if field == "center_of_mass" else value
     return _memo(obj.Document, "selector_scalar", (obj,), key, compute)
@@ -110,8 +130,16 @@ def migrate_link_scopes(doc):
             _property(obj, "QuerySources", list(obj.QuerySources), "App::PropertyLinkListGlobal")
 
 
+def _finite(number):
+    """math.isfinite, treating JSON integers too large for a float as not finite."""
+    try:
+        return math.isfinite(number)
+    except OverflowError:
+        return False
+
+
 def _vector(value, name):
-    if not isinstance(value, (list, tuple)) or len(value) != 3 or any(isinstance(n, bool) or not isinstance(n, (int, float)) or not math.isfinite(n) for n in value):
+    if not isinstance(value, (list, tuple)) or len(value) != 3 or any(isinstance(n, bool) or not isinstance(n, (int, float)) or not _finite(n) for n in value):
         raise _error("invalid_selector", name + " requires three finite millimeter coordinates")
     return App.Vector(*value)
 
@@ -483,6 +511,9 @@ def _geometry(row):
     shape, kind = row["_shape"], row["entity_type"]
     if kind == "vertex":
         return "point"
+    if kind == "edge" and shape.Degenerated:
+        # Sphere poles and similar collapsed edges have no native 3D curve.
+        return "degenerate"
     primitive = shape.Surface if kind == "face" else shape.Curve
     return {"Plane": "plane", "Cylinder": "cylinder", "Cone": "cone", "Sphere": "sphere",
             "Toroid": "torus", "Line": "line", "LineSegment": "line", "Circle": "circle",
@@ -676,6 +707,37 @@ def _literal_reference_full(context, selector):
              "part": _part_id(context.doc, obj), "_object": obj, "_shape": shape}]
 
 
+def _measure(value, name, positive=False):
+    if (isinstance(value, bool) or not isinstance(value, (int, float)) or not _finite(value)
+            or value < 0 or positive and value == 0):
+        raise _error("invalid_selector", name + " requires a " + ("positive" if positive else "non-negative")
+                     + " finite millimeter number")
+    return float(value)
+
+
+def _parameter_filters(selector, geometric_filter):
+    """Validated {parameter: millimeters} and absolute tolerance of a geometry filter."""
+    filters = {}
+    for name, carriers in _PARAMETERS.items():
+        if name not in selector:
+            continue
+        if geometric_filter not in carriers:
+            hint = ("; " + geometric_filter + " uses major_radius/minor_radius"
+                    if name == "radius" and geometric_filter in {"torus", "ellipse"} else "")
+            raise _error("invalid_selector", name + " applies only to " + ", ".join(sorted(carriers)) + " geometry" + hint,
+                         geometry=geometric_filter, field=name)
+        filters[name] = _measure(selector[name], name, positive=True)
+    if "tolerance" not in selector:
+        return filters, PARAMETER_TOLERANCE
+    if not filters:
+        raise _error("invalid_selector", "tolerance requires a radius, major_radius or minor_radius filter", field="tolerance")
+    return filters, _measure(selector["tolerance"], "tolerance")
+
+
+def _parameter_matches(actual, expected, tolerance):
+    return actual is not None and abs(actual - expected) <= tolerance
+
+
 def _evaluate(context, selector, depth=0):
     if depth > 24 or not isinstance(selector, dict):
         raise _error("invalid_selector", "Selector must be a bounded declarative object")
@@ -760,7 +822,9 @@ def _evaluate(context, selector, depth=0):
         geometric_filter = selector.get("geometry")
         if geometric_filter not in {"plane", "cylinder", "cone", "sphere", "torus", "line", "circle", "ellipse", "spline", "point"}:
             raise _error("invalid_selector", "Unknown geometry filter")
-        return [row for row in rows if _geometry(row) == geometric_filter]
+        filters, tolerance = _parameter_filters(selector, geometric_filter)
+        return [row for row in rows if _geometry(row) == geometric_filter
+                and all(_parameter_matches(_row_scalar(row, name), value, tolerance) for name, value in filters.items())]
     if kind == "parallel":
         direction = _vector(selector.get("direction"), "direction")
         if direction.Length < TOLERANCE:
@@ -835,7 +899,126 @@ def _evaluate(context, selector, depth=0):
     raise _error("invalid_selector", "Unknown selector kind", kind=kind)
 
 
-def _summary(row):
+def _xyz(vector):
+    return [vector.x, vector.y, vector.z]
+
+
+def _unit(vector):
+    vector = App.Vector(vector)
+    if vector.Length > 0:
+        vector.normalize()
+    return _xyz(vector)
+
+
+def _surface_parameters(surface, u, v, bounds):
+    """Native projection parameters moved into the face's periodic range."""
+    u0, u1, v0, v1 = bounds
+    if surface.isUPeriodic() and not u0 <= u <= u1:
+        u = u0 + (u - u0) % surface.UPeriod()
+    if surface.isVPeriodic() and not v0 <= v <= v1:
+        v = v0 + (v - v0) % surface.VPeriod()
+    return u, v
+
+
+def _face_point(face, center_of_mass):
+    """A point on the face, clear of its boundary whenever one can be found.
+
+    Order: parametric centre, a parameter grid nearest that centre, the
+    projected centre of mass, small inward steps from edge midpoints, and
+    finally the longest edge's midpoint (on the boundary, still on the face).
+    """
+    bounds = u0, u1, v0, v1 = face.ParameterRange
+    du, dv = u1 - u0, v1 - v0
+    surface = face.Surface
+    edges = [edge for edge in face.Edges if not edge.Degenerated]
+    boundary = []
+
+    def interior(u, v):
+        try:
+            if not face.isPartOfDomain(u, v):
+                return None
+            point = face.valueAt(u, v)
+            if edges:
+                if not boundary:
+                    boundary.append(Part.Compound(edges))
+                if boundary[0].distToShape(Part.Vertex(point))[0] <= _POINT_CLEARANCE:
+                    return None
+            return point
+        except Exception:
+            # Native classification can fail on a degenerate parameter curve;
+            # another candidate is tried.
+            return None
+
+    steps = 8
+    grid = sorted((((i + .5) / steps, (j + .5) / steps) for i in range(steps) for j in range(steps)),
+                  key=lambda item: ((item[0] - .5) ** 2 + (item[1] - .5) ** 2, item))
+    for a, b in [(.5, .5)] + grid:
+        point = interior(u0 + a * du, v0 + b * dv)
+        if point is not None:
+            return point
+    seeds = [App.Vector(*center_of_mass)] + [edge.valueAt((edge.FirstParameter + edge.LastParameter) / 2)
+                                             for edge in sorted(edges, key=lambda edge: -edge.Length)]
+    for index, seed in enumerate(seeds):
+        try:
+            u, v = _surface_parameters(surface, *surface.parameter(seed), bounds)
+        except Exception:
+            continue  # Native projection failed for this seed; try the next one.
+        offsets = [(0.0, 0.0)] if index == 0 else [
+            (scale * math.cos(angle), scale * math.sin(angle))
+            for scale in (1e-2, 1e-3, 1e-4) for angle in (k * math.pi / 4 for k in range(8))]
+        for a, b in offsets:
+            point = interior(u + a * du, v + b * dv)
+            if point is not None:
+                return point
+    if len(seeds) > 1:
+        return seeds[1]
+    return face.Vertexes[0].Point if face.Vertexes else App.Vector(*center_of_mass)
+
+
+def _element_point(row):
+    shape = row["_shape"]
+    if row["entity_type"] == "edge":
+        return _xyz(shape.valueAt((shape.FirstParameter + shape.LastParameter) / 2))
+    if row["entity_type"] == "face":
+        return _xyz(_face_point(shape, _row_scalar(row, "center_of_mass")))
+    return _xyz(shape.Point)
+
+
+def _detail(row, kind):
+    """Usable geometry for resolve_selector output; never used by evaluation."""
+    shape, result = row["_shape"], {"point_mm": list(_row_scalar(row, "point"))}
+    if row["entity_type"] == "edge":
+        if kind == "line":
+            result["direction"] = _unit(shape.valueAt(shape.LastParameter) - shape.valueAt(shape.FirstParameter))
+        elif kind in {"circle", "ellipse"}:
+            curve = shape.Curve
+            if kind == "circle":
+                result["radius_mm"] = _row_scalar(row, "radius")
+            else:
+                result["major_radius_mm"] = _row_scalar(row, "major_radius")
+                result["minor_radius_mm"] = _row_scalar(row, "minor_radius")
+            result["geometric_center_mm"] = _xyz(curve.Center)
+            result["axis"] = _unit(curve.Axis)
+    elif row["entity_type"] == "face" and kind in {"cylinder", "cone", "sphere", "torus"}:
+        surface = shape.Surface
+        if kind == "torus":
+            result["major_radius_mm"] = _row_scalar(row, "major_radius")
+            result["minor_radius_mm"] = _row_scalar(row, "minor_radius")
+        else:
+            result["radius_mm"] = _row_scalar(row, "radius")
+        if kind in {"sphere", "torus"}:
+            result["geometric_center_mm"] = _xyz(surface.Center)
+        else:
+            result["axis_point_mm"] = _xyz(surface.Center)
+        if kind != "sphere":
+            result["axis"] = _unit(surface.Axis)
+        if kind == "cone":
+            result["apex_mm"] = _xyz(surface.Apex)
+            result["semi_angle_rad"] = float(surface.SemiAngle)
+    return result
+
+
+def _summary(row, detail=False):
     shape = row["_shape"]
     result = {"geometry": _geometry(row), "center_mm": list(_row_scalar(row, "center_of_mass"))}
     if row["entity_type"] == "face":
@@ -844,21 +1027,28 @@ def _summary(row):
             result["normal"] = list(shape.normalAt(0, 0))
     elif row["entity_type"] == "edge":
         result["length_mm"] = _row_scalar(row, "length")
+    if detail:
+        result.update(_detail(row, result["geometry"]))
     return result
 
 
-def _resolved(context, selector):
+def _resolved(context, selector, detail=False):
     values = _evaluate(context, selector)
-    return [{**{key: value for key, value in row.items() if not key.startswith("_")}, "summary": _summary(row)}
+    return [{**{key: value for key, value in row.items() if not key.startswith("_")}, "summary": _summary(row, detail)}
             for row in sorted(values, key=_identity)]
 
 
-def _resolve_full(doc, selector, before=None):
+def _resolve_full(doc, selector, before=None, detail=False):
     """Fresh complete preparation, retained as an explicit correctness oracle."""
-    return _resolved(_Context(doc, before, eager=True, cache=False), selector)
+    return _resolved(_Context(doc, before, eager=True, cache=False), selector, detail)
 
 
-def resolve(doc, selector, before=None):
+def resolve(doc, selector, before=None, detail=False):
+    """Matched rows with a basic summary; ``detail`` adds resolve_selector geometry.
+
+    Detail (points on elements, radii, axes) is computed only for that read
+    output and ambiguity diagnostics, never while consumers rebind.
+    """
     global _evaluation_milliseconds
     start = time.perf_counter()
     try:
@@ -875,7 +1065,7 @@ def resolve(doc, selector, before=None):
                     provider.drop_document(doc)
             discard_foreign()
             try:
-                return _resolve_full(doc, selector, before)
+                return _resolve_full(doc, selector, before, detail)
             finally:
                 discard_foreign()
         token = index.token(*sorted(document_index.DOMAINS)) if index is not None else None
@@ -894,7 +1084,7 @@ def resolve(doc, selector, before=None):
                         contexts.popitem(last=False)
                 contexts.move_to_end(boundary)
                 context = contexts[boundary]
-            result = _resolved(context, selector)
+            result = _resolved(context, selector, detail)
         except Exception:
             if not changed():
                 raise
@@ -915,7 +1105,7 @@ def resolve(doc, selector, before=None):
         current = document_index.get(doc)
         fallback_token = current.token(*sorted(document_index.DOMAINS)) if current is not None else None
         try:
-            result = _resolve_full(doc, selector, before)
+            result = _resolve_full(doc, selector, before, detail)
             if (document_index.get(doc) is not current or current is not None
                     and fallback_token != current.token(*sorted(document_index.DOMAINS))):
                 raise _error("selector_document_changed", "Native document changed during selector resolution; retry")
@@ -926,6 +1116,12 @@ def resolve(doc, selector, before=None):
         _evaluation_milliseconds += (time.perf_counter() - start) * 1000
 
 
+def _detailed_matches(doc, selector, before=None, entity_type=None):
+    """Ambiguity diagnostics carry the resolve_selector geometry for refining picks."""
+    values = resolve(doc, selector, before, detail=True)
+    return [row for row in values if row["entity_type"] == entity_type] if entity_type else values
+
+
 def native_reference(doc, spec, before=None, entity_type=None):
     values = resolve(doc, spec, before)
     if entity_type:
@@ -933,7 +1129,8 @@ def native_reference(doc, spec, before=None, entity_type=None):
     if not values:
         raise _error("missing_reference", "Reference selector resolves to no matching element")
     if len(values) != 1:
-        raise _error("ambiguous_reference", "Reference selector resolves to several elements", matches=values)
+        raise _error("ambiguous_reference", "Reference selector resolves to several elements",
+                     matches=_detailed_matches(doc, spec, before, entity_type))
     return {"feature": values[0]["feature"], "subelement": values[0]["subelement"]}
 
 
@@ -1047,7 +1244,8 @@ def bind(feature, input_name, selector, native_property="AttachmentSupport", man
     if not values:
         raise _error("missing_reference", "Reference selector resolves to no matching element")
     if not many and len(values) != 1:
-        raise _error("ambiguous_reference", "Reference selector resolves to several elements", matches=values)
+        raise _error("ambiguous_reference", "Reference selector resolves to several elements",
+                     matches=_detailed_matches(feature.Document, selector, before=feature))
     for source in _sources(feature.Document, selector, before=feature):
         if source == feature or feature in source.OutListRecursive:
             raise _error("cyclic_reference", "Reference selector cannot target its consumer or a downstream feature")

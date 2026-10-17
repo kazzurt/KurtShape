@@ -26,9 +26,11 @@ ARGS = {
     "split_part": {"id", "name", "part", "plane", "face", "sketch"},
     "transform_part": {"id", "name", "part", "translation", "rotation", "coordinate_system", "copy"},
     "delete_part": {"id", "name", "part"},
-    "linear_pattern_parts": {"id", "name", "parts", "direction", "spacing", "count", "operation", "merge_scope"},
-    "circular_pattern_parts": {"id", "name", "parts", "axis", "angle", "count", "operation", "merge_scope"},
-    "mirror_parts": {"id", "name", "parts", "plane", "origin", "normal", "operation", "merge_scope"},
+    "linear_pattern_parts": {"id", "name", "parts", "direction", "spacing", "count", "operation", "merge_scope",
+                             "include_source"},
+    "circular_pattern_parts": {"id", "name", "parts", "axis", "angle", "count", "operation", "merge_scope",
+                               "include_source"},
+    "mirror_parts": {"id", "name", "parts", "plane", "origin", "normal", "operation", "merge_scope", "include_source"},
     "rollback": {"index"},
     "set_part_appearance": {"part", "name", "visible", "color"},
 }
@@ -585,6 +587,12 @@ def operation_members(doc, owner_name):
     Helpers placed in an untagged user Body (such as an axis datum) remain.
     """
     tagged = [obj for obj in doc.Objects if getattr(obj, "KurtShapeOperationOwner", "") == owner_name]
+    # Pattern copies consumed by Add/Remove/Intersect were untagged before
+    # 2026-10-17; their recorded tool Bodies still belong to the operation.
+    owner = doc.getObject(owner_name)
+    recorded = [doc.getObject(name) for name in getattr(owner, "KurtShapePatternToolParts", [])] if owner else []
+    tagged += [obj for obj in recorded if obj is not None and obj not in tagged and getattr(obj, "KurtShapeInternal", False)
+               and not getattr(obj, "KurtShapeOperationOwner", "")]
     return [obj for obj in tagged if not _owned_elsewhere(obj, owner_name)]
 
 
@@ -789,6 +797,9 @@ def refresh_validation(doc):
             if not tools or any(tool.Shape.isNull() for tool in tools):
                 continue
             desired = _scope_parts(doc, operation, tools, index)
+            # Included pattern sources are tools of their operation, never targets.
+            sources = set(getattr(obj, "KurtShapePatternSourceParts", []))
+            desired = [key for key in desired if key not in sources]
             recorded = list(obj.KurtShapeMergePartIds)
             if set(desired) != set(recorded):
                 scope_errors.append({"feature": obj.Name, "code": "auto_merge_scope_changed",
@@ -1609,7 +1620,23 @@ def handle(controller, doc, req):
         operation = req.get("operation", "new")
         if operation not in {"new", "add", "remove", "intersect"}:
             raise _error("invalid_argument", "Operation must be new, add, remove or intersect")
+        # Feature-pattern semantics: the source parts act together with their
+        # copies, as consumed tools (boolean_parts tools), never as targets.
+        include_source = _bool(req, "include_source", False)
+        if include_source and operation not in {"add", "remove"}:
+            # Intersect against several patterned tools is ambiguous (each
+            # instance in turn, or the union of instances) and the native
+            # multi-tool Common splits its result; ask for an explicit union.
+            raise _error("invalid_argument", "include_source requires operation add or remove; for intersect, "
+                         "fuse the tools with boolean_parts first")
         snapshots = _inputs(doc, req.get("parts"), name)
+        source_ids = [key for key, _ in snapshots]
+        if include_source and isinstance(req.get("merge_scope"), list):
+            overlap = [item for item in req["merge_scope"]
+                       if isinstance(item, str) and part_id(current_part(doc, item)) in source_ids]
+            if overlap:
+                raise _error("invalid_argument", "merge_scope must not contain a pattern source part when include_source is true",
+                             parts=overlap)
         count = req.get("count", 2)
         if isinstance(count, bool) or not isinstance(count, int) or not 2 <= count <= 100:
             raise _error("invalid_argument", "Pattern count must be between two and one hundred")
@@ -1646,17 +1673,36 @@ def handle(controller, doc, req):
             copies = outputs
             for body in copies:
                 _prop(body, "App::PropertyBool", "KurtShapeInternal", True)
+                # Consumed copies are not outputs; _record's closure does not
+                # reach a Body from its features, so tag them for deletion.
+                _prop(body, "App::PropertyString", "KurtShapeOperationOwner", reps[0].Name)
             scope = req.get("merge_scope", "auto")
             candidates = current_parts(doc) if scope == "auto" else [current_part(doc, key) for key in scope] if isinstance(scope, list) and scope else []
             if not candidates:
                 raise _error("empty_merge_scope", "Pattern merge scope must be auto or a nonempty part list")
+            # Source snapshots are this history position's source geometry.
+            source_tools = [source for key, source in snapshots] if include_source else []
+            tools_pool = copies + source_tools
+            if include_source:
+                candidates = [body for body in candidates if part_id(body) not in source_ids]
+                if not candidates:
+                    raise _error("empty_merge_scope", "No part other than the pattern sources is in the merge scope")
             relevant = {}
             for body in candidates:
-                matching = [copy for copy in copies if _pair_matches(doc, body, copy, operation)]
+                matching = [copy for copy in tools_pool if _pair_matches(doc, body, copy, operation)]
                 if matching:
                     relevant[part_id(body)] = matching
             if not relevant:
                 raise _error("empty_merge_scope", "Pattern copies do not touch the selected scope")
+            if include_source and operation == "add":
+                # Add would otherwise discard an authored source solid or copy.
+                touched = {tool.Name for tools in relevant.values() for tool in tools}
+                loose = [key for key, source in zip(source_ids, source_tools) if source.Name not in touched]
+                if loose:
+                    raise _error("empty_merge_scope", "An included source part does not touch the merge scope", parts=loose)
+                loose_copies = [copy.Label for copy in copies if copy.Name not in touched]
+                if loose_copies:
+                    raise _error("empty_merge_scope", "A pattern copy does not touch the merge scope", copies=loose_copies)
             target_inputs = _inputs(doc, list(relevant), name + "Target")
             snapshots += target_inputs
             inputs_by_id = dict(target_inputs)
@@ -1687,7 +1733,11 @@ def handle(controller, doc, req):
                 outputs.append(result); boolean_reps.append(rep)
             _validate(doc, outputs)
             _prop(reps[0], "App::PropertyStringList", "KurtShapeMergePartIds", list(relevant))
-            _prop(reps[0], "App::PropertyStringList", "KurtShapePatternToolParts", [copy.Name for copy in copies])
-            return _record(doc, reps[0], req, outputs, list(relevant), snapshots)
+            _prop(reps[0], "App::PropertyStringList", "KurtShapePatternToolParts", [copy.Name for copy in tools_pool])
+            consumed = list(relevant)
+            if include_source:
+                _prop(reps[0], "App::PropertyStringList", "KurtShapePatternSourceParts", source_ids)
+                consumed += source_ids
+            return _record(doc, reps[0], req, outputs, consumed, snapshots)
         return _record(doc, reps[0], req, outputs, snapshots=snapshots)
     raise _error("unsupported_operation", "Unsupported studio operation")
