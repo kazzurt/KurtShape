@@ -39,7 +39,8 @@ Stored managed Part Studios already using `UseHasher=false` open without native 
 | `sketch_circle` | Optional `id`, plane/support; `x`, `y`, `diameter`, optional `center_on` | New constrained circle; optional native center expressions for a compatible origin rectangle in the same native coordinate frame |
 | `add_rectangle` | `sketch`, `width`, `height`, `x=0`, `y=0`, `construction=false` | Append constrained rectangle to an existing sketch |
 | `add_circle` | `sketch`, `x`, `y`, `diameter`, `construction=false` | Append constrained circle |
-| `add_line` | `sketch`, `x1`, `y1`, `x2`, `y2`, `construction=false` | Append line with driving endpoint coordinates; coincident endpoints reject |
+| `add_line` | `sketch`, `x1`, `y1`, `x2`, `y2`, `construction=false` | Append line with driving endpoint coordinates; coincident endpoints reject. A non-construction line endpoint within 1e-6 mm of an endpoint of a fully constrained, non-construction arc (any non-line curve) gets a native Coincident instead of coordinates; line-to-line junctions keep coordinates |
+| `add_arc` | `sketch`, `cx`, `cy`, then exactly one form: `radius`, `start_angle`, `end_angle` (radians or quantity strings such as `"90 deg"`), or start/end points `x1`, `y1`, `x2`, `y2`; `construction=false` | Append a native circular arc running counter-clockwise from start to end, fully constrained (DoF 0) and unmoved by the solve. A non-construction arc endpoint within 1e-6 mm of an endpoint of fully constrained, non-construction sketch geometry (or the sketch origin) gets a native Coincident, which joins line/arc profiles topologically. The span is always the driving angle `Sweep` (rad). An arc with a free end also gets `CenterX`/`CenterY`; a free arc also gets `Radius` and `StartX` or `StartY` (the start coordinate that best fixes its angle; zero uses an axis constraint); an arc joined at both ends is set by its endpoints and `Sweep`, so semicircles stay regular. Mixed or incomplete forms, radius ≤ 0, zero sweep, \|end−start\| ≥ 360 deg and endpoint radii differing by more than 1e-6 mm reject with `invalid_argument`; works inside a managed sketch edit |
 | `begin_sketch_edit` | `feature` | Start an exclusive managed native sketch edit lease |
 | `finish_sketch_edit` | `cancel=false` | Validate/rebuild and group the completed edit into one history step, or restore its accepted starting state |
 | `set_sketch_support` | `sketch`; `plane:"XY"/"XZ"/"YZ"` or `support:{feature,subelement:"FaceN"}`; optional `body` | Replace native support while preserving sketch-local geometry, constraints and expressions. Same-Body planar face/datum rules match creation. Self/downstream references and later-history targets reject. Participates in managed draft Undo/Redo, Cancel and grouped Finish |
@@ -48,10 +49,10 @@ Stored managed Part Studios already using `UseHasher=false` open without native 
 | `edit_extrusion` | `feature`; optional `length`, `expression` (string or null), `reversed`, `end_type` | Edit an existing Extrude/Remove in place from native state: depth, depth formula, direction, and native Pocket Blind ↔ Through all. Formula-driven depth rejects numeric replacement (`expression_driven`); unsupported end changes reject (`unsupported_transition`); a Remove that removes nothing rejects (`empty_cut`). Also accepted by `preview`. See [Extrude/Remove editing](EXTRUSION_EDIT.md) |
 | `orphan_helpers` | Read-only; no revision | Groups of helper objects whose owning studio operation no longer exists: `owner`, `objects`, surviving `consumers`, kept `inputs`, `repairable`. Opening a file never removes them. See [history lifecycle](HISTORY_LIFECYCLE.md) |
 | `repair_orphan_helpers` | Optional `owners:[ID,...]` | Removes only unconsumed leftover groups in one undoable transaction and returns `repair_report`; consumed groups reject `orphan_has_consumers`; nothing to repair rejects `no_orphans` |
-| `set_parameter` | `feature`, `parameter`, `value` | Named or indexed driving sketch dimension, Pad Length or blind-Pocket Length; expression-driven/reference parameters reject numeric replacement |
+| `set_parameter` | `feature`, `parameter`, `value` | Named or indexed driving sketch dimension, Pad Length or blind-Pocket Length, signed datum-plane `Offset`, or the signed `Angle` of a line-angle plane; expression-driven/reference parameters reject numeric replacement |
 | `rename_feature` | `feature`, `name` | Change native Label, preserving internal ID/references; Body can be renamed as the visible part |
 | `delete_feature` | `feature`, `cascade=false` | Delete sketches, datum planes and built-in native PartDesign features, including fillet/chamfer/revolution/mirror/pattern. Dependencies require explicit cascade; Body, external references and script-owned/proxy targets or consumers reject |
-| `delete_features` (studio operations) | As below | Selecting a studio operation removes its whole helper closure with it (plan field `helpers`); a later consumer of the operation rejects the deletion |
+| `delete_features` (studio operations) | As below | Selecting a studio operation removes its whole helper closure with it (plan field `helpers`); a later consumer of the operation rejects the deletion. This includes `operation:"new"` results whose representative is a top-level native Part tool (`Part::Revolution`, `Part::Extrusion`, …) outside every Body; select its consumers in the same request |
 | `delete_features` | Nonempty distinct `features:[ID,...]`, `cascade=false`; optional `body` | Validate the complete selected set before mutation; delete consumers before sources in one native transaction. Selected dependents need no cascade; unselected dependents return `dependent_features` with IDs until explicit cascade. Independent selections may span Bodies; external/script-owned dependency rules match single deletion. One Undo restores the whole deletion |
 | `rebuild` | None | Touch native modeling features and recompute |
 | `undo` / `redo` | None | Native document history outside editing; native sketch snapshots within its managed lease; fresh revision |
@@ -166,6 +167,7 @@ Through-all `pad` requests require an explicit `operation` or `merge_scope` to e
 | `linear_pattern_parts` | `parts`, `direction`, `spacing`, `count`; result fields | Native placed copies and result operations |
 | `circular_pattern_parts` | `parts`, `axis`, `angle`, `count`; result fields | Native rotated copies; a full turn excludes the coincident last instance |
 | `mirror_parts` | `parts`, `origin`, `normal`; result fields | Native Part Mirroring and result operations |
+| `create_plane` | Optional `id`, `name`, `body`, `offset=0` (signed mm along the finished plane's normal) plus exactly one definition. **Offset:** `base_plane:"XY"/"XZ"/"YZ"` (default XY) or `support` (datum plane, planar face reference or selector). **Point-normal:** `origin:[x,y,z]`, `normal:[x,y,z]`, optional `x_direction:[x,y,z]`. **Three-point:** `points:[[x,y,z],[x,y,z],[x,y,z]]`. **Line-angle:** `axis:{origin,direction}` or one straight edge reference/selector, `reference_normal:[x,y,z]`, `angle=0` | Native `PartDesign::Plane` in the Body; the Body Tip is unchanged. Frames, storage and inspection under [Datum planes](#datum-planes) |
 | `rollback` | Zero-based `index` between 0 and feature-count | Moves every current Tip to the shared history position; later features are held. Insertions enter at the bar; roll forward rewires recorded stable part inputs |
 | `set_part_appearance` | `part`, optional `name`, `visible`, RGB `color:[0..1,0..1,0..1]` | Native part metadata and view appearance; visibility never removes a part from export |
 | `fillet` / `chamfer` | Optional `part`, `edges:[reference,...]`, `radius` / `size` | Native PartDesign feature on the current part |
@@ -174,6 +176,44 @@ Through-all `pad` requests require an explicit `operation` or `merge_scope` to e
 | `resolve_selector` | `selector`; read-only, no revision required | Matched native elements with part identity and geometry summary |
 
 All modeling requests use the existing transaction/revision/edit guards. Every accepted command is one undo step; rejection restores native objects and revision. `preview.proposal` accepts these modeling operations and legacy operations except rebuild, uses a disposable native clone, and returns current-part measurements. Commit remains a fresh operation against the preview's base revision. Inspect adds `studio:{enabled,feature_order,rollback_index,parts}`; each part has stable `id`, current native `body`/`feature`, name, visibility and color. Features expose `rolled_back`, `selectors` and `reference_health`. Export includes each current part once, with `included_part_ids` alongside native Body IDs. Assembly source selection uses the same current-result enumeration.
+
+### Datum planes
+
+`create_plane` coordinates are world millimetres. They are converted once into the owning Body's frame at creation (the same values when the Body is at identity, which is the normal case). The plane then belongs to the Body and moves with it. Directions need not be unit length; they are normalized. A sketch on the plane (`create_sketch support:{feature:<plane id>}`, no subelement) uses the plane's frame exactly: local +X is the plane's x direction, +Y is normal × x, +Z is the normal, and the origin is the plane origin plus `offset` along the normal. A circle at sketch (10, 5) therefore lies at origin + 10·x + 5·y.
+
+- **Point-normal.** `origin` and `normal` are required. `x_direction` is projected into the plane and rejects when parallel to the normal. When it is omitted, x is world +X projected into the plane, or world +Y when the normal is parallel to X (projection shorter than 1e-6).
+- **Three-point.** The origin is the first point, x points toward the second, and the normal is (p2−p1)×(p3−p1), so the third point is on the +Y side. Points closer than 1e-7 mm or collinear points (sine below 1e-7) reject.
+- **Line-angle.** The plane contains the line. Its origin is `axis.origin` and x is `axis.direction`. At `angle` 0 the normal is `reference_normal` projected perpendicular to the line, which rejects when parallel to it. A signed `angle` (radians, or a quantity such as `"108 deg"`) turns the plane right-handedly about the line direction. An edge reference or selector supplies the line's origin and direction, from its first-parameter point to its last-parameter point. The edge is copied once at creation and is not tracked afterwards. `PlaneAxisReference` records which edge was used.
+
+Native representation: the offset mode is unchanged. It uses FlatFace on the selected support, and the native expression `AttachmentOffset.Base.z = Offset` drives it. The point-normal, three-point and line-angle modes attach FlatFace to the Body origin XY plane. A native expression drives the whole `AttachmentOffset` from Body-coordinate properties in the "KurtShape plane" group:
+
+- `PlaneMode` (read-only)
+- point-normal: `PlaneOrigin`, `PlaneNormal`, `PlaneXDirection`
+- three-point: `PlanePoint1`..`PlanePoint3`
+- line-angle: `PlaneAxisOrigin`, `PlaneAxisDirection`, `PlaneReferenceNormal`, `Angle`
+- every mode: `Offset`
+
+Editing these properties natively moves the plane and the sketches attached to it. Plain FreeCAD rebuilds the saved file without KurtShape. The native attachment editor shows these offsets as expression-bound.
+
+`Offset` is a signed `set_parameter`/`set_expression` parameter for every KurtShape plane. Line-angle planes also report a signed `Angle` parameter in radians, marked `signed:true`.
+
+Inspect adds `plane` to every datum-plane feature, with these fields:
+
+- `mode`: `offset`, `point_normal`, `three_points`, `line_angle`, or `native` for helper planes
+- `frame:{origin_mm,x_direction,y_direction,normal}`: in world coordinates; exactly the frame of an attached sketch
+- `placement:{position_mm,rotation_xyzw}`: in Body coordinates
+- `support` and `map_mode`
+- `definition`: the authored request fields in Body coordinates (`origin`/`normal`/`x_direction`, `points`, or `axis`/`reference_normal`/`angle`/`axis_reference`), plus `offset`
+
+Validation rules:
+
+- Fields from two definitions in one request return `invalid_argument` with `modes`.
+- Missing required fields, non-finite or boolean numbers, vectors without exactly three components, zero directions and wrong-dimension quantities return `invalid_argument`.
+- An edge that is not straight returns `unsupported_axis`, and unknown fields return `unknown_argument`.
+- A rejected request leaves objects, Undo and revision unchanged.
+- After recompute, the native frame is checked against the request, and a mismatch returns `attachment_failed`.
+
+The GUI Plane tool still authors the offset mode. `preview` accepts every mode, including signed line-angle angles.
 
 A geometry reference accepts `{feature,subelement:"FaceN"|"EdgeN"|"VertexN"}` or an authored selector (bare, or `{selector:...}`). Native names remain supported explicit references, not inferred persistent identities. Interactive Use sends the exact picked native edge; Sketcher retains its mapped source association. A native external geometry `Missing` flag produces a `missing_reference` build error and a missing entry in the sketch's `reference_health`, even if Sketcher retains cached geometry and reports its own state as valid. Authored selectors keep their separate query semantics. Selector syntax:
 

@@ -127,6 +127,8 @@ def native_parameters(obj):
         expression = next((value for path, value in obj.ExpressionEngine if path.lstrip(".") == "Offset"), None)
         params["Offset"] = {"value": obj.Offset.Value, "unit": "mm", "editable": expression is None,
                             "expression": expression, "native_property": "Offset"}
+    if obj.TypeId == "PartDesign::Plane":
+        params.update(modeling_geometry.plane_parameters(obj))
     tool = getattr(obj, "KurtShapeTool", None) or obj
     for native_property, public_name, unit in (("LengthFwd", "Length", "mm"), ("Angle", "Angle", "rad"),
                                              ("Radius", "Radius", "mm"), ("Size", "Size", "mm"), ("Value", "Thickness", "mm")):
@@ -218,6 +220,8 @@ def native_feature_summary(obj):
     if "SourceFeatureId" in obj.PropertiesList:
         result["source_feature_id"] = obj.SourceFeatureId
         result["source_feature_name"] = obj.SourceFeatureName
+    if obj.TypeId == "PartDesign::Plane":
+        result["plane"] = modeling_geometry.plane_summary(obj)
     result["reference_health"] = json.loads(getattr(obj, "QueryHealth", "[]"))
     if obj.TypeId == "Sketcher::SketchObject":
         result["reference_health"].extend({"input": error["input"], "status": "missing",
@@ -235,9 +239,9 @@ class Controller:
     READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
                     "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}
-    MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line",
+    MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line", "add_arc",
                  "pad", "pocket", "edit_extrusion", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "repair_orphan_helpers", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS
-    EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "set_parameter", "set_expression", "set_sketch_support", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
+    EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "add_arc", "set_parameter", "set_expression", "set_sketch_support", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
     CREATE_OPS = {"new", "open", "recover", "import_step"}
     OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
     ARGS = {
@@ -248,6 +252,7 @@ class Controller:
         "add_rectangle": {"sketch", "width", "height", "x", "y", "construction"},
         "add_circle": {"sketch", "x", "y", "diameter", "construction"},
         "add_line": {"sketch", "x1", "y1", "x2", "y2", "construction"},
+        "add_arc": {"sketch", "cx", "cy", "radius", "start_angle", "end_angle", "x1", "y1", "x2", "y2", "construction"},
         "begin_sketch_edit": {"feature"}, "finish_sketch_edit": {"cancel"},
         "set_sketch_support": {"sketch", "plane", "support"},
         "pad": {"id","profile","length","reversed","source_feature_id","source_feature_name"},
@@ -2132,9 +2137,138 @@ class Controller:
         x2, y2 = number(req["x2"], "x2"), number(req["y2"], "y2")
         if math.hypot(x2-x1, y2-y1) < 1e-7:
             raise OperationError("invalid_argument", "Line endpoints must be distinct")
-        i = sk.addGeometry(Part.LineSegment(App.Vector(x1,y1,0), App.Vector(x2,y2,0)), self._construction(req))
-        self._position_constraints(sk, i, 1, x1, y1, "StartX", "StartY")
-        self._position_constraints(sk, i, 2, x2, y2, "EndX", "EndY")
+        construction = self._construction(req)
+        points = {1: App.Vector(x1, y1, 0), 2: App.Vector(x2, y2, 0)}
+        # Line-to-line junctions keep their coordinate dimensions. An endpoint
+        # on a fixed profile arc (any non-line curve) joins it natively.
+        anchors = [] if construction else self._anchor_points(sk, lambda curve: not isinstance(curve, Part.LineSegment))
+        joins = {pos: self._anchor(anchors, point) for pos, point in points.items()}
+        if joins[1] is not None and joins[1] == joins[2]:
+            raise OperationError("invalid_argument", "Line endpoints must be distinct")
+        before = self._solver_report(sk) if any(join is not None for join in joins.values()) else None
+        i = sk.addGeometry(Part.LineSegment(points[1], points[2]), construction)
+        for pos, x, y, names in ((1, x1, y1, ("StartX", "StartY")), (2, x2, y2, ("EndX", "EndY"))):
+            if joins[pos] is not None:
+                sk.addConstraint(Sketcher.Constraint("Coincident", i, pos, *joins[pos]))
+            else:
+                self._position_constraints(sk, i, pos, x, y, *names)
+        if before is not None:
+            self._require_fixed(sk, i, before, points, "line")
+
+    # New curve endpoints join existing sketch endpoints within this distance (mm).
+    ENDPOINT_TOLERANCE = 1e-6
+    SOLVER_DIAGNOSTICS = ("ConflictingConstraints", "RedundantConstraints",
+                          "PartiallyRedundantConstraints", "MalformedConstraints")
+
+    @staticmethod
+    def _anchor_points(sk, accept):
+        """Endpoints of solved, fully constrained, non-construction curves a new curve may join."""
+        candidates = [index for index, curve in enumerate(sk.Geometry)
+                      if isinstance(curve, (Part.LineSegment, Part.ArcOfConic, Part.BSplineCurve)) and not sk.getConstruction(index)
+                      and not (isinstance(curve, Part.BSplineCurve) and curve.isPeriodic()) and accept(curve)]
+        if not candidates:
+            return []
+        # Joining a curve with free parameters would leave the new curve free too.
+        dependent = {index for index, _ in sk.getGeometryWithDependentParameters()}
+        return [(index, pos, sk.getPoint(index, pos)) for index in candidates if index not in dependent for pos in (1, 2)]
+
+    def _anchor(self, anchors, point, origin=False):
+        """Nearest coincident anchor as (geometry, point position), the sketch origin, or None."""
+        near = [(location.distanceToPoint(point), index, pos) for index, pos, location in anchors
+                if location.distanceToPoint(point) <= self.ENDPOINT_TOLERANCE]
+        if near:
+            return min(near)[1:]
+        if origin and point.Length <= self.ENDPOINT_TOLERANCE:
+            return -1, 1
+        return None
+
+    def _solver_report(self, sk):
+        return sk.DoF, {name: set(getattr(sk, name)) for name in self.SOLVER_DIAGNOSTICS}
+
+    def _require_fixed(self, sk, geometry, before, expected, kind):
+        """A new curve solves with no new diagnostics, adds no freedom and stays where requested."""
+        if sk.solve() != 0:
+            raise OperationError("constraint_conflict", f"New {kind} produces a sketch solver conflict")
+        dof, diagnostics = self._solver_report(sk)
+        added = {name: sorted(diagnostics[name] - before[1][name]) for name in self.SOLVER_DIAGNOSTICS
+                 if diagnostics[name] - before[1][name]}
+        if added:
+            raise OperationError("constraint_conflict", f"New {kind} constraints are redundant or conflicting", constraints=added)
+        if dof != before[0] or geometry in {index for index, _ in sk.getGeometryWithDependentParameters()}:
+            raise OperationError("constraint_conflict", f"New {kind} is not fully constrained", dof=dof)
+        curve = sk.Geometry[geometry]
+        for pos, point in expected.items():
+            actual = (curve.value((curve.FirstParameter + curve.LastParameter) / 2) if pos == "mid"
+                      else sk.getPoint(geometry, pos))
+            if actual.distanceToPoint(point) > 1e-5:
+                raise OperationError("constraint_conflict", f"The sketch solver moved the new {kind}", point=str(pos))
+
+    def _add_arc(self, sk, req):
+        center_form, endpoint_form = {"radius", "start_angle", "end_angle"}, {"x1", "y1", "x2", "y2"}
+        given = set(req)
+        if given & center_form and given & endpoint_form:
+            raise OperationError("invalid_argument", "Give radius/start_angle/end_angle or x1/y1/x2/y2, not both")
+        by_points = bool(given & endpoint_form)
+        missing = sorted(({"cx", "cy"} | (endpoint_form if by_points else center_form)) - given)
+        if missing:
+            raise OperationError("invalid_argument", "add_arc requires cx, cy and either radius, start_angle and end_angle "
+                                 "or x1, y1, x2 and y2", fields=missing)
+        center = App.Vector(number(req["cx"], "cx"), number(req["cy"], "cy"), 0)
+        construction = self._construction(req)
+        full = 2 * math.pi
+        if by_points:
+            first = App.Vector(number(req["x1"], "x1"), number(req["y1"], "y1"), 0)
+            last = App.Vector(number(req["x2"], "x2"), number(req["y2"], "y2"), 0)
+            radii = [first.distanceToPoint(center), last.distanceToPoint(center)]
+            if min(radii) < 1e-7:
+                raise OperationError("invalid_argument", "Arc radius must be positive")
+            if abs(radii[0] - radii[1]) > self.ENDPOINT_TOLERANCE:
+                raise OperationError("invalid_argument", "Arc start and end points must be equidistant from the center", radii=radii)
+            radius = sum(radii) / 2
+            start = math.atan2(first.y - center.y, first.x - center.x)
+            sweep = (math.atan2(last.y - center.y, last.x - center.x) - start) % full
+        else:
+            radius = number(req["radius"], "radius", True)
+            start = number(req["start_angle"], "start_angle", unit="rad")
+            end = number(req["end_angle"], "end_angle", unit="rad")
+            if abs(end - start) >= full - 1e-12:
+                raise OperationError("invalid_argument", "Arc sweep must be less than 360 deg")
+            sweep = (end - start) % full
+        if 2 * radius * math.sin(sweep / 2) < 1e-7:
+            raise OperationError("invalid_argument", "Arc sweep must be nonzero and less than 360 deg")
+        start %= full
+        arc = Part.ArcOfCircle(Part.Circle(center, App.Vector(0, 0, 1), radius), start, start + sweep)
+        points = {1: first, 2: last} if by_points else {1: arc.StartPoint, 2: arc.EndPoint}
+        middle = start + sweep / 2
+        expected = dict(points, mid=center + App.Vector(math.cos(middle), math.sin(middle), 0) * radius)
+        # Profile arcs join coincident endpoints of fixed profile curves (or the
+        # origin) natively; construction arcs are always dimensioned on their own.
+        anchors = [] if construction else self._anchor_points(sk, lambda curve: True)
+        joins = [None, None] if construction else [self._anchor(anchors, points[pos], origin=True) for pos in (1, 2)]
+        if joins[0] is not None and joins[0] == joins[1]:
+            raise OperationError("invalid_argument", "Arc start and end points join the same sketch point")
+        before = self._solver_report(sk)
+        i = sk.addGeometry(arc, construction)
+        for pos, join in zip((1, 2), joins):
+            if join is not None:
+                sk.addConstraint(Sketcher.Constraint("Coincident", i, pos, *join))
+        # DoF 5 = joined endpoints (2 each) + center (2) + radius/start + Sweep.
+        # Sweep, not Radius, closes a two-ended arc: it stays regular for semicircles.
+        if None in joins:
+            self._position_constraints(sk, i, 3, center.x, center.y, "CenterX", "CenterY")
+        if joins == [None, None]:
+            self._dimension(sk, Sketcher.Constraint("Radius", i, radius), "Radius")
+            # The start coordinate that changes fastest along the circle fixes the start angle.
+            along_x = abs(math.sin(start)) >= abs(math.cos(start))
+            value = points[1].x if along_x else points[1].y
+            value = round(value, 9) if abs(value - round(value, 9)) < 1e-12 else value
+            if value == 0:
+                sk.addConstraint(Sketcher.Constraint("PointOnObject", i, 1, -2 if along_x else -1))
+            else:
+                self._dimension(sk, Sketcher.Constraint("DistanceX" if along_x else "DistanceY", i, 1, value),
+                                "StartX" if along_x else "StartY")
+        self._dimension(sk, Sketcher.Constraint("Angle", i, sweep), "Sweep")
+        self._require_fixed(sk, i, before, expected, "arc")
 
     @staticmethod
     def _deletable_feature(obj, body):
@@ -2368,7 +2502,7 @@ class Controller:
                 sk.setExpression("Constraints.CenterY", f"{rectangle.Name}.Constraints.Height / 2")
             if sk.solve()!=0:
                 raise OperationError("constraint_conflict", "Circle solver failed")
-        elif op in {"add_rectangle", "add_circle", "add_line"}:
+        elif op in {"add_rectangle", "add_circle", "add_line", "add_arc"}:
             sk = self._profile(doc, req["sketch"])
             getattr(self, "_" + op)(sk, req)
             if sk.solve() != 0:
@@ -2439,7 +2573,7 @@ class Controller:
                 feature = doc.getObject(info["native_feature"])
             if feature.TypeId=="Sketcher::SketchObject" and not feature.Constraints[info["constraint_index"]].Driving:
                 raise OperationError("unsupported_parameter", "This parameter is not a supported driving length dimension")
-            value = number(req["value"], "value", parameter != "Offset" and info.get("constraint_type") not in {"DistanceX", "DistanceY", "Angle"}, info["unit"]) if op == "set_parameter" else None
+            value = number(req["value"], "value", not info.get("signed") and parameter != "Offset" and info.get("constraint_type") not in {"DistanceX", "DistanceY", "Angle"}, info["unit"]) if op == "set_parameter" else None
             property_path=(f"Constraints.{info['name']}" if info.get("name") else f"Constraints[{info['constraint_index']}]") if feature.TypeId=="Sketcher::SketchObject" else info.get("native_property", parameter)
             aliases={property_path}
             if feature.TypeId=="Sketcher::SketchObject":

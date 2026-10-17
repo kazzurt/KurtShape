@@ -1294,7 +1294,7 @@ class Panel(QtGui.QDockWidget):
         if op not in {"inspect", "check_geometry"}:
             self._cancel_geometry_check()
         if op in {"rename_feature", "delete_feature", "set_parameter", "set_expression", "edit_extrusion", "edit_dress_up", "begin_sketch_edit",
-                  "add_rectangle", "add_circle", "add_line"} and self.feature_held(args.get("feature") or args.get("sketch")):
+                  "add_rectangle", "add_circle", "add_line", "add_arc"} and self.feature_held(args.get("feature") or args.get("sketch")):
             self.notify("Roll forward through this feature before editing it.")
             return None
         if self.studio_dialog and not self.studio_committing and op in self.core.MODEL_OPS | self.core.ASSEMBLY_OPS | self.core.CREATE_OPS | {"begin_sketch_edit", "undo", "redo", "adopt"}:

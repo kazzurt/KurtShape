@@ -303,7 +303,8 @@ class ExtrusionEvaluator:
             if "offset" in normalized:
                 normalized["offset"] = number(normalized["offset"], "Offset")
             if "angle" in normalized:
-                normalized["angle"] = number(normalized["angle"], "Angle", True, "rad")
+                # A line-angle datum plane accepts signed and zero angles.
+                normalized["angle"] = number(normalized["angle"], "Angle", op != "create_plane", "rad")
             if isinstance(normalized.get("rotation"), dict):
                 normalized["rotation"] = dict(normalized["rotation"])
                 normalized["rotation"]["angle"] = number(normalized["rotation"].get("angle", 0), "Rotation", unit="rad")

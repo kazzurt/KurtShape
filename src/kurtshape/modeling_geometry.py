@@ -8,14 +8,24 @@ from __future__ import annotations
 
 import FreeCAD as App
 import Part
+import json
+import math
 import re
 
 from . import reference_tools, selectors, studio
 from .bodies import origin_plane, owner
 
 OPS = {"create_plane", "extrude_face", "move_face"}
+# Mutually exclusive datum-plane definitions. Fields shared by every mode are
+# id, name, body and offset; "offset" mode is the original support/origin plane.
+PLANE_MODES = {
+    "offset": ("support", "base_plane"),
+    "point_normal": ("origin", "normal", "x_direction"),
+    "three_points": ("points",),
+    "line_angle": ("axis", "reference_normal", "angle"),
+}
 ARGS = {
-    "create_plane": {"id", "name", "body", "support", "base_plane", "offset"},
+    "create_plane": {"id", "name", "body", "offset"} | {key for keys in PLANE_MODES.values() for key in keys},
     "extrude_face": {"id", "name", "face", "length", "reversed", "operation", "merge_scope"},
     "move_face": {"id", "name", "part", "faces", "distance"},
 }
@@ -225,10 +235,219 @@ def make_face_tool(core, doc, req, name):
     return tool
 
 
+PLANE_GROUP = "KurtShape plane"
+_X, _Y, _Z = App.Vector(1, 0, 0), App.Vector(0, 1, 0), App.Vector(0, 0, 1)
+# Offset always moves along the finished plane's own normal (local +Z).
+_ALONG_NORMAL = " * placement(vector(0; 0; Offset / 1 mm); create(<<rotation>>))"
+# Native expressions drive AttachmentOffset from the Body-coordinate inputs
+# below, so editing any of them (or Offset/Angle) moves the plane and every
+# sketch attached to it. "ZXY" keeps the normal exact and projects X into it.
+PLANE_EXPRESSIONS = {
+    "point_normal": "placement(PlaneOrigin; create(<<rotation>>; PlaneXDirection; vector(0; 0; 0); PlaneNormal; <<ZXY>>))"
+                    + _ALONG_NORMAL,
+    "three_points": "placement(PlanePoint1; create(<<rotation>>; PlanePoint2 - PlanePoint1; vector(0; 0; 0); "
+                    "vcross(PlanePoint2 - PlanePoint1; PlanePoint3 - PlanePoint1); <<ZXY>>))" + _ALONG_NORMAL,
+    "line_angle": "placement(PlaneAxisOrigin; rotation(PlaneAxisDirection; Angle) * create(<<rotation>>; PlaneAxisDirection; "
+                  "vector(0; 0; 0); PlaneReferenceNormal; <<XZY>>))" + _ALONG_NORMAL,
+}
+PLANE_PROPERTIES = {
+    "point_normal": (("App::PropertyPosition", "PlaneOrigin", "Plane origin before Offset, in Body coordinates"),
+                     ("App::PropertyVector", "PlaneNormal", "Plane normal and sketch +Z, in Body coordinates"),
+                     ("App::PropertyVector", "PlaneXDirection", "Sketch +X, projected into the plane, in Body coordinates")),
+    "three_points": (("App::PropertyPosition", "PlanePoint1", "Plane origin, in Body coordinates"),
+                     ("App::PropertyPosition", "PlanePoint2", "Point on sketch +X, in Body coordinates"),
+                     ("App::PropertyPosition", "PlanePoint3", "Point on the sketch +Y side; normal is (P2-P1)x(P3-P1)")),
+    "line_angle": (("App::PropertyPosition", "PlaneAxisOrigin", "Point on the contained line and plane origin, in Body coordinates"),
+                   ("App::PropertyVector", "PlaneAxisDirection", "Contained line direction and sketch +X, in Body coordinates"),
+                   ("App::PropertyVector", "PlaneReferenceNormal", "Plane normal at Angle 0, perpendicular to the line"),
+                   ("App::PropertyAngle", "Angle", "Right-handed rotation about the line from the reference normal")),
+}
+
+
+def plane_mode(req):
+    """Return the single requested datum-plane definition."""
+    present = [mode for mode, keys in PLANE_MODES.items() if any(key in req for key in keys)]
+    if len(present) > 1:
+        raise _error("invalid_argument", "Choose one plane definition: support/base_plane, origin+normal, "
+                     "points, or axis+reference_normal", modes=present)
+    return present[0] if present else "offset"
+
+
+def _require(spec, keys, label):
+    missing = [key for key in keys if key not in spec]
+    if missing:
+        raise _error("invalid_argument", label + " requires " + " and ".join(keys), missing=missing)
+
+
+def _direction(value, name):
+    return studio._vector(value, name, direction=True)
+
+
+def _perpendicular(vector, normal, name, reference):
+    """Unit component of a unit vector perpendicular to a unit normal."""
+    projected = vector - normal * vector.dot(normal)
+    if projected.Length < 1e-7:
+        raise _error("invalid_argument", name + " must not be parallel to the " + reference)
+    return projected.normalize()
+
+
+def default_x_direction(normal):
+    """World +X projected into the plane, or world +Y for a normal along X."""
+    for axis in (_X, _Y):
+        projected = axis - normal * axis.dot(normal)
+        if projected.Length > 1e-6:
+            return projected.normalize()
+
+
+def _line(doc, spec):
+    """A line as (origin, unit direction) in world coordinates."""
+    if isinstance(spec, dict) and set(spec) <= {"origin", "direction"}:
+        _require(spec, ("origin", "direction"), "axis")
+        return studio._vector(spec["origin"], "axis.origin"), _direction(spec["direction"], "axis.direction"), None
+    if not is_reference(spec):
+        raise _error("invalid_argument", "axis requires {origin,direction} or one straight edge reference")
+    reference = _reference(doc, spec, "edge")
+    _, edge = _shape(doc, reference)
+    if not isinstance(edge.Curve, (Part.Line, Part.LineSegment)) or edge.Length < 1e-9:
+        raise _error("unsupported_axis", "Plane axis must be a straight, nonzero edge")
+    start, end = edge.valueAt(edge.FirstParameter), edge.valueAt(edge.LastParameter)
+    return start, (end - start).normalize(), reference
+
+
+def _plane_frame(doc, req, mode):
+    """World origin, x axis, normal and authored inputs for a frame mode."""
+    if mode == "point_normal":
+        _require(req, ("origin", "normal"), "A point-normal plane")
+        origin = studio._vector(req["origin"], "origin")
+        normal = _direction(req["normal"], "normal")
+        x = (_perpendicular(_direction(req["x_direction"], "x_direction"), normal, "x_direction", "plane normal")
+             if "x_direction" in req else default_x_direction(normal))
+        return origin, x, normal, {"PlaneOrigin": origin, "PlaneNormal": normal, "PlaneXDirection": x}, None
+    if mode == "three_points":
+        points = req["points"]
+        if not isinstance(points, (list, tuple)) or len(points) != 3:
+            raise _error("invalid_argument", "points requires three [x,y,z] points")
+        p1, p2, p3 = [studio._vector(point, "points[" + str(index) + "]") for index, point in enumerate(points)]
+        first, second = p2 - p1, p3 - p1
+        if first.Length < 1e-7 or second.Length < 1e-7:
+            raise _error("invalid_argument", "points must be three distinct points")
+        normal = first.cross(second)
+        if normal.Length <= 1e-7 * first.Length * second.Length:
+            raise _error("invalid_argument", "points must not be collinear")
+        return (p1, App.Vector(first).normalize(), normal.normalize(),
+                {"PlanePoint1": p1, "PlanePoint2": p2, "PlanePoint3": p3}, None)
+    _require(req, ("axis", "reference_normal"), "A line-angle plane")
+    origin, direction, edge = _line(doc, req["axis"])
+    reference = _perpendicular(_direction(req["reference_normal"], "reference_normal"), direction,
+                               "reference_normal", "axis direction")
+    angle = studio._number(req.get("angle", 0), "angle", unit="rad")
+    normal = App.Rotation(direction, math.degrees(angle)).multVec(reference)
+    return (origin, direction, normal, {"PlaneAxisOrigin": origin, "PlaneAxisDirection": direction,
+                                       "PlaneReferenceNormal": reference, "Angle": angle}, edge)
+
+
+def _create_frame_plane(core, doc, req, body, mode):
+    """Native datum plane at an arbitrary frame, attached to the Body origin.
+
+    The plane keeps FreeCAD's FlatFace attachment to the Body XY plane; its
+    AttachmentOffset is a native expression of the stored inputs, so the
+    file rebuilds without KurtShape and edits update downstream sketches.
+    """
+    origin, x, normal, inputs, edge = _plane_frame(doc, req, mode)
+    offset = _number(req.get("offset", 0), "Offset")
+    # Requests use world millimetres; the plane is stored in its Body's frame.
+    inverse = body.getGlobalPlacement().inverse()
+    tip = body.Tip
+    plane = body.newObject("PartDesign::Plane", core._id(doc, req, "Plane"))
+    if req.get("name"):
+        plane.Label = req["name"]
+    plane.AttachmentSupport = [(origin_plane(body, "XY"), [""])]
+    plane.MapMode = "FlatFace"
+    plane.addProperty("App::PropertyString", "PlaneMode", PLANE_GROUP, "Datum plane definition")
+    plane.PlaneMode = mode
+    plane.setEditorMode("PlaneMode", 1)
+    for kind, name, description in PLANE_PROPERTIES[mode]:
+        plane.addProperty(kind, name, PLANE_GROUP, description)
+        value = inputs[name]
+        if name == "Angle":
+            plane.Angle = math.degrees(value)
+        else:
+            setattr(plane, name, inverse.multVec(value) if kind == "App::PropertyPosition" else inverse.Rotation.multVec(value))
+    if edge is not None:
+        plane.addProperty("App::PropertyString", "PlaneAxisReference", PLANE_GROUP,
+                          "Edge whose line was copied into PlaneAxisOrigin/PlaneAxisDirection at creation (not tracked)")
+        plane.PlaneAxisReference = json.dumps(edge, sort_keys=True)
+        plane.setEditorMode("PlaneAxisReference", 1)
+    plane.addProperty("App::PropertyDistance", "Offset", PLANE_GROUP, "Signed offset along the plane normal")
+    plane.Offset = offset
+    plane.AttachmentOffset = inverse * App.Placement(origin + normal * offset, App.Rotation(x, App.Vector(), normal, "ZXY"))
+    plane.setExpression("AttachmentOffset", PLANE_EXPRESSIONS[mode])
+    body.Tip = tip
+    core._recompute(doc)
+    if studio._native_failed(plane):
+        raise _error("attachment_failed", "The plane could not attach to its Body origin", status=plane.getStatusString())
+    actual = plane.getGlobalPlacement()
+    if ((actual.Base - (origin + normal * offset)).Length > 1e-7 or (actual.Rotation.multVec(_X) - x).Length > 1e-9
+            or (actual.Rotation.multVec(_Z) - normal).Length > 1e-9):
+        raise _error("attachment_failed", "The native plane did not reach the requested frame")
+    if App.GuiUp:
+        plane.ViewObject.Visibility = True
+    return plane.Name
+
+
+def _vector_list(value):
+    return [value.x, value.y, value.z]
+
+
+def _frame(placement):
+    rotation = placement.Rotation
+    return {"origin_mm": _vector_list(placement.Base), "x_direction": _vector_list(rotation.multVec(_X)),
+            "y_direction": _vector_list(rotation.multVec(_Y)), "normal": _vector_list(rotation.multVec(_Z))}
+
+
+def plane_summary(obj):
+    """Inspection record of a native datum plane and its sketch frame.
+
+    `frame` is in world coordinates and is exactly the frame of a sketch
+    attached to the plane. `definition` repeats the authored request fields
+    in Body coordinates (world when the Body is at identity).
+    """
+    mode = getattr(obj, "PlaneMode", "") or ("offset" if "Offset" in obj.PropertiesList else "native")
+    definition = {}
+    if mode == "point_normal":
+        definition = {"origin": _vector_list(obj.PlaneOrigin), "normal": _vector_list(obj.PlaneNormal),
+                      "x_direction": _vector_list(obj.PlaneXDirection)}
+    elif mode == "three_points":
+        definition = {"points": [_vector_list(getattr(obj, "PlanePoint" + str(index))) for index in (1, 2, 3)]}
+    elif mode == "line_angle":
+        definition = {"axis": {"origin": _vector_list(obj.PlaneAxisOrigin), "direction": _vector_list(obj.PlaneAxisDirection)},
+                      "reference_normal": _vector_list(obj.PlaneReferenceNormal), "angle": math.radians(obj.Angle.Value)}
+        if "PlaneAxisReference" in obj.PropertiesList:
+            definition["axis_reference"] = json.loads(obj.PlaneAxisReference)
+    if "Offset" in obj.PropertiesList:
+        definition["offset"] = obj.Offset.Value
+    return {"mode": mode, "frame": _frame(obj.getGlobalPlacement()),
+            "placement": {"position_mm": _vector_list(obj.Placement.Base), "rotation_xyzw": list(obj.Placement.Rotation.Q)},
+            "support": [{"feature": linked.Name, "subelements": list(elements)} for linked, elements in obj.AttachmentSupport],
+            "map_mode": str(obj.MapMode), "definition": definition}
+
+
+def plane_parameters(obj):
+    """Signed driving Angle of a line-angle plane (Offset is reported by core)."""
+    if getattr(obj, "PlaneMode", "") != "line_angle" or "Angle" not in obj.PropertiesList:
+        return {}
+    expression = next((value for path, value in obj.ExpressionEngine if path.lstrip(".") == "Angle"), None)
+    return {"Angle": {"value": math.radians(obj.Angle.Value), "unit": "rad", "editable": expression is None,
+                      "expression": expression, "native_property": "Angle", "signed": True}}
+
+
 def _create_plane(core, doc, req):
     if "support" in req and "base_plane" in req:
         raise _error("invalid_argument", "Choose one support or one origin plane")
+    mode = plane_mode(req)
     body = core._body(doc, req)
+    if mode != "offset":
+        return _create_frame_plane(core, doc, req, body, mode)
     spec = req.get("support")
     if spec is None:
         plane_name = req.get("base_plane", "XY")
