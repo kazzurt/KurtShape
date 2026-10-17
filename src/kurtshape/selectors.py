@@ -47,6 +47,10 @@ _refresh_milliseconds = 0.0
 _rebuild_metrics = {}
 _native_pending = set()
 _CONTEXT_LIMIT = 16
+# Element inputs that together own one native subelement list (for example a
+# fillet's Base). Each request entry is one member; the list is rebuilt from all
+# members in entry order, de-duplicated, whenever any member's resolution moves.
+GROUP_MODE = "linksub_group"
 
 
 def _shape_frame(shape):
@@ -1206,6 +1210,8 @@ def _set_reference(feature, info, values):
             from .sketch_tools import restore_sketch_content
             restore_sketch_content(feature, output.getvalue())
             feature.touch()
+    elif mode == GROUP_MODE:
+        raise _error("invalid_selector_metadata", "Grouped element inputs are rewritten together with their native list")
     else:
         raise _error("invalid_selector_metadata", "Unknown native reference binding mode")
 
@@ -1222,6 +1228,10 @@ def _native_references(feature, info):
     elif mode == "linksub_index":
         index = info.get("index", 0)
         links = [(value[0], [value[1][index]])] if value[0] is not None and 0 <= index < len(value[1]) else []
+    elif mode == GROUP_MODE:
+        # The member's own slots of the shared native list (after de-duplication).
+        obj, names = _group_value(value)
+        links = [(obj, [names[slot]]) for slot in info.get("slots", []) if 0 <= slot < len(names)]
     elif mode in {"linksub", "linksublist"}:
         links = [value] if isinstance(value, tuple) and len(value) == 2 and (value[0] is None or hasattr(value[0], "Name")) else list(value)
     else:
@@ -1260,6 +1270,245 @@ def bind(feature, input_name, selector, native_property="AttachmentSupport", man
     _write_health(feature, health)
     _property(feature, "QueryResolutionLog", "[]")
     return values
+
+
+def _group_value(value):
+    if isinstance(value, tuple) and len(value) == 2 and value[0] is not None and hasattr(value[0], "Name"):
+        return value[0], list(value[1])
+    return None, []
+
+
+def _element_order(row):
+    match = re.fullmatch(r"([A-Za-z]+)([0-9]+)", row["subelement"])
+    return (row["feature"], match.group(1), int(match.group(2))) if match else (row["feature"], row["subelement"], 0)
+
+
+def _group_members(inputs, native_property):
+    return sorted(((name, info) for name, info in inputs.items()
+                   if info.get("mode") == GROUP_MODE and info.get("native_property") == native_property),
+                  key=lambda item: item[1].get("index", 0))
+
+
+def _mapped_name(base, element):
+    """The element's mapped (history) name on ``base``: what FreeCAD's own tracking follows."""
+    try:
+        mapped = base.Shape.getElementMappedName(element) if base is not None and element else None
+    except Exception:
+        return None
+    return mapped if isinstance(mapped, str) and mapped else None
+
+
+def literal_element(base, info, names=None, layout_intact=False):
+    """Current name on ``base`` of a literal group member's element, or None when it is gone.
+
+    While the native list still has the recorded layout, the literal takes the
+    name FreeCAD's element tracking holds in the slot that carries its element:
+    its own slot, or, when an earlier entry already includes that element and
+    the literal owns no slot, that entry's slot (``element_slot``). Otherwise
+    its mapped name is resolved on the current input; a mapped name that no
+    longer resolves means the element is gone. A stale index is never reused,
+    except for an input without an element map, where indices are all there is.
+    """
+    slots = info.get("slots") or []
+    slot = slots[0] if slots else info.get("element_slot")
+    if layout_intact and names is not None and isinstance(slot, int) and 0 <= slot < len(names):
+        return names[slot]
+    mapped = info.get("mapped")
+    if not mapped:
+        return info["selector"]["subelement"]
+    try:
+        name = base.Shape.getElementIndexedName(mapped) if base is not None else None
+    except Exception:
+        name = None
+    return name if isinstance(name, str) and name.startswith(info.get("entity_type", "edge").capitalize()) else None
+
+
+def _member_resolution(feature, info, base, names, layout_intact):
+    """(status, count, refs, error) of one group member at its regeneration position.
+
+    A literal member keeps its element (``literal_element``): the name FreeCAD
+    tracks in the slot that carries it, else its mapped name. A selector
+    member is evaluated afresh. A multi member (``many``) takes every match of
+    its entity type on the consumer's input, in native index order, and is
+    missing when none remain; a single member must resolve to exactly one
+    element there. Nothing else is ever substituted.
+    """
+    if info.get("literal"):
+        entity_type = info.get("entity_type", "edge")
+        name = literal_element(base, info, names, layout_intact)
+        if name is None:
+            return "missing", 0, [], "The selected " + entity_type + " no longer exists on the feature's input; select it again"
+        return "healthy", 1, [{"feature": base.Name if base is not None else info["selector"]["feature"], "subelement": name}], None
+    values = resolve(feature.Document, info["selector"], before=feature)
+    entity_type = info.get("entity_type", "edge")
+    on_input = sorted((row for row in values if base is not None and row["feature"] == base.Name
+                       and row["entity_type"] == entity_type), key=_element_order)
+    refs = [{"feature": row["feature"], "subelement": row["subelement"]} for row in on_input]
+    if info.get("many"):
+        if not refs:
+            return "missing", 0, [], "Multi reference matches no " + entity_type + " of the feature's input"
+        return "healthy", len(refs), refs, None
+    if not values:
+        return "missing", 0, [], None
+    if len(values) != 1:
+        return "ambiguous", len(values), [], None
+    if not refs:
+        return "missing", 1, [], "Reference does not resolve on the feature's input"
+    return "healthy", 1, refs, None
+
+
+def _group_layout(members, fresh):
+    """Ordered native names without duplicates, the slots each member owns,
+    and the slot that carries each member's first element (owned or not)."""
+    names, slots, carriers, seen = [], {}, {}, {}
+    for name, _ in members:
+        owned = []
+        for ref in fresh[name]:
+            if ref["subelement"] not in seen:
+                seen[ref["subelement"]] = len(names)
+                owned.append(len(names))
+                names.append(ref["subelement"])
+        slots[name] = owned
+        carriers[name] = seen[fresh[name][0]["subelement"]] if fresh[name] else None
+    return names, slots, carriers
+
+
+def _literal_tracking(base, element, owned, carrier):
+    """(element_slot, mapped) of a literal member: the earlier entry's slot that
+    carries its element when it owns none, and the element's mapped name."""
+    return (None if owned or carrier is None else carrier), _mapped_name(base, element)
+
+
+def _set_literal_tracking(info, tracking):
+    for key, value in zip(("element_slot", "mapped"), tracking):
+        if value is None:
+            info.pop(key, None)
+        else:
+            info[key] = value
+
+
+def bind_group(feature, prefix, entries, base, native_property="Base", entity_type="edge"):
+    """Bind an ordered element list whose members together own one native list.
+
+    ``entries`` are ``{"literal": {feature, subelement}}`` (already a name on
+    ``base``), ``{"selector": query}`` (exactly one element) or
+    ``{"selector": query, "many": True}`` (every matching element of
+    ``entity_type`` on ``base``, at least one). Member ``i`` is the input
+    ``<prefix>_<i>``. The native list is written in entry order with repeated
+    elements kept once, at their first position. Returns the native names.
+    """
+    if not _in_transaction(feature.Document):
+        raise _error("selector_transaction_required", "Selector bindings must be authored inside the native mutation transaction")
+    doc = feature.Document
+    inputs = _json(feature, "QueryInputs")
+    members, fresh, counts = [], {}, {}
+    for index, entry in enumerate(entries):
+        name = prefix + "_" + str(index)
+        info = {"native_property": native_property, "mode": GROUP_MODE, "index": index, "entity_type": entity_type}
+        if "literal" in entry:
+            literal = {"feature": base.Name, "subelement": entry["literal"]["subelement"]}
+            info.update(selector=literal, many=False, literal=True)
+            fresh[name], counts[name] = [literal], 1
+        else:
+            selector = entry["selector"]
+            info.update(selector=selector, many=bool(entry.get("many")))
+            values = resolve(doc, selector, before=feature)
+            refs = [{"feature": row["feature"], "subelement": row["subelement"]}
+                    for row in sorted(values, key=_element_order)
+                    if row["feature"] == base.Name and row["entity_type"] == entity_type]
+            if info["many"]:
+                if not refs:
+                    raise _error("missing_reference", "Multi reference selector matches no " + entity_type + " of the current part",
+                                 input=name, match_count=len(values))
+            else:
+                if not values:
+                    raise _error("missing_reference", "Reference selector resolves to no matching element", input=name)
+                if len(values) != 1:
+                    raise _error("ambiguous_reference", "Reference selector resolves to several elements", input=name,
+                                 matches=_detailed_matches(doc, selector, before=feature))
+                if not refs:
+                    raise _error("missing_reference", "Reference does not resolve on the current part; select it again or use a selector",
+                                 input=name)
+            for source in _sources(doc, selector, before=feature):
+                if source == feature or feature in source.OutListRecursive:
+                    raise _error("cyclic_reference", "Reference selector cannot target its consumer or a downstream feature")
+            fresh[name], counts[name] = refs, len(refs)
+        members.append((name, info))
+    names, slots, carriers = _group_layout(members, fresh)
+    setattr(feature, native_property, (base, names))
+    health = _health(feature)
+    for name, info in members:
+        info["slots"] = slots[name]
+        info["resolved"] = [{"feature": base.Name, "subelement": names[slot]} for slot in slots[name]]
+        if info.get("literal"):
+            # Tracked even while an earlier entry already includes the element.
+            _set_literal_tracking(info, _literal_tracking(base, info["selector"]["subelement"], slots[name], carriers[name]))
+        inputs[name] = info
+        health[name] = {"status": "healthy", "count": counts[name]}
+    _property(feature, "QueryInputs", json.dumps(inputs, sort_keys=True))
+    sources = {obj.Name: obj for item in inputs.values() for obj in _sources(doc, item["selector"], before=feature)}
+    _property(feature, "QuerySources", list(sources.values()), "App::PropertyLinkListGlobal")
+    _write_health(feature, health)
+    _property(feature, "QueryResolutionLog", "[]")
+    return names
+
+
+def _refresh_group(feature, members, health, allow_reference_writes):
+    """Re-evaluate every member of one native list; rewrite it as a whole.
+
+    Any unhealthy member keeps the complete last native list (no partial
+    rewrite and no substitution). Returns True when metadata changed.
+    """
+    prop = members[0][1]["native_property"]
+    base, names = _group_value(getattr(feature, prop))
+    layout_intact = len(names) == sum(len(info.get("slots", [])) for _, info in members)
+    fresh, healthy = {}, True
+    for name, info in members:
+        try:
+            status, count, refs, error = _member_resolution(feature, info, base, names, layout_intact)
+            health[name] = {"status": status, "count": count, **({"error": error} if error else {})}
+        except Exception as exc:
+            status, refs = "missing", []
+            health[name] = {"status": "missing", "count": 0, "error": str(exc), "code": getattr(exc, "code", "selector_rebuild_failed")}
+        healthy = healthy and status == "healthy"
+        fresh[name] = refs
+    if not healthy or base is None:
+        return False
+    layout, slots, carriers = _group_layout(members, fresh)
+    changes = []
+    for name, info in members:
+        resolved = [{"feature": base.Name, "subelement": layout[slot]} for slot in slots[name]]
+        actual = _native_references(feature, info)
+        tracking, moved = None, False
+        if info.get("literal"):
+            # A literal's element can be renamed while it owns no slot.
+            tracking = _literal_tracking(base, fresh[name][0]["subelement"], slots[name], carriers[name])
+            moved = fresh[name][0] != info["selector"] or tracking != (info.get("element_slot"), info.get("mapped"))
+        if moved or resolved != info.get("resolved") or resolved != actual or slots[name] != info.get("slots"):
+            changes.append((name, info, actual, resolved, tracking))
+    if layout == names and not changes:
+        return False
+    if not allow_reference_writes:
+        pending = [name for name, info, _, _, _ in changes if not info.get("literal")]
+        if layout != names and not pending:
+            pending = [name for name, info in members if not info.get("literal")]
+        for name in pending:
+            health[name] = {"status": "missing", "count": health[name]["count"],
+                            "error": "Selector changed; run a managed rebuild to update its native input",
+                            "code": "pending_selector_resolution"}
+        return False
+    if layout != names:
+        setattr(feature, prop, (base, layout))
+    logs = json.loads(getattr(feature, "QueryResolutionLog", "[]"))
+    for name, info, actual, resolved, tracking in changes:
+        if actual != resolved:
+            logs.append({"input": name, "previous": actual, "resolved": resolved})
+        info["resolved"], info["slots"] = resolved, slots[name]
+        if info.get("literal"):
+            info["selector"] = dict(fresh[name][0])
+            _set_literal_tracking(info, tracking)
+    _property(feature, "QueryResolutionLog", json.dumps(logs[-128:], sort_keys=True))
+    return True
 
 
 def unbind(feature, input_name):
@@ -1323,7 +1572,11 @@ def move_binding(source, destination, input_name, native_property, mode):
 def _refresh_feature_impl(feature, allow_reference_writes=True):
     inputs, health = _json(feature, "QueryInputs"), _health(feature)
     changed = False
+    for prop in sorted({info.get("native_property") for info in inputs.values() if info.get("mode") == GROUP_MODE}):
+        changed = _refresh_group(feature, _group_members(inputs, prop), health, allow_reference_writes) or changed
     for name, info in inputs.items():
+        if info.get("mode") == GROUP_MODE:
+            continue
         try:
             values = resolve(feature.Document, info["selector"], before=feature)
             status = "missing" if not values else "ambiguous" if not info.get("many") and len(values) != 1 else "healthy"
@@ -1436,13 +1689,27 @@ def reference_errors(doc):
     for obj in doc.Objects:
         if not _active(obj):
             continue
-        for name, health in _health(obj).items():
+        healths = _health(obj)
+        for name, health in healths.items():
             if health.get("status") != "healthy":
                 errors.append({"feature": obj.Name, "input": name, "reference_health": health["status"],
                                "message": "Reference " + name + " is " + health["status"] + (": " + health["error"] if health.get("error") else "")})
-        for name, info in _json(obj, "QueryInputs").items():
+        inputs = _json(obj, "QueryInputs")
+        # A group with an unhealthy member keeps its whole last native list,
+        # which FreeCAD's tracking may rename; that member is the cause.
+        blocked = {info.get("native_property") for name, info in inputs.items()
+                   if info.get("mode") == GROUP_MODE and healths.get(name, {}).get("status", "healthy") != "healthy"}
+        for name, info in inputs.items():
+            if info.get("mode") == GROUP_MODE and (info.get("literal") or info.get("native_property") in blocked):
+                # Literal slots stay with FreeCAD's own element tracking.
+                continue
             try:
                 divergent = _native_references(obj, info) != info.get("resolved")
+                if not divergent and info.get("mode") == GROUP_MODE:
+                    # A native list edit that adds elements leaves member slots intact.
+                    members = _group_members(inputs, info["native_property"])
+                    divergent = (len(_group_value(getattr(obj, info["native_property"]))[1])
+                                 != sum(len(member.get("slots", [])) for _, member in members))
             except (AttributeError, TypeError, ValueError, KeyError):
                 divergent = True
             if divergent and not any(

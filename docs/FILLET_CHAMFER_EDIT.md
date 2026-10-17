@@ -12,7 +12,7 @@ Double-click a Fillet or Chamfer in the feature history, or right-click it and c
 - **Errors.** With no edges selected, the dialog says *Select one or more edges in the model.* An impossible radius reports that the fillet could not be built and suggests a smaller value or different edges. A duplicate edge, a face reference or an invalid formula is rejected. Confirm stays disabled while the preview is invalid.
 - **Restored picking.** Confirm, Cancel, a document switch, Undo, or any other operation that closes the dialog removes the gate. The tick loop also removes it if the dialog disappears for any other reason.
 
-Edges picked in the viewport are stored as KurtShape selectors (closest edge on the part), as for a new fillet. They resolve against history before the feature. Untouched edges are sent back as their stored selectors.
+Edges picked in the viewport are stored as KurtShape selectors (closest edge on the part), as for a new fillet. They resolve against history before the feature. Untouched edges are sent back as their stored selectors. An edge that came from a multi reference (`{selector, all:true}`, see the [operation contract](OPERATION_CONTRACT.md#multi-edge-references)) reports that multi reference; the edge list keeps it once, so sending the list back keeps the whole query group associative. A reference whose edges an earlier entry already includes (for example a picked edge the query also matches) is listed as its own row without a highlighted edge, so an edit keeps it and its edge stays rounded if the query later stops matching it.
 
 ## Implementation
 

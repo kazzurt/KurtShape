@@ -2315,7 +2315,9 @@ class Panel(QtGui.QDockWidget):
                 fields["part"].setEnabled(False)
                 edit_base = doc.getObject(edit["base"])
                 for entry in edit["edges"]:
-                    fields["edges"].add(entry["reference"], entry["label"], (edit_base, entry["subelement"]))
+                    # subelement None: an entry whose edges earlier rows already include.
+                    fields["edges"].add(entry["reference"], entry["label"],
+                                        (edit_base, entry["subelement"]) if entry["subelement"] else None)
                 amount = fields[edit["key"]]
                 # Load the authoritative value without the creation clamp; an
                 # untouched (possibly display-rounded) field is never resent.

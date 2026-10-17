@@ -24,24 +24,90 @@ def selector_value(value):
     return value.get("selector", value)
 
 
+def _on_base(doc, spec, entity_type, base, before=None):
+    """The one element a reference names, as a subelement of ``base``."""
+    from .core import OperationError
+    reference = selectors.native_reference(doc, spec, before=before, entity_type=entity_type)
+    source = doc.getObject(reference["feature"])
+    element = reference["subelement"]
+    if base is not None and source != base:
+        mapped = source.Shape.getElementMappedName(element)
+        element = base.Shape.getElementIndexedName(mapped) if mapped else ""
+        if not element or not element.startswith(entity_type.capitalize()):
+            raise OperationError("missing_reference", "Reference does not resolve on the current part; select it again or use a selector")
+    return {"feature": (base or source).Name, "subelement": element}
+
+
 def _references(doc, specs, entity_type, base, before=None):
     from .core import OperationError
     if not isinstance(specs, list) or not specs or len(specs) > 128:
         raise OperationError("invalid_argument", "Choose one or more geometry references (maximum 128)")
     resolved = []
     for spec in specs:
-        reference = selectors.native_reference(doc, spec, before=before, entity_type=entity_type)
-        source = doc.getObject(reference["feature"])
-        element = reference["subelement"]
-        if base is not None and source != base:
-            mapped = source.Shape.getElementMappedName(element)
-            element = base.Shape.getElementIndexedName(mapped) if mapped else ""
-            if not element or not element.startswith(entity_type.capitalize()):
-                raise OperationError("missing_reference", "Reference does not resolve on the current part; select it again or use a selector")
-        if element in [entry["subelement"] for entry in resolved]:
+        reference = _on_base(doc, spec, entity_type, base, before)
+        if reference["subelement"] in [entry["subelement"] for entry in resolved]:
             raise OperationError("invalid_argument", "The same geometry was selected more than once")
-        resolved.append({"feature": (base or source).Name, "subelement": element})
+        resolved.append(reference)
     return resolved
+
+
+# Multi references: {"selector": <query>, "all": true} in an edges list stands
+# for every edge of the current part the query matches, re-evaluated at each
+# regeneration (selectors.GROUP_MODE). Lists without it keep the per-slot path.
+MULTI_FIELDS = {"selector", "all"}
+
+
+def _edge_specs(specs):
+    """Validate multi-reference entries; returns (specs, any_multi).
+
+    A list with no ``all`` key is returned unchanged. ``all:false`` is the
+    plain single selector ``{selector:<query>}``.
+    """
+    from .core import OperationError
+    if not isinstance(specs, list) or not any(isinstance(spec, dict) and "all" in spec for spec in specs):
+        return specs, False
+    normalized, multi = [], False
+    for spec in specs:
+        if not isinstance(spec, dict) or "all" not in spec:
+            normalized.append(spec)
+            continue
+        if "selector" not in spec:
+            raise OperationError("invalid_argument", "all applies to a selector query; write {selector:<query>, all:true}")
+        unknown = sorted(set(spec) - MULTI_FIELDS)
+        if unknown:
+            raise OperationError("unknown_argument", "Unknown multi reference field", fields=unknown)
+        if not isinstance(spec["all"], bool):
+            raise OperationError("invalid_argument", "all must be true or false")
+        if not spec["all"]:
+            normalized.append({"selector": spec["selector"]})
+            continue
+        if not isinstance(spec["selector"], dict) or "kind" not in spec["selector"]:
+            raise OperationError("invalid_argument", "all:true needs a selector query (an object with kind), not a native element name")
+        normalized.append(spec)
+        multi = True
+    for spec in normalized if multi else ():
+        # A multi list unwraps {selector:...} entries itself, so it checks
+        # their fields here; a typo such as "All" must not drop the intent.
+        if isinstance(spec, dict) and "selector" in spec and "all" not in spec and set(spec) != {"selector"}:
+            raise OperationError("unknown_argument", "Unknown reference field; a {selector:<query>} entry takes only "
+                                 "selector and all", fields=sorted(set(spec) - MULTI_FIELDS))
+    return normalized, multi
+
+
+def _group_entries(doc, specs, entity_type, base, before=None):
+    """Members for selectors.bind_group: literals on ``base``, single and multi selectors."""
+    from .core import OperationError
+    if not specs or len(specs) > 128:
+        raise OperationError("invalid_argument", "Choose one or more geometry references (maximum 128)")
+    entries = []
+    for spec in specs:
+        if isinstance(spec, dict) and spec.get("all") is True:
+            entries.append({"selector": spec["selector"], "many": True})
+        elif is_selector(spec):
+            entries.append({"selector": selector_value(spec)})
+        else:
+            entries.append({"literal": _on_base(doc, spec, entity_type, base, before)})
+    return entries
 
 
 def handle(core, doc, req):
@@ -63,10 +129,17 @@ def handle(core, doc, req):
     if tip is None or tip.Shape.isNull() or not tip.Shape.Solids:
         raise OperationError("missing_body", "Choose a current solid part")
     field, entity_type = ("faces", "face") if op == "shell" else ("edges", "edge")
-    refs = _references(doc, req.get(field), entity_type, tip)
+    specs, multi = (req.get(field), False) if op == "shell" else _edge_specs(req.get(field))
+    if multi:
+        entries, refs = _group_entries(doc, specs, entity_type, tip), None
+    else:
+        refs = _references(doc, specs, entity_type, tip)
     type_id = {"fillet": "PartDesign::Fillet", "chamfer": "PartDesign::Chamfer", "shell": "PartDesign::Thickness"}[op]
     feature = body.newObject(type_id, core._id(doc, req, {"fillet": "Fillet", "chamfer": "Chamfer", "shell": "Shell"}[op]))
-    feature.Base = (tip, [reference["subelement"] for reference in refs])
+    if multi:
+        selectors.bind_group(feature, field, entries, tip, native_property="Base", entity_type=entity_type)
+    else:
+        feature.Base = (tip, [reference["subelement"] for reference in refs])
     if op == "fillet":
         feature.Radius = number(req.get("radius"), "Radius", True)
     elif op == "chamfer":
@@ -78,15 +151,16 @@ def handle(core, doc, req):
             raise OperationError("invalid_argument", "reversed must be boolean")
         feature.Value = thickness
         feature.Reversed = reversed_direction
-    for index, spec in enumerate(req[field]):
-        if is_selector(spec):
+    for index, spec in enumerate(specs):
+        if not multi and is_selector(spec):
             selectors.bind(feature, field + "_" + str(index), selector_value(spec),
                            native_property="Base", mode="linksub_index", index=index)
     core._recompute(doc)
     if feature.Shape.isNull() or len(feature.Shape.Solids) != 1 or {"Invalid", "Error"} & set(feature.State):
         raise OperationError("build_failed", "Native feature could not create one valid solid", feature=feature.Name)
     if op != "shell":
-        _require_plausible_volume(feature, tip.Shape, [reference["subelement"] for reference in refs],
+        _require_plausible_volume(feature, tip.Shape,
+                                  list(feature.Base[1]) if multi else [reference["subelement"] for reference in refs],
                                   feature.Radius.Value if op == "fillet" else feature.Size.Value, op,
                                   "radius" if op == "fillet" else "size")
     body.Tip = feature
@@ -170,24 +244,87 @@ def _forget_edge_inputs(feature):
                                                 sort_keys=True)
 
 
+def _group_reference(base, info, element):
+    if info.get("literal"):
+        return {"feature": base.Name, "subelement": element}
+    if info.get("many"):
+        return {"selector": info["selector"], "all": True}
+    return {"selector": info["selector"]}
+
+
+def _group_rows(feature, base, members):
+    """Edge rows of a multi-reference feature (selectors.GROUP_MODE).
+
+    One row per Base slot, with the reference of the entry that owns it, and
+    one row with ``subelement`` None for each entry that owns no slot because
+    earlier entries already include its edges, placed at its entry position.
+    Sending the distinct references back in row order reproduces the
+    authored list, so such an entry is not lost by an edit. A literal whose
+    edge no longer exists is left out (never sent back as a stale index) and
+    reported in ``notes``.
+    """
+    names = list(feature.Base[1])
+    health = selectors._health(feature)
+    layout_intact = len(names) == sum(len(info.get("slots", [])) for _, info in members)
+    owners = {slot: (member, info) for member, info in members for slot in info.get("slots", [])}
+    pending, last, notes = {}, -1, []
+    for member, info in members:
+        if info.get("slots"):
+            last = max(last, max(info["slots"]))
+            continue
+        if info.get("literal"):
+            element = selectors.literal_element(base, info, names, layout_intact)
+            if element is None:
+                notes.append("A picked edge (" + info["selector"]["subelement"] + ") no longer exists on "
+                             + base.Label + "; it is left out of the edge list, pick it again to keep it")
+                continue
+            label = base.Label + " · " + element + " (also included by an earlier reference)"
+        else:
+            element = None
+            label = base.Label + (" · every match of a query" if info.get("many") else " · query") \
+                + " (its edges are already included by an earlier reference)"
+        pending.setdefault(last, []).append(
+            {"reference": _group_reference(base, info, element), "subelement": None, "label": label})
+    edges = list(pending.pop(-1, []))
+    for index, element in enumerate(names):
+        member, info = owners.get(index, (None, None))
+        label = base.Label + " · " + element
+        if info is None:
+            reference = {"feature": base.Name, "subelement": element}
+        else:
+            reference = _group_reference(base, info, element)
+            if info.get("many"):
+                label += " (one of %d query matches)" % health.get(member, {}).get("count", len(info["slots"]))
+        edges.append({"reference": reference, "subelement": element, "label": label})
+        edges.extend(pending.pop(index, []))
+    for index in sorted(pending):
+        edges.extend(pending[index])
+    return edges, notes
+
+
 def describe_dress_up(doc, name):
     """Current native settings and selected edges of a Fillet/Chamfer.
 
     Edges are subelements of the feature's own input (its Base), so edges
     the completed feature rounded away stay selectable while editing. A bound
     selector is returned as the reference so an untouched edge stays
-    associative when it is sent back.
+    associative when it is sent back. A row whose ``subelement`` is None is
+    a multi-reference entry whose edges earlier entries already include.
     """
     feature, base = _dress_up(doc, name)
     kind, prop, key = DRESS_UP[feature.TypeId]
     inputs = _edge_inputs(feature)
-    edges = []
-    for index, element in enumerate(feature.Base[1]):
-        bound = inputs.get("edges_" + str(index))
-        reference = ({"selector": bound["selector"]} if bound else {"feature": base.Name, "subelement": element})
-        edges.append({"reference": reference, "subelement": element, "label": base.Label + " · " + element})
-    expression = next((value for path, value in feature.ExpressionEngine if path.lstrip(".") == prop), None)
+    members = selectors._group_members(inputs, "Base")
     limitations = []
+    if members:
+        edges, limitations = _group_rows(feature, base, members)
+    else:
+        edges = []
+        for index, element in enumerate(feature.Base[1]):
+            bound = inputs.get("edges_" + str(index))
+            reference = ({"selector": bound["selector"]} if bound else {"feature": base.Name, "subelement": element})
+            edges.append({"reference": reference, "subelement": element, "label": base.Label + " · " + element})
+    expression = next((value for path, value in feature.ExpressionEngine if path.lstrip(".") == prop), None)
     if getattr(feature, "UseAllEdges", False):
         limitations.append("This feature rounds all edges; selected edges are ignored until Use all edges is turned off")
     chamfer_type = getattr(feature, "ChamferType", None)
@@ -218,12 +355,18 @@ def edit_dress_up(core, doc, req):
         specs = req["edges"]
         if not isinstance(specs, list) or not specs:
             raise OperationError("invalid_argument", f"Select one or more edges for {feature.Label}")
-        # Resolve against history before this feature: its input shape.
-        refs = _references(doc, specs, "edge", base, before=feature)
-        _forget_edge_inputs(feature)
-        feature.Base = (base, [reference["subelement"] for reference in refs])
+        specs, multi = _edge_specs(specs)
+        if multi:
+            entries = _group_entries(doc, specs, "edge", base, before=feature)
+            _forget_edge_inputs(feature)
+            selectors.bind_group(feature, "edges", entries, base, native_property="Base", entity_type="edge")
+        else:
+            # Resolve against history before this feature: its input shape.
+            refs = _references(doc, specs, "edge", base, before=feature)
+            _forget_edge_inputs(feature)
+            feature.Base = (base, [reference["subelement"] for reference in refs])
         for index, spec in enumerate(specs):
-            if is_selector(spec):
+            if not multi and is_selector(spec):
                 selectors.bind(feature, "edges_" + str(index), selector_value(spec),
                                native_property="Base", mode="linksub_index", index=index)
     if "expression" in req:
