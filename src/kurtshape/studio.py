@@ -1091,7 +1091,18 @@ def _native_boolean(doc, source, tools, name, key, label, kind):
     boolean.Type = {"union": 0, "subtract": 1, "intersect": 2}[kind]
     boolean.Group = private_tools
     boolean.Refine = True
+    # Exact first. Native automatic fuzz scales with the combined bounds, which
+    # through-all tools inflate (a 0.5 m tool fuzzes ~6e-5 mm); near-tangent
+    # sections then carried ~3e-4 mm edge tolerances and later fillets came
+    # out invalid. Keep the native automatic value only where exact fails.
+    if "FuzzyTolerance" in boolean.PropertiesList:
+        boolean.FuzzyTolerance = 0.0
     doc.recompute()
+    shape = boolean.Shape
+    if "FuzzyTolerance" in boolean.PropertiesList and (
+            shape.isNull() or len(shape.Solids) != 1 or _native_failed(boolean)):
+        boolean.FuzzyTolerance = -1.0
+        doc.recompute()
     return result, boolean
 
 

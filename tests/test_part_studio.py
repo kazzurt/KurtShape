@@ -1,5 +1,6 @@
 """Native U2 studio fixtures: scope, parts, history and persistent dependencies."""
 from pathlib import Path
+import math
 import shutil
 import subprocess
 import sys
@@ -162,6 +163,40 @@ class PartStudioTests(unittest.TestCase):
             self.call("add_line", sketch="S", body="Body", x1=x1 + 30, y1=y1, x2=x2 + 30, y2=y2)
         self.call("pad", id="UnitNamed", profile="S", body="Body", length=2, operation="new", name="Unit named")
         self.assertAlmostEqual(self.doc.getObject("UnitNamed").Shape.BoundBox.ZMax, 2.0, places=6)
+
+    def test_studio_booleans_are_exact_on_near_tangent_sections(self):
+        # The trimming plane contains the bend's spine tangent. Native automatic
+        # fuzz (scaled by the through-all tool) left ~2.5e-4 mm edge tolerances.
+        self.call("create_sketch", id="Tube", plane="YZ", body="Body")
+        self.call("add_circle", sketch="Tube", body="Body", x=0, y=0, diameter=12)
+        self.call("revolve", id="Bend", profile="Tube", axis={"origin": [0, 20, 0], "direction": [0, 0, 1]},
+                  angle="72 deg", operation="new", name="Bend")
+        part = [p for p in self.state["studio"]["parts"] if p["name"] == "Bend"][0]["id"]
+        self.call("create_sketch", id="Half", plane="XY", body="Body")
+        for (x1, y1), (x2, y2) in (((-200, 0), (200, 0)), ((200, 0), (200, 200)), ((200, 200), (-200, 200)), ((-200, 200), (-200, 0))):
+            self.call("add_line", sketch="Half", body="Body", x1=x1, y1=y1, x2=x2, y2=y2)
+        self.call("pad", id="Trim", profile="Half", end_type="through_all", operation="intersect", merge_scope=[part])
+        trim = self.doc.getObject("Trim")
+        self.assertEqual(trim.FuzzyTolerance, 0.0)
+        self.assertLess(trim.Shape.getTolerance(1), 1e-5)
+        self.assertTrue(trim.Shape.isValid())
+        exact = self.doc.getObject("Bend").Shape.common(self.doc.getObject("TrimTool").Shape)
+        self.assertAlmostEqual(trim.Shape.Volume, exact.Volume, delta=1e-6)
+        self.assertLess(trim.Shape.Volume, math.pi * 36 * 20 * math.radians(72))
+
+    def test_dress_up_rejects_implausible_kernel_volume(self):
+        from types import SimpleNamespace
+        from kurtshape import reference_tools
+        base = Part.makeBox(10, 10, 10)
+        edge = next("Edge" + str(index + 1) for index, item in enumerate(base.Edges) if abs(item.Length - 10) < 1e-9)
+        sane = SimpleNamespace(Name="Fillet", Shape=SimpleNamespace(Volume=1000 - 0.2146 * 10))
+        reference_tools._require_plausible_volume(sane, base, [edge], 1.0, "fillet", "radius")
+        # The R3 crease fillet on the Dodec Hub returned a 42 % larger solid.
+        for volume in (1420.0, 0.0, -5.0):
+            broken = SimpleNamespace(Name="Fillet", Shape=SimpleNamespace(Volume=volume))
+            with self.assertRaises(OperationError) as caught:
+                reference_tools._require_plausible_volume(broken, base, [edge], 1.0, "fillet", "radius")
+            self.assertEqual(caught.exception.code, "invalid_geometry")
 
     def test_new_parts_and_explicit_add_scope(self):
         self.part()

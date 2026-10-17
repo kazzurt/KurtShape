@@ -82,8 +82,42 @@ def handle(core, doc, req):
     core._recompute(doc)
     if feature.Shape.isNull() or len(feature.Shape.Solids) != 1 or {"Invalid", "Error"} & set(feature.State):
         raise OperationError("build_failed", "Native feature could not create one valid solid", feature=feature.Name)
+    if op != "shell":
+        _require_plausible_volume(feature, tip.Shape, [reference["subelement"] for reference in refs],
+                                  feature.Radius.Value if op == "fillet" else feature.Size.Value, op,
+                                  "radius" if op == "fillet" else "size")
     body.Tip = feature
     return feature.Name
+
+
+# A rolling-ball fillet or equal chamfer of size s adds or removes at most
+# s^2 * cot(theta/2) of section per unit edge length; 20 covers dihedral
+# angles down to about 6 degrees.
+DRESS_UP_SECTION_LIMIT = 20.0
+
+
+def _require_plausible_volume(feature, base_shape, edges, size, kind, key):
+    """Dress-up kernels can report success with a self-intersecting solid.
+
+    A native R3 fillet fading into a near-tangent crease returned one solid,
+    state Valid, 28,000 mm3 larger than its 66,000 mm3 input. BRepCheck stays
+    an explicit request (interactive paths never run it), so reject that
+    gross failure from volumes alone.
+    """
+    from .core import OperationError
+    length = 0.0
+    for element in edges:
+        try:
+            length += base_shape.getElement(element).Length
+        except Exception:
+            continue
+    before, after = base_shape.Volume, feature.Shape.Volume
+    limit = DRESS_UP_SECTION_LIMIT * size * size * length + 1e-6 * abs(before)
+    if after <= 0 or abs(after - before) > limit:
+        raise OperationError("invalid_geometry", f"The {kind} produced an implausible solid (volume changed by "
+                             f"{after - before:.6g} mm3 for {length:.6g} mm of edges); the kernel result is likely "
+                             f"self-intersecting. Try a different {key}, fewer edges or another order",
+                             feature=feature.Name, volume_change_mm3=after - before, limit_mm3=limit)
 
 
 # Editing existing Fillet/Chamfer features ------------------------------------
@@ -210,4 +244,5 @@ def edit_dress_up(core, doc, req):
         raise OperationError("build_failed", f"The {kind} could not be built on the selected edges"
                              + (f" ({detail})" if detail and detail != "Valid" else "")
                              + f"; try a smaller {key} or different edges", feature=feature.Name)
+    _require_plausible_volume(feature, base.Shape, list(feature.Base[1]), getattr(feature, prop).Value, kind, key)
     return None
