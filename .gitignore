@@ -1,4 +1,5 @@
 runtime/
+projects/
 __pycache__/
 *.pyc
 validation/temporary-projects/

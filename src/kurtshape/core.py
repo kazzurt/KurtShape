@@ -532,7 +532,7 @@ class Controller:
         """Capture an eligible STEP job; ownership loss raises instead of falling back."""
         from dataclasses import asdict
         from . import document_index
-        from .step_export_worker import NativeStepExportWorker, world_fingerprints, world_roundtrip_stable
+        from .step_export_worker import NativeStepExportWorker
         from .step_capture import roundtrip_digest, initial_world_fingerprints
         from .preview_worker import _snapshot_file_identity
         def require_current_request():

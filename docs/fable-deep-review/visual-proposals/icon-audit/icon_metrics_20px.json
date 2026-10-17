@@ -1,0 +1,902 @@
+{
+ "adopt-copy": {
+  "coverage": 0.657,
+  "ink": 0.202,
+  "bbox": [
+   1,
+   1,
+   17,
+   18
+  ],
+  "bbox_w": 17,
+  "bbox_h": 18
+ },
+ "arc": {
+  "coverage": 0.175,
+  "ink": 0.064,
+  "bbox": [
+   0,
+   0,
+   18,
+   16
+  ],
+  "bbox_w": 19,
+  "bbox_h": 17
+ },
+ "assembly": {
+  "coverage": 0.458,
+  "ink": 0.172,
+  "bbox": [
+   1,
+   0,
+   18,
+   17
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "axis": {
+  "coverage": 0.16,
+  "ink": 0.044,
+  "bbox": [
+   2,
+   2,
+   17,
+   18
+  ],
+  "bbox_w": 16,
+  "bbox_h": 17
+ },
+ "boolean": {
+  "coverage": 0.425,
+  "ink": 0.165,
+  "bbox": [
+   2,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 16
+ },
+ "build-menu": {
+  "coverage": 0.56,
+  "ink": 0.177,
+  "bbox": [
+   2,
+   3,
+   19,
+   19
+  ],
+  "bbox_w": 18,
+  "bbox_h": 17
+ },
+ "cancel": {
+  "coverage": 0.19,
+  "ink": 0.088,
+  "bbox": [
+   3,
+   3,
+   16,
+   16
+  ],
+  "bbox_w": 14,
+  "bbox_h": 14
+ },
+ "chamfer": {
+  "coverage": 0.603,
+  "ink": 0.204,
+  "bbox": [
+   2,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 16
+ },
+ "check-geometry": {
+  "coverage": 0.432,
+  "ink": 0.161,
+  "bbox": [
+   1,
+   2,
+   19,
+   19
+  ],
+  "bbox_w": 19,
+  "bbox_h": 18
+ },
+ "circle": {
+  "coverage": 0.525,
+  "ink": 0.117,
+  "bbox": [
+   2,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 16
+ },
+ "circular-pattern": {
+  "coverage": 0.375,
+  "ink": 0.149,
+  "bbox": [
+   0,
+   0,
+   19,
+   19
+  ],
+  "bbox_w": 20,
+  "bbox_h": 20
+ },
+ "confirm": {
+  "coverage": 0.165,
+  "ink": 0.067,
+  "bbox": [
+   1,
+   3,
+   18,
+   15
+  ],
+  "bbox_w": 18,
+  "bbox_h": 13
+ },
+ "constraints-menu": {
+  "coverage": 0.37,
+  "ink": 0.11,
+  "bbox": [
+   2,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 16
+ },
+ "construction": {
+  "coverage": 0.15,
+  "ink": 0.035,
+  "bbox": [
+   1,
+   0,
+   18,
+   17
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "coordinate-system": {
+  "coverage": 0.265,
+  "ink": 0.074,
+  "bbox": [
+   2,
+   1,
+   18,
+   18
+  ],
+  "bbox_w": 17,
+  "bbox_h": 18
+ },
+ "cut-menu": {
+  "coverage": 0.56,
+  "ink": 0.168,
+  "bbox": [
+   2,
+   3,
+   19,
+   19
+  ],
+  "bbox_w": 18,
+  "bbox_h": 17
+ },
+ "dimension": {
+  "coverage": 0.19,
+  "ink": 0.077,
+  "bbox": [
+   2,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 16
+ },
+ "document-menu": {
+  "coverage": 0.27,
+  "ink": 0.121,
+  "bbox": [
+   1,
+   4,
+   18,
+   15
+  ],
+  "bbox_w": 18,
+  "bbox_h": 12
+ },
+ "draft": {
+  "coverage": 0.583,
+  "ink": 0.189,
+  "bbox": [
+   1,
+   0,
+   18,
+   17
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "edit-menu": {
+  "coverage": 0.468,
+  "ink": 0.133,
+  "bbox": [
+   1,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 17,
+  "bbox_h": 16
+ },
+ "example": {
+  "coverage": 0.38,
+  "ink": 0.144,
+  "bbox": [
+   1,
+   1,
+   18,
+   16
+  ],
+  "bbox_w": 18,
+  "bbox_h": 16
+ },
+ "export": {
+  "coverage": 0.417,
+  "ink": 0.122,
+  "bbox": [
+   2,
+   1,
+   18,
+   18
+  ],
+  "bbox_w": 17,
+  "bbox_h": 18
+ },
+ "extrude": {
+  "coverage": 0.417,
+  "ink": 0.146,
+  "bbox": [
+   3,
+   0,
+   16,
+   17
+  ],
+  "bbox_w": 14,
+  "bbox_h": 18
+ },
+ "fillet": {
+  "coverage": 0.632,
+  "ink": 0.219,
+  "bbox": [
+   2,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 16
+ },
+ "fit": {
+  "coverage": 0.355,
+  "ink": 0.108,
+  "bbox": [
+   1,
+   1,
+   18,
+   18
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "fixed-joint": {
+  "coverage": 0.328,
+  "ink": 0.137,
+  "bbox": [
+   1,
+   2,
+   18,
+   17
+  ],
+  "bbox_w": 18,
+  "bbox_h": 16
+ },
+ "geometry-menu": {
+  "coverage": 0.455,
+  "ink": 0.126,
+  "bbox": [
+   1,
+   2,
+   18,
+   19
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "groove": {
+  "coverage": 0.682,
+  "ink": 0.205,
+  "bbox": [
+   1,
+   1,
+   19,
+   19
+  ],
+  "bbox_w": 19,
+  "bbox_h": 19
+ },
+ "ground": {
+  "coverage": 0.393,
+  "ink": 0.132,
+  "bbox": [
+   2,
+   1,
+   17,
+   19
+  ],
+  "bbox_w": 16,
+  "bbox_h": 19
+ },
+ "insert": {
+  "coverage": 0.295,
+  "ink": 0.101,
+  "bbox": [
+   1,
+   4,
+   18,
+   17
+  ],
+  "bbox_w": 18,
+  "bbox_h": 14
+ },
+ "isometric": {
+  "coverage": 0.52,
+  "ink": 0.184,
+  "bbox": [
+   2,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 16
+ },
+ "kurtshape-dodecahedron": {
+  "coverage": 0.59,
+  "ink": 0.258,
+  "bbox": [
+   1,
+   2,
+   18,
+   17
+  ],
+  "bbox_w": 18,
+  "bbox_h": 16
+ },
+ "line": {
+  "coverage": 0.16,
+  "ink": 0.054,
+  "bbox": [
+   0,
+   0,
+   19,
+   19
+  ],
+  "bbox_w": 20,
+  "bbox_h": 20
+ },
+ "linear-pattern": {
+  "coverage": 0.495,
+  "ink": 0.192,
+  "bbox": [
+   1,
+   1,
+   17,
+   17
+  ],
+  "bbox_w": 17,
+  "bbox_h": 17
+ },
+ "loft-remove": {
+  "coverage": 0.655,
+  "ink": 0.186,
+  "bbox": [
+   1,
+   1,
+   19,
+   19
+  ],
+  "bbox_w": 19,
+  "bbox_h": 19
+ },
+ "loft": {
+  "coverage": 0.615,
+  "ink": 0.176,
+  "bbox": [
+   1,
+   1,
+   18,
+   19
+  ],
+  "bbox_w": 18,
+  "bbox_h": 19
+ },
+ "measure": {
+  "coverage": 0.318,
+  "ink": 0.081,
+  "bbox": [
+   1,
+   1,
+   18,
+   17
+  ],
+  "bbox_w": 18,
+  "bbox_h": 17
+ },
+ "mirror": {
+  "coverage": 0.39,
+  "ink": 0.113,
+  "bbox": [
+   1,
+   1,
+   18,
+   18
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "modify-menu": {
+  "coverage": 0.65,
+  "ink": 0.234,
+  "bbox": [
+   2,
+   2,
+   19,
+   18
+  ],
+  "bbox_w": 18,
+  "bbox_h": 17
+ },
+ "more": {
+  "coverage": 0.145,
+  "ink": 0.042,
+  "bbox": [
+   2,
+   7,
+   17,
+   11
+  ],
+  "bbox_w": 16,
+  "bbox_h": 5
+ },
+ "move-face": {
+  "coverage": 0.325,
+  "ink": 0.126,
+  "bbox": [
+   2,
+   2,
+   19,
+   17
+  ],
+  "bbox_w": 18,
+  "bbox_h": 16
+ },
+ "new-document": {
+  "coverage": 0.677,
+  "ink": 0.164,
+  "bbox": [
+   2,
+   1,
+   17,
+   18
+  ],
+  "bbox_w": 16,
+  "bbox_h": 18
+ },
+ "new-part": {
+  "coverage": 0.56,
+  "ink": 0.177,
+  "bbox": [
+   2,
+   3,
+   19,
+   19
+  ],
+  "bbox_w": 18,
+  "bbox_h": 17
+ },
+ "normal": {
+  "coverage": 0.378,
+  "ink": 0.104,
+  "bbox": [
+   2,
+   1,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 17
+ },
+ "open": {
+  "coverage": 0.647,
+  "ink": 0.186,
+  "bbox": [
+   1,
+   2,
+   18,
+   18
+  ],
+  "bbox_w": 18,
+  "bbox_h": 17
+ },
+ "patterns-menu": {
+  "coverage": 0.495,
+  "ink": 0.192,
+  "bbox": [
+   1,
+   1,
+   17,
+   17
+  ],
+  "bbox_w": 17,
+  "bbox_h": 17
+ },
+ "pierce": {
+  "coverage": 0.255,
+  "ink": 0.068,
+  "bbox": [
+   1,
+   1,
+   18,
+   18
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "plane": {
+  "coverage": 0.49,
+  "ink": 0.119,
+  "bbox": [
+   0,
+   2,
+   19,
+   16
+  ],
+  "bbox_w": 20,
+  "bbox_h": 15
+ },
+ "point": {
+  "coverage": 0.2,
+  "ink": 0.058,
+  "bbox": [
+   1,
+   1,
+   18,
+   18
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "polyline": {
+  "coverage": 0.235,
+  "ink": 0.081,
+  "bbox": [
+   0,
+   0,
+   19,
+   18
+  ],
+  "bbox_w": 20,
+  "bbox_h": 19
+ },
+ "rebuild": {
+  "coverage": 0.282,
+  "ink": 0.096,
+  "bbox": [
+   2,
+   2,
+   18,
+   18
+  ],
+  "bbox_w": 17,
+  "bbox_h": 17
+ },
+ "recent": {
+  "coverage": 0.52,
+  "ink": 0.121,
+  "bbox": [
+   2,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 16
+ },
+ "recovery": {
+  "coverage": 0.625,
+  "ink": 0.161,
+  "bbox": [
+   2,
+   1,
+   17,
+   18
+  ],
+  "bbox_w": 16,
+  "bbox_h": 18
+ },
+ "rectangle": {
+  "coverage": 0.58,
+  "ink": 0.127,
+  "bbox": [
+   1,
+   2,
+   18,
+   17
+  ],
+  "bbox_w": 18,
+  "bbox_h": 16
+ },
+ "redo": {
+  "coverage": 0.177,
+  "ink": 0.066,
+  "bbox": [
+   2,
+   1,
+   18,
+   15
+  ],
+  "bbox_w": 17,
+  "bbox_h": 15
+ },
+ "reference-menu": {
+  "coverage": 0.51,
+  "ink": 0.129,
+  "bbox": [
+   0,
+   0,
+   19,
+   18
+  ],
+  "bbox_w": 20,
+  "bbox_h": 19
+ },
+ "remove": {
+  "coverage": 0.497,
+  "ink": 0.188,
+  "bbox": [
+   2,
+   1,
+   18,
+   17
+  ],
+  "bbox_w": 17,
+  "bbox_h": 17
+ },
+ "revolute-joint": {
+  "coverage": 0.56,
+  "ink": 0.151,
+  "bbox": [
+   2,
+   3,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 15
+ },
+ "revolve": {
+  "coverage": 0.603,
+  "ink": 0.185,
+  "bbox": [
+   1,
+   1,
+   17,
+   18
+  ],
+  "bbox_w": 17,
+  "bbox_h": 18
+ },
+ "save": {
+  "coverage": 0.75,
+  "ink": 0.209,
+  "bbox": [
+   2,
+   1,
+   18,
+   18
+  ],
+  "bbox_w": 17,
+  "bbox_h": 18
+ },
+ "search": {
+  "coverage": 0.357,
+  "ink": 0.087,
+  "bbox": [
+   2,
+   2,
+   19,
+   19
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "settings": {
+  "coverage": 0.58,
+  "ink": 0.179,
+  "bbox": [
+   1,
+   1,
+   19,
+   18
+  ],
+  "bbox_w": 19,
+  "bbox_h": 18
+ },
+ "shape-tools-menu": {
+  "coverage": 0.425,
+  "ink": 0.165,
+  "bbox": [
+   2,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 16
+ },
+ "shell": {
+  "coverage": 0.52,
+  "ink": 0.215,
+  "bbox": [
+   2,
+   2,
+   17,
+   17
+  ],
+  "bbox_w": 16,
+  "bbox_h": 16
+ },
+ "shortcuts": {
+  "coverage": 0.62,
+  "ink": 0.171,
+  "bbox": [
+   1,
+   3,
+   18,
+   16
+  ],
+  "bbox_w": 18,
+  "bbox_h": 14
+ },
+ "sketch": {
+  "coverage": 0.295,
+  "ink": 0.08,
+  "bbox": [
+   1,
+   3,
+   18,
+   19
+  ],
+  "bbox_w": 18,
+  "bbox_h": 17
+ },
+ "slider-joint": {
+  "coverage": 0.46,
+  "ink": 0.138,
+  "bbox": [
+   1,
+   2,
+   18,
+   19
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "spline": {
+  "coverage": 0.165,
+  "ink": 0.06,
+  "bbox": [
+   0,
+   1,
+   19,
+   18
+  ],
+  "bbox_w": 20,
+  "bbox_h": 18
+ },
+ "split": {
+  "coverage": 0.618,
+  "ink": 0.162,
+  "bbox": [
+   0,
+   0,
+   19,
+   19
+  ],
+  "bbox_w": 20,
+  "bbox_h": 20
+ },
+ "sweep-remove": {
+  "coverage": 0.502,
+  "ink": 0.144,
+  "bbox": [
+   0,
+   3,
+   19,
+   19
+  ],
+  "bbox_w": 20,
+  "bbox_h": 17
+ },
+ "sweep": {
+  "coverage": 0.347,
+  "ink": 0.106,
+  "bbox": [
+   0,
+   3,
+   16,
+   19
+  ],
+  "bbox_w": 17,
+  "bbox_h": 17
+ },
+ "tools": {
+  "coverage": 0.302,
+  "ink": 0.11,
+  "bbox": [
+   2,
+   2,
+   18,
+   12
+  ],
+  "bbox_w": 17,
+  "bbox_h": 11
+ },
+ "transform": {
+  "coverage": 0.372,
+  "ink": 0.138,
+  "bbox": [
+   1,
+   1,
+   18,
+   18
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "trim": {
+  "coverage": 0.3,
+  "ink": 0.09,
+  "bbox": [
+   1,
+   1,
+   18,
+   18
+  ],
+  "bbox_w": 18,
+  "bbox_h": 18
+ },
+ "undo": {
+  "coverage": 0.177,
+  "ink": 0.066,
+  "bbox": [
+   1,
+   1,
+   17,
+   15
+  ],
+  "bbox_w": 17,
+  "bbox_h": 15
+ }
+}

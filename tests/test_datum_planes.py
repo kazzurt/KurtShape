@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
 import Part
 from kurtshape.core import Controller
-from kurtshape import modeling_geometry, studio
+from kurtshape import modeling_geometry
 
 X, Y, Z = App.Vector(1, 0, 0), App.Vector(0, 1, 0), App.Vector(0, 0, 1)
 

@@ -1642,13 +1642,13 @@ def recompute(doc):
                                     "consumers": len(consumers)}
     consumers = [obj for obj in doc.Objects if "QueryInputs" in obj.PropertiesList and _active(obj)]
     if not consumers:
-        result = native()
+        native()
         metrics()
         return dict(_rebuild_metrics[doc.Name])
     if not _in_transaction(doc):
         # Undo/reopen restore native selector caches. No adapter writes outside
         # an accepted mutation; caller must create a rebuild transaction first.
-        result = native()
+        native()
         for obj in consumers:
             _refresh_feature(obj, allow_reference_writes=False)
         metrics()

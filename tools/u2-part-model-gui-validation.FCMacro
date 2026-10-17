@@ -43,7 +43,7 @@ socket.getaddrinfo = deny_network
 import FreeCAD as App
 import FreeCADGui as Gui
 import Part
-from PySide import QtCore, QtGui
+from PySide import QtCore
 from PySide6 import QtTest, QtWidgets
 from kurtshape import ui
 from kurtshape.core import native_intent

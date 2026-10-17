@@ -1,9 +1,7 @@
 """Typed native consumers of geometry references and authored selectors."""
 import re
 
-import FreeCAD as App
 from . import hole_tools, selectors
-from .bodies import owner
 
 OPS = {"fillet", "chamfer", "shell", "project_geometry", "edit_dress_up", "hole"}
 ARGS = {

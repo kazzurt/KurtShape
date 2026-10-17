@@ -1,0 +1,253 @@
+{
+  "review": "Fable deep review, fresh isolated regression run",
+  "checkout": "f57d59267857ad32c302d2ae6e6c1368ce3c6a68 (main)",
+  "command": "runtime/.../bin/pythonw.exe -B tools/run_native_tests.py --require-native --timeout 3600 (all suites; KURTSHAPE_PERF unset; external Onshape examples folder unavailable)",
+  "started_local": "Sat Oct 17 03:41:22 PDT 2026",
+  "method": "Fresh isolated Python subprocess per suite",
+  "limits": "Headless native and Qt regressions; no GUI acceptance or native C++ networking interception",
+  "passed": true,
+  "seconds": 363.2,
+  "counts": {
+    "tests": 616,
+    "passed": 612,
+    "skipped": 4,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "source_unchanged": true,
+  "unassigned_test_cases": [],
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "run_dir": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\test-tmp\\regression-run-20261017-034123-31628-0002430d",
+  "suites": [
+    {
+      "name": "native",
+      "passed": true,
+      "counts": {
+        "tests": 558,
+        "passed": 554,
+        "skipped": 4,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 344.4,
+      "exit_code": 0,
+      "timed_out": false,
+      "skips": [
+        {
+          "id": "test_build_status.StatusPerformanceTests.test_explicit_check_and_measure_cost_reported",
+          "reason": "perf: set KURTSHAPE_PERF=1 to run performance checks"
+        },
+        {
+          "id": "test_build_status.StatusPerformanceTests.test_idle_and_post_change_inspection_budget",
+          "reason": "perf: set KURTSHAPE_PERF=1 to run performance checks"
+        },
+        {
+          "id": "test_build_status.StatusPerformanceTests.test_open_does_not_rebuild",
+          "reason": "perf: set KURTSHAPE_PERF=1 to run performance checks"
+        },
+        {
+          "id": "test_build_status.StatusPerformanceTests.test_tip_edit_overhead_budget",
+          "reason": "perf: set KURTSHAPE_PERF=1 to run performance checks"
+        }
+      ],
+      "slowest_cases": [
+        {
+          "id": "test_everyday_modeling.EverydayModelingDirectionTests.test_placed_rotated_body_studio_preview_matches_confirm",
+          "seconds": 9.79
+        },
+        {
+          "id": "test_assembly.AssemblyWorkflowTests.test_original_three_solid_steps_insert_explicit_bodies_and_preserve_sources",
+          "seconds": 8.28
+        },
+        {
+          "id": "test_everyday_modeling.EverydayModelingDirectionTests.test_studio_add_and_cut_defaults_on_every_face",
+          "seconds": 7.62
+        },
+        {
+          "id": "test_geometry_queries.GeometryQueryTests.test_interactive_reference_and_studio_operations_do_not_check",
+          "seconds": 7.61
+        },
+        {
+          "id": "test_assembly.AssemblyWorkflowTests.test_original_steps_insert_directly_as_three_solid_choices",
+          "seconds": 7.05
+        },
+        {
+          "id": "test_step_import.StepImportTests.test_real_three_solid_parts_preserve_geometry_source_and_native_roundtrip",
+          "seconds": 6.19
+        },
+        {
+          "id": "test_native_validation_snapshot.NativeValidationSnapshotTests.test_original_studio_fixture_including_every_origin_point_survives_two_warm_inspections",
+          "seconds": 6.12
+        },
+        {
+          "id": "test_part_studio.PartStudioTests.test_studio_up_to_face_and_sweep_path_selectors",
+          "seconds": 4.86
+        }
+      ],
+      "checks": null
+    },
+    {
+      "name": "bridge",
+      "passed": true,
+      "counts": {
+        "tests": 19,
+        "passed": 19,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 14.7,
+      "exit_code": 0,
+      "timed_out": false,
+      "skips": [],
+      "slowest_cases": [
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_status_requires_exact_explicit_capability_and_matching_live_ledger",
+          "seconds": 2.55
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_status_runs_while_owner_mutation_is_blocked_and_after_unknown_outcome",
+          "seconds": 1.53
+        },
+        {
+          "id": "test_bridge_native.NativeBridgeStatusTests.test_noncanonical_http_status_keeps_owner_validation_and_default_measure_semantics",
+          "seconds": 1.06
+        },
+        {
+          "id": "test_bridge_native.NativeBridgeStatusTests.test_canonical_http_status_and_replay_preserve_real_controller_state_without_tick",
+          "seconds": 1.06
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_started_timeout_lookup_replay_and_different_payload_reuse",
+          "seconds": 0.72
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_fast_status_reports_actual_queued_cancellation_and_cached_replay",
+          "seconds": 0.62
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_cancelled_request_id_is_not_later_executed",
+          "seconds": 0.61
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_noncanonical_status_and_invalid_defaults_keep_queued_validation",
+          "seconds": 0.59
+        }
+      ],
+      "checks": null
+    },
+    {
+      "name": "shortcuts",
+      "passed": true,
+      "counts": {
+        "tests": 33,
+        "passed": 33,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 0.8,
+      "exit_code": 0,
+      "timed_out": false,
+      "skips": [],
+      "slowest_cases": [
+        {
+          "id": "test_shortcuts.QtRoutingTests.test_help_typing_and_toggle_do_not_trigger_sketch_tools",
+          "seconds": 0.03
+        },
+        {
+          "id": "test_shortcuts.RouterTests.test_user_override_conflicts_reject_and_perpendicular_keeps_shift_l",
+          "seconds": 0.01
+        },
+        {
+          "id": "test_shortcuts.QtRoutingTests.test_dimension_dialog_keeps_return",
+          "seconds": 0.01
+        },
+        {
+          "id": "test_shortcuts.QtRoutingTests.test_shifted_digit_maps_to_standard_view",
+          "seconds": 0.01
+        },
+        {
+          "id": "test_shortcuts.QtRoutingTests.test_palette_owns_arrow_and_escape_without_model_commands",
+          "seconds": 0.01
+        },
+        {
+          "id": "test_shortcuts.QtRoutingTests.test_typing_letters_spaces_and_model_keys_does_not_model",
+          "seconds": 0.01
+        },
+        {
+          "id": "test_shortcuts.QtRoutingTests.test_file_shortcuts_in_fields_use_application_callbacks_once",
+          "seconds": 0.01
+        },
+        {
+          "id": "test_shortcuts.QtRoutingTests.test_text_undo_is_not_model_undo",
+          "seconds": 0.0
+        }
+      ],
+      "checks": null
+    },
+    {
+      "name": "workflows",
+      "passed": true,
+      "counts": {
+        "tests": 6,
+        "passed": 6,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "seconds": 3.3,
+      "exit_code": 0,
+      "timed_out": false,
+      "skips": [],
+      "slowest_cases": [
+        {
+          "id": "workflows.linear-feature-pattern",
+          "seconds": 0.0
+        },
+        {
+          "id": "workflows.circular-feature-pattern",
+          "seconds": 0.0
+        },
+        {
+          "id": "workflows.offset-plane",
+          "seconds": 0.0
+        },
+        {
+          "id": "workflows.angled-plane",
+          "seconds": 0.0
+        },
+        {
+          "id": "workflows.additive-sweep",
+          "seconds": 0.0
+        },
+        {
+          "id": "workflows.additive-loft",
+          "seconds": 0.0
+        }
+      ],
+      "checks": 415
+    }
+  ],
+  "source_sha256_count": 114,
+  "source_manifest_digest": "bc4044cd8c959396f5327f5c5e965ccfd44322e40048bb5152a12d7fc0a5254d",
+  "note": "Full report (617 KB) and junit.xml remain in the isolated session folder named in run_dir's parent; they are not committed. The 4 skips are the opt-in StatusPerformanceTests methods. No external real-part fixture tests exist in SUITES at this revision; their absence is not a skip here.",
+  "external_fixture_skips": 0
+}

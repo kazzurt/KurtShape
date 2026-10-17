@@ -1,0 +1,456 @@
+[
+ {
+  "label": "Use",
+  "command": "Sketcher_Projection",
+  "native": true,
+  "gray_ink": 0.308,
+  "gray_cover": 0.65,
+  "original": "pierce",
+  "original_ink": 0.068,
+  "original_cover": 0.255,
+  "color_ink": 0.317,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Hole",
+  "command": "PartDesign_Hole",
+  "native": true,
+  "gray_ink": 0.52,
+  "gray_cover": 0.895,
+  "original": "remove",
+  "original_ink": 0.188,
+  "original_cover": 0.497,
+  "color_ink": 0.543,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Helical sweep",
+  "command": "PartDesign_AdditiveHelix",
+  "native": true,
+  "gray_ink": 0.225,
+  "gray_cover": 0.537,
+  "original": "sweep",
+  "original_ink": 0.106,
+  "original_cover": 0.347,
+  "color_ink": 0.243,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Additive primitives",
+  "command": "PartDesign_CompPrimitiveAdditive",
+  "native": true,
+  "gray_ink": 0.289,
+  "gray_cover": 0.781,
+  "original": "extrude",
+  "original_ink": 0.146,
+  "original_cover": 0.417,
+  "color_ink": 0.299,
+  "sizes": [
+   16
+  ]
+ },
+ {
+  "label": "Shape binder",
+  "command": "PartDesign_ShapeBinder",
+  "native": true,
+  "gray_ink": 0.382,
+  "gray_cover": 0.765,
+  "original": "plane",
+  "original_ink": 0.119,
+  "original_cover": 0.49,
+  "color_ink": 0.395,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Offset surface",
+  "command": "Part_Offset",
+  "native": true,
+  "gray_ink": 0.223,
+  "gray_cover": 0.463,
+  "original": "shell",
+  "original_ink": 0.215,
+  "original_cover": 0.52,
+  "color_ink": 0.227,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Intersect shapes",
+  "command": "Part_Section",
+  "native": true,
+  "gray_ink": 0.383,
+  "gray_cover": 0.72,
+  "original": "boolean",
+  "original_ink": 0.165,
+  "original_cover": 0.425,
+  "color_ink": 0.398,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Coincident",
+  "command": "Sketcher_ConstrainCoincident",
+  "native": true,
+  "gray_ink": 0.206,
+  "gray_cover": 0.41,
+  "original": "point",
+  "original_ink": 0.058,
+  "original_cover": 0.2,
+  "color_ink": 0.218,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Tangent",
+  "command": "Sketcher_ConstrainTangent",
+  "native": true,
+  "gray_ink": 0.197,
+  "gray_cover": 0.365,
+  "original": "arc",
+  "original_ink": 0.064,
+  "original_cover": 0.175,
+  "color_ink": 0.215,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Horizontal",
+  "command": "Sketcher_ConstrainHorizontal",
+  "native": true,
+  "gray_ink": 0.071,
+  "gray_cover": 0.16,
+  "original": "line",
+  "original_ink": 0.054,
+  "original_cover": 0.16,
+  "color_ink": 0.077,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Equal",
+  "command": "Sketcher_ConstrainEqual",
+  "native": true,
+  "gray_ink": 0.096,
+  "gray_cover": 0.2,
+  "original": "dimension",
+  "original_ink": 0.077,
+  "original_cover": 0.19,
+  "color_ink": 0.104,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Slot",
+  "command": "Sketcher_CreateSlot",
+  "native": true,
+  "gray_ink": 0.189,
+  "gray_cover": 0.5,
+  "original": "rectangle",
+  "original_ink": 0.127,
+  "original_cover": 0.58,
+  "color_ink": 0.195,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Regular polygon",
+  "command": "Sketcher_CreateRegularPolygon",
+  "native": true,
+  "gray_ink": 0.225,
+  "gray_cover": 0.557,
+  "original": "circle",
+  "original_ink": 0.117,
+  "original_cover": 0.525,
+  "color_ink": 0.235,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Center rectangle",
+  "command": "Sketcher_CreateRectangle_Center",
+  "native": true,
+  "gray_ink": 0.198,
+  "gray_cover": 0.468,
+  "original": "rectangle",
+  "original_ink": 0.127,
+  "original_cover": 0.58,
+  "color_ink": 0.204,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Extend",
+  "command": "Sketcher_Extend",
+  "native": true,
+  "gray_ink": 0.111,
+  "gray_cover": 0.275,
+  "original": "trim",
+  "original_ink": 0.09,
+  "original_cover": 0.3,
+  "color_ink": 0.113,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Mirror geometry",
+  "command": "Sketcher_Symmetry",
+  "native": true,
+  "gray_ink": 0.26,
+  "gray_cover": 0.585,
+  "original": "mirror",
+  "original_ink": 0.113,
+  "original_cover": 0.39,
+  "color_ink": 0.278,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Sketch fillet",
+  "command": "Sketcher_CreateFillet",
+  "native": true,
+  "gray_ink": 0.158,
+  "gray_cover": 0.367,
+  "original": "fillet",
+  "original_ink": 0.219,
+  "original_cover": 0.632,
+  "color_ink": 0.162,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Pad (history)",
+  "command": "PartDesign_Pad",
+  "native": true,
+  "gray_ink": 0.266,
+  "gray_cover": 0.68,
+  "original": "extrude",
+  "original_ink": 0.146,
+  "original_cover": 0.417,
+  "color_ink": 0.288,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Pocket (history)",
+  "command": "PartDesign_Pocket",
+  "native": true,
+  "gray_ink": 0.334,
+  "gray_cover": 0.603,
+  "original": "remove",
+  "original_ink": 0.188,
+  "original_cover": 0.497,
+  "color_ink": 0.345,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Fillet (history)",
+  "command": "PartDesign_Fillet",
+  "native": true,
+  "gray_ink": 0.412,
+  "gray_cover": 0.708,
+  "original": "fillet",
+  "original_ink": 0.219,
+  "original_cover": 0.632,
+  "color_ink": 0.439,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Sketch (history)",
+  "command": "Sketcher_NewSketch",
+  "native": true,
+  "gray_ink": 0.223,
+  "gray_cover": 0.873,
+  "original": "sketch",
+  "original_ink": 0.08,
+  "original_cover": 0.295,
+  "color_ink": 0.231,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Body (parts)",
+  "command": "PartDesign_Body",
+  "native": true,
+  "gray_ink": 0.285,
+  "gray_cover": 0.535,
+  "original": "isometric",
+  "original_ink": 0.184,
+  "original_cover": 0.52,
+  "color_ink": 0.292,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ },
+ {
+  "label": "Part Extrude (history)",
+  "command": "Part_Extrude",
+  "native": true,
+  "gray_ink": 0.31,
+  "gray_cover": 0.593,
+  "original": "extrude",
+  "original_ink": 0.146,
+  "original_cover": 0.417,
+  "color_ink": 0.318,
+  "sizes": [
+   20,
+   24,
+   32,
+   40,
+   48,
+   60,
+   64
+  ]
+ }
+]

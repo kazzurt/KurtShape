@@ -1,0 +1,854 @@
+[
+ {
+  "where": "shell",
+  "label": "Document menu",
+  "command": null,
+  "original": "document-menu"
+ },
+ {
+  "where": "shell",
+  "label": "Save",
+  "command": null,
+  "original": "save"
+ },
+ {
+  "where": "shell",
+  "label": "Help",
+  "command": null,
+  "original": null
+ },
+ {
+  "where": "shell",
+  "label": "Settings",
+  "command": null,
+  "original": "settings"
+ },
+ {
+  "where": "shell",
+  "label": "New part",
+  "command": null,
+  "original": "new-part"
+ },
+ {
+  "where": "shell",
+  "label": "Sketch",
+  "command": "Sketcher_NewSketch",
+  "original": "sketch"
+ },
+ {
+  "where": "shell",
+  "label": "Extrude",
+  "command": "PartDesign_Pad",
+  "original": "extrude"
+ },
+ {
+  "where": "shell",
+  "label": "Boolean parts",
+  "command": null,
+  "original": "boolean"
+ },
+ {
+  "where": "shell",
+  "label": "Split",
+  "command": null,
+  "original": "split"
+ },
+ {
+  "where": "shell",
+  "label": "Transform",
+  "command": null,
+  "original": "transform"
+ },
+ {
+  "where": "shell",
+  "label": "More",
+  "command": null,
+  "original": "more"
+ },
+ {
+  "where": "shell",
+  "label": "Rebuild",
+  "command": "Std_Refresh",
+  "original": "rebuild"
+ },
+ {
+  "where": "shell",
+  "label": "Check geometry",
+  "command": "Part_CheckGeometry",
+  "original": "check-geometry"
+ },
+ {
+  "where": "shell",
+  "label": "Fit",
+  "command": "Std_ViewFitAll",
+  "original": "fit"
+ },
+ {
+  "where": "shell",
+  "label": "Normal",
+  "command": "Std_ViewTop",
+  "original": "normal"
+ },
+ {
+  "where": "shell",
+  "label": "3D",
+  "command": "Std_ViewIsometric",
+  "original": "isometric"
+ },
+ {
+  "where": "shell",
+  "label": "Show planes",
+  "command": "PartDesign_Plane",
+  "original": "plane"
+ },
+ {
+  "where": "shell",
+  "label": "Use",
+  "command": "Sketcher_Projection",
+  "original": null
+ },
+ {
+  "where": "shell",
+  "label": "Pierce",
+  "command": null,
+  "original": "pierce"
+ },
+ {
+  "where": "shell",
+  "label": "Finish sketch",
+  "command": null,
+  "original": "confirm"
+ },
+ {
+  "where": "shell",
+  "label": "Cancel sketch",
+  "command": null,
+  "original": "cancel"
+ },
+ {
+  "where": "shell",
+  "label": "Create Assembly",
+  "command": null,
+  "original": "assembly"
+ },
+ {
+  "where": "shell",
+  "label": "Insert",
+  "command": null,
+  "original": "insert"
+ },
+ {
+  "where": "shell",
+  "label": "Ground",
+  "command": null,
+  "original": "ground"
+ },
+ {
+  "where": "shell",
+  "label": "Fixed",
+  "command": null,
+  "original": "fixed-joint"
+ },
+ {
+  "where": "shell",
+  "label": "Revolute",
+  "command": null,
+  "original": "revolute-joint"
+ },
+ {
+  "where": "shell",
+  "label": "Slider",
+  "command": null,
+  "original": "slider-joint"
+ },
+ {
+  "where": "shell",
+  "label": "Move",
+  "command": null,
+  "original": "transform"
+ },
+ {
+  "where": "shell",
+  "label": "Edit",
+  "command": null,
+  "original": "edit-menu"
+ },
+ {
+  "where": "shell",
+  "label": "Solve",
+  "command": null,
+  "original": "rebuild"
+ },
+ {
+  "where": "shell",
+  "label": "Joints",
+  "command": null,
+  "original": "fixed-joint"
+ },
+ {
+  "where": "shell",
+  "label": "Part",
+  "command": null,
+  "original": null
+ },
+ {
+  "where": "shell",
+  "label": "Plane",
+  "command": null,
+  "original": "plane"
+ },
+ {
+  "where": "shell",
+  "label": "Recent projects",
+  "command": null,
+  "original": null
+ },
+ {
+  "where": "shell",
+  "label": "Recovery",
+  "command": null,
+  "original": "recovery"
+ },
+ {
+  "where": "shell",
+  "label": "Repair leftover helpers",
+  "command": null,
+  "original": null
+ },
+ {
+  "where": "shell",
+  "label": "Undo",
+  "command": null,
+  "original": "undo"
+ },
+ {
+  "where": "shell",
+  "label": "Redo",
+  "command": null,
+  "original": "redo"
+ },
+ {
+  "where": "Add material",
+  "label": "Extrude",
+  "command": "PartDesign_Pad",
+  "original": "extrude"
+ },
+ {
+  "where": "Add material",
+  "label": "Revolve",
+  "command": "PartDesign_Revolution",
+  "original": "revolve"
+ },
+ {
+  "where": "Add material",
+  "label": "Sweep",
+  "command": "PartDesign_AdditivePipe",
+  "original": "sweep"
+ },
+ {
+  "where": "Add material",
+  "label": "Loft",
+  "command": "PartDesign_AdditiveLoft",
+  "original": "loft"
+ },
+ {
+  "where": "Add material",
+  "label": "Helical sweep",
+  "command": "PartDesign_AdditiveHelix",
+  "original": null
+ },
+ {
+  "where": "Add material",
+  "label": "Additive primitives",
+  "command": "PartDesign_CompPrimitiveAdditive",
+  "original": null
+ },
+ {
+  "where": "Remove material",
+  "label": "Extrude \u00b7 Cut",
+  "command": "PartDesign_Pocket",
+  "original": "remove"
+ },
+ {
+  "where": "Remove material",
+  "label": "Revolve remove",
+  "command": "PartDesign_Groove",
+  "original": "groove"
+ },
+ {
+  "where": "Remove material",
+  "label": "Sweep remove",
+  "command": "PartDesign_SubtractivePipe",
+  "original": "sweep-remove"
+ },
+ {
+  "where": "Remove material",
+  "label": "Loft remove",
+  "command": "PartDesign_SubtractiveLoft",
+  "original": "loft-remove"
+ },
+ {
+  "where": "Remove material",
+  "label": "Helical remove",
+  "command": "PartDesign_SubtractiveHelix",
+  "original": null
+ },
+ {
+  "where": "Remove material",
+  "label": "Subtractive primitives",
+  "command": "PartDesign_CompPrimitiveSubtractive",
+  "original": null
+ },
+ {
+  "where": "Remove material",
+  "label": "Hole",
+  "command": "PartDesign_Hole",
+  "original": null
+ },
+ {
+  "where": "Modify",
+  "label": "Fillet",
+  "command": "PartDesign_Fillet",
+  "original": "fillet"
+ },
+ {
+  "where": "Modify",
+  "label": "Chamfer",
+  "command": "PartDesign_Chamfer",
+  "original": "chamfer"
+ },
+ {
+  "where": "Modify",
+  "label": "Shell",
+  "command": "PartDesign_Thickness",
+  "original": "shell"
+ },
+ {
+  "where": "Modify",
+  "label": "Draft",
+  "command": "PartDesign_Draft",
+  "original": "draft"
+ },
+ {
+  "where": "Modify",
+  "label": "Move face",
+  "command": "PartDesign_Pad",
+  "original": "move-face"
+ },
+ {
+  "where": "Modify",
+  "label": "Boolean",
+  "command": "PartDesign_Boolean",
+  "original": "boolean"
+ },
+ {
+  "where": "Pattern",
+  "label": "Mirror",
+  "command": "PartDesign_Mirrored",
+  "original": "mirror"
+ },
+ {
+  "where": "Pattern",
+  "label": "Linear pattern",
+  "command": "PartDesign_LinearPattern",
+  "original": "linear-pattern"
+ },
+ {
+  "where": "Pattern",
+  "label": "Circular pattern",
+  "command": "PartDesign_PolarPattern",
+  "original": "circular-pattern"
+ },
+ {
+  "where": "Pattern",
+  "label": "Multiple transforms",
+  "command": "PartDesign_MultiTransform",
+  "original": "transform"
+ },
+ {
+  "where": "Reference",
+  "label": "Plane",
+  "command": "PartDesign_Plane",
+  "original": "plane"
+ },
+ {
+  "where": "Reference",
+  "label": "Axis",
+  "command": "PartDesign_Line",
+  "original": "axis"
+ },
+ {
+  "where": "Reference",
+  "label": "Point",
+  "command": "PartDesign_Point",
+  "original": "point"
+ },
+ {
+  "where": "Reference",
+  "label": "Coordinate system",
+  "command": "PartDesign_CoordinateSystem",
+  "original": "coordinate-system"
+ },
+ {
+  "where": "Reference",
+  "label": "Shape binder",
+  "command": "PartDesign_ShapeBinder",
+  "original": null
+ },
+ {
+  "where": "Reference",
+  "label": "Subshape binder",
+  "command": "PartDesign_SubShapeBinder",
+  "original": null
+ },
+ {
+  "where": "Part tools",
+  "label": "Part extrude",
+  "command": "Part_Extrude",
+  "original": "extrude"
+ },
+ {
+  "where": "Part tools",
+  "label": "Part revolve",
+  "command": "Part_Revolve",
+  "original": "revolve"
+ },
+ {
+  "where": "Part tools",
+  "label": "Part sweep",
+  "command": "Part_Sweep",
+  "original": "sweep"
+ },
+ {
+  "where": "Part tools",
+  "label": "Part loft",
+  "command": "Part_Loft",
+  "original": "loft"
+ },
+ {
+  "where": "Part tools",
+  "label": "Part Boolean",
+  "command": "Part_Boolean",
+  "original": "boolean"
+ },
+ {
+  "where": "Part tools",
+  "label": "Offset surface",
+  "command": "Part_Offset",
+  "original": null
+ },
+ {
+  "where": "Part tools",
+  "label": "Offset wire",
+  "command": "Part_Offset2D",
+  "original": null
+ },
+ {
+  "where": "Part tools",
+  "label": "Ruled surface",
+  "command": "Part_RuledSurface",
+  "original": null
+ },
+ {
+  "where": "Part tools",
+  "label": "Part thickness",
+  "command": "Part_Thickness",
+  "original": "shell"
+ },
+ {
+  "where": "Part tools",
+  "label": "Intersect shapes",
+  "command": "Part_Section",
+  "original": null
+ },
+ {
+  "where": "Part tools",
+  "label": "Check geometry",
+  "command": "Part_CheckGeometry",
+  "original": "check-geometry"
+ },
+ {
+  "where": "Geometry",
+  "label": "Single line",
+  "command": "Sketcher_CreateLine",
+  "original": "line"
+ },
+ {
+  "where": "Geometry",
+  "label": "Line",
+  "command": "Sketcher_CreatePolyline",
+  "original": "polyline"
+ },
+ {
+  "where": "Geometry",
+  "label": "Point",
+  "command": "Sketcher_CreatePoint",
+  "original": "point"
+ },
+ {
+  "where": "Geometry",
+  "label": "Circle",
+  "command": "Sketcher_CreateCircle",
+  "original": "circle"
+ },
+ {
+  "where": "Geometry",
+  "label": "Three-point circle",
+  "command": "Sketcher_Create3PointCircle",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Center arc",
+  "command": "Sketcher_CreateArc",
+  "original": "arc"
+ },
+ {
+  "where": "Geometry",
+  "label": "Three-point arc",
+  "command": "Sketcher_Create3PointArc",
+  "original": "arc"
+ },
+ {
+  "where": "Geometry",
+  "label": "Rectangle",
+  "command": "Sketcher_CreateRectangle",
+  "original": "rectangle"
+ },
+ {
+  "where": "Geometry",
+  "label": "Center rectangle",
+  "command": "Sketcher_CreateRectangle_Center",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Center ellipse",
+  "command": "Sketcher_CreateEllipseByCenter",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Three-point ellipse",
+  "command": "Sketcher_CreateEllipseBy3Points",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Elliptical arc",
+  "command": "Sketcher_CreateArcOfEllipse",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Hyperbolic arc",
+  "command": "Sketcher_CreateArcOfHyperbola",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Parabolic arc",
+  "command": "Sketcher_CreateArcOfParabola",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Spline control points",
+  "command": "Sketcher_CreateBSpline",
+  "original": "spline"
+ },
+ {
+  "where": "Geometry",
+  "label": "Spline through points",
+  "command": "Sketcher_CreateBSplineByInterpolation",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Closed spline control points",
+  "command": "Sketcher_CreatePeriodicBSpline",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Closed spline through points",
+  "command": "Sketcher_CreatePeriodicBSplineByInterpolation",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Slot",
+  "command": "Sketcher_CreateSlot",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Arc slot",
+  "command": "Sketcher_CreateArcSlot",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Oblong",
+  "command": "Sketcher_CreateOblong",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Regular polygon",
+  "command": "Sketcher_CreateRegularPolygon",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Square",
+  "command": "Sketcher_CreateSquare",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Triangle",
+  "command": "Sketcher_CreateTriangle",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Pentagon",
+  "command": "Sketcher_CreatePentagon",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Hexagon",
+  "command": "Sketcher_CreateHexagon",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Heptagon",
+  "command": "Sketcher_CreateHeptagon",
+  "original": null
+ },
+ {
+  "where": "Geometry",
+  "label": "Octagon",
+  "command": "Sketcher_CreateOctagon",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Dimension",
+  "command": "Sketcher_Dimension",
+  "original": "dimension"
+ },
+ {
+  "where": "Constraints",
+  "label": "Horizontal",
+  "command": "Sketcher_ConstrainHorizontal",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Vertical",
+  "command": "Sketcher_ConstrainVertical",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Coincident",
+  "command": "Sketcher_ConstrainCoincident",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Point on object",
+  "command": "Sketcher_ConstrainPointOnObject",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Parallel",
+  "command": "Sketcher_ConstrainParallel",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Perpendicular",
+  "command": "Sketcher_ConstrainPerpendicular",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Tangent",
+  "command": "Sketcher_ConstrainTangent",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Equal",
+  "command": "Sketcher_ConstrainEqual",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Symmetric",
+  "command": "Sketcher_ConstrainSymmetric",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Fix geometry",
+  "command": "Sketcher_ConstrainBlock",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Distance",
+  "command": "Sketcher_ConstrainDistance",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Horizontal distance",
+  "command": "Sketcher_ConstrainDistanceX",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Vertical distance",
+  "command": "Sketcher_ConstrainDistanceY",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Angle",
+  "command": "Sketcher_ConstrainAngle",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Radius",
+  "command": "Sketcher_ConstrainRadius",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Diameter",
+  "command": "Sketcher_ConstrainDiameter",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Driving / reference",
+  "command": "Sketcher_ToggleDrivingConstraint",
+  "original": null
+ },
+ {
+  "where": "Constraints",
+  "label": "Enable / disable constraint",
+  "command": "Sketcher_ToggleActiveConstraint",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Construction",
+  "command": "Sketcher_ToggleConstruction",
+  "original": "construction"
+ },
+ {
+  "where": "Edit",
+  "label": "Trim",
+  "command": "Sketcher_Trimming",
+  "original": "trim"
+ },
+ {
+  "where": "Edit",
+  "label": "Extend",
+  "command": "Sketcher_Extend",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Split",
+  "command": "Sketcher_Split",
+  "original": "split"
+ },
+ {
+  "where": "Edit",
+  "label": "Offset",
+  "command": "Sketcher_Offset",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Sketch fillet",
+  "command": "Sketcher_CreateFillet",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Sketch chamfer",
+  "command": "Sketcher_CreateChamfer",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Join curves",
+  "command": "Sketcher_JoinCurves",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Use",
+  "command": "Sketcher_Projection",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Intersect external geometry",
+  "command": "Sketcher_Intersection",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Carbon copy",
+  "command": "Sketcher_CarbonCopy",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Mirror geometry",
+  "command": "Sketcher_Symmetry",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Move geometry",
+  "command": "Sketcher_Move",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Rotate geometry",
+  "command": "Sketcher_Rotate",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Scale geometry",
+  "command": "Sketcher_Scale",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Rectangular array",
+  "command": "Sketcher_RectangularArray",
+  "original": null
+ },
+ {
+  "where": "Edit",
+  "label": "Validate sketch",
+  "command": "Sketcher_ValidateSketch",
+  "original": null
+ }
+]

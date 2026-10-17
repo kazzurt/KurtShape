@@ -9,7 +9,6 @@ import itertools
 from kurtshape_evidence import evidence_dir
 import FreeCAD as App
 import Part
-import Sketcher
 
 
 ROOT = Path(__file__).resolve().parents[1]

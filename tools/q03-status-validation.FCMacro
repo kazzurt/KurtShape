@@ -28,7 +28,7 @@ from native_validation_snapshot import snapshot_document
 import FreeCAD as App
 import FreeCADGui as Gui
 import Part
-from PySide import QtCore, QtGui
+from PySide import QtCore
 from PySide6 import QtTest, QtWidgets
 from kurtshape import geometry, ui
 

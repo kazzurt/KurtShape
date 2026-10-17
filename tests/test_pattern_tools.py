@@ -190,7 +190,6 @@ class PatternToolTests(unittest.TestCase):
         self.assertTrue(set(self.doc.Holes.KurtShapePatternToolParts) <= members)
 
     def test_saved_include_source_pattern_reopens_rebuilds_and_deletes(self):
-        import shutil
         import tempfile
         self.circular_holes(include_source=True)
         with tempfile.TemporaryDirectory(prefix="pattern-source-", dir=support.TEST_TMP, ignore_cleanup_errors=True) as temporary:

@@ -1,0 +1,1823 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="564.444mm" height="440.972mm"
+ viewBox="0 0 1600 1250"
+ xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.2" baseProfile="tiny">
+<title>KurtShape concept mockup: Sketch editing · ambitious direction</title>
+<desc>Concept mockup, not a screenshot. Inline dimension entry, constraint badges, DoF badge and snap narration drawn as overlays; native solver and tools unchanged.</desc>
+<defs>
+</defs>
+<g fill="none" stroke="black" stroke-width="1" fill-rule="evenodd" stroke-linecap="square" stroke-linejoin="bevel" >
+
+<g fill="#ffffff" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Sans Serif" font-size="9" font-weight="400" font-style="normal" 
+>
+<rect x="0" y="0" width="1600" height="1250"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Sans Serif" font-size="9" font-weight="400" font-style="normal" 
+>
+<rect x="0" y="0" width="1600" height="44"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Sans Serif" font-size="9" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="0,44 1600,44 " />
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="16" font-weight="600" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="14" y="28.5" font-family="Segoe UI" font-size="16" font-weight="600" font-style="normal" 
+ >KurtShape</text>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,112,12)"
+font-family="Segoe UI" font-size="16" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,6 L21,6 M3,12 L21,12 M3,18 L21,18"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="16" font-weight="600" font-style="normal" 
+>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="14" font-weight="600" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="148" y="27.5" font-family="Segoe UI" font-size="14" font-weight="600" font-style="normal" 
+ >Bracket plate</text>
+</g>
+
+<g fill="#fff1cc" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="14" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M239,15 C239,13.3431 240.343,12 242,12 L296,12 C297.657,12 299,13.3431 299,15 L299,29 C299,30.6569 297.657,32 296,32 L242,32 C240.343,32 239,30.6569 239,29 L239,15"/>
+</g>
+
+<g fill="#fff1cc" fill-opacity="1" stroke="#7a4f00" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="600" font-style="normal" 
+>
+<text fill="#7a4f00" fill-opacity="1" stroke="none" xml:space="preserve" x="247" y="26.5" font-family="Segoe UI" font-size="11" font-weight="600" font-style="normal" 
+ >Unsaved</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#8a949e" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M1340,10 C1340,8.89543 1340.9,8 1342,8 L1448,8 C1449.1,8 1450,8.89543 1450,10 L1450,34 C1450,35.1046 1449.1,36 1448,36 L1342,36 C1340.9,36 1340,35.1046 1340,34 L1340,10"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="1348" y="27.5" font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+ >Part Studio</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="1430,19 1434,23 " />
+<polyline fill="none" vector-effect="none" points="1434,23 1438,19 " />
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1472,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,2 L18,2 L22,6 L22,22 L3,22 L3,2"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1472,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,2 L18,2 L22,6 L22,22 L3,22 L3,2"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1472,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M7,2 L7,9 L17,9 L17,2 M7,22 L7,14 L18,14 L18,22"/>
+</g>
+
+<g fill="#899198" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1472,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="13" y="3" width="2" height="4"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1472,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="13" y="3" width="2" height="4"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M2,6 C2,5.44772 2.44772,5 3,5 L21,5 C21.5523,5 22,5.44772 22,6 L22,18 C22,18.5523 21.5523,19 21,19 L3,19 C2.44772,19 2,18.5523 2,18 L2,6"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M2,6 C2,5.44772 2.44772,5 3,5 L21,5 C21.5523,5 22,5.44772 22,6 L22,18 C22,18.5523 21.5523,19 21,19 L3,19 C2.44772,19 2,18.5523 2,18 L2,6"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="5" y="8" width="2" height="2"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="5" y="8" width="2" height="2"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="5" y="12" width="2" height="2"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="5" y="12" width="2" height="2"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="10" y="8" width="2" height="2"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="10" y="8" width="2" height="2"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="10" y="12" width="2" height="2"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="10" y="12" width="2" height="2"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="15" y="8" width="2" height="2"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="15" y="8" width="2" height="2"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="15" y="12" width="2" height="2"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="15" y="12" width="2" height="2"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1508,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M7,16 L17,16"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1544,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M9,2 L15,2 L16,6 L20,5 L23,10 L20,13 L22,17 L17,21 L13,19 L9,22 L5,19 L6,15 L2,12 L5,7 L9,8 L9,2"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1544,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M9,2 L15,2 L16,6 L20,5 L23,10 L20,13 L22,17 L17,21 L13,19 L9,22 L5,19 L6,15 L2,12 L5,7 L9,8 L9,2"/>
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.833333,0,0,0.833333,1544,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="12" cy="12" r="4"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.833333,0,0,0.833333,1544,12)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="12" cy="12" r="4"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1.3" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="0" y="44" width="1600" height="40"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="0,84 1600,84 " />
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,14,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M20,18 L20,11 C20,8.33333 18.6667,7 16,7 L3,7 M8,2 L3,7 L8,12"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,50,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M4,18 L4,11 C4,8.33333 5.33333,7 8,7 L21,7 M16,2 L21,7 L16,12"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="78,53 78,75 " />
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,96,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M2,20 L8,7 L16,16 L22,3"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,96,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="2" cy="20" r="1.4"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,96,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="2" cy="20" r="1.4"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,96,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="8" cy="7" r="1.4"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,96,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="8" cy="7" r="1.4"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,96,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="16" cy="16" r="1.4"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,96,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="16" cy="16" r="1.4"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,96,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="22" cy="3" r="1.4"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,96,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="22" cy="3" r="1.4"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M125,52 C125,50.8954 125.895,50 127,50 L159,50 C160.105,50 161,50.8954 161,52 L161,76 C161,77.1046 160.105,78 159,78 L127,78 C125.895,78 125,77.1046 125,76 L125,52"/>
+<image x="132" y="54" width="22" height="22" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFgAAABYCAYAAABxlTA0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAC4klEQVR4nO3cT0tUcRTG8efccTQikQhxNKLcJISbFrWJEAoiV1ELIdG0IF30DtykEb6DFmNgDoWCiyLaRGBg4aYgaBPYxiIaR0RCJiK1e08Li3Tu/Lmj90x6fT7L35wZDl8ul1n9ACIiIiIiIiLaQAJN9SXjh3/WNQPA133LcxjpXzPdKkKKBq7vnUw4WB0UlU4AtX+Osyo67qF6cHGsI2O/4u5WMHBTz6MzHuQpgEMFRpYc6KV0qmvGZrVoyBu46cbDFs913uLfU1tI1ol5p9Kj3bPhrxYNjv9IxXNj91E6LgDUrs9qsHf5HuQL03Rt4qQn3ruyfkQwDOiX8Nba2TxP5heaPz7D0JBXarYq90Adt63cB1IVA0H/kESBCJD41HI7A9wpNet7RagndTZrRY0OBZnyv4MdfA59lz3MF9hF/DmAX/9hl91mKsiQL/DiWEdGBPfC32dvyvM3DUD19wEAbyq7SjTlDTw/0v9jpSZ+QSFPKr1Q1OR/ggF8G+lYXkh1XlFHzgOYr+BOkVIw8F8LDzpfAvhQgV0iqWRg2h4GNsbAxhjYGAMbY2BjDGyMgY0xsDEGNsbAxhjYGAMbY2BjDGyMgY0xsDEGNsbAxhjYGAMbY2BjDGyMgY0xsDEGNsbAxhjYGAMbY2BjDGyMgY0xsDEGNsbAxhjYGAMbY+CtO9FwffxcqSEG3rpG8XSqoWf88cG+yYI3FDDwNgn0cs3K2ovGvuT+fJ8zcDhOY/XAcL4PGDgkqrhV3zuZyD1n4PBUxbB2MfeQgcPk4WjuUcDA8irsXaJIHF3OPfPdOpVP5tjs3Ya54+8dRxvDX2unkiPrt2mV8Q0vNu07C2+hqFFJ9ExMA3o22Ly8zqSutgGiG0/5Di5I1Im5NwFkAwxn12c3xwUYuKj0aPesA20HsFRkbMmBthe6v5OBS0inumZcibeqaBKbn+asiiZdibcWu4GW7+By8KJqIiIiIiIiou36DQDPr6/fwfo9AAAAAElFTkSuQmCC" />
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,168,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="12" cy="12" r="9"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,168,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="12" cy="12" r="9"/>
+</g>
+
+<g fill="#899198" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,168,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="12" cy="12" r="1.4"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,168,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="12" cy="12" r="1.4"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,168,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M12,12 L19,6"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,204,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,18 C-0.313708,13.3056 0.80558,6.81371 5.5,3.5 C10.1944,0.186292 16.6863,1.30558 20,6 "/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,204,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="3" cy="18" r="1.5"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,204,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="3" cy="18" r="1.5"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,204,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="20" cy="6" r="1.5"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,204,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="20" cy="6" r="1.5"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,240,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M2,20 C17,21 4,2 22,4 "/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,240,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="2" cy="20" r="1.5"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,240,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="2" cy="20" r="1.5"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,240,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="22" cy="4" r="1.5"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,240,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="22" cy="4" r="1.5"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,276,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M2,12 L22,12 M12,2 L12,22"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,276,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="12" cy="12" r="3"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,276,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="12" cy="12" r="3"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="304,53 304,75 " />
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,322,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,3 L3,21 M21,3 L21,21 M3,12 L21,12 M7,8 L3,12 L7,16 M17,8 L21,12 L17,16"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,358,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M4,2 L20,22 M20,2 L4,22"/>
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,358,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="5" cy="18" r="3"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,358,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="5" cy="18" r="3"/>
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,358,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="19" cy="18" r="3"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,358,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="19" cy="18" r="3"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,394,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M2,18 L7,13 M9,11 L14,6 M16,4 L19,1 M5,21 L10,16 M12,14 L17,9 M19,7 L22,4"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="422,53 422,75 " />
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,440,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="2" y="3" width="10" height="9"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,440,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="2" y="3" width="10" height="9"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,440,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="17" cy="16" r="5"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,440,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="17" cy="16" r="5"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,440,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M2,22 L12,13"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,476,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,4 L21,4 M3,20 L21,20 M6,4 L6,20 M18,4 L18,20 M3,12 L21,12"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,476,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M9,9 L6,12 L9,15 M15,9 L18,12 L15,15"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,512,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M2,7 L14,7 L14,21 L2,21 L2,7"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,512,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M2,7 L14,7 L14,21 L2,21 L2,7"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,512,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M8,14 L17,3 L21,6 L12,17 L8,18 L8,14"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,512,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M8,14 L17,3 L21,6 L12,17 L8,18 L8,14"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,548,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,19 L20,2 M2,11 L22,11 M11,2 L11,22"/>
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,548,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="11" cy="11" r="3"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,548,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<circle cx="11" cy="11" r="3"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="576,53 576,75 " />
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,594,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,20 L7,12 L21,12 L17,20 L3,20"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,594,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,20 L7,12 L21,12 L17,20 L3,20"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,594,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M12,16 L12,2 M8,6 L12,2 L16,6"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,630,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,7.5 L12,3 L21,7.5 L12,12 L3,7.5"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,630,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,7.5 L12,3 L21,7.5 L12,12 L3,7.5"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,630,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,7.5 L12,12 L12,21 L3,16.5 L3,7.5"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,630,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,7.5 L12,12 L12,21 L3,16.5 L3,7.5"/>
+</g>
+
+<g fill="#899198" fill-opacity="1" stroke="none" transform="matrix(0.916667,0,0,0.916667,630,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M12,12 L21,7.5 L21,16.5 L12,21 L12,12"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,630,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M12,12 L21,7.5 L21,16.5 L12,21 L12,12"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="658,53 658,75 " />
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,676,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M3,12 L9,18 L21,5"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.916667,0,0,0.916667,712,54)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M5,5 L19,19 M19,5 L5,19"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#8a949e" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M762,53 C762,51.8954 762.895,51 764,51 L950,51 C951.105,51 952,51.8954 952,53 L952,75 C952,76.1046 951.105,77 950,77 L764,77 C762.895,77 762,76.1046 762,75 L762,53"/>
+<image x="768" y="57" width="14" height="14" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAD+UlEQVRoge2YP2wTVxzHv9+zWzf/UMSCFGdrJZYwtJUolISpC0Fqw5CqJkIKhyc7CFGqtBMSqrq0qhhiPKAYoqomqYz6RxRbYugQUtSWJRISE6pggARVKkSGWE7P9+tgXNHYuTvfe3ZsyZ/J9nv+/t5H7873/AM6dOjQoUOHLaGuoInoyUERjAnkAIABAQYo2AEDj2HjkQAPSOTygY0bP1+8uK6rrhuqgoyY8XGQHwN4x2PFAsBrRgnn0pdn7irW91DOJxEzNgwaXwPY6zPCBpCySvbZzFxy1e863PAjyMiJ+GcAv/D5/c2sii1jC5cv/K4hq4q6Fjg5OfnaRqA3JcBRzesogojOzya+1ZwLo465bJAcAIQg+OYjc+p93cGeBSPRqU8bJFeBJNITk1N7tIZ6mfTiB2XR63wVBLi31s2h3MxMUUeelx3ki1/LhsuVi+GN/ud2XGOeMxEz/iHI73QV9MhTC6+8nkmd/1s1yH0Hyw/xZtMfpHVcR5Cj4ET05CC8nlB0IxjTEeMoKJqK+EMORKKndqmmOAuWD87bBQlrn2qI2z04oFpABRGGVTNcdnCbBSmNFaRgh2oBFSjsV81wvkQNPFYtoIKAK6oZzoI2HqkWUIGUh6oZbvfgA9UCKtA27qtmON+DRE61gH8k/6RHbqmmOArmAxs3yj2U5kMwq+MfhaNgufvFa6pF/GCTV3XkuB62jRLOodwgaibLu8M7v9cRFHCbcGf5j7/2vLV3EMDbOgp6gphInP/qTx1RnloWVsk+C6Bhrb1NLMzPJn7RFeZJMDOXXDXIIwC0tBFcCJvmdJ+uMM9Np/TszG8gogBEV/EtGCmwkNUlWXef5Wg0/oEI0wB6dCxga7jUJV2jly59mVdJqacvCgC4MnvhJ6OE/QLcUyn8EgsAblZ/LMM6drJuQQBIzyXurHVzCCJnADz1WXtZIO/NpxKRLuk+LMCv1VPUJZVbgeMnTu8M0jouIkcIvOucKXmCWZu8Wlpb/SGTyZQqI6Y53bfO9RyBGl0ELlmh0qFMMvms3vVp7XVGoqd2EdY+EYaFEqawX8AVUh7SNu4/6ZFbTsevRkg2pZlbD6Y53VdgIQvIcPVo/ZItJwjolWxJQcBNEjetkD3qRbJlBQE9ki0tCKhLtrwgAIzHYr3BYiDnR9LXg77ZZJLJZ1aodAjgUo3hkWDRuD4ei/XW+m5b7GAFl51ctEL24c072VaCQEXSyAIYqTFcJdkWl+jLlC9XexQ1D+g4GCwa148d++S/fzptJwi4S1qvFs5U3rSlIOAsSXB35XXbCgL/k1zcNPRj5YVrV63VuXv79sabQwczduCfIsEVAp9fSSUy272uDrr4F7cGjXrGpHs9AAAAAElFTkSuQmCC" />
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#65717c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<text fill="#65717c" fill-opacity="1" stroke="none" xml:space="preserve" x="788" y="69" font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+ >Search tools…  Alt+C</text>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<rect x="0" y="84" width="250" height="880"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="250,84 250,964 " />
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="10" y="105.5" font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+ >Feature history</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#8a949e" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M8,118 C8,116.895 8.89543,116 10,116 L240,116 C241.105,116 242,116.895 242,118 L242,140 C242,141.105 241.105,142 240,142 L10,142 C8.89543,142 8,141.105 8,140 L8,118"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#65717c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<text fill="#65717c" fill-opacity="1" stroke="none" xml:space="preserve" x="16" y="134" font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+ >Filter features</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="10" y="163" font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+ >Features (6)</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="12" y="187.5" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >▸</text>
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.666667,0,0,0.666667,26,175)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M2,18 L8,4 L22,5 L16,19 L2,18"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.666667,0,0,0.666667,26,175)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M2,18 L8,4 L22,5 L16,19 L2,18"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.666667,0,0,0.666667,26,175)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M1,12 L23,12"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="48" y="188.5" font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+ >Origin  ·  Top · Front · Right</text>
+<image x="26" y="202" width="16" height="16" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAADy0lEQVR4nO2aQYgbVRjHf99kSLfFgm23m2yz2D20FWuxJ3up1FDwoF50lVLXNZkGD/WgQhGkYll6rielioWyrrvJqi22Ci5Y0S32KF499CK9mIVCeyoLupvPQ1lYNEkzeW/evKH5H5N5//f9/nnz5n1JYKCBBhpooIEGGughlaRdQC8ari3syq213gtUbzS/nLpi09v7AEZfawxrvvUryBMAIrzS/OL1b235B7aMktBw7eJWzeviOjyAKl+PRvUJW3N4G8B4NDMUrg5dBZ7+z1uhzRD8DKC8FK5ofgHhaIcrrIXgYQAqxd1/XRB46QEXWgnBswBUilHjI+BEjwOMQ/AqgEKlcRrlVMxhRiF48xgsVutvAZ8aWKyK6rG45wQvVkAhqh8HzhvahCrycexBhpMaqxjVX0CZw85q/C7ugFRXwOgbjWdQLmPng5hZHr/5TtxBOQsT96WR2txBQX4CHrFgN7M8fvNNzp5txR2Yyia4M6rvzSk3gIIFu77hIYUVMFaZLaHBdYSSBTsjeHC8CZYqsztWJbwG7LZgZwwPDjfB4drFrWsSLgL7LdhZgQdHAWzo7A5ZsLMGDy4CKC+FK7qp0aWziyOr8JB4AOudnb5swcw6PCQaQOzOrpsSgYcEH4OFyr4PBD60YJUYPCR0EBqN5k+qymcWrBKFhwQCKET146I0LHgnDg+WAyhW5p9H5HvMD1hO4MFiALuq84db95ubzYZWzuDB0iY4Ups7iAY2Ojun8GAhgJ1Tc3tyBEvADkMr5/BgGMBYZbZEkLsOjBnWkQo8GByENnR244Y1pAYPfQZgsbNLFR76CGDP24ubwrWhK5h3dqnDQ9w9oLwU5oduf4XwouG8XsBDrBWgUnys+TmC6Q+S3sBDzyc2lWJ14RxozXA+r+Chx1ugUN17WuCM4VzewUMPR2FLnZ2X8PCAPaBQqb+rKiY/WILH8NBlBYxEjecC1WuG/l7DQ5cVkEPLht7ew0P3W+BJA99MwEOnAKanA1WO9OmZGXjoEEDp1r6ngG19+GUKHjoEsNri2T68MgcPnW4BoRzTJ5Pw0C6A6elAiHX/ZxYe2gQw8ufjB4DtPY7PNDy0CUCk5+f/b1mHhzbdYCAcVe14/V1FfwiE35v38p9kHR7aBKD6v39n3wWuisg32+6Fv/xx6djfbkpzozbfB8g86BTwI6qXtq/kf16HbjouzoXafiGisEVgApGJO1v+oVitu67LuhRUkAvLs5Pvb3y9TQA6KfCoq8Jc6X7bq5NA9wBaygkJ9FU3ZbmVtuRy2jV4p38BsbyUhhaHPz4AAAAASUVORK5CYII=" />
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="48" y="215.5" font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+ >Plate profile</text>
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.666667,0,0,0.666667,26,226)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M5,10.5 L12,7 L19,10.5 L12,14 L5,10.5"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.666667,0,0,0.666667,26,226)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M5,10.5 L12,7 L19,10.5 L12,14 L5,10.5"/>
+</g>
+
+<g fill="#b8bdc2" fill-opacity="1" stroke="none" transform="matrix(0.666667,0,0,0.666667,26,226)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M5,10.5 L12,14 L12,21 L5,17.5 L5,10.5"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.666667,0,0,0.666667,26,226)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M5,10.5 L12,14 L12,21 L5,17.5 L5,10.5"/>
+</g>
+
+<g fill="#899198" fill-opacity="1" stroke="none" transform="matrix(0.666667,0,0,0.666667,26,226)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M12,14 L19,10.5 L19,17.5 L12,21 L12,14"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.666667,0,0,0.666667,26,226)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M12,14 L19,10.5 L19,17.5 L12,21 L12,14"/>
+</g>
+
+<g fill="#dedfe1" fill-opacity="1" stroke="none" transform="matrix(0.666667,0,0,0.666667,26,226)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M9,8 L9,4 L15,4 L15,8"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.666667,0,0,0.666667,26,226)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M9,8 L9,4 L15,4 L15,8"/>
+</g>
+
+<g fill="none" stroke="#51575d" stroke-opacity="1" stroke-width="0.95" stroke-linecap="round" stroke-linejoin="round" transform="matrix(0.666667,0,0,0.666667,26,226)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="nonzero" d="M12,6 L12,1 M9,4 L12,1 L15,4"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="48" y="239.5" font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+ >Plate</text>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="0" y="246" width="250" height="24"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<rect x="0" y="246" width="3" height="24"/>
+<image x="26" y="250" width="16" height="16" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAADy0lEQVR4nO2aQYgbVRjHf99kSLfFgm23m2yz2D20FWuxJ3up1FDwoF50lVLXNZkGD/WgQhGkYll6rielioWyrrvJqi22Ci5Y0S32KF499CK9mIVCeyoLupvPQ1lYNEkzeW/evKH5H5N5//f9/nnz5n1JYKCBBhpooIEGGughlaRdQC8ari3syq213gtUbzS/nLpi09v7AEZfawxrvvUryBMAIrzS/OL1b235B7aMktBw7eJWzeviOjyAKl+PRvUJW3N4G8B4NDMUrg5dBZ7+z1uhzRD8DKC8FK5ofgHhaIcrrIXgYQAqxd1/XRB46QEXWgnBswBUilHjI+BEjwOMQ/AqgEKlcRrlVMxhRiF48xgsVutvAZ8aWKyK6rG45wQvVkAhqh8HzhvahCrycexBhpMaqxjVX0CZw85q/C7ugFRXwOgbjWdQLmPng5hZHr/5TtxBOQsT96WR2txBQX4CHrFgN7M8fvNNzp5txR2Yyia4M6rvzSk3gIIFu77hIYUVMFaZLaHBdYSSBTsjeHC8CZYqsztWJbwG7LZgZwwPDjfB4drFrWsSLgL7LdhZgQdHAWzo7A5ZsLMGDy4CKC+FK7qp0aWziyOr8JB4AOudnb5swcw6PCQaQOzOrpsSgYcEH4OFyr4PBD60YJUYPCR0EBqN5k+qymcWrBKFhwQCKET146I0LHgnDg+WAyhW5p9H5HvMD1hO4MFiALuq84db95ubzYZWzuDB0iY4Ups7iAY2Ojun8GAhgJ1Tc3tyBEvADkMr5/BgGMBYZbZEkLsOjBnWkQo8GByENnR244Y1pAYPfQZgsbNLFR76CGDP24ubwrWhK5h3dqnDQ9w9oLwU5oduf4XwouG8XsBDrBWgUnys+TmC6Q+S3sBDzyc2lWJ14RxozXA+r+Chx1ugUN17WuCM4VzewUMPR2FLnZ2X8PCAPaBQqb+rKiY/WILH8NBlBYxEjecC1WuG/l7DQ5cVkEPLht7ew0P3W+BJA99MwEOnAKanA1WO9OmZGXjoEEDp1r6ngG19+GUKHjoEsNri2T68MgcPnW4BoRzTJ5Pw0C6A6elAiHX/ZxYe2gQw8ufjB4DtPY7PNDy0CUCk5+f/b1mHhzbdYCAcVe14/V1FfwiE35v38p9kHR7aBKD6v39n3wWuisg32+6Fv/xx6djfbkpzozbfB8g86BTwI6qXtq/kf16HbjouzoXafiGisEVgApGJO1v+oVitu67LuhRUkAvLs5Pvb3y9TQA6KfCoq8Jc6X7bq5NA9wBaygkJ9FU3ZbmVtuRy2jV4p38BsbyUhhaHPz4AAAAASUVORK5CYII=" />
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="48" y="263.5" font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+ >Boss profile</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#185fa5" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="600" font-style="normal" 
+>
+<text fill="#185fa5" fill-opacity="1" stroke="none" xml:space="preserve" x="190" y="262" font-family="Segoe UI" font-size="10" font-weight="600" font-style="normal" 
+ >editing</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#185fa5" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="600" font-style="normal" 
+opacity="0.6" >
+<image x="26" y="274" width="16" height="16" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAADIElEQVR4nO2bT0gUYRjGn/dbTVIpk+gieO0QCsFeqpOQ1EEP/YMOBYqL4KVtCTSkHDSs7LLmRdn02MnwYoegkxBEEF2SLt6isU61GtLuqvN22B3T1YKZ/b55Db/fbb6Z9/2e59nZndn5AxxwSGpix3Gq3GzeBVCvfn1vyGQy6xI6lMSkjuMoN5tfBHACQK13uLHgOI6IlsgnLZrPTQM4uX3czeamJUKIRTnZH/PUvXstnf6Z22juvHh+fmFhgaPSFFkA/zbvE30Ikexy5eYZWGKmLn89M3UxsFRcou4ovw7GJ9nLfLWKtSnF7pYIxW61irVJhGB0gr+Zn0qPuuXbTqVHRUIwdh5QPM4X3gIcBwAwVkCYJ9BacZGbAHSUNn9JILc0XgdGJwhHSxLfNzUcOjM8PLxhQmeViaYA8CWb6yFQfGugaOgGY8/fto4d4zs+Fo4vZ/N3AIyZ0Gls9yLGN129PKZlXb3KMReAKu7qOlCKv+rqtau3qcb/CzYAaQHS2ACkBUhjA5AWII0NwFhnZn3XGnT2KkP7n6G+vrvH1muQIkaSgSM6ehKwCtB4VYHHJycf/9DRc1tvPZgwXo6JICoOoCeVaiSuuW3SeDkErDLhaXUe6UqDCB2AhPFydAQROIDeWwPNHtEogEsA6sJMaoA1IsyRx/cyE2OfgxQGviDiEX3C/jHuU8eMm0x0GUB9kMIwh8HaEDVREfiDCRPAZoiafUvwABjarvRoh7EStMSeCksLkMYGIC1AGhuAtABpbADSAqSxAUgLkMYGIC1AGhuAtABpbACBK4gje4ozMCG0hdgD6FnwmqgIri3wLacP7968jp89N8dMxwGcClpviFlmdX1m4tHzoIUV3RjpTQ20eB7dB3Ctkj4VMMusRmYmHi6GbaDl1phAEBUb99F6c7Q3NdDibWIIRFd19t3GrFL8IJMe+6iroZFHZQ0Eod24j9F3hioOgvmFimHEhHGfSF6aChxEBMZ9In1rLJEcbGV4QwRc2XODCI37iLw2l0gOtgL8BOALpaFXSnF/lMb3BYlkf3si2d8urcNisVgsB5Xf9HtFVEi1aO8AAAAASUVORK5CYII=" />
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#646f78" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="italic" 
+>
+<text fill="#646f78" fill-opacity="1" stroke="none" xml:space="preserve" x="48" y="287.5" font-family="Segoe UI" font-size="13" font-weight="400" font-style="italic" 
+ >Boss</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#646f78" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="italic" 
+opacity="0.6" >
+<image x="26" y="298" width="16" height="16" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAD0UlEQVR4nO2aTYhbVRiGn+8mtmOhTMcKgtnahT9YEBTEqoPSRbvSqUgpItPMTZ2ic5NxNDehi0tWWtpFbVFxWuhCKdYRWxUFWxz86UIQ3RU3bqfbmQrqxGnzdeFmaJM0N+fcP73v8uZ877nPyznJ+XIv5MqVK1euXLly/U8lSd/AICq/Vr+3UHDeQPnx5PG3z9n0Tn0AB+bm7u5cu+MH4H4ARPacOvbWZ7b8C7aMolC5Xt/MWvECsH3d5T2PPP7k5V9/uvSbjTlSG8DkZDBSKHa+BHbc9JGDxRBSGUAQBMW/WD0LsqvHEGshOCbFEUmWVlbnFXnuNuOKqJ51a80Jk8nSFoBMef5RkP0DjjcOIVUBuFW/KSKvhywzCiE1P4NuzT+IynsGFtdEeTHsOSEVK6Di+XtRedfQpqjC8bBFiQfges3dKvIhNlajyudhSxIN4IDn70D0U6Bo7qanS2MbvLBViX0HlGf87Y7I9wij5m56urRlxG21Wp2wlYkchF7x3tyG4ywibDV3Gx4eEghgevZQ6brwHVAydzODh5gDePnV5lZHOovANnM3c3iI8UuwXK9v3lDga4UHzN3swENMAUxOBiNO2zmP6GPmbvbgIYYtEARB8U/aHwO7zd3swkP0K0CWVlbngefNrezDQ7QBhO3s+igaeLByAusut+o3IXRn10XRwUNEJ8GK15hW4X1zp2jhIYIAKp6/V0XOmHtHDw+WA6jU/F2q8gXGWyseeLAYwFSt+YSoXgTuNHOKDx4sBWCvs4sXHiwEMDXbuE86XALuMXOKHx4MzwHTs4dKdLhIRuHB4Chsr7NLDh6GXAH2Ortk4WGIAGZmZjY6bTln3tklDw8hAwiCoPi3s+kMyLNm06YDHsIFIFeW2x+AGD2LSxM8DH5iE7faOKJQNpsuXfAw4AqYqjUawJzZVOmDhwEOQnY6u3TCw21WQMXzqyqYPLAkzfDQZwW41fpOcC6Y2acbHvqugMK4mXX64aFfAKIPDm+bDXjoEUAQBA7KU8NZZgceegRw5eraw8BYeLtswUOvLdC5/nR4q+zBQ68AhPFwNtmEhy4BBEHgKE6I/Z9deOgSwNLK2kOgdw1Wnm146LoFdHzA2p+zDg/dukHRZ9Ce45eBrxD55erS7ydOvbOQaXjoFoDy6E1XlkHPq8onf4xtXFxotf6J59bi0S0BiOhHqvIS6DciLKyMjnz7X4Nerx5/iOgmVCZUmRhdbuN6jXjvKgqJqgjzJ48d9tdfviUAVdkHbEnPW8S2JKiyD+gfgAj7UXkhtvuKU/++lZprvW4AWWqcIsp+CIYAAAAASUVORK5CYII=" />
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#646f78" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="italic" 
+>
+<text fill="#646f78" fill-opacity="1" stroke="none" xml:space="preserve" x="48" y="311.5" font-family="Segoe UI" font-size="13" font-weight="400" font-style="italic" 
+ >Hole profile</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#646f78" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="italic" 
+opacity="0.6" >
+<image x="26" y="322" width="16" height="16" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAChElEQVR4nO2aO28TQRSFz11HCR2OqEiQIqACpHTQUkU00CTZX5BtaDCVhVN4tVsQcAVCiMZSRIkci5qSOl0gUAFNHMqYCgxhL41XMgbJ453HXch85Xp8fc7nl+wZwOPxeDwnF5IOoABFdxpPQbwBYFZz1i6ybLX9pHWQXwg0B1onunvvOohvQ788AFzlIGiMXii9ANuUXkD70YPXYHoG4LuBcbuUZVsG5nj+G0S+BeI4Dg6Pvq0z0YthjGixOrudJEnmOotTAXEcBwf9wRoBMYArYze/ZSA9V53ruhThRMDIM97En8XH2WcgcSXCqoApi4/jRIQVAZrFx9kn5nRh/tSODRFGBYRhWDm9cHGdgCYDl03OhiURRgRYLv4bBLxjIP1y+GGn0+n8NDCvOC6Lj2NKRCEBYRhWqmcvhMP3+KWiD24CXRFTCShT8b/wnpjT/uePnWlEKAmI43imdzRoIMAGGEvFM7qAP4Fpe3F+bitJkuNJq2dURvb6g5cg3ATrx7MPnQch7fUH1wDcmrRa9efwGb1QItxQWaQmgPBGK4oEjOcqy5QEENM/8eIfhYiUPghL/4+QbbwA6QDSeAHSAaTxAqQDSOMFSAeQxguQDiCNFyAdQBovQDqANF6AdABpvACVRYzsq+0gplHNrCTg+Ef2kIGuXiR3MNANqNJSWTvVzlBU21xmZE0C1opFswsDXUKQth/f31O9T6G9wbKJKFI8R2t3WFqETvEcI+cDXIswUTzH6AkR2yJMFs+xckbItAgbxXOsnhLTFWGzeI6Tc4LTinBRPMfpSdFJIlwWzxE5KxzVNpcBbgE83MOnVwDVXRYvBVGtvhLV6ivSOTwej8dzUvkFhNMQVVNcNIYAAAAASUVORK5CYII=" />
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#646f78" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="italic" 
+>
+<text fill="#646f78" fill-opacity="1" stroke="none" xml:space="preserve" x="48" y="335.5" font-family="Segoe UI" font-size="13" font-weight="400" font-style="italic" 
+ >Through hole</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#185fa5" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="italic" 
+>
+<polyline fill="none" vector-effect="none" points="8,347 242,347 " />
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="italic" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M8,344 C8,342.895 8.89543,342 10,342 L20,342 C21.1046,342 22,342.895 22,344 L22,350 C22,351.105 21.1046,352 20,352 L10,352 C8.89543,352 8,351.105 8,350 L8,344"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#185fa5" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<text fill="#185fa5" fill-opacity="1" stroke="none" xml:space="preserve" x="28" y="361" font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+ >End of history · drag to roll back</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="8,806 242,806 " />
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="10" y="825" font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+ >Parts (1)</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#185fa5" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M6,837 C6,835.343 7.34315,834 9,834 L241,834 C242.657,834 244,835.343 244,837 L244,857 C244,858.657 242.657,860 241,860 L9,860 C7.34315,860 6,858.657 6,857 L6,837"/>
+</g>
+
+<g fill="#7f93a8" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M14,843 C14,841.895 14.8954,841 16,841 L24,841 C25.1046,841 26,841.895 26,843 L26,851 C26,852.105 25.1046,853 24,853 L16,853 C14.8954,853 14,852.105 14,851 L14,843"/>
+</g>
+
+<g fill="#7f93a8" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="34" y="852.5" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >Plate</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M182,841 C182,839.343 183.343,838 185,838 L224,838 C225.657,838 227,839.343 227,841 L227,853 C227,854.657 225.657,856 224,856 L185,856 C183.343,856 182,854.657 182,853 L182,841"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="600" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="190" y="851" font-family="Segoe UI" font-size="10" font-weight="600" font-style="normal" 
+ >Active</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#65717c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<text fill="#65717c" fill-opacity="1" stroke="none" xml:space="preserve" x="10" y="875" font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+ >Click a part to select · right-click to make it the target</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<rect x="251" y="85" width="1349" height="849"/>
+</g>
+
+<g fill="#f7f8f9" fill-opacity="1" stroke="#b8bdc2" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<rect x="693.5" y="391.5" width="384" height="256"/>
+</g>
+
+<g fill="#f7f8f9" fill-opacity="1" stroke="#d9534f" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="661.5,519.5 1109.5,519.5 " />
+</g>
+
+<g fill="#f7f8f9" fill-opacity="1" stroke="#5cb85c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="885.5,359.5 885.5,679.5 " />
+</g>
+
+<g fill="#ebebeb" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<rect x="821.5" y="471.5" width="128" height="96"/>
+</g>
+
+<g fill="none" stroke="#2d3338" stroke-opacity="1" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<rect x="821.5" y="471.5" width="128" height="96"/>
+</g>
+
+<g fill="#2d3338" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<circle cx="821.5" cy="471.5" r="3"/>
+</g>
+
+<g fill="#2d3338" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<circle cx="949.5" cy="471.5" r="3"/>
+</g>
+
+<g fill="#2d3338" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<circle cx="821.5" cy="567.5" r="3"/>
+</g>
+
+<g fill="#2d3338" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<circle cx="949.5" cy="567.5" r="3"/>
+</g>
+
+<g fill="#ebebeb" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<circle cx="987.9" cy="513.1" r="44.8"/>
+</g>
+
+<g fill="none" stroke="#185fa5" stroke-opacity="1" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<circle cx="987.9" cy="513.1" r="44.8"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<circle cx="987.9" cy="513.1" r="3"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="821.5,445.5 949.5,445.5 " />
+<polyline fill="none" vector-effect="none" points="821.5,439.5 821.5,463.5 " />
+<polyline fill="none" vector-effect="none" points="949.5,439.5 949.5,463.5 " />
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<rect x="857.5" y="435.5" width="56" height="18"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="868" y="449.5" font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+ >40 mm</text>
+<polyline fill="none" vector-effect="none" points="785.5,471.5 785.5,567.5 " />
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<rect x="735.5" y="510.5" width="50" height="18"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="743" y="524.5" font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+ >30 mm</text>
+</g>
+
+<g fill="#eef5fb" fill-opacity="1" stroke="#9dc6ec" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M878.5,460.5 C878.5,459.395 879.395,458.5 880.5,458.5 L890.5,458.5 C891.605,458.5 892.5,459.395 892.5,460.5 L892.5,470.5 C892.5,471.605 891.605,472.5 890.5,472.5 L880.5,472.5 C879.395,472.5 878.5,471.605 878.5,470.5 L878.5,460.5"/>
+</g>
+
+<g fill="#eef5fb" fill-opacity="1" stroke="#204f79" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<text fill="#204f79" fill-opacity="1" stroke="none" xml:space="preserve" x="873.5" y="469.5" font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+ >—</text>
+</g>
+
+<g fill="#eef5fb" fill-opacity="1" stroke="#9dc6ec" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M878.5,564.5 C878.5,563.395 879.395,562.5 880.5,562.5 L890.5,562.5 C891.605,562.5 892.5,563.395 892.5,564.5 L892.5,574.5 C892.5,575.605 891.605,576.5 890.5,576.5 L880.5,576.5 C879.395,576.5 878.5,575.605 878.5,574.5 L878.5,564.5"/>
+</g>
+
+<g fill="#eef5fb" fill-opacity="1" stroke="#204f79" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<text fill="#204f79" fill-opacity="1" stroke="none" xml:space="preserve" x="873.5" y="573.5" font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+ >—</text>
+</g>
+
+<g fill="#eef5fb" fill-opacity="1" stroke="#9dc6ec" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M804.5,514.5 C804.5,513.395 805.395,512.5 806.5,512.5 L816.5,512.5 C817.605,512.5 818.5,513.395 818.5,514.5 L818.5,524.5 C818.5,525.605 817.605,526.5 816.5,526.5 L806.5,526.5 C805.395,526.5 804.5,525.605 804.5,524.5 L804.5,514.5"/>
+</g>
+
+<g fill="#eef5fb" fill-opacity="1" stroke="#204f79" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<text fill="#204f79" fill-opacity="1" stroke="none" xml:space="preserve" x="803" y="523.5" font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+ >|</text>
+</g>
+
+<g fill="#eef5fb" fill-opacity="1" stroke="#9dc6ec" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M946.5,514.5 C946.5,513.395 947.395,512.5 948.5,512.5 L958.5,512.5 C959.605,512.5 960.5,513.395 960.5,514.5 L960.5,524.5 C960.5,525.605 959.605,526.5 958.5,526.5 L948.5,526.5 C947.395,526.5 946.5,525.605 946.5,524.5 L946.5,514.5"/>
+</g>
+
+<g fill="#eef5fb" fill-opacity="1" stroke="#204f79" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<text fill="#204f79" fill-opacity="1" stroke="none" xml:space="preserve" x="945" y="523.5" font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+ >|</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#185fa5" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M1042.7,502.1 C1042.7,500.443 1044.04,499.1 1045.7,499.1 L1131.7,499.1 C1133.36,499.1 1134.7,500.443 1134.7,502.1 L1134.7,524.1 C1134.7,525.757 1133.36,527.1 1131.7,527.1 L1045.7,527.1 C1044.04,527.1 1042.7,525.757 1042.7,524.1 L1042.7,502.1"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="1050.69" y="518.594" font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+ >Ø 28</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="1092.69" y="517.594" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >mm · Enter</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#65717c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<text fill="#65717c" fill-opacity="1" stroke="none" xml:space="preserve" x="1042.69" y="540.094" font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+ >Type a value or expression · Tab for next</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#185fa5" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<text fill="#185fa5" fill-opacity="1" stroke="none" xml:space="preserve" x="927.891" y="578.891" font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+ >Snap: circle center to plate edge midpoint</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#8a949e" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M265,102 C265,100.343 266.343,99 268,99 L562,99 C563.657,99 565,100.343 565,102 L565,246 C565,247.657 563.657,249 562,249 L268,249 C266.343,249 265,247.657 265,246 L265,102"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M265,102 C265,100.343 266.343,99 268,99 L562,99 C563.657,99 565,100.343 565,102 L565,130 C565,131.657 563.657,133 562,133 L268,133 C266.343,133 265,131.657 265,130 L265,102"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<rect x="265" y="119" width="300" height="14"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="265,133 565,133 " />
+<image x="275" y="106" width="20" height="20" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAEo0lEQVR4nO2cTWgcZRjHf+92sl0bW2lJzEzStBFp1JOIHlRQ4zWKF0FtFnY3PUQxgmdLZFWCx3pQC8WGNOluUhMEg6KQUhKknqRXz4rYpgfRk/nqzOOhIZq6H9nM++7OO5n/deb9P8/+eN6PeXZ2IVGiRIkSJUqUKFGiRIkSWSbV6gR068RQ+eiGw6mV1bYbzL/mm44XK4DdZy4/EvipH4AHATJq475fLg2vmYyZMmneTHUPz/YGfuoqW/AA1oL0V32FyYzJuLEA6A7PdQZBsAj07rigGDQN0XqAx7KlIwSb3wOPVrzBMESrAfYVJjNpJ7UAPFnzRoMQ7QU4sOSsycEvQQZ2db8hiHYCLBZT7smbEyCvNDTOAEQLAYryfu0/B+T2NFwzROsAuoWZMRHeDWWiEaJVB2k3V34HxafaDIXvMqmNV8Mctq2pQC9fzmqFB6AYXJW2L8JYWAGwK1d6WWDKhLdCvRBmvKMrEVPy8uXnBeaBAyb8RdRHYcZHugK7c7NPCHwDmHkUEzV6e3roYhiLyG4iPbkr/b7yrwOdRgKIGl2ZHjof1sbItAir7uHZ3oBgGeg2EkATPIggQO/0TIekZAl42EgAjfAgYpvIsWzpiDhSvbMSVprhQYQqsK8wmZFU27fAs0YCGIAHUdmFG+2sNCpD8CAKFVgsplx1cALkdSP+BuFBywGK8h66+QnCm4bsjcKDFgN0C/3vI7xnxLwJ8KCFB2k3XxoF9ZkR8ybBgxYB9PLlrEDJiHkT4UELALr52ZcgWMDE8tFkeNBkgF7h8nMiqUVMNAdaAA+auIlsdVYWgXbt5i2CB02qQKOdlRbCgyYA7MmWjvuO+hE4od28xfDA8KOcd3qmw3fUVWIKDwx2YzrOTBwW31BnJSLwwFAF9hUmM46fWQCe0m4eIXhgAuDAkrNO+grwonbviMED3ceYYjHlkr4IvKHVFyIJD7QCFNXVd+ucgrf0eW5bRxIeaATo5fvHgLO6/LYVYXig6Rzo5mbeRsnnOrx2KOLwQAPArkJpSIkq6fDaIQvgQcgP7RbKgwgL6D5PWgIPQgA01lmxCB7scRMx1lmxDB7soQI7C+VTB4Tr/OcHLVpkITxosAJ7sqXjKLWMokdrFpbCgwYe5e52VlhEcVJrBhbDg13unv92VtRjWqNbDg92AfDoyNwDzvrmDXS/LRUDeLCLKZxe35wjgVdVdQEqeFxrxBjBgzoAvZELh4AubdFiBg/qAAw2Dz+tLVIM4UEdgMrX9L5eTOFBvTVQqYHQEWIMD2o8ynkjFw7J+v1/Auk9u8ccHtSowGC9/RkSeHVVYwqHmL77BB7UAKhgYE+O+wgeVFkDt9a/v4C2htz2GTyoUoFb619j8BQf7jd4ULWZsOv1zwd+U6jZW5eGPtCTkl2qCLDO+ucLXAPmHLnz9e/T+T+MZGaJqrWz7m2a3kFxTYT5BNpOVQM4Boyj+Hkb2lQCrZIq7sJuvpwT1McKMfrPZ7ZIUGsKObsylZ2+91q1ChxXiN4vjiyWQgDGgf8BrHyQFpaNZmSjqjCpWIErq23DXe0b55MpfFeCWrv9d/qnVucRS/0DLWvdBVsyB2UAAAAASUVORK5CYII=" />
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="14" font-weight="600" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="301" y="121.5" font-family="Segoe UI" font-size="14" font-weight="600" font-style="normal" 
+ >Boss profile</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="14" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M415,106 C415,104.895 415.895,104 417,104 L485,104 C486.105,104 487,104.895 487,106 L487,126 C487,127.105 486.105,128 485,128 L417,128 C415.895,128 415,127.105 415,126 L415,106"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="433.5" y="121.5" font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+ >Finish</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#8a949e" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M493,106 C493,104.895 493.895,104 495,104 L553,104 C554.105,104 555,104.895 555,106 L555,126 C555,127.105 554.105,128 553,128 L495,128 C493.895,128 493,127.105 493,126 L493,106"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="505" y="121.5" font-family="Segoe UI" font-size="13" font-weight="400" font-style="normal" 
+ >Cancel</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="275" y="156" font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+ >On</text>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M305,144 C305,142.343 306.343,141 308,141 L428,141 C429.657,141 431,142.343 431,144 L431,158 C431,159.657 429.657,161 428,161 L308,161 C306.343,161 305,159.657 305,158 L305,144"/>
+<image x="311" y="144" width="14" height="14" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAAACXBIWXMAAA7EAAAOxAGVKw4bAAADS0lEQVRoge2ZP4gcVRzHP793s3tBLJK3Zzii4oUTOxvTaZNWOEiusDBNbO78AwqSFF4UxEIujY0BowkhCYQ012gISRtQsFIbK7kiwp2iZh8nRHCzO+9n4R7M3s3s7cx7HLtkPt2835s33++bB19+M1BTU1NTU/P4IjEWefbkR/NTmq73L28qtEXEoepExHloi6oz6ZTrNFK3maxvsbaWxnj2XkQxOHdy5RrK6RK3KLAFOASH0gacCk4UR3+DvKoTb5xRaVfdmGCD84tnD/d8Y1MgCV1rRLaAdn9jHIpTQ1sUh+hm0vnn+vrdC53tycGiej5Z2kdzAAeBgyjzAAiI9isqdKefTIEr25NNyJOOLS83BHknZI3oeP0xexlk0P05swgcCRIUEVX57tdb53/KjgUZRPW9oPsjY/Cf7x6ryHML515SeCVMUlQ27az7eudgZYMy5d8N0xMXhS9+uHSpu3O8ksH5xbOHQU6Fy4pGp9Hkcl6hksGeT5aAZpCkuNxcX1v9K69Q2mA/Gt4O1xQPVb1QVCttsB8NTwcpikheNGQpf0QnIBoG6yUYt2hQ2MiLhiylDI5bNAAX86Ihy8gGJykasoxscJKiIct2PyjPLHx45ECzm9sf9rxJUPkemI2pMAjVV5PE/5xX+vdRQzduf/oboAIwd2LlS+DN/dS3D3x1/5vVt8K6iQlgzyPa9cmLonpnn3UN43dEX06M7xVN2HVEhzF34oOrIG/EVBiE6rn7t86vjjp96BEdx2ho+u6e0ZBlqMFxjIZfbn/2oMwNhQYnrWsootDguHUNwLfDuoYiio/omHUNUuHtQYHBSewaisg1OG5dg6jmflAahV0Gn39t5SmQ18NlRaN0NGTZZbD7iCVgOkhSXEpHQ5YBg8eWlxsg74drikeVaMgyYPDBH3ZB0JkwSVGpFA1ZBgwaNQ/D9MRFYOgHpRHXGOSFhTMzaWN61qep9SItRKzxYlXUKrQMYhW1KFaFloAFnggVshOFjaN/N4/eu/dJYdcwCnF+YR//+IDa7qFEafk0tWqMVS/WQEtFLfr/Bgm0UCyCBVoM25iSXUMRUQxWZXtjtJvaKWOsCi31YjEqjc7DG9lf0TU1NTU1NTU1jx//ATKcTGid1SFcAAAAAElFTkSuQmCC" />
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#204f79" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="600" font-style="normal" 
+>
+<text fill="#204f79" fill-opacity="1" stroke="none" xml:space="preserve" x="331" y="155.5" font-family="Segoe UI" font-size="11" font-weight="600" font-style="normal" 
+ >Plate · Face6 (top)</text>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="275" y="186" font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+ >Shows</text>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#185fa5" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M323,174 C323,172.895 323.895,172 325,172 L377,172 C378.105,172 379,172.895 379,174 L379,188 C379,189.105 378.105,190 377,190 L325,190 C323.895,190 323,189.105 323,188 L323,174"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#204f79" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="600" font-style="normal" 
+>
+<text fill="#204f79" fill-opacity="1" stroke="none" xml:space="preserve" x="328.5" y="185" font-family="Segoe UI" font-size="9" font-weight="600" font-style="normal" 
+ >Constraints</text>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#185fa5" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M382,174 C382,172.895 382.895,172 384,172 L436,172 C437.105,172 438,172.895 438,174 L438,188 C438,189.105 437.105,190 436,190 L384,190 C382.895,190 382,189.105 382,188 L382,174"/>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#204f79" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="600" font-style="normal" 
+>
+<text fill="#204f79" fill-opacity="1" stroke="none" xml:space="preserve" x="387" y="185" font-family="Segoe UI" font-size="9" font-weight="600" font-style="normal" 
+ >Dimensions</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M441,174 C441,172.895 441.895,172 443,172 L495,172 C496.105,172 497,172.895 497,174 L497,188 C497,189.105 496.105,190 495,190 L443,190 C441.895,190 441,189.105 441,188 L441,174"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="444" y="185" font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+ >Construction</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M500,174 C500,172.895 500.895,172 502,172 L554,172 C555.105,172 556,172.895 556,174 L556,188 C556,189.105 555.105,190 554,190 L502,190 C500.895,190 500,189.105 500,188 L500,174"/>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="500.5" y="185" font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+ >Later features</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#185fa5" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="600" font-style="normal" 
+>
+<text fill="#185fa5" fill-opacity="1" stroke="none" xml:space="preserve" x="275" y="212.5" font-family="Segoe UI" font-size="11" font-weight="600" font-style="normal" 
+ >Native Sketcher panel</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#65717c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<text fill="#65717c" fill-opacity="1" stroke="none" xml:space="preserve" x="415" y="212" font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+ >· constraints list, elements, solver tools</text>
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="#65717c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<text fill="#65717c" fill-opacity="1" stroke="none" xml:space="preserve" x="275" y="234" font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+ >Finish Enter · Cancel Esc · N normal · Shift+7 iso · D dimension</text>
+</g>
+
+<g fill="#fff7e0" fill-opacity="1" stroke="#e8c76a" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M265,893 C265,891.343 266.343,890 268,890 L492,890 C493.657,890 495,891.343 495,893 L495,917 C495,918.657 493.657,920 492,920 L268,920 C266.343,920 265,918.657 265,917 L265,893"/>
+</g>
+
+<g fill="#8c6005" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="400" font-style="normal" 
+>
+<circle cx="279" cy="905" r="5"/>
+</g>
+
+<g fill="#8c6005" fill-opacity="1" stroke="#7a4f00" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+>
+<text fill="#7a4f00" fill-opacity="1" stroke="none" xml:space="preserve" x="291" y="910" font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+ >2 DoF free · drag blue geometry</text>
+</g>
+
+<g fill="#8c6005" fill-opacity="1" stroke="#c0392b" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="291,870 313,878 " />
+</g>
+
+<g fill="#8c6005" fill-opacity="1" stroke="#27ae60" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="291,870 277,882 " />
+</g>
+
+<g fill="#8c6005" fill-opacity="1" stroke="#2980b9" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="291,870 291,846 " />
+</g>
+
+<g fill="#8c6005" fill-opacity="1" stroke="#c0392b" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<text fill="#c0392b" fill-opacity="1" stroke="none" xml:space="preserve" x="315" y="882" font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+ >x</text>
+</g>
+
+<g fill="#8c6005" fill-opacity="1" stroke="#27ae60" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<text fill="#27ae60" fill-opacity="1" stroke="none" xml:space="preserve" x="267" y="888" font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+ >y</text>
+</g>
+
+<g fill="#8c6005" fill-opacity="1" stroke="#2980b9" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<text fill="#2980b9" fill-opacity="1" stroke="none" xml:space="preserve" x="294" y="848" font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+ >z</text>
+</g>
+
+<g fill="#eef0f2" fill-opacity="1" stroke="#8a949e" stroke-opacity="1" stroke-width="0.8" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M1477.18,134.6 L1499,147.2 L1499,122 L1477.18,109.4 L1477.18,134.6"/>
+</g>
+
+<g fill="#dfe3e7" fill-opacity="1" stroke="#8a949e" stroke-opacity="1" stroke-width="0.8" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M1520.82,134.6 L1499,147.2 L1499,122 L1520.82,109.4 L1520.82,134.6"/>
+</g>
+
+<g fill="#f8f9fa" fill-opacity="1" stroke="#8a949e" stroke-opacity="1" stroke-width="0.8" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M1499,96.8 L1520.82,109.4 L1499,122 L1477.18,109.4 L1499,96.8"/>
+</g>
+
+<g fill="#f8f9fa" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="600" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="1490.5" y="112" font-family="Segoe UI" font-size="9" font-weight="600" font-style="normal" 
+ >TOP</text>
+</g>
+
+<g fill="#f8f9fa" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="7" font-weight="600" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="1474" y="140" font-family="Segoe UI" font-size="7" font-weight="600" font-style="normal" 
+ >FRONT</text>
+</g>
+
+<g fill="#f8f9fa" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="7" font-weight="600" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="1504" y="140" font-family="Segoe UI" font-size="7" font-weight="600" font-style="normal" 
+ >RIGHT</text>
+</g>
+
+<g fill="#f8f9fa" fill-opacity="1" stroke="#65717c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<text fill="#65717c" fill-opacity="1" stroke="none" xml:space="preserve" x="1487.5" y="167" font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+ >home</text>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<rect x="0" y="934" width="1600" height="30"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="0,934 1600,934 " />
+</g>
+
+<g fill="#ffffff" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<rect x="258" y="934" width="125" height="30"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="9" font-weight="400" font-style="normal" 
+>
+<rect x="258" y="934" width="125" height="2"/>
+<image x="266" y="942" width="14" height="14" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABLElEQVRoge3aMU7DMBSH8c9xVy4Bp2BnZUZkQ1RFiCJGRrgBDF0qASMM3IeZE7AggVQUHgOMqZwmps0/et9oW8/+7QbP63UhdaA8Ot2miPtmljzbqaLYxez16X52mXPsKHXAYpxj7BH+14cZAOV4+vl4N7vONbZIX8xWrsuaZMZVOT6b5JqXBm4gszDPhewlEPIhewuEPMheA6E7svdA6IaUAEJ7pAwQ2iGlgLA6Ug4IqyElgdAcKQuEZkhpIPwiD4+nt8v25YF/XRxMznfqNoYCJHxVi7r1wQBjjFa3PhjgshyongPVc6B6DlTPgeo5UD0HqudA9RyongPVc6B6DlTPgeo5UD0HEnhfwzu6ZgsbfdRtJP+Lhqo6WcuH2A59U7w8P9y8bfodnteiHyWmX8A9iGq7AAAAAElFTkSuQmCC" />
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="284" y="954.5" font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+ >Bracket plate  •</text>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+>
+<rect x="0" y="964" width="1600" height="36"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="0,964 1600,964 " />
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="600" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M10,975 C10,973.343 11.3431,972 13,972 L112,972 C113.657,972 115,973.343 115,975 L115,989 C115,990.657 113.657,992 112,992 L13,992 C11.3431,992 10,990.657 10,989 L10,975"/>
+<image x="16" y="975" width="14" height="14" preserveAspectRatio="none" image-rendering="optimizeQuality" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAAACXBIWXMAAA7EAAAOxAGVKw4bAAADjElEQVRoge2YTWwUZRjHf8/Odl3AIomQHiCZbVNb5GAwURMIkMUDCdh0t/Uj6sFwlZti1u5qsuFGgIQDgRMXIITEEJSvotUgBi/e9GRM0ADpBU9N7B5my8zjYVPTNrvb2XdmZ6a4/9vMvO//eX553nfeeQZ66qmnnnrq6f8rK+4EVipXrBzeNLrn3Kbt+2bn/rj/Z1A/CSOpsGQXKh8KennxWlPujkdfn/g9iGcqeFrhyB6vvAV6Yek98awf7YnSy0F8E1HBwUJ5r8IMkG3y+Imm3P2mlYwd0B6felVE7gEb2wwzhowVcGiiPOK5/IywxcdwI8jY9uDwZGmb5/G9TziAAZM9GUsFR8aObq5bmfvAdoPpTzxLdz++dvwvP4Mjr+DoeKnfsTJ3MIMDGLBc3vQ7OFLAXL6adcS6LvCauYvetOq1S35HRwaYz1fTvFC/Auw3d9Gb6Xrt3Qd3zjh+Z0TzqVatpphzzoO8b27SORxEU0HJ/eqcAjlsbmEGBxEA2oWpCsgn5g7mcNDlY8IuTB0R5Ky5QzA46CJgrjj1ASqXzWMEh8M8eHvZhfIh4LpA2swhHDjoAuAqncGqUuVW38L8O2HAQciAuWJlJ6o/0b4zaKmw4SDEt+jQ2JcvofodCYKDkA764cnSNhfuAVtN5ncLDkKo4MjY0c1P3fQMYJvM7yYcGL/lGhodL/U7KWsaVaP/Jt2GgwAVzOWrWSdlfYPyusn8KODAEPC/zkD992VLFRUcmLxkAnYGgt5OL9QigYPOKyiDv9VPmnYGgt626rW3o4KDDgHtQrmsyqcmgeKAa8T1qVyx/DHKObMg8cA1YvtQkM4gTrhG/FUUpDOIG66RQxsNTXy+x/NSM8C6zo3jh4M2x8Rg8Ys3VPkWeL5T06TANXJpoq0T5Rf7PP7G4EMgSXDQAuA52NXq2SqaThIctIBQj10GXtPp+vxkkuCgFSCa79AnkXDQZA8OHPhsQ3Zd31wHx0Ji4aBJBddnM7ufFThotkTF9/JMPBw0AfS5/9YEHKzYgz733+N0fX5kLcDBigq22n8Ks6CnReXAw52ZwbUCBythxLMXi6owK8pVtfjq0SuZXzh2zAPgRuQ5BtKyJTp8sLrxacY5AzIH8hBRjSsxE4lHzVqYv7h0hS2roJtx3gP5qHGlsKbwQAXczAYFzi/eWw5ocVdcfhDojzy7EKTwj2dxN+48ItW/pyG6egYFhQsAAAAASUVORK5CYII=" />
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#204f79" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="600" font-style="normal" 
+>
+<text fill="#204f79" fill-opacity="1" stroke="none" xml:space="preserve" x="36" y="986.5" font-family="Segoe UI" font-size="11" font-weight="600" font-style="normal" 
+ >Editing sketch</text>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="634" y="987" font-family="Segoe UI" font-size="12" font-weight="400" font-style="normal" 
+ >mm  ·  L line · G rectangle · C circle · D dimension · Esc ends tool</text>
+</g>
+
+<g fill="#e6f1fa" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="1535" y="987" font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+ >Messages</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="12" font-weight="600" font-style="normal" 
+>
+<circle cx="577" cy="109" r="11"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="573.5" y="114.5" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >1</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<circle cx="1142.7" cy="503.1" r="11"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="1139.19" y="508.594" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >2</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<circle cx="935.5" cy="435.5" r="11"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="932" y="441" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >3</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<circle cx="511" cy="904" r="11"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="507.5" y="909.5" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >4</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<circle cx="917.9" cy="575.9" r="11"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="914.391" y="581.391" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >5</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<circle cx="230" cy="300" r="11"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="226.5" y="305.5" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >6</text>
+</g>
+
+<g fill="none" stroke="#8a949e" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<rect x="0" y="0" width="1600" height="1000"/>
+</g>
+
+<g fill="#fff1cc" fill-opacity="1" stroke="#e8c76a" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<path vector-effect="none" fill-rule="evenodd" d="M1270,897 C1270,895.343 1271.34,894 1273,894 L1583,894 C1584.66,894 1586,895.343 1586,897 L1586,915 C1586,916.657 1584.66,918 1583,918 L1273,918 C1271.34,918 1270,916.657 1270,915 L1270,897"/>
+</g>
+
+<g fill="#fff1cc" fill-opacity="1" stroke="#7a4f00" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<text fill="#7a4f00" fill-opacity="1" stroke="none" xml:space="preserve" x="1278" y="910" font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+ >CONCEPT MOCKUP · not a screenshot of implemented behavior</text>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="none" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<rect x="0" y="1000" width="1600" height="250"/>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#d6dadf" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="10" font-weight="700" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="0,1000 1600,1000 " />
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="16" font-weight="700" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="20" y="1027.5" font-family="Segoe UI" font-size="16" font-weight="700" font-style="normal" 
+ >Sketch editing · ambitious direction</text>
+</g>
+
+<g fill="#f5f6f7" fill-opacity="1" stroke="#59636c" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#59636c" fill-opacity="1" stroke="none" xml:space="preserve" x="20" y="1045.5" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >Inline dimension entry, constraint badges, DoF badge and snap narration drawn as overlays; native solver and tools unchanged.</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<circle cx="31" cy="1068" r="10"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="27.5" y="1073.5" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >1</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="50" y="1070.5" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >Sketch box with text Finish/Cancel buttons, support chip, and 'Shows' toggles for constraints, dimensions, construction and later features.</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<circle cx="31" cy="1091" r="10"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="27.5" y="1096.5" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >2</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="50" y="1093.5" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >Inline dimension entry at placement: a floating QLineEdit over the viewport (like the existing QuantityField) accepting expressions; Tab cycles the next</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="50" y="1108.5" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >free dimension.</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<circle cx="31" cy="1129" r="10"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="27.5" y="1134.5" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >3</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="50" y="1131.5" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >Constraint glyph badges on geometry (horizontal, vertical, coincident), drawn as Coin SoAnnotation overlays from native constraint data; click to</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="50" y="1146.5" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >delete.</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<circle cx="821" cy="1068" r="10"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="817.5" y="1073.5" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >4</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="840" y="1070.5" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >Persistent DoF badge at the viewport corner: amber while free, green when fully constrained, red on conflict.</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<circle cx="821" cy="1091" r="10"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="817.5" y="1096.5" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >5</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="840" y="1093.5" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >Snap narration: the current snap target is named near the cursor, which the existing snapping module already knows.</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<circle cx="821" cy="1114" r="10"/>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#ffffff" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+>
+<text fill="#ffffff" fill-opacity="1" stroke="none" xml:space="preserve" x="817.5" y="1119.5" font-family="Segoe UI" font-size="13" font-weight="700" font-style="normal" 
+ >6</text>
+</g>
+
+<g fill="#185fa5" fill-opacity="1" stroke="#2d3338" stroke-opacity="1" stroke-width="1" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+>
+<text fill="#2d3338" fill-opacity="1" stroke="none" xml:space="preserve" x="840" y="1116.5" font-family="Segoe UI" font-size="11" font-weight="400" font-style="normal" 
+ >History shows an 'editing' tag on the active sketch row and mutes later rows.</text>
+</g>
+</g>
+</svg>

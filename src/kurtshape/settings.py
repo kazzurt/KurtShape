@@ -14,8 +14,13 @@ class Settings:
             self.data = {}
         if not isinstance(self.data, dict):
             self.data = {}
-        self.project_directory = root.parent.parent / "projects"
-        self.roots = {root.parent.resolve(), self.project_directory.resolve()}
+        # New installations must not assume the author's CADkz/Codex layout.
+        # Retain the implicit grants of existing profiles until users migrate them.
+        layout = self.data.setdefault("workspace_layout", "legacy" if self.path.exists() else "portable")
+        self.project_directory = root.parent.parent / "projects" if layout == "legacy" else root / "projects"
+        self.roots = {self.project_directory.resolve()}
+        if layout == "legacy":
+            self.roots.add(root.parent.resolve())
         configured = self.data.get("project_roots", [])
         if isinstance(configured, list):
             self.roots.update(Path(p).resolve() for p in configured if isinstance(p, str) and Path(p).is_absolute())

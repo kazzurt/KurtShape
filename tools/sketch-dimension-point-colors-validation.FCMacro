@@ -18,7 +18,7 @@ root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(root / "src"))
 sys.path.insert(0, str(root / "tools"))
-from kurtshape import ui, theme
+from kurtshape import ui
 from kurtshape_evidence import evidence_dir
 
 source_files = ("theme.py", "sketch_colors.py")

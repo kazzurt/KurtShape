@@ -619,7 +619,7 @@ class Panel(QtGui.QDockWidget):
         self.sketch_bar.addSeparator()
         self.tool(self.sketch_bar, "Normal", self.normal, "Normal to sketch · N")
         self.tool(self.sketch_bar, "3D", self.isometric, "Sketch in 3D · Shift+7")
-        finish = self.tool(self.sketch_bar, "Finish sketch", self.finish_sketch, "Commit changes", ":/icons/dialog-ok.svg")
+        self.tool(self.sketch_bar, "Finish sketch", self.finish_sketch, "Commit changes", ":/icons/dialog-ok.svg")
         self.sketch_cancel_action = self.tool(self.sketch_bar, "Cancel sketch", lambda: self.finish_sketch(cancel=True), "Discard this edit session", ":/icons/dialog-cancel.svg")
         self.sketch_bar.addWidget(SearchField(self.show_tool_search))
         self.main.addToolBar(QtCore.Qt.TopToolBarArea, self.sketch_bar)

@@ -5,7 +5,6 @@ The incumbent functions remain the independent fingerprint/fallback oracle.
 """
 from contextlib import contextmanager
 import copy
-import hashlib
 from pathlib import Path
 import sys
 import unittest
@@ -19,7 +18,6 @@ import FreeCAD as App
 import Part
 from kurtshape import assembly, core as core_module, step_export_worker as worker_module
 from kurtshape.core import OperationError
-from native_validation_snapshot import snapshot_document
 from test_step_export_jobs import StepExportJobTests
 from kurtshape import step_capture as candidate
 

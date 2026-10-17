@@ -52,7 +52,7 @@ SUITES = {
         "test_part_studio.PartStudioTests", "test_pattern_tools.PatternToolTests",
         "test_selector_consumers.SelectorConsumerTests",
         "test_multi_edge_references.MultiEdgeReferenceTests",
-        "test_runtime_layout.RuntimeLayoutTests",
+        "test_runtime_layout.RuntimeLayoutTests", "test_settings.SettingsTests",
         "test_native_files.NativeFileBehaviorTests",
         "test_native_validation_snapshot.NativeValidationSnapshotTests",
         "test_build_status.BuildStatusTests", "test_build_status.StatusPerformanceTests",

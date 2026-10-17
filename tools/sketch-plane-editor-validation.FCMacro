@@ -7,7 +7,7 @@ import sys
 import traceback
 import FreeCAD as App
 import FreeCADGui as Gui
-from PySide import QtCore, QtGui
+from PySide import QtCore
 from PySide6 import QtTest, QtWidgets
 
 root = Path(os.environ["KURTSHAPE_ROOT"])

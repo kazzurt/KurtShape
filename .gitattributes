@@ -3,3 +3,5 @@
 *.stp -text
 *.stl -text
 *.png binary
+# Preserve Qt's generated SVG formatting in the original review artwork.
+docs/fable-deep-review/visual-proposals/concepts/*.svg whitespace=-blank-at-eol
