@@ -2,16 +2,17 @@
 import re
 
 import FreeCAD as App
-from . import selectors
+from . import hole_tools, selectors
 from .bodies import owner
 
-OPS = {"fillet", "chamfer", "shell", "project_geometry", "edit_dress_up"}
+OPS = {"fillet", "chamfer", "shell", "project_geometry", "edit_dress_up", "hole"}
 ARGS = {
     "fillet": {"id", "part", "edges", "radius"},
     "chamfer": {"id", "part", "edges", "size"},
     "shell": {"id", "part", "faces", "thickness", "reversed"},
     "project_geometry": {"sketch", "references", "defining"},
     "edit_dress_up": {"feature", "edges", "radius", "size", "expression"},
+    "hole": set(hole_tools.ARGS),
 }
 
 
@@ -51,6 +52,8 @@ def handle(core, doc, req):
         return project_geometry(core, doc, req)
     if op == "edit_dress_up":
         return edit_dress_up(core, doc, req)
+    if op == "hole":
+        return hole_tools.handle(core, doc, req)
 
     body_request = dict(req)
     if "part" in req:

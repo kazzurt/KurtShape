@@ -32,6 +32,10 @@ def unconsumed_sketches(doc, before=None):
         elif source.TypeId in {"PartDesign::ShapeBinder", "PartDesign::SubShapeBinder"}:
             for linked in objects(source.Support):
                 profiles(linked, visited)
+        elif source.TypeId == "Sketcher::SketchObject" and getattr(source, "KurtShapeHoleHelper", False):
+            # A Hole's internal profile is attached to its binder of the authored sketch.
+            for linked in objects(source.AttachmentSupport):
+                profiles(linked, visited)
 
     for consumer in doc.Objects:
         operation = getattr(consumer, "KurtShapeOperationOwner", "") or consumer.Name
@@ -130,6 +134,10 @@ def reference_errors(sketch):
                            "code": "missing_reference", "reference_health": "missing",
                            "message": "Used edge source is missing; repair or remove this sketch reference",
                            "native_reference": extension.Ref})
+    if getattr(sketch, "KurtShapeHoleHelper", False):
+        # A Hole's bridged profile: bound centres must still exist and sit on their sketch centres.
+        from .hole_tools import bridge_errors
+        errors.extend(bridge_errors(sketch))
     return errors
 
 

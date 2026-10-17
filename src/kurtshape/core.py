@@ -24,6 +24,7 @@ from . import assembly as native_assembly
 from . import studio
 from . import selectors as native_selectors
 from . import reference_tools
+from . import hole_tools
 from . import extrusion_edit
 from .sketch_tools import restore_sketch_content, reference_errors as sketch_reference_errors
 from . import modeling_geometry
@@ -131,12 +132,19 @@ def native_parameters(obj):
         params.update(modeling_geometry.plane_parameters(obj))
     tool = getattr(obj, "KurtShapeTool", None) or obj
     for native_property, public_name, unit in (("LengthFwd", "Length", "mm"), ("Angle", "Angle", "rad"),
-                                             ("Radius", "Radius", "mm"), ("Size", "Size", "mm"), ("Value", "Thickness", "mm")):
+                                             ("Radius", "Radius", "mm"), ("Size", "Size", "mm"), ("Value", "Thickness", "mm"),
+                                             ("Diameter", "Diameter", "mm"), ("Depth", "Depth", "mm"),
+                                             ("DrillPointAngle", "PointAngle", "rad")):
+        hole = tool.TypeId == "PartDesign::Hole"
         supported = ((tool.TypeId == "Part::Extrusion" and native_property == "LengthFwd") or
                      (tool.TypeId == "Part::Revolution" and native_property == "Angle") or
                      (tool.TypeId == "PartDesign::Fillet" and native_property == "Radius") or
                      (tool.TypeId == "PartDesign::Chamfer" and native_property == "Size") or
-                     (tool.TypeId == "PartDesign::Thickness" and native_property == "Value"))
+                     (tool.TypeId == "PartDesign::Thickness" and native_property == "Value") or
+                     (hole and native_property == "Diameter") or
+                     (hole and native_property == "Depth" and str(tool.DepthType) == "Dimension") or
+                     (hole and native_property == "DrillPointAngle" and str(tool.DrillPoint) == "Angled"
+                      and str(tool.DepthType) == "Dimension"))
         if not supported:
             continue
         value = getattr(tool, native_property)
@@ -1999,6 +2007,7 @@ class Controller:
         obj = doc.getObject(name)
         if not obj or obj.TypeId != "Sketcher::SketchObject" or owner(doc, obj) is None:
             raise OperationError("missing_reference", "Profile must name a sketch in this body")
+        hole_tools.reject_helper(obj, "profile")
         if obj.solve() != 0:
             raise OperationError("constraint_conflict", "Sketch solver reports conflicting constraints")
         return obj
@@ -2391,6 +2400,7 @@ class Controller:
             target = doc.getObject(name)
             if target is None:
                 raise OperationError("missing_reference", "Feature ID does not exist", feature=name)
+            hole_tools.reject_helper(target, "delete")
             if self._studio_tool(target):
                 # A studio operation built as a neutral Part tool (New results) lives
                 # outside every Body; its generated Bodies are removed as helpers.
@@ -2419,6 +2429,9 @@ class Controller:
                     raise OperationError("external_dependency", "A later feature depends on this operation's result",
                                          feature=dependent.Name)
         removed |= helpers
+        # A Hole's private bound profile (in-Body binder and sketch) goes with its Hole.
+        helpers |= hole_tools.private_helpers(doc, selected, removed)
+        removed |= helpers
         while pending:
             obj = pending.pop()
             selected_body = owners[obj.Name]
@@ -2435,7 +2448,8 @@ class Controller:
                     if leftover and doc.getObject(leftover) is None:
                         raise OperationError("orphan_helpers", f"Leftover helpers from the removed operation {leftover} still reference this feature. "
                                              "Use Repair leftover helpers, then delete again.", feature=dependent.Name, owner=leftover)
-                    raise OperationError("external_dependency", "A feature outside this Body depends on the deletion", feature=dependent.Name)
+                    raise OperationError("external_dependency", "A feature outside this Body depends on the deletion",
+                                         feature=hole_tools.public_name(dependent))
                 if not self._deletable_feature(dependent, selected_body):
                     raise OperationError("unsupported_dependency", "A script-owned or unsupported feature depends on this deletion", feature=dependent.Name)
                 if dependent.Name in removed:
@@ -2443,6 +2457,9 @@ class Controller:
                 removed.add(dependent.Name)
                 owners[dependent.Name] = selected_body
                 pending.append(dependent)
+        cascaded = hole_tools.private_helpers(doc, removed, removed | helpers) - removed
+        helpers |= cascaded
+        removed |= cascaded
         ordered = [obj.Name for obj in studio.order(doc) if obj.Name in removed]
         ordered.extend(obj.Name for obj in doc.Objects if obj.Name in removed and obj.Name not in ordered)
         return {"selected": [name for name in ordered if name in selected],
@@ -2675,6 +2692,8 @@ class Controller:
                 expression = req.get("expression")
                 if expression is not None and (not isinstance(expression, str) or len(expression) > 512 or not re.fullmatch(extrusion_edit.EXPRESSION_PATTERN, expression)):
                     raise OperationError("invalid_argument", "Use a dimensional formula with named properties and arithmetic")
+                if feature.TypeId == "PartDesign::Hole":
+                    return hole_tools.set_expression(self, doc, feature, property_path, expression)
                 feature.setExpression(property_path, expression)
                 self._recompute(doc)
                 if set(feature.State) & {"Invalid", "Error"}:
@@ -2686,6 +2705,8 @@ class Controller:
                 feature.setDatum(native_parameters(feature)[parameter]["constraint_index"],App.Units.Quantity(f"{value} {info['unit']}"))
                 if feature.solve()!=0:
                     raise OperationError("constraint_conflict", "Dimension produces a sketch solver conflict")
+            elif feature.TypeId == "PartDesign::Hole":
+                hole_tools.set_parameter(self, doc, feature, property_path, math.degrees(value) if info["unit"] == "rad" else value)
             else:
                 setattr(feature, property_path, math.degrees(value) if info["unit"] == "rad" else value)
         elif op == "duplicate_feature":

@@ -647,9 +647,15 @@ def orphan_groups(doc):
             groups.setdefault(owner_name, []).append(obj)
     report = []
     for owner_name, members in sorted(groups.items()):
-        members = [obj for obj in members if not _owned_elsewhere(obj, owner_name)]
+        # A Hole's private profile helpers live in the part's Body, which the
+        # part's own operation owns; that Body only contains them.
+        members = [obj for obj in members if getattr(obj, "KurtShapeHoleHelper", False)
+                   or not _owned_elsewhere(obj, owner_name)]
+        containers = {_body_owner(obj).Name for obj in members
+                      if getattr(obj, "KurtShapeHoleHelper", False) and _body_owner(obj) is not None}
         removed = native_closure(doc, {obj.Name for obj in members})
         consumers, inputs = closure_report(doc, [doc.getObject(name) for name in removed])
+        consumers = [name for name in consumers if name not in containers]
         report.append({"owner": owner_name, "objects": sorted(removed),
                        "tagged_objects": sorted(obj.Name for obj in members),
                        "consumers": consumers, "inputs": inputs, "repairable": not consumers})
