@@ -1,0 +1,331 @@
+"""GUI behaviour of contract 3.2 U4: render_view through the real bridge in a hidden private FreeCAD.
+
+Run by tools/run_gui_recipe.ps1 -Recipe render-view: a hidden private FreeCAD process (own -u/-s
+configuration, never Kurt's window or profile) starts the production ui.start() Panel with the real
+Bridge and sends render_view requests over loopback HTTP; the panel's own tick begins them, parks the
+job and completes it (Bridge.poll_deferred). It asserts:
+  1. successful and deliberately failing renders leave unchanged: the active document, the selection,
+     the active view's camera, object and ViewObject visibility, the GUI Modified flag, undo/redo counts,
+     the revision and LastFailure;
+  2. a render_view request causes no Panel inspect and no Panel.refresh;
+  3. every Panel.tick while the render child runs (only polling) stays under 100 ms;
+  4. the image exists, is a PNG of the requested size, the request is completed in the ledger and an
+     identical request is a synchronous cache hit;
+  5. the owner-thread time per render request (the tick that begins it) and the total Qt time per render
+     are recorded.
+"""
+import http.client
+import json
+import os
+from pathlib import Path
+import statistics
+import struct
+import sys
+import threading
+import time
+import traceback
+import uuid
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime"), session
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path[:0] = [str(root / "src"), str(root / "tools"), str(root / "tools" / "perf")]
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("render-view")
+report = {"passed": False, "checks": [], "pid": os.getpid(), "qpa": app.platformName(), "renders": [],
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "method": "Hidden private FreeCAD GUI; production ui.start() Panel with the real Bridge; loopback render_view "
+                    "requests begun and completed by the panel tick",
+          "limits": ["No physical display; the camera and selection are compared as FreeCAD reports them.",
+                     "Hidden-GUI timings are recorded for the record; only the 100 ms polling-tick bound is asserted."]}
+panel = None
+cleaned = False
+stats = {}
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition, detail=None):
+    if not condition:
+        raise AssertionError(label + ("" if detail is None else ": " + str(detail)))
+    report["checks"].append(label)
+    save()
+
+
+def summary(values):
+    if not values:
+        return {"n": 0}
+    ordered = sorted(values)
+    return {"n": len(values), "median": round(statistics.median(values), 2),
+            "p95": round(ordered[max(0, int(len(values) * .95) - 1)], 2), "max": round(max(values), 2),
+            "total": round(sum(values), 2)}
+
+
+def reset():
+    stats.clear()
+    stats.update(begin_tick=[], poll_tick=[], other_tick=[], dispatch={}, begin=0, refresh=0)
+
+
+def post(payload, timeout=60):
+    connection = http.client.HTTPConnection("127.0.0.1", panel.bridge.server.server_port, timeout=timeout)
+    try:
+        connection.request("POST", "/operation", body=json.dumps(payload),
+                           headers={"Authorization": "Bearer " + panel.bridge.token, "Content-Type": "application/json"})
+        response = connection.getresponse()
+        return response.status, json.loads(response.read())
+    finally:
+        connection.close()
+
+
+def bridge(request, timeout=60):
+    """Send one request from a worker thread while the GUI event loop (and so the panel tick) runs."""
+    result = {}
+
+    def send():
+        began = time.perf_counter()
+        try:
+            result["status"], result["response"] = post(request, timeout)
+            result["ms"] = (time.perf_counter() - began) * 1000
+        except Exception:
+            result["error"] = traceback.format_exc()
+    worker = threading.Thread(target=send, daemon=True)
+    worker.start()
+    deadline = time.monotonic() + timeout
+    while worker.is_alive() and time.monotonic() < deadline:
+        QtTest.QTest.qWait(10)
+    if "response" not in result:
+        raise AssertionError("bridge request got no response: " + json.dumps(result, default=str)[:800])
+    QtTest.QTest.qWait(150)  # the trailing tick runs here
+    result["response"]["_client_ms"] = round(result["ms"], 1)
+    return result["response"]
+
+
+def render(**args):
+    state = panel.state
+    return {"op": "render_view", "document_id": state["document_id"], "request_id": str(uuid.uuid4()), **args}
+
+
+def invariants(doc):
+    core = panel.core
+    gui = Gui.getDocument(doc.Name)
+    view = gui.activeView()
+    return {"active": App.ActiveDocument.Name if App.ActiveDocument else None,
+            "selection": sorted((item.DocumentName, item.ObjectName, tuple(item.SubElementNames))
+                                for item in Gui.Selection.getSelectionEx("", 0)),
+            "camera": view.getCamera() if view is not None and hasattr(view, "getCamera") else None,
+            "visibility": sorted((obj.Name, bool(obj.Visibility),
+                                  bool(obj.ViewObject.Visibility) if getattr(obj, "ViewObject", None) else None)
+                                 for obj in doc.Objects),
+            "modified": gui.Modified, "undo": doc.UndoCount, "redo": doc.RedoCount,
+            "revision": core._meta(doc).Revision, "last_failure": core._meta(doc).LastFailure,
+            "last_failed_attempt": core.last_failures.get(core.identifier(doc))}
+
+
+def run():
+    global panel
+    try:
+        from bench_core import prepare_environment
+        scratch = prepare_environment(session / "render-view-files")  # a granted project root
+        panel = ui.start()
+        core = panel.core
+        check("Production panel started with the real loopback Bridge",
+              type(panel.bridge).__name__ == "Bridge" and panel.bridge.server.server_port > 0)
+        dispatch, begin, refresh, tick = core.dispatch, core.begin, panel.refresh, panel.tick
+        panel.timer.timeout.disconnect()
+
+        def counted_dispatch(request):
+            op = request.get("op") if isinstance(request, dict) else None
+            stats["dispatch"][op] = stats["dispatch"].get(op, 0) + 1
+            return dispatch(request)
+
+        def counted_begin(request):
+            stats["begin"] += 1
+            return begin(request)
+
+        def counted_refresh():
+            stats["refresh"] += 1
+            return refresh()
+
+        def timed_tick():
+            serving = not panel.bridge.pending.empty()
+            waiting = bool(panel.bridge.deferred)
+            b = time.perf_counter()
+            try:
+                tick()
+            finally:
+                elapsed = (time.perf_counter() - b) * 1000
+                (stats["begin_tick"] if serving else stats["poll_tick"] if waiting else stats["other_tick"]).append(elapsed)
+        core.dispatch, core.begin, panel.refresh = counted_dispatch, counted_begin, counted_refresh
+        panel.timer.timeout.connect(timed_tick)
+        reset()
+
+        # A saved studio document with a selection and a camera the renders must not touch.
+        check("New document", panel.operation("new", name="Render GUI") is not None, panel.message.text())
+        check("Profile", panel.operation("sketch_rectangle", id="Base", width=60, height=40) is not None, panel.message.text())
+        check("Block", panel.operation("pad", id="Block", profile="Base", length=10, operation="new") is not None, panel.message.text())
+        check("Bore profile", panel.operation("sketch_circle", id="BoreProfile", x=40, y=20, diameter=10) is not None, panel.message.text())
+        check("Bore", panel.operation("pocket", id="Bore", profile="BoreProfile", through_all=True, operation="remove",
+                                      merge_scope=["Body"]) is not None, panel.message.text())
+        saved = panel.operation("save", path=str(scratch / "render-gui.FCStd"))
+        check("Saved", saved is not None, panel.message.text())
+        doc = panel.document()
+        # A second open document, so "the active document is unchanged" can actually fail.
+        bystander = App.newDocument("Bystander")
+        bystander.addObject("Part::Box", "Box")
+        bystander.recompute()
+        App.setActiveDocument(doc.Name)
+        Gui.ActiveDocument = Gui.getDocument(doc.Name)
+        QtTest.QTest.qWait(300)
+        check("Two documents open, the rendered one active",
+              len(App.listDocuments()) >= 2 and App.ActiveDocument.Name == doc.Name, App.listDocuments())
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, "Base")
+        view = Gui.getDocument(doc.Name).activeView()
+        view.viewFront()
+        QtTest.QTest.qWait(300)
+        before = invariants(doc)
+        check("Fixture is clean and selected", before["modified"] is False and before["selection"], before)
+
+        # 1-5. Successful renders --------------------------------------------------------------
+        requests = [("iso", {"views": ["iso"]}),
+                    ("section", {"section": {"plane": "XZ", "offset": -20}, "views": ["section", "iso"]}),
+                    ("highlight", {"views": ["iso"], "highlights": [
+                        {"selector": {"kind": "created_by", "feature": "Bore", "entity_type": "face"}, "label": "A", "note": "bore"}]}),
+                    ("sheet", {"views": ["iso", "front", "top", "right"], "layout": "sheet", "quality": "draft"})]
+        for name, args in requests:
+            reset()
+            request = render(**args)
+            response = bridge(request)
+            check(name + ": render_view succeeded", response.get("ok") is True, json.dumps(response)[:800])
+            result = response["result"]
+            image = result["images"][0]
+            data = Path(image["path"]).read_bytes()
+            check(name + ": a PNG of the reported size exists",
+                  data[:8] == b"\x89PNG\r\n\x1a\n" and struct.unpack(">II", data[16:24]) == (image["width"], image["height"]))
+            check(name + ": begun once, no Panel inspect, no refresh",
+                  stats["begin"] == 1 and stats["dispatch"].get("inspect", 0) == 0 and stats["refresh"] == 0, stats)
+            check(name + ": every polling tick under 100 ms", max(stats["poll_tick"] or [0]) < 100, summary(stats["poll_tick"]))
+            status = core.ledger.status(request["request_id"])
+            check(name + ": ledger completed with the same response",
+                  status["status"] == "completed" and status["response"]["result"]["render_id"] == result["render_id"])
+            check(name + ": document and GUI state unchanged", invariants(doc) == before, (invariants(doc), before))
+            report["renders"].append({"name": name, "owner_tick_ms": summary(stats["begin_tick"]),
+                                      "poll_tick_ms": summary(stats["poll_tick"]),
+                                      "qt_ms_total": round(sum(stats["begin_tick"]) + sum(stats["poll_tick"]), 2),
+                                      "client_ms": response["_client_ms"], "timing_ms": result["timing_ms"],
+                                      "tessellation": result["tessellation"]})
+            save()
+        # Eight highlights (review follow-up): the owner tick of a fresh multi-highlight render, then of a
+        # settings-only change, which must reuse the resolved highlights instead of resolving and exporting again.
+        points = [[x, y, z] for x in (5, 30, 55) for y in (5, 35) for z in (0, 10)][:8]
+        eight = [{"selector": {"kind": "closest", "point": point,
+                               "query": {"kind": "owned_by", "part": "Body", "entity_type": "face"}}, "label": chr(65 + i)}
+                 for i, point in enumerate(points)]
+        multi = {}
+        for name, args in (("eight_highlights", {"views": ["iso"], "highlights": eight}),
+                           ("eight_highlights_settings_only", {"views": ["top"], "highlights": eight})):
+            reset()
+            counters = dict(core.renders.counters)
+            response = bridge(render(**args))
+            check(name + ": render_view succeeded", response.get("ok") is True, json.dumps(response)[:800])
+            check(name + ": no Panel inspect, no refresh", stats["dispatch"].get("inspect", 0) == 0 and stats["refresh"] == 0, stats)
+            check(name + ": every polling tick under 100 ms", max(stats["poll_tick"] or [0]) < 100, summary(stats["poll_tick"]))
+            check(name + ": document and GUI state unchanged", invariants(doc) == before, (invariants(doc), before))
+            multi[name] = {"owner_tick_ms": summary(stats["begin_tick"]), "timing_ms": response["result"]["timing_ms"],
+                           "counters": {key: core.renders.counters[key] - counters[key] for key in counters}}
+        check("A settings-only change reuses all eight resolved highlights",
+              multi["eight_highlights_settings_only"]["counters"]["highlight_resolutions"] == 0
+              and multi["eight_highlights_settings_only"]["counters"]["highlight_cache_hits"] == 8
+              and multi["eight_highlights_settings_only"]["counters"]["highlight_exports"] == 0, multi)
+        report["multi_highlight"] = multi
+        save()
+        reset()
+        again = bridge(render(views=["iso"]))
+        check("An identical request is a cache hit", again.get("ok") and again["result"]["cached"] is True, again)
+        check("A cache hit parks nothing", stats["poll_tick"] == [] and panel.bridge.deferred == [], stats)
+
+        # 1. Deliberately failing renders change nothing either ---------------------------------
+        for name, args, code in (("no match", {"highlights": [{"selector": {"feature": "Block", "subelement": "Face99"}}]},
+                                  "highlight_no_match"),
+                                 ("bad up", {"views": [{"direction": [1, 0, 0], "up": [2, 0, 0]}]}, "invalid_argument"),
+                                 ("missed section", {"section": {"plane": "XY", "offset": 50}}, "section_misses_parts"),
+                                 ("stale", {"expected_revision": "not-current"}, "stale_revision")):
+            reset()
+            response = bridge(render(**args))
+            check(name + ": rejected with " + code, response.get("error", {}).get("code") == code, response)
+            check(name + ": no Panel inspect, no refresh", stats["dispatch"].get("inspect", 0) == 0 and stats["refresh"] == 0, stats)
+            check(name + ": document and GUI state unchanged", invariants(doc) == before, (invariants(doc), before))
+        report["owner_thread_ms_per_render"] = summary([row["owner_tick_ms"]["max"] for row in report["renders"]])
+        report["qt_ms_per_render"] = summary([row["qt_ms_total"] for row in report["renders"]])
+        report["passed"] = True
+        save()
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["passed"] = False
+        save()
+    finally:
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    except Exception:
+        report.setdefault("cleanup_errors", []).append(traceback.format_exc())
+        report["passed"] = False
+        save()
+    finally:
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["error"] = "render-view exceeded 300 seconds"
+    report["passed"] = False
+    save()
+    cleanup()
+
+
+save()
+QtCore.QTimer.singleShot(300000, timeout)
+QtCore.QTimer.singleShot(1200, run)

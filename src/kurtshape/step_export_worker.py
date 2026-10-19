@@ -187,7 +187,7 @@ class NativeStepExportWorker(NativeGeometryCheckWorker):
             path = self.folder / child
             path.mkdir(exist_ok=True)
             environment[name] = str(path)
-        environment.update(PYTHONDONTWRITEBYTECODE="1", QT_QPA_PLATFORM="offscreen")
+        environment.update(PYTHONDONTWRITEBYTECODE="1", QT_QPA_PLATFORM="offscreen", KURTSHAPE_WORKER="1")
         self.log = (self.folder / "native-worker.log").open("wb")
         self.process = subprocess.Popen(
             [self.executable, "-B", str(Path(__file__).resolve()), str(self.folder), self.token,

@@ -2,11 +2,16 @@
 
 BENCH_HOLES and BENCH_REPEAT parameterize the historical GUI recipe. Native
 controller metrics use the same plate geometry as the headless harness.
+BENCH_PARAMETERS (run_gui_recipe -Parameters) is the parameter count for the
+contract 3.2 parameter metrics; a build without parameter operations reports
+that section unavailable instead of measuring something else.
 """
+import http.client
 import json
 import os
 from pathlib import Path
 import sys
+import threading
 import time
 import traceback
 
@@ -47,21 +52,121 @@ def validate():
         QtGui.QApplication.processEvents()
         REPORT["model"] = {"objects": len(benchmark.doc.Objects), "tree_items": len(panel.items)}
 
+        def setup_parameters():
+            """3b §14.4: N parameters (one formula in five) created natively in ONE setup recompute; with 0 the
+            same no-op recompute runs, so both sides pay it (repeated managed recomputes grow inspect cost)."""
+            doc = benchmark.doc
+            if PARAMETERS > 0:
+                from kurtshape import parameters as backend
+                operations = set(panel.core.OPS)
+                missing = sorted({"create_parameter", "edit_parameter", "list_parameters"} - operations)
+                if missing:
+                    raise RuntimeError("BENCH_PARAMETERS=" + str(PARAMETERS) + " needs parameter operations this build lacks: "
+                                       + ", ".join(missing))
+                vs = backend.create_set(doc)
+                for index in range(PARAMETERS):
+                    name = "p%02d" % index
+                    vs.addProperty(backend.TYPES["length"], name, backend.GROUP)
+                    setattr(vs, name, index + 1)
+                    if index % 5 == 4:
+                        vs.setExpression(name, "p%02d * 2" % (index - 1))
+            doc.recompute()
+            panel.core.observer.state(doc)["refresh"] = True
+            panel.tick()
+            QtGui.QApplication.processEvents()
+            section = getattr(panel, "parameter_section", None)
+            if PARAMETERS > 0:
+                assert section is not None and len(section.order) == PARAMETERS, "The panel did not list every parameter"
+                REPORT["checks"].append(str(PARAMETERS) + " parameters created natively in one recompute and listed")
+        setup_parameters()
+
         def shell():
             retained = dict(panel.items)
             created = panel.feature_model.created
+            section = getattr(panel, "parameter_section", None)
+            section_created = section.created if hasattr(section, "created") else None
             refresh = timed(panel.refresh, REPEAT)[1]
             assert all(panel.items.get(key) is item for key, item in retained.items()), "Refresh replaced stable feature rows"
             assert panel.feature_model.created == created, "Unchanged refresh allocated feature rows"
             REPORT["checks"].append("Repeated real Panel refresh retains every stable history row")
+            if hasattr(section, "created"):
+                assert section.created == section_created, "Unchanged refresh allocated parameter rows"
+                REPORT["checks"].append("Repeated real Panel refresh retains every parameter row")
             idle = timed(panel.tick, max(200, REPEAT))[1]
 
             def dirty_tick():
                 panel.core.observer.state(benchmark.doc)["refresh"] = True
                 panel.tick()
             dirty = timed(dirty_tick, REPEAT)[1]
-            return {"panel_refresh_ms": refresh, "tick_idle_ms": idle, "tick_after_refresh_flag_ms": dirty}
+            read = [read_request_tick() for _ in range(REPEAT)]
+            REPORT["checks"].append("A queued bridge inspect is served by exactly the timed Panel.tick")
+            return {"panel_refresh_ms": refresh, "tick_idle_ms": idle, "tick_after_refresh_flag_ms": dirty,
+                    "tick_after_read_request_ms": read}
+
+        def read_request_tick():
+            """One Panel.tick that serves a read-only bridge inspect (and its refresh path).
+
+            The request goes through the real loopback transport from a worker thread; the
+            GUI thread waits (without processing events) until it is queued, so the timed
+            tick is the one that dispatches it.
+            """
+            result = {}
+            request = {"op": "inspect", "document_id": benchmark.state["document_id"], "measure": False}
+
+            def send():
+                connection = http.client.HTTPConnection("127.0.0.1", panel.bridge.server.server_port, timeout=60)
+                try:
+                    connection.request("POST", "/operation", body=json.dumps(request),
+                                       headers={"Authorization": "Bearer " + panel.bridge.token,
+                                                "Content-Type": "application/json"})
+                    result["response"] = json.loads(connection.getresponse().read())
+                except Exception:
+                    result["error"] = traceback.format_exc()
+                finally:
+                    connection.close()
+            assert panel.bridge.pending.empty(), "Bridge queue must be empty before the read-request tick"
+            worker = threading.Thread(target=send, daemon=True)
+            worker.start()
+            deadline = time.monotonic() + 10
+            while panel.bridge.pending.empty():
+                if time.monotonic() > deadline or not worker.is_alive():
+                    raise RuntimeError("Bridge inspect was not queued: " + str(result.get("error")))
+                time.sleep(0.001)
+            began = time.perf_counter()
+            panel.tick()
+            milliseconds = (time.perf_counter() - began) * 1000
+            worker.join(30)
+            assert panel.bridge.pending.empty(), "The timed tick did not serve the queued request"
+            assert (result.get("response") or {}).get("ok") is True, result
+            return milliseconds
         add_section("shell", shell)
+
+        def parameters():
+            """3b §14.4: section refresh with a forced key change, and one value commit (Enter until the refreshed
+            field shows the new value) through the real panel."""
+            from PySide6 import QtTest
+            section = panel.parameter_section
+            forced = timed(lambda: section.refresh(force=True), REPEAT)[1]
+            commits = []
+            for index in range(REPEAT):
+                text = str(100 + index)
+                field = section.rows["p00"].field
+                field.setFocus(QtCore.Qt.MouseFocusReason)
+                QtGui.QApplication.processEvents()
+                field.selectAll()
+                QtTest.QTest.keyClicks(field, text)
+                began = time.perf_counter()
+                QtTest.QTest.keyClick(field, QtCore.Qt.Key_Return)
+                deadline = time.monotonic() + 30
+                while section.rows["p00"].field.edited or section.rows["p00"].field.text() != text:
+                    if time.monotonic() > deadline:
+                        raise RuntimeError("The parameter commit did not complete: " + section.error.text())
+                    QtGui.QApplication.processEvents()
+                commits.append((time.perf_counter() - began) * 1000)
+            REPORT["checks"].append("Parameter value commits applied through the real panel")
+            return {"parameter_section_refresh_ms": forced, "parameter_commit_ms": commits}
+        if PARAMETERS > 0:
+            add_section("parameters", parameters)
 
         def checkpoints():
             snapshots = []
@@ -166,8 +271,9 @@ try:
     OUTPUT = resolve_output(os.environ.get("BENCH_GUI_OUT"), "bench-gui.json")
     HOLES = int(os.environ.get("BENCH_HOLES", "20"))
     REPEAT = int(os.environ.get("BENCH_REPEAT", "3"))
+    PARAMETERS = int(os.environ.get("BENCH_PARAMETERS", "0") or "0")
     REPORT = base_report("plate", HOLES, "Hidden FreeCAD GUI; Qt events synthesized inside this process; native fixture through Panel.operation")
-    REPORT.update(gui_process_pid=os.getpid(), repeat=REPEAT, measurement_level=False,
+    REPORT.update(gui_process_pid=os.getpid(), repeat=REPEAT, parameters=PARAMETERS, measurement_level=False,
                   measurement_policy=MEASUREMENT_POLICY)
     session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
     SCRATCH = prepare_environment(session / "benchmark-working")

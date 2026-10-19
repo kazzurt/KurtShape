@@ -17,11 +17,32 @@ def provider(doc):
     return cache if cache is not None and cache._documents.get(doc.Name) == doc else None
 
 
-def bounding_box(shape):
-    box = shape.BoundBox
+def _box(box):
     return {"min": [box.XMin, box.YMin, box.ZMin],
             "max": [box.XMax, box.YMax, box.ZMax],
             "size": [box.XLength, box.YLength, box.ZLength]}
+
+
+def bounding_box(shape):
+    """Fast, conservative box (it may extend past curved faces): for pruning only."""
+    return _box(shape.BoundBox)
+
+
+def tight_bounding_box(shape):
+    """Exact extents of the geometry for measurements and result checks.
+
+    Native BoundBox encloses BSpline control points and so overstates curved
+    parts (a fluted 13 mm drill reported 28.8 mm). OCCT's optimal box uses the
+    exact surfaces, never a display triangulation, so the GUI and a headless
+    run report the same numbers.
+    """
+    try:
+        box = shape.optimalBoundingBox(False, False)
+    except Exception:
+        box = None
+    if box is None or not box.isValid():
+        box = shape.BoundBox
+    return _box(box)
 
 
 def center_of_mass(shape):
@@ -80,7 +101,7 @@ def check_shape(shape, details=True):
     return {"valid": valid, "issues": issues, "ms": (time.perf_counter() - began) * 1000}
 
 
-COMPUTE = {"bbox": bounding_box, "volume": lambda shape: scalar(shape, "volume"),
+COMPUTE = {"bbox": tight_bounding_box, "volume": lambda shape: scalar(shape, "volume"),
            "area": lambda shape: scalar(shape, "area"), "center_of_mass": center_of_mass}
 
 

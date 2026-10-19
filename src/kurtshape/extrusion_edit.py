@@ -10,8 +10,11 @@ from __future__ import annotations
 import json
 import re
 
+from . import parameters
 
-EXPRESSION_PATTERN = r"[A-Za-z0-9_ .+*/()\[\]-]+"
+
+# The shared formula alphabet lives in parameters (contract 3.2 F3a §5.1); kept here for the schema registry.
+EXPRESSION_PATTERN = parameters.EXPRESSION_PATTERN
 END_TYPES = ("blind", "through_all", "up_to_face")
 _NATIVE_END = {"Length": "blind", "ThroughAll": "through_all", "UpToFace": "up_to_face"}
 
@@ -236,10 +239,16 @@ def apply(core, doc, req):
         raise _error("invalid_argument", "Depth applies only to a Blind end condition")
     if "expression" in req:
         expression = req["expression"]
-        if expression is not None and (not isinstance(expression, str) or len(expression) > 512
-                                       or not re.fullmatch(EXPRESSION_PATTERN, expression)):
-            raise _error("invalid_argument", "Use a dimensional formula with named properties and arithmetic")
-        target.setExpression(prop, expression)
+        if expression is None:
+            parameters.set_native_expression(target, prop, None)
+        else:
+            # The shared validator (units, parameter names, cycles); verify_applied checks the result.
+            previous = float(getattr(getattr(target, prop), "Value", getattr(target, prop)))
+            text, value = parameters.prepare_expression(doc, target, expression, "mm")
+            parameters.set_native_expression(target, prop, text)
+            core._reports.setdefault("changed_inputs", []).append(
+                {"feature": info["feature"], "native_feature": target.Name, "parameter": "Length", "path": prop,
+                 "expression": text, "previous": previous, "current": value})
     if "length" in req:
         current = _expression(target, prop)
         if current is not None:

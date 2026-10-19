@@ -1,0 +1,1 @@
+{"op":"render_view","document_id":"<document_id>","views":["iso"],"frame":"highlights","highlights":[{"input":{"feature":"Round","name":"edges_0"},"label":"A","note":"fillet input edge"},{"selector":{"kind":"created_by","feature":"Round","entity_type":"face"},"label":"B","note":"fillet faces"}]}

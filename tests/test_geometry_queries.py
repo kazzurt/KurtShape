@@ -288,8 +288,13 @@ class GeometryQueryTests(unittest.TestCase):
             self.call("undo")
             self.assertAlmostEqual(studio.current_part(self.doc, "Body").Shape.Volume, volume)
             self.call("sketch_rectangle", id="AddProfile", body="Body", x=8, width=5, height=10)
+        # Contract 3.1: accepting a studio Add/Remove/Intersect checks each result once.
+        with patch.object(geometry, "check_shape", wraps=geometry.check_shape) as result_check:
             self.call("pad", id="AutoAdd", profile="AddProfile", length=10, operation="add", merge_scope=["Body"])
-            self.assertAlmostEqual(studio.current_part(self.doc, "Body").Shape.Volume, 1300)
+        self.assertEqual(result_check.call_count, 1)
+        self.assertEqual(self.state["result_report"]["geometry_check"], "valid")
+        self.assertAlmostEqual(studio.current_part(self.doc, "Body").Shape.Volume, 1300)
+        with no_kernel_checks(self) as check:
             self.call("undo")
             self.assertAlmostEqual(studio.current_part(self.doc, "Body").Shape.Volume, volume)
             self.new_document()

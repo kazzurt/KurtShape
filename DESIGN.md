@@ -183,7 +183,7 @@ Preserve native Windows scaling. Elide long document and reference names with fu
 
 The persistent shell has a compact document row, one contextual command row, left history/parts, the central native MDI viewer, local-document tabs and a quiet footer. The document row carries the brand, icon-only document menu, elastic identity, workspace-mode choice, Save, Help and Settings. Undo/Redo begin the contextual row; a search field (175px) opens the command search.
 
-The history dock uses a bounded width (235–430px). A vertical, noncollapsing splitter gives feature history and parts independently scrollable space, with an initial 3:1 stretch. Part choice and bold active-part text identify the modeling target without changing the viewport selection or camera.
+The history dock uses a bounded width (235–430px). A vertical, noncollapsing splitter gives feature history, parameters and parts independently scrollable space, with a 3:1:1 stretch; the three heights are remembered in the profile (saved 400 ms after a drag, and at close). Part choice and bold active-part text identify the modeling target without changing the viewport selection or camera.
 
 Feature editors float modelessly beside the canvas by default, request a compact width (320px) within their width bounds (280–440px), and can move or dock left/right. Placement and height are bounded to the screen's available area and the canvas. Long form rows wrap; only the form content scrolls. The title/acceptance header and preview verdict remain outside that scroll region.
 
@@ -234,6 +234,13 @@ Keep explicit empty, active, filled and disabled states. The theme also supplies
 The active local FreeCAD user-parameter profile uses `FreeCAD Light`. Readability also depends on native drawing and rich-text colors beyond the Qt palette. Copy the selected sketch/annotation, editor, measurement and grid colors from the bundled `FreeCAD Light.cfg`, while preserving selection/navigation preferences and model ViewObjects. Native report text, logging, warning and error colors use the existing theme tokens; existing rich report fragments are recolored when their foreground matches a previous native report color. Refresh the native report highlighter after changing its parameters so retained warning/error ranges use the new colors and preserve their native severity metadata.
 
 A coalesced style/palette guard restores the owned application CSS and palette after delayed native preference observers replace them. Settings explicitly identifies the appearance as **Light (Onshape)** and provides **Restore light appearance** to reapply the native/Qt appearance and white backgrounds to active views of open documents. Mouse navigation keeps its separate Save workflow.
+
+### Parameters
+
+The Parameters section sits between history and parts: a "Parameters (n)" title with a "+" button, then compact rows of name, value and unit (mm, °, blank). A value commits on Enter or when focus moves inside the window (Tab, a click elsewhere in KurtShape), never on a window switch: an unapplied edit keeps an amber outline ("Not applied yet · Enter applies, Esc discards"). A rejected value keeps its text with a red outline and the error line names the value that stands ("kept 12 mm"); Esc restores it. `=` starts a formula; formula rows carry a small ƒx marker and show their value until focused. While the parameter set is not evaluated (a native edit, a broken formula) a warning banner names it and formula values are drawn as stale. The section is read-only, with the reason on the "+" tooltip, during sketch and feature editing, for reference files and in assemblies.
+
+- **Do** name parameters as identifiers (`shaft_diameter`); feature formulas use the reference shown in the tooltip (Copy reference).
+- **Do not** commit on window deactivation or add a per-keystroke rebuild.
 
 ### History, tabs and messages
 

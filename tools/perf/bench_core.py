@@ -28,6 +28,9 @@ sys.path.insert(0, str(ROOT / "src"))
 from report import evaluate_budgets
 
 DEFAULT_SECTIONS = ("edits", "inspect", "checkpoint", "preview", "open")
+# Opt-in sections, never run by default. Contract 3.2 units add the Benchmark
+# method of the same name; a listed section without one is refused up front.
+OPTIONAL_SECTIONS = ("rebuild", "bridge_reads", "render", "parameters", "batch")
 MEASUREMENT_POLICY = "Contract3: false counts only; true volume/area/bbox; full adds solid mass center. No automatic BRepCheck. Older true baselines include the former full/check work."
 
 
@@ -183,7 +186,10 @@ class Benchmark:
                 "intent_signature_ms": sum(events["intent"]), "inspection_ms": sum(events["inspection"]),
                 "selector_evaluation_ms": sum(events["selector_evaluation"]),
                 "auto_scope_sync_ms": sum(events["auto_scope_sync"]),
-                "managed_rebuild_ms": sum(events["managed_rebuild"])}
+                "managed_rebuild_ms": sum(events["managed_rebuild"]),
+                # Contract 3.2 F1: result validation and its key table, reported apart from overhead_ms.
+                "result_validation_ms": sum(events["result_validation"]),
+                "result_keys_ms": sum(events["result_keys"])}
 
     def build(self):
         if self.fixture == "studio":
@@ -357,6 +363,144 @@ class Benchmark:
                 evaluator.close()
         return {"preview_first_ms": first, "preview_update_ms": updates}
 
+    def bridge_reads(self):
+        """Contract 3.2 bridge reads: capabilities, one operation schema, a compact one-feature inspect and a full inspect."""
+        document_id = self.state["document_id"]
+        feature = self.upstream
+
+        def dispatch(request):
+            response = self.core.dispatch(request)
+            assert response["ok"], response
+            return response
+        samples = {}
+        for name, request in (("capabilities_ms", {"op": "capabilities"}),
+                              ("operation_schema_one_ms", {"op": "operation_schema", "operations": ["pad"]}),
+                              ("compact_inspect_overview_ms", {"op": "inspect", "document_id": document_id, "detail": "compact"}),
+                              ("compact_inspect_one_feature_ms", {"op": "inspect", "document_id": document_id, "features": [feature]}),
+                              ("full_inspect_ms", {"op": "inspect", "document_id": document_id, "measure": self.measure})):
+            dispatch(request)  # warm
+            samples[name] = timed(lambda: dispatch(request), self.repeat)[1]
+        return samples
+
+    def render(self):
+        """Contract 3.2 render_view (report-only, C34): owner-thread time on a miss, with 8 distinct highlights,
+        a cache hit, end to end through the render child, and the child's peak commit."""
+        document_id = self.state["document_id"]
+
+        def render(**arguments):
+            response = self.core.dispatch({"op": "render_view", "document_id": document_id, **arguments})
+            assert response["ok"], response
+            return response["result"]
+        owner, end_to_end, highlighted, peaks = [], [], [], []
+        for index in range(self.repeat):
+            # A distinct size per sample misses the image cache; the capture is reused after the first.
+            began = time.perf_counter()
+            result = render(size=[1024 - index, 768])
+            end_to_end.append((time.perf_counter() - began) * 1000)
+            owner.append(result["timing_ms"]["owner"])
+            peak = self.core.renders.diagnostics()["last_peak_commit_mb"]
+            if peak is not None:
+                peaks.append(peak)
+        points = [[x, y, z] for x in (5, 30, 55) for y in (5, 35) for z in (0, 6)][:8]
+        selectors = [{"selector": {"kind": "closest", "point": point,
+                                   "query": {"kind": "owned_by", "part": "Body", "entity_type": "face"}}, "label": chr(65 + i)}
+                     for i, point in enumerate(points)]
+        for index in range(self.repeat):
+            highlighted.append(render(size=[800 - index, 600], quality="draft", highlights=selectors)["timing_ms"]["owner"])
+        render(size=[640, 480])
+        hits = timed(lambda: render(size=[640, 480]), self.repeat)[1]
+        samples = {"render_owner_ms": owner, "render_owner_highlights8_ms": highlighted, "render_cache_hit_ms": hits,
+                   "render_end_to_end_ms": end_to_end}
+        if peaks:
+            samples["render_peak_commit_mb"] = peaks
+        return samples
+
+    def parameters(self):
+        """Contract 3.2 F3a (report-only, C34): inspect with 0 vs 20 parameters, list_parameters, a late-bound
+        parameter edit (pruned and full) against set_parameter on a twin dimension, and binds per rebuild."""
+        import os
+        from kurtshape import parameters as model_parameters
+        document_id = self.state["document_id"]
+
+        def dispatch(request):
+            response = self.core.dispatch(request)
+            assert response["ok"], response
+            return response["result"]
+        inspect = {"op": "inspect", "document_id": document_id, "measure": False}
+        dispatch(inspect)
+        samples = {"parameters_inspect_0_ms": timed(lambda: dispatch(inspect), self.repeat)[1]}
+        for index in range(20):
+            self.call("create_parameter", name="p%02d" % index, type="length", value=index + 1)
+        samples["parameters_inspect_20_ms"] = timed(lambda: dispatch(inspect), self.repeat)[1]
+        listing = {"op": "list_parameters", "document_id": document_id}
+        samples["parameters_list_20_ms"] = timed(lambda: dispatch(listing), self.repeat)[1]
+        diameters = [(row["id"], name) for row in self.state["features"] if row["type"] == "Sketcher::SketchObject"
+                     for name, info in row["parameters"].items()
+                     if info.get("constraint_type") == "Diameter" and info.get("editable")]
+        late, twin = diameters[-1], diameters[-2]
+        self.call("create_parameter", name="late", bind=[{"feature": late[0], "parameter": late[1]}])
+        base = next(row for row in self.state["parameters"] if row["name"] == "late")["value"]
+        for mode in ("pruned", "full"):
+            values = []
+            with_env = {model_parameters.FULL_RECOMPUTE_ENV: "1" if mode == "full" else "0"}
+            previous = {key: os.environ.get(key) for key in with_env}
+            os.environ.update(with_env)
+            try:
+                for index in range(self.repeat):
+                    result = self.call("edit_parameter", name="late", value=base + 0.1 * (index + 1) * (1 if mode == "full" else -1))
+                    values.append(result["total_ms"])
+            finally:
+                for key, value in previous.items():
+                    os.environ.pop(key, None) if value is None else os.environ.__setitem__(key, value)
+            samples["parameters_late_edit_%s_ms" % mode] = values
+        twin_value = next(row for row in self.state["features"] if row["id"] == twin[0])["parameters"][twin[1]]["value"]
+        samples["parameters_set_parameter_twin_ms"] = [
+            self.call("set_parameter", feature=twin[0], parameter=twin[1], value=twin_value + 0.1 * (index + 1))["total_ms"]
+            for index in range(self.repeat)]
+        for count, targets in ((1, diameters[:1]), (10, diameters[1:11])):  # disjoint, never the late/twin pair
+            current = [next(row for row in self.state["features"] if row["id"] == feature)["parameters"][name]["value"]
+                       for feature, name in targets]
+            if len(set(current)) != 1:
+                continue
+            with self.capture() as events:
+                self.call("create_parameter", name="bind%02d" % count, bind=[{"feature": feature, "parameter": name}
+                                                                            for feature, name in targets])
+            samples["parameters_bind_%d_managed_rebuilds" % count] = [float(len(events["managed_rebuild"]))]
+        return samples
+
+    def batch(self):
+        """Contract 3.2 F4 (report-only, C34): one 6-step recipe sent step by step, as one batch and as a batch
+        preview; each run is undone (6 undos or 1) outside the measurement."""
+        steps = [{"op": "create_sketch", "id": "BenchBatchSk", "as": "sk", "plane": "XY"},
+                 {"op": "add_rectangle", "sketch": {"$ref": "sk"}, "x": -40, "y": -40, "width": 8, "height": 6},
+                 {"op": "add_circle", "sketch": {"$ref": "sk"}, "x": -30, "y": -30, "diameter": 3},
+                 {"op": "add_line", "sketch": {"$ref": "sk"}, "x1": -40, "y1": -25, "x2": -30, "y2": -25, "construction": True},
+                 {"op": "sketch_circle", "id": "BenchBatchSpot", "x": -20, "y": -40, "diameter": 2},
+                 {"op": "sketch_rectangle", "id": "BenchBatchRect", "x": -20, "y": -30, "width": 3, "height": 3}]
+
+        def resolved(step):
+            return {key: ("BenchBatchSk" if isinstance(value, dict) and "$ref" in value else value)
+                    for key, value in step.items() if key != "as"}
+        sequential, batched, previews = [], [], []
+        for _ in range(self.repeat):
+            began = time.perf_counter()
+            for step in steps:
+                self.call(**resolved(step))
+            sequential.append((time.perf_counter() - began) * 1000)
+            for _ in steps:
+                self.call("undo")
+        for _ in range(self.repeat):
+            batched.append(self.call("batch", label="bench", steps=steps)["total_ms"])
+            self.call("undo")
+        preview = {"op": "preview", "document_id": self.state["document_id"], "expected_revision": self.state["revision"],
+                   "measure": self.measure, "proposal": {"op": "batch", "steps": steps}}
+        for _ in range(self.repeat):
+            began = time.perf_counter()
+            response = self.core.dispatch(preview)
+            previews.append((time.perf_counter() - began) * 1000)
+            assert response["ok"] and response["result"]["accepted"], response
+        return {"batch_sequential_6_ms": sequential, "batch_commit_6_ms": batched, "batch_preview_6_ms": previews}
+
     def rebuild(self):
         samples = [self.call("rebuild") for _ in range(self.repeat)]
         return {"total_rebuild_ms": [item["total_ms"] for item in samples],
@@ -444,8 +588,11 @@ def main():
     if args.holes < 1 or args.repeat < 1:
         parser.error("holes and repeat must be positive")
     sections = list(dict.fromkeys(args.sections.split(",")))
-    if any(name not in (*DEFAULT_SECTIONS, "rebuild") for name in sections):
+    if any(name not in (*DEFAULT_SECTIONS, *OPTIONAL_SECTIONS) for name in sections):
         parser.error("Unknown benchmark section")
+    unavailable = [name for name in sections if not callable(getattr(Benchmark, name, None))]
+    if unavailable:
+        parser.error("Benchmark section not available in this build: " + ", ".join(unavailable))
     if args.fixture == "studio" and "rebuild" not in sections:
         sections.insert(0, "rebuild")
     # Open is destructive to the in-memory fixture, so always measure it last.

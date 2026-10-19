@@ -1,7 +1,7 @@
 """Typed native consumers of geometry references and authored selectors."""
 import re
 
-from . import hole_tools, selectors
+from . import hole_tools, parameters, selectors
 
 OPS = {"fillet", "chamfer", "shell", "project_geometry", "edit_dress_up", "hole"}
 ARGS = {
@@ -199,7 +199,7 @@ def _require_plausible_volume(feature, base_shape, edges, size, kind, key):
 
 DRESS_UP = {"PartDesign::Fillet": ("fillet", "Radius", "radius"),
             "PartDesign::Chamfer": ("chamfer", "Size", "size")}
-EXPRESSION_PATTERN = r"[A-Za-z0-9_ .+*/()\[\]-]+"
+EXPRESSION_PATTERN = parameters.EXPRESSION_PATTERN  # contract 3.2 F3a: one formula alphabet
 
 
 def _dress_up(doc, name):
@@ -368,11 +368,17 @@ def edit_dress_up(core, doc, req):
                 selectors.bind(feature, "edges_" + str(index), selector_value(spec),
                                native_property="Base", mode="linksub_index", index=index)
     if "expression" in req:
-        expression = req["expression"] or None
-        if expression is not None and (not isinstance(expression, str) or len(expression) > 512
-                                       or not re.fullmatch(EXPRESSION_PATTERN, expression)):
-            raise OperationError("invalid_argument", "Use a dimensional formula with named properties and arithmetic")
-        feature.setExpression(prop, expression)
+        expression = req["expression"] or None  # "" clears, as before
+        if expression is None:
+            parameters.set_native_expression(feature, prop, None)
+        else:
+            previous = float(getattr(feature, prop).Value)
+            text, value = parameters.prepare_expression(doc, feature, expression, "mm")
+            parameters.set_native_expression(feature, prop, text)
+            core._reports.setdefault("changed_inputs", []).append(
+                {"feature": feature.Name, "native_feature": feature.Name,
+                 "parameter": {"Radius": "Radius", "Size": "Size", "Value": "Thickness"}.get(prop, prop), "path": prop,
+                 "expression": text, "previous": previous, "current": value})
     if key in req:
         current = next((value for path, value in feature.ExpressionEngine if path.lstrip(".") == prop), None)
         if current is not None:

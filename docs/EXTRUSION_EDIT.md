@@ -53,7 +53,7 @@ Contract 3.0 gains one additive typed mutation:
 - `expression` sets a depth formula; `null` clears it.
 - A numeric `length` on a formula-driven depth rejects with `expression_driven`. No formula is ever dropped implicitly.
 - Unsupported end transitions reject with `unsupported_transition`, and a direction change that is not available rejects with `unsupported_parameter`.
-- A Remove that would remove nothing rejects with `empty_cut`.
+- A Remove that would remove nothing rejects with `empty_cut`. Since contract 3.2 (OPERATION_CONTRACT §3.2.1) every edit of a studio Add/Remove/Intersect runs the 3.1 result post-conditions on the edited operation and on every downstream result operation it affects, at their own history positions; a failure rejects with the creation code (`empty_add`, `empty_cut`, `invalid_geometry`, `build_failed`), `feature` naming the failing operation, `validation:"history"` and `trigger`. The own-tip pre-check of this operation stays in place (it also covers automatic merge scopes, which the native gate would otherwise report as `build_failed`); the live GUI preview runs only the own-tip checks.
 - The operation is also accepted by `preview`.
 - Failures abort the transaction and keep the accepted revision.
 

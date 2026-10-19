@@ -1,10 +1,15 @@
 """Timeout semantics: queued cancellation versus started, unknown outcome."""
+import http.client
+import io
 import json
 from copy import deepcopy
 from pathlib import Path
+import socket
+import struct
 import sys
 import threading
 import time
+import traceback
 import unittest
 import urllib.error
 import urllib.request
@@ -65,6 +70,237 @@ class BridgeTimeoutTests(unittest.TestCase):
         opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
         with opener.open(req,timeout=3) as response:
             return json.loads(response.read())
+
+    # Fable review R1 (2026-10-19): a client that is gone before the answer --------------
+    def record_handler_errors(self, bridge):
+        """Replace the server's handle_error: anything escaping do_POST lands in the returned list."""
+        errors = []
+        bridge.server.handle_error = lambda request, address: errors.append(traceback.format_exc())
+        return errors
+
+    def attempt(self, bridge, payload=None):
+        """Send a request from a thread, play the owner thread once; the response or the client's exception."""
+        results = []
+
+        def send():
+            try:
+                results.append(self.request(bridge, payload))
+            except Exception as exc:
+                results.append(exc)
+        thread = threading.Thread(target=send)
+        thread.start()
+        deadline = time.monotonic() + 3
+        while bridge.pending.empty() and time.monotonic() < deadline:
+            time.sleep(0.002)
+        self.assertTrue(bridge.tick())
+        thread.join(3)
+        self.assertEqual(len(results), 1, "the request ended within the timeout")
+        return results[0]
+
+    def answered(self, bridge, payload=None):
+        result = self.attempt(bridge, payload)
+        self.assertIsInstance(result, dict, result)
+        return result
+
+    def test_a_client_gone_before_the_answer_never_reaches_handle_error_or_stderr(self):
+        bridge, controller = self.create(request_timeout=3)
+        errors = self.record_handler_errors(bridge)
+        body = json.dumps({"op": "dummy"}).encode()
+        raw = socket.create_connection(("127.0.0.1", bridge.server.server_port), timeout=3)
+        raw.sendall(b"POST /operation HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\n"
+                    b"Authorization: Bearer " + bridge.token.encode() + b"\r\nContent-Length: "
+                    + str(len(body)).encode() + b"\r\n\r\n" + body)
+        deadline = time.monotonic() + 3
+        while bridge.pending.empty() and time.monotonic() < deadline:
+            time.sleep(0.002)
+        # An abortive close, like a client whose own timeout fired: the answer goes to a dead socket.
+        raw.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+        raw.close()
+        with patch("sys.stderr", new_callable=io.StringIO) as stderr:
+            self.assertTrue(bridge.tick())
+            time.sleep(0.3)  # the handler thread writes to the dead socket
+            self.assertEqual(self.answered(bridge), {"ok": True, "result": {"call": 2}, "queue_wait_ms": unittest.mock.ANY})
+        self.assertEqual((errors, stderr.getvalue()), ([], ""))
+        self.assertEqual(controller.calls, 2)
+
+    def test_every_reply_write_tolerates_windows_socket_errors(self):
+        bridge, _ = self.create(request_timeout=3)
+        errors = self.record_handler_errors(bridge)
+        handler = bridge.server.RequestHandlerClass
+        failures = (ConnectionAbortedError(10053, "aborted by the host"), ConnectionResetError(10054, "reset"),
+                    TimeoutError("timed out"), OSError(10058, "socket shut down"))
+        for error in failures:
+            def fail(*args, error=error, **kwargs):
+                raise error
+            for write in ("send_json", "send_error"):
+                with self.subTest(error=type(error).__name__, write=write), patch.object(handler, write, fail):
+                    client_errors = (OSError, http.client.HTTPException, urllib.error.URLError)
+                    if write == "send_json":
+                        # The reply write of a dispatched request fails: the client sees the connection close.
+                        self.assertIsInstance(self.attempt(bridge), client_errors)
+                    else:
+                        with self.assertRaises(client_errors):
+                            self.forbidden(bridge)  # the send_error(403) path
+        self.assertEqual(errors, [], "nothing escaped do_POST")
+        self.assertTrue(self.answered(bridge)["ok"], "the bridge still answers")
+
+    def forbidden(self, bridge):
+        """A request without the token takes the send_error(403) path."""
+        req = urllib.request.Request(f"http://127.0.0.1:{bridge.server.server_port}/operation", data=b"{}",
+                                     headers={"Content-Type": "application/json"}, method="POST")
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with opener.open(req, timeout=3) as response:
+            return response.read()
+
+    def test_handle_error_writes_the_session_log_and_never_stderr(self):
+        bridge, _ = self.create()
+        with patch("sys.stderr", new_callable=io.StringIO) as stderr:
+            try:
+                raise RuntimeError("handler bug on purpose")
+            except RuntimeError:
+                bridge.server.handle_error(None, ("127.0.0.1", 1))
+        self.assertEqual(stderr.getvalue(), "")
+        log = (bridge.path.parent / "kurtshape.log").read_text(encoding="utf-8")
+        self.assertIn("Bridge handler error for ('127.0.0.1', 1)", log)
+        self.assertIn("RuntimeError: handler bug on purpose", log)
+
+    # Contract 3.2 U2d: transport (F5 §6.1, §9.5) ---------------------------------------
+    def test_queue_full_returns_json_503_with_request_identity(self):
+        bridge, controller = self.create(retry=True, lookup=True)
+        sentinels = [object() for _ in range(32)]
+        for sentinel in sentinels:
+            bridge.pending.put_nowait(sentinel)
+        self.assertTrue(bridge.pending.full())
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        payload = {"op": "mutate", "request_id": "no-room"}
+        request = urllib.request.Request(f"http://127.0.0.1:{bridge.server.server_port}/operation",
+                                         data=json.dumps(payload).encode(),
+                                         headers={"Content-Type": "application/json", "Authorization": "Bearer " + bridge.token},
+                                         method="POST")
+        with self.assertRaises(urllib.error.HTTPError) as rejected:
+            opener.open(request, timeout=3)
+        error = rejected.exception
+        try:
+            self.assertEqual(error.code, 503)
+            self.assertEqual(error.headers.get("Retry-After"), "1")
+            self.assertEqual(error.headers.get("Content-Type"), "application/json")
+            body = json.loads(error.read())
+        finally:
+            error.close()
+        self.assertEqual(body["error"]["code"], "queue_full")
+        self.assertEqual(body["error"]["request_id"], "no-room")
+        self.assertEqual(body["error"]["session_id"], bridge.ledger.session_id)
+        self.assertEqual(bridge.ledger.status("no-room")["status"], "cancelled", "a tracked request is recorded as cancelled")
+        self.assertEqual([bridge.pending.get_nowait() for _ in range(32)], sentinels, "nothing was queued")
+        self.assertEqual(controller.calls, 0)
+        # an untracked read gets the same 503 and is not ledgered
+        for sentinel in sentinels:
+            bridge.pending.put_nowait(sentinel)
+        request = urllib.request.Request(f"http://127.0.0.1:{bridge.server.server_port}/operation",
+                                         data=json.dumps({"op": "inspect", "request_id": "read-no-room"}).encode(),
+                                         headers={"Content-Type": "application/json", "Authorization": "Bearer " + bridge.token},
+                                         method="POST")
+        with self.assertRaises(urllib.error.HTTPError) as rejected:
+            opener.open(request, timeout=3)
+        rejected.exception.close()
+        self.assertEqual(rejected.exception.code, 503)
+        self.assertEqual(bridge.ledger.status("read-no-room")["status"], "not_recorded")
+        for _ in range(32):
+            bridge.pending.get_nowait()
+
+    def test_malformed_and_non_finite_bodies_return_json_400_before_registration(self):
+        bridge, controller = self.create(retry=True, lookup=True)
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        cases = [(b"[]", "Request body must be one JSON object"), (b"null", "Request body must be one JSON object"),
+                 (b"invalid json", "Request body must be one JSON object"), (b"\xff\xfe", "Request body must be one JSON object"),
+                 (b'{"op":"mutate","request_id":"nan-1","value":NaN}', "Request contains a non-finite number"),
+                 (b'{"op":"inspect","value":Infinity}', "Request contains a non-finite number"),
+                 (b'{"op":"mutate","request_id":"neg-inf","value":-Infinity}', "Request contains a non-finite number")]
+        with patch.object(RequestStatusLookup, "lookup", side_effect=AssertionError("lookup reached")) as lookup:
+            for raw, message in cases:
+                with self.subTest(raw=raw):
+                    request = urllib.request.Request(f"http://127.0.0.1:{bridge.server.server_port}/operation", data=raw,
+                                                     headers={"Content-Type": "application/json",
+                                                              "Authorization": "Bearer " + bridge.token}, method="POST")
+                    with self.assertRaises(urllib.error.HTTPError) as rejected:
+                        opener.open(request, timeout=3)
+                    error = rejected.exception
+                    try:
+                        self.assertEqual(error.code, 400)
+                        self.assertEqual(error.headers.get("Content-Type"), "application/json")
+                        body = json.loads(error.read())
+                    finally:
+                        error.close()
+                    self.assertEqual(body, {"ok": False, "error": {"code": "invalid_request", "message": message}})
+            lookup.assert_not_called()
+        self.assertEqual(bridge.ledger.status("nan-1")["status"], "not_recorded", "nothing is registered")
+        self.assertEqual(bridge.ledger.status("neg-inf")["status"], "not_recorded")
+        self.assertTrue(bridge.pending.empty())
+        self.assertEqual(controller.calls, 0)
+        # a bad Content-Length header is the same JSON 400
+        request = urllib.request.Request(f"http://127.0.0.1:{bridge.server.server_port}/operation", data=b"{}",
+                                         headers={"Content-Type": "application/json", "Authorization": "Bearer " + bridge.token,
+                                                  "Content-Length": "two"}, method="POST")
+        with self.assertRaises(urllib.error.HTTPError) as rejected:
+            opener.open(request, timeout=3)
+        rejected.exception.close()
+        self.assertEqual(rejected.exception.code, 400)
+
+    def test_tick_records_dispatched_operation_only(self):
+        bridge, controller = self.create(retry=True, lookup=True, request_timeout=0.08)
+        self.assertIsNone(bridge.last_op)
+        self.assertFalse(bridge.tick())
+        self.assertIsNone(bridge.last_op, "an idle tick records nothing")
+        worker, done, results, errors = self.start_request(bridge, {"op": "inspect", "request_id": "last-op-1"})
+        deadline = time.monotonic() + 3
+        while bridge.pending.empty() and time.monotonic() < deadline:
+            time.sleep(.002)
+        self.assertTrue(bridge.tick())
+        self.assertEqual(bridge.last_op, "inspect")
+        self.assertTrue(done.wait(3))
+        self.assertEqual(errors, [])
+        self.assertTrue(results[0]["ok"], results)
+        # a request cancelled by its queued timeout is dequeued but never dispatched: last_op is None
+        cancelled = self.request(bridge, {"op": "mutate", "request_id": "cancelled-last-op"})
+        self.assertEqual(cancelled["error"]["code"], "timeout")
+        self.assertEqual(bridge.pending.qsize(), 1)
+        self.assertTrue(bridge.tick())
+        self.assertIsNone(bridge.last_op)
+        self.assertFalse(bridge.tick())
+        self.assertIsNone(bridge.last_op)
+
+    def test_session_file_lists_read_operations_and_build(self):
+        from kurtshape import build_identity
+
+        class ClassifiedController(DummyController):
+            READ_OPS = {"inspect", "capabilities"}
+            NON_MUTATING_OPS = frozenset({"inspect", "capabilities", "render_view"})
+        bridge, _ = self.create(controller=ClassifiedController())
+        session = json.loads(bridge.path.read_text(encoding="utf-8"))
+        self.assertEqual(session["read_operations"], ["capabilities", "inspect"])
+        self.assertEqual(session["non_mutating_operations"], ["capabilities", "inspect", "render_view"])
+        self.assertEqual(session["build"], build_identity.summary())
+        self.assertEqual(session["request_size_limit"], contract.REQUEST_SIZE_LIMIT)
+        self.assertEqual(session["contract_revision"], contract.CONTRACT_REVISION)
+        plain, _ = self.create()
+        session = json.loads(plain.path.read_text(encoding="utf-8"))
+        self.assertEqual(session["read_operations"], [])
+        self.assertEqual(session["non_mutating_operations"], [])
+
+    def test_started_timeout_marks_untracked_reads(self):
+        bridge, controller = self.create(delay=0.3, request_timeout=0.08)
+        # The dummy controller publishes no READ_OPS, so the bridge treats "dummy" as its one read.
+        worker, done, results, errors = self.start_request(bridge, {"op": "dummy", "request_id": "slow-read"})
+        deadline = time.monotonic() + 3
+        while bridge.pending.empty() and time.monotonic() < deadline:
+            time.sleep(.002)
+        self.assertTrue(bridge.tick())
+        self.assertTrue(done.wait(3))
+        self.assertEqual(errors, [])
+        error = results[0]["error"]
+        self.assertEqual(error["code"], "outcome_unknown")
+        self.assertIs(error["tracked"], False, "a read is not in the ledger; resending it is safe")
+        self.assertEqual(bridge.ledger.status("slow-read")["status"], "not_recorded")
 
     def test_queued_timeout_cancels_before_any_mutation(self):
         bridge,controller=self.create()
@@ -459,6 +695,200 @@ class BridgeTimeoutTests(unittest.TestCase):
         self.assertTrue(bridge.tick())
         self.assertEqual(controller.calls,0)
         self.assertTrue(bridge.pending.empty())
+
+
+class FakeHandle:
+    """A parked view-op job: poll() is None until finish(); cancel() completes it like render_jobs.Deferred."""
+
+    def __init__(self):
+        self.response = None
+        self.callbacks = []
+        self.polls = 0
+        self.fail = None
+
+    def add_done_callback(self, callback):
+        self.callbacks.append(callback)
+
+    def finish(self, response):
+        if self.response is None:
+            self.response = response
+            for callback in self.callbacks:
+                callback(deepcopy(response))
+
+    def poll(self):
+        self.polls += 1
+        if self.fail is not None:
+            raise self.fail
+        return None if self.response is None else deepcopy(self.response)
+
+    def cancel(self, response):
+        self.finish(response)
+
+
+class ViewController(RetryController):
+    """Ledger semantics of Controller._run: view ops begin and park; everything else dispatches."""
+    READ_OPS = {"request_status", "inspect"}
+    VIEW_OPS = frozenset({"render_view"})
+
+    def __init__(self):
+        super().__init__()
+        self.handles = []
+        self.begun = []
+        self.dispatched = []
+
+    def dispatch(self, request):
+        self.dispatched.append(request["op"])
+        if request["op"] == "inspect":  # reads are never ledgered (Controller._run)
+            return {"ok": True, "result": {"inspect": True}}
+        return super().dispatch(request)
+
+    def begin(self, request):
+        self.begun.append(request["op"])
+        replay = self.ledger.register(request, "started")
+        if replay is not None:
+            return replay
+        handle = FakeHandle()
+        handle.add_done_callback(lambda response, rid=request["request_id"]: self.ledger.complete(rid, response))
+        self.handles.append(handle)
+        return handle
+
+
+class BridgeDeferredTests(unittest.TestCase):
+    """Contract 3.2 F2: view ops begin and park on the owner thread; nothing else changes (U4)."""
+
+    def create(self, request_timeout=2, controller=None):
+        folder = support.scratch(self, prefix="bridge-deferred-session-")
+        controller = controller or ViewController()
+        controller.default_measure = True
+        controller.request_status_lookup = RequestStatusLookup(controller.ledger, controller.__dict__)
+        bridge = Bridge(controller, folder, request_timeout=request_timeout)
+        self.addCleanup(bridge.close)
+        return bridge, controller
+
+    def post(self, bridge, payload):
+        req = urllib.request.Request(f"http://127.0.0.1:{bridge.server.server_port}/operation", data=json.dumps(payload).encode(),
+                                     headers={"Content-Type": "application/json", "Authorization": "Bearer " + bridge.token},
+                                     method="POST")
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with opener.open(req, timeout=5) as response:
+            return json.loads(response.read())
+
+    def start(self, bridge, payload):
+        results = []
+        thread = threading.Thread(target=lambda: results.append(self.post(bridge, payload)))
+        thread.start()
+        deadline = time.monotonic() + 3
+        while bridge.pending.empty() and time.monotonic() < deadline:
+            time.sleep(0.002)
+        return thread, results
+
+    def test_only_view_ops_route_to_begin(self):
+        bridge, controller = self.create()
+        thread, results = self.start(bridge, {"op": "mutate", "request_id": "m-1"})
+        self.assertTrue(bridge.tick())
+        thread.join(3)
+        thread, _ = self.start(bridge, {"op": "render_view", "request_id": "v-1"})
+        self.assertTrue(bridge.tick())
+        self.assertEqual((controller.dispatched, controller.begun), (["mutate"], ["render_view"]))
+        self.assertEqual(bridge.last_op, "render_view")
+        controller.handles[0].finish({"ok": True, "result": {"image": 1}})
+        bridge.poll_deferred()
+        thread.join(3)
+        # A patched dispatch (tests, GUI recipes) still receives every non-view op synchronously.
+        seen = []
+        controller.dispatch = lambda request: seen.append(request["op"]) or {"ok": True, "result": {}}
+        thread, results = self.start(bridge, {"op": "inspect"})
+        bridge.tick()
+        thread.join(3)
+        self.assertEqual((seen, results[0]["ok"]), (["inspect"], True))
+
+    def test_deferred_reply_after_poll_without_blocking_tick(self):
+        bridge, controller = self.create()
+        view, view_results = self.start(bridge, {"op": "render_view", "request_id": "v-2"})
+        self.assertTrue(bridge.tick())
+        self.assertEqual(len(bridge.deferred), 1)
+        other, other_results = self.start(bridge, {"op": "inspect", "request_id": "i-2"})
+        self.assertTrue(bridge.tick(), "other requests are served while the view job runs")
+        other.join(3)
+        self.assertTrue(other_results[0]["ok"])
+        self.assertTrue(bridge.poll_deferred(), "still waiting")
+        self.assertEqual(view_results, [])
+        time.sleep(0.05)
+        controller.handles[0].finish({"ok": True, "result": {"image": 2}})
+        self.assertFalse(bridge.poll_deferred())
+        view.join(3)
+        self.assertEqual(view_results[0]["result"], {"image": 2})
+        self.assertGreaterEqual(view_results[0]["queue_wait_ms"], 0)
+        self.assertEqual(bridge.deferred, [])
+        self.assertEqual(controller.ledger.status("v-2")["status"], "completed")
+
+    def test_deferred_outcome_unknown_then_request_status_returns_stored_response(self):
+        bridge, controller = self.create(request_timeout=0.3)
+        thread, results = self.start(bridge, {"op": "render_view", "request_id": "v-3"})
+        bridge.tick()
+        thread.join(3)
+        self.assertEqual(results[0]["error"]["code"], "outcome_unknown")
+        self.assertNotIn("tracked", results[0]["error"], "a view op is ledger-tracked")
+        self.assertEqual(self.post(bridge, {"op": "request_status", "request_id": "v-3"})["result"]["status"], "started")
+        controller.handles[0].finish({"ok": True, "result": {"image": 3}})
+        self.assertFalse(bridge.poll_deferred(), "the waiter is gone; the reply is dropped, not an error")
+        status = self.post(bridge, {"op": "request_status", "request_id": "v-3"})["result"]
+        self.assertEqual((status["status"], status["response"]), ("completed", {"ok": True, "result": {"image": 3}}))
+
+    def test_poll_exception_completes_waiter_and_ledger(self):
+        bridge, controller = self.create()
+        thread, results = self.start(bridge, {"op": "render_view", "request_id": "v-4"})
+        bridge.tick()
+        controller.handles[0].fail = RuntimeError("worker vanished")
+        self.assertFalse(bridge.poll_deferred())
+        thread.join(3)
+        self.assertEqual(results[0]["error"]["code"], "render_failed")
+        self.assertIn("worker vanished", results[0]["error"]["message"])
+        self.assertEqual(controller.ledger.status("v-4")["status"], "failed")
+
+    def test_close_cancels_deferred(self):
+        bridge, controller = self.create()
+        thread, results = self.start(bridge, {"op": "render_view", "request_id": "v-5"})
+        bridge.tick()
+        bridge.close()
+        thread.join(3)
+        self.assertEqual(results[0]["error"]["code"], "render_cancelled")
+        self.assertEqual(controller.ledger.status("v-5")["status"], "failed")
+        self.assertEqual(bridge.deferred, [])
+
+    def test_close_replies_with_an_already_completed_response(self):
+        bridge, controller = self.create()
+        thread, results = self.start(bridge, {"op": "render_view", "request_id": "v-7"})
+        bridge.tick()
+        closed = {"ok": False, "error": {"code": "document_closed", "message": "closed"}}
+        controller.handles[0].finish(closed)  # completed (ledger written) but not yet polled
+        bridge.close()
+        thread.join(3)
+        self.assertEqual(results[0]["error"]["code"], "document_closed", "the reply matches the ledger")
+        self.assertEqual(controller.ledger.status("v-7")["response"], closed)
+
+    def test_a_non_dict_from_dispatch_is_not_parked(self):
+        bridge, controller = self.create()
+        controller.dispatch = lambda request: object()  # a broken patched dispatch for an ordinary op
+        thread, results = self.start(bridge, {"op": "inspect"})
+        with self.assertRaises(TypeError):
+            bridge.tick()
+        self.assertEqual(bridge.deferred, [], "only view ops begun through begin are parked")
+        thread.join(5)  # the HTTP waiter ends with outcome_unknown
+
+    def test_ledger_unchanged_for_other_ops(self):
+        bridge, controller = self.create()
+        thread, results = self.start(bridge, {"op": "mutate", "request_id": "m-6"})
+        bridge.tick()
+        thread.join(3)
+        self.assertEqual(controller.ledger.status("m-6")["status"], "completed")
+        thread, results = self.start(bridge, {"op": "inspect", "request_id": "i-6"})
+        bridge.tick()
+        thread.join(3)
+        self.assertTrue(results[0]["ok"])
+        self.assertEqual(controller.ledger.status("i-6")["status"], "not_recorded")
+        self.assertEqual(controller.begun, [])
+        self.assertFalse(bridge.poll_deferred())
 
 
 if __name__=="__main__":

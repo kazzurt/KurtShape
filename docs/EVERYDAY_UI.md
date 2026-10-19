@@ -86,4 +86,6 @@ Fresh cloud runs: Linux, FreeCAD 1.1.4 / OCCT 7.8.1. **Windows not run.**
 .\tools\run_gui_recipe.ps1 -Recipe sketch-regions
 .\tools\run_gui_recipe.ps1 -Recipe extrusion-edit
 .\tools\run_gui_recipe.ps1 -Recipe history-lifecycle
+.\tools\run_gui_recipe.ps1 -Recipe parameter-panel
+.\tools\run_gui_recipe.ps1 -Recipe parameter-panel-reopen -SeedUserConfig <user-data\user.cfg of the parameter-panel run>
 ```

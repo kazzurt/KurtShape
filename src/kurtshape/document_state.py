@@ -12,6 +12,8 @@ _METADATA = frozenset({"Label", "Visibility", "QueryHealth", "QueryResolutionLog
                        "KurtShapePartName", "KurtShapePartColor", "KurtShapePartVisible"})
 _DERIVED = _SHAPES | {"Proxy", "PlacementList", "Visibility", "QueryHealth", "QueryResolutionLog"}
 _HISTORY_METADATA = {"KurtShapeFeatureOrder", "KurtShapeRollbackIndex", "KurtShapeStudioEnabled"}
+# Native changes that never affect result-check keys (contract 3.2 F1 r2_token).
+_COSMETIC = _METADATA | {"Label2", "_GroupTouched"}
 
 
 class DocumentState:
@@ -30,7 +32,8 @@ class DocumentState:
                      "instance_id": uuid.uuid4().hex,
                      "intent_versions": {}, "summary_versions": {},
                      "intent_epoch": 0, "summary_epoch": 0,
-                     "change_serial": 0, "full_change_serial": 0,
+                     "change_serial": 0, "full_change_serial": 0, "commit_count": 0,
+                     "result_serial": 0, "history_serial": 0,
                      "change_log": deque(maxlen=2048),
                      "index": document_index.DocumentIndex(doc)}
             self.states[doc.Name] = state
@@ -57,6 +60,11 @@ class DocumentState:
             state["summary_versions"][name] = serial
             if intent:
                 state["intent_versions"][name] = serial
+                if prop not in _COSMETIC:
+                    # Contract 3.2 result checks: authored, non-cosmetic changes stale the key table.
+                    state["result_serial"] = serial
+        if name == "KurtShapeProject" and prop in _HISTORY_METADATA:
+            state["history_serial"] = serial
         if full:
             state["intent_epoch"] += 1
             state["summary_epoch"] += 1
@@ -93,6 +101,16 @@ class DocumentState:
             state["generation"] += 1
             from . import studio
             studio.native_recomputed(doc)
+
+    def note_intent_change(self, obj):
+        """Record an authored change FreeCAD reports through no observer slot.
+
+        Native property renames and similar silent edits leave the incremental
+        intent signature stale; callers that know better mark the object here.
+        """
+        state = self._record_change(obj.Document, obj.Name, "$properties", intent=True)
+        state["index"].invalidate()
+        self.invalidate(obj.Document, geometry=False, changed=obj.Name)
 
     def slotChangedObject(self, obj, prop):
         if obj.Name == "KurtShapeProject":
@@ -167,6 +185,7 @@ class DocumentState:
 
     def slotCommitTransaction(self, doc):
         state = self._record_change(doc, None, "$commit")
+        state["commit_count"] += 1
         state["index"].invalidate()
         self.invalidate(doc, intent=False, geometry=False, changed="")
         if not self.controller.busy:
@@ -195,9 +214,16 @@ class DocumentState:
             snapshots = getattr(self.controller, "snapshots", None)
             if snapshots is not None:
                 snapshots.retire_document(state["instance_id"])
+            # Contract 3.2 F2: cancel this document's render job (document_closed), drop its captures.
+            renders = getattr(self.controller, "_renders", None)
+            if renders is not None:
+                renders.retire_document(state["instance_id"])
             document_index.unbind(state["index"])
         self.controller.geometry.drop_document(doc.Name)
         self.controller.unmanaged.pop(doc.Name, None)
+        checks = getattr(self.controller, "result_checks", None)
+        if checks is not None:
+            checks.drop_document(doc.Name)
 
     def close(self):
         App.removeDocumentObserver(self)

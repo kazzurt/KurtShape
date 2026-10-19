@@ -1,0 +1,412 @@
+"""GUI idle cost and real-Bridge behaviour on plate60 (recipe interaction-idle; promoted from the 3.2 probe).
+
+Run by tools/run_gui_recipe.ps1 -Recipe interaction-idle [-PreviewSource <plate FCStd>] [-Holes N]:
+a hidden private FreeCAD process (Windows QPA, own -u/-s configuration) starts the
+production ui.start() Panel with the real Bridge. The prepared FCStd is copied into
+the session and opened through the panel; without -PreviewSource a plate is built
+in this process first (bench_core, like responsiveness-preview; 60 holes unless
+-Holes is given). panel.timer and panel.recovery_timer are rewired through timing
+wrappers with the same callables and intervals; core.dispatch is counted by op and
+core.sync by call; a 10 ms heartbeat records GUI-thread stalls. Phases:
+  1. 3 s settle, then 5 s idle;
+  2. a panel set_parameter on the last hole's Diameter, then a 3 s tail;
+  3. a bridge inspect (POST from a worker thread, the panel's own tick serves it);
+  4. a bridge set_parameter with request_id, then an identical replay;
+  5. a managed rebuild with the server request_timeout lowered to 2 s while
+     request_status polls arrive in the exact shape and with an extra field.
+``passed`` covers functional facts only. Timings and counts are recorded per phase;
+``guards`` evaluates the contract 3.2 absolute GUI guards (verification §4.4(d))
+for the record, and does not decide ``passed``. Never Kurt's app or profile.
+"""
+import hashlib
+import http.client
+import json
+import math
+import os
+from pathlib import Path
+import shutil
+import statistics
+import sys
+import threading
+import time
+import traceback
+import uuid
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime"), session
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path[:0] = [str(root / "src"), str(root / "tools"), str(root / "tools" / "perf")]
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("interaction-idle")
+GUARDS = {  # verification spec §4.4(d) / integration plan §4 step 4(d); 3.1 observed values in the comments
+    "idle_tick_total_ms": 200.0,        # 72-91
+    "idle_tick_max_ms": 50.0,           # 5.3-11
+    "idle_heartbeat_gap_max_ms": 100.0,  # 24.9-58.5
+    "idle_dispatches": 0,
+    "idle_sync_calls": 10,
+    "checkpoint_median_ms": 30.0,       # 6.8-11.6 (idle phase; None when no checkpoint ran)
+    "bridge_inspect_round_trip_ms": 500.0,  # 126-257
+    "bridge_inspect_dispatches": 1,     # contract 3.2 (C22/C34); 3.1 gives 2 (request + trailing GUI inspect)
+}
+
+
+def source_hashes():
+    return {str(path.relative_to(root)).replace("\\", "/"): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted((root / "src").rglob("*.py"))}
+
+
+report = {"passed": False, "checks": [], "pid": os.getpid(), "qpa": app.platformName(), "phases": {},
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}, "source_sha256": source_hashes(),
+          "method": "Hidden private FreeCAD GUI; production ui.start() Panel with the real Bridge; timers rewired through timing wrappers",
+          "limits": ["Hidden-GUI timings follow the window and the OS timer resolution; they are absolute guards, not paired comparisons.",
+                     "Heartbeat percentiles follow the 15.6 ms Windows timer and are not used as guards.",
+                     "No physical display, DPI or human-input latency is measured."]}
+panel = None
+cleaned = False
+stats = {}
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition, detail=None):
+    if not condition:
+        raise AssertionError(label + ("" if detail is None else ": " + str(detail)))
+    report["checks"].append(label)
+    save()
+
+
+def summary(values):
+    if not values:
+        return {"n": 0}
+    ordered = sorted(values)
+    return {"n": len(values), "median": statistics.median(values), "p95": ordered[max(0, int(len(values) * .95) - 1)],
+            "max": max(values), "total": sum(values)}
+
+
+def reset():
+    stats.clear()
+    stats.update(tick=[], checkpoint=[], beats=[], dispatch={}, sync=0, inspect_ms=[])
+
+
+def phase(name, extra=None):
+    beats = stats["beats"]
+    gaps = [(b - a) * 1000 for a, b in zip(beats, beats[1:])]
+    report["phases"][name] = {"tick_ms": summary(stats["tick"]), "checkpoint_ms": summary(stats["checkpoint"]),
+                              "heartbeat_gap_ms": summary(gaps), "dispatch_by_op": dict(stats["dispatch"]),
+                              "sync_calls": stats["sync"], "inspect_dispatch_ms": summary(stats["inspect_ms"]),
+                              **(extra or {})}
+    save()
+    return report["phases"][name]
+
+
+def post(payload, timeout=60):
+    connection = http.client.HTTPConnection("127.0.0.1", panel.bridge.server.server_port, timeout=timeout)
+    try:
+        connection.request("POST", "/operation", body=json.dumps(payload),
+                           headers={"Authorization": "Bearer " + panel.bridge.token, "Content-Type": "application/json"})
+        response = connection.getresponse()
+        return response.status, json.loads(response.read())
+    finally:
+        connection.close()
+
+
+def loopback(request, timeout=60):
+    result = {}
+
+    def send():
+        began = time.perf_counter()
+        try:
+            result["status"], result["response"] = post(request, timeout)
+            result["ms"] = (time.perf_counter() - began) * 1000
+        except Exception:
+            result["error"] = traceback.format_exc()
+    worker = threading.Thread(target=send, daemon=True)
+    worker.start()
+    return worker, result
+
+
+def wait(worker, seconds=60):
+    deadline = time.monotonic() + seconds
+    while worker.is_alive() and time.monotonic() < deadline:
+        QtTest.QTest.qWait(25)
+
+
+def prepare_fixture():
+    """Copy the prepared plate into the session, or build one here (never open the source in place)."""
+    copy = session / "fixtures" / "plate.FCStd"
+    copy.parent.mkdir(parents=True, exist_ok=True)
+    raw = os.environ.get("PREVIEW_BENCH_SOURCE")
+    if raw:
+        source = Path(raw).resolve()
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        shutil.copy2(source, copy)
+        report["fixture_source"] = {"path": str(source), "sha256": digest, "built": False}
+        return copy, source, digest
+    from bench_core import Benchmark, prepare_environment
+    holes = int(os.environ.get("BENCH_HOLES", "60"))
+    # prepare_environment grants the scratch folder as a project root, so the build may save there.
+    scratch = prepare_environment(session / "interaction-idle-fixtures")
+    built = scratch / "plate.FCStd"
+    builder = Benchmark(scratch, "plate", holes, 1, measure=False)
+    began = time.perf_counter()
+    try:
+        builder.build()
+        builder.call("save", path=str(built))
+    finally:
+        builder.close()
+    report["fixture_source"] = {"path": str(built), "built": True, "holes": holes, "build_ms": (time.perf_counter() - began) * 1000}
+    return built, None, None
+
+
+def evaluate_guards():
+    idle, inspect = report["phases"].get("idle_5s", {}), report["phases"].get("bridge_inspect", {})
+    observed = {"idle_tick_total_ms": idle.get("tick_ms", {}).get("total"),
+                "idle_tick_max_ms": idle.get("tick_ms", {}).get("max"),
+                "idle_heartbeat_gap_max_ms": idle.get("heartbeat_gap_ms", {}).get("max"),
+                "idle_dispatches": sum(idle.get("dispatch_by_op", {}).values()) if idle else None,
+                "idle_sync_calls": idle.get("sync_calls"),
+                "checkpoint_median_ms": idle.get("checkpoint_ms", {}).get("median"),
+                "bridge_inspect_round_trip_ms": inspect.get("round_trip_ms"),
+                "bridge_inspect_dispatches": inspect.get("dispatch_by_op", {}).get("inspect")}
+    guards = {name: {"limit": limit, "value": observed[name],
+                     "within": None if observed[name] is None else
+                     (observed[name] == limit if name == "bridge_inspect_dispatches" else observed[name] <= limit)}
+              for name, limit in GUARDS.items()}
+    report["guards"] = guards
+    report["guards_within"] = all(item["within"] is not False for item in guards.values())
+
+
+def run():
+    global panel
+    try:
+        fixture, source, digest = prepare_fixture()
+        panel = ui.start()
+        core = panel.core
+        check("Production panel started with the real loopback Bridge",
+              type(panel.bridge).__name__ == "Bridge" and panel.bridge.server.server_port > 0)
+        began = time.perf_counter()
+        state = panel.operation("open", path=str(fixture))
+        report["open_ms"] = (time.perf_counter() - began) * 1000
+        check("Plate fixture opened through the panel", state is not None, panel.message.text())
+        doc = App.ActiveDocument
+        pockets = sum(o.TypeId == "PartDesign::Pocket" for o in doc.Objects)
+        report["fixture"] = {"objects": len(doc.Objects), "pockets": pockets}
+        check("Fixture is a native hole plate", pockets >= 2 and doc.getObject(f"H{pockets - 1}") is not None)
+        tip = f"H{pockets - 1}"
+        # bench_core plate geometry: 600 mm square, ceil(sqrt(n)) grid; plate60 uses the 3.1 probe's 20 and 21 mm.
+        pitch = 600 / (math.ceil(math.sqrt(pockets)) + 1)
+        values = (round(min(20.0, pitch * .30), 3), round(min(21.0, pitch * .315), 3))
+        # Rewire the production timers through timing wrappers (same callables, same intervals).
+        tick, checkpoint = panel.tick, panel.checkpoint_projects
+        intervals = (panel.timer.interval(), panel.recovery_timer.interval())
+        panel.timer.timeout.disconnect()
+        panel.recovery_timer.timeout.disconnect()
+
+        def timed_tick():
+            b = time.perf_counter()
+            try:
+                tick()
+            finally:
+                stats["tick"].append((time.perf_counter() - b) * 1000)
+
+        def timed_checkpoint():
+            b = time.perf_counter()
+            try:
+                checkpoint()
+            finally:
+                stats["checkpoint"].append((time.perf_counter() - b) * 1000)
+        panel.timer.timeout.connect(timed_tick)
+        panel.recovery_timer.timeout.connect(timed_checkpoint)
+        report["timer_intervals_ms"] = {"tick": intervals[0], "recovery": intervals[1]}
+        dispatch, sync = core.dispatch, core.sync
+
+        def counted_dispatch(request):
+            op = request.get("op") if isinstance(request, dict) else None
+            stats["dispatch"][op] = stats["dispatch"].get(op, 0) + 1
+            b = time.perf_counter()
+            try:
+                return dispatch(request)
+            finally:
+                if op == "inspect":
+                    stats["inspect_ms"].append((time.perf_counter() - b) * 1000)
+
+        def counted_sync(*args, **kwargs):
+            stats["sync"] += 1
+            return sync(*args, **kwargs)
+        core.dispatch, core.sync = counted_dispatch, counted_sync
+        heartbeat = QtCore.QTimer(main)
+        heartbeat.setInterval(10)
+        heartbeat.timeout.connect(lambda: stats["beats"].append(time.perf_counter()))
+        heartbeat.start()
+        reset()
+        QtTest.QTest.qWait(3000)
+        phase("settle_3s_after_open")
+        reset()
+        QtTest.QTest.qWait(5000)
+        idle = phase("idle_5s")
+        check("Idle GUI dispatches nothing", sum(idle["dispatch_by_op"].values()) == 0)
+        check("Idle ticks ran on the production timer", idle["tick_ms"]["n"] > 50)
+        # GUI edit through the panel (as the feature editors do), then the refresh tail.
+        reset()
+        b = time.perf_counter()
+        edited = panel.operation("set_parameter", feature=tip, parameter="Diameter", value=values[0])
+        edit_ms = (time.perf_counter() - b) * 1000
+        check("Panel set_parameter accepted", edited is not None, panel.message.text())
+        phase("panel_set_parameter_call", {"wall_ms": edit_ms})
+        reset()
+        QtTest.QTest.qWait(3000)
+        phase("after_edit_3s")
+        # Real Bridge: one read request and one tracked edit.
+        state = panel.state
+        reset()
+        worker, result = loopback({"op": "inspect", "document_id": state["document_id"], "measure": False})
+        wait(worker)
+        QtTest.QTest.qWait(500)
+        inspected = phase("bridge_inspect", {"round_trip_ms": result.get("ms"), "ok": (result.get("response") or {}).get("ok"),
+                                              "queue_wait_ms": (result.get("response") or {}).get("queue_wait_ms")})
+        check("Bridge inspect answered ok", inspected["ok"] is True, result)
+        state = panel.state
+        reset()
+        rid = str(uuid.uuid4())
+        edit = {"op": "set_parameter", "document_id": state["document_id"], "expected_revision": state["revision"],
+                "request_id": rid, "feature": tip, "parameter": "Diameter", "value": values[1], "measure": False}
+        worker, result = loopback(edit)
+        wait(worker)
+        QtTest.QTest.qWait(500)
+        replay_worker, replay = loopback(edit)
+        wait(replay_worker)
+        QtTest.QTest.qWait(300)
+        strip = lambda r: {k: v for k, v in (r or {}).items() if k != "queue_wait_ms"}  # noqa: E731
+        replayed = phase("bridge_set_parameter_and_replay", {
+            "round_trip_ms": result.get("ms"), "ok": (result.get("response") or {}).get("ok"),
+            "replay_ms": replay.get("ms"), "replay_has_queue_wait": "queue_wait_ms" in (replay.get("response") or {}),
+            "replay_equal_excluding_queue_wait": strip(replay.get("response")) == strip(result.get("response"))})
+        check("Bridge set_parameter accepted", replayed["ok"] is True)
+        check("Identical replay returns the ledger copy", replayed["replay_equal_excluding_queue_wait"]
+              and not replayed["replay_has_queue_wait"] and replayed["dispatch_by_op"].get("set_parameter") == 1)
+        # Owner thread blocked by a long managed rebuild with a short server timeout (uncertain outcome),
+        # while status polls arrive: exact {op, request_id} (off-thread fast path) vs an extra field (owner queue).
+        state = panel.state
+        reset()
+        panel.bridge.request_timeout = 2
+        rid = str(uuid.uuid4())
+        rebuild = {"op": "rebuild", "document_id": state["document_id"], "expected_revision": state["revision"],
+                   "request_id": rid, "measure": False}
+        worker, result = loopback(rebuild, timeout=120)
+        polls = []
+        t0 = time.perf_counter()
+
+        def poller():
+            time.sleep(1.0)
+            for payload in ({"op": "request_status", "request_id": rid},
+                            {"op": "request_status", "request_id": rid},
+                            {"op": "request_status", "request_id": rid, "measure": False}):
+                b = time.perf_counter()
+                try:
+                    _, response = post(payload)
+                    polls.append({"payload_keys": sorted(payload), "ms": (time.perf_counter() - b) * 1000,
+                                  "status": (response.get("result") or {}).get("status"),
+                                  "error": (response.get("error") or {}).get("code"),
+                                  "at_s": time.perf_counter() - t0})
+                except Exception:
+                    polls.append({"payload_keys": sorted(payload), "error": traceback.format_exc()})
+                time.sleep(0.5)
+        poll_thread = threading.Thread(target=poller, daemon=True)
+        poll_thread.start()
+        wait(worker, 120)
+        wait(poll_thread, 120)
+        rebuild_done_s = time.perf_counter() - t0
+        QtTest.QTest.qWait(500)
+        status_worker, status_result = loopback({"op": "request_status", "request_id": rid})
+        wait(status_worker)
+        final_status = ((status_result.get("response") or {}).get("result") or {}).get("status")
+        blocked = phase("blocked_owner_status_polls", {
+            "rebuild_client_ms": result.get("ms"),
+            "rebuild_reply_code": ((result.get("response") or {}).get("error") or {}).get("code"),
+            "rebuild_reply_ok": (result.get("response") or {}).get("ok"), "rebuild_done_s": rebuild_done_s,
+            "polls": polls, "final_status": final_status})
+        panel.bridge.request_timeout = 30
+        heartbeat.stop()
+        exact = [poll for poll in blocked["polls"] if poll.get("payload_keys") == ["op", "request_id"]]
+        check("Exact-shape status polls were answered during the blocked rebuild window", len(exact) == 2 and all(poll.get("status") for poll in exact))
+        check("Blocked rebuild settles as completed under its original request_id", final_status == "completed")
+        report["source_sha256_after"] = source_hashes()
+        check("Recipe ran against unchanged production source", report["source_sha256_after"] == report["source_sha256"])
+        if source is not None:
+            check("Prepared source FCStd bytes unchanged", hashlib.sha256(source.read_bytes()).hexdigest() == digest)
+        evaluate_guards()
+        report["passed"] = True
+        save()
+    except Exception:
+        report["error"] = traceback.format_exc()
+        try:
+            evaluate_guards()
+        except Exception:
+            pass
+        save()
+    finally:
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    except Exception:
+        report.setdefault("cleanup_errors", []).append(traceback.format_exc())
+        report["passed"] = False
+        save()
+    finally:
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["error"] = "interaction-idle exceeded 420 seconds"
+    report["passed"] = False
+    save()
+    cleanup()
+
+
+save()
+QtCore.QTimer.singleShot(420000, timeout)
+QtCore.QTimer.singleShot(1200, run)

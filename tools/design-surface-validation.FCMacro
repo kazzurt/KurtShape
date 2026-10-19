@@ -346,12 +346,18 @@ def validate():
         check("Move face keeps distinct icon despite sharing the Pad command",
               original_icon_name("Move face", "PartDesign_Pad") != original_icon_name("Extrude", "PartDesign_Pad")
               and png_hash(icon_for("Move face", "PartDesign_Pad")) != png_hash(icon_for("Extrude", "PartDesign_Pad")))
-        check("History and parts use independent native splitter", panel.history_splitter.count() == 2
-              and panel.history_splitter.orientation() == QtCore.Qt.Vertical)
-        sizes = panel.history_splitter.sizes()
-        panel.history_splitter.setSizes([sum(sizes) - 180, 180])
+        # Contract 3.2 F3b (intentional change): history, parameters and parts share one native splitter.
+        splitter = panel.history_splitter
+        check("History, parameters and parts use one native splitter", splitter.count() == 3
+              and splitter.orientation() == QtCore.Qt.Vertical and not splitter.childrenCollapsible()
+              and splitter.widget(1) is panel.parameter_section
+              and splitter.widget(0).isAncestorOf(panel.features) and splitter.widget(2).isAncestorOf(panel.parts))
+        sizes = splitter.sizes()
+        splitter.setSizes([sum(sizes) - 300, 120, 180])
         wait(80)
-        check("Both split regions remain available", all(size >= 60 for size in panel.history_splitter.sizes()))
+        check("All three split regions remain available",
+              all(size >= max(60, splitter.widget(index).minimumSizeHint().height())
+                  for index, size in enumerate(splitter.sizes())))
         capture("model-workspace-1440")
         hover(tool_button(panel.document_bar, "Document"), "Document menu symbol")
         leave(tool_button(panel.document_bar, "Document"))

@@ -40,6 +40,7 @@ from .toolbar_labels import ToolbarLabels
 from .rollback_history import RollbackMarker
 from .history_selection import HistorySelection, ROLLED_BACK_ROLE
 from .history_model import HistoryModel
+from .parameter_panel import ParameterSection, SectionLayout, PreferenceStore, ControllerParameterAdapter
 from .responsiveness import install_monitor
 
 
@@ -134,6 +135,9 @@ class Panel(QtGui.QDockWidget):
         self.setMinimumWidth(235)
         self.setMaximumWidth(430)
         self.core, self.state = controller, None
+        # close_document asks what this panel is editing in a document (contract 3.2, C25).
+        controller.editor_activity = self.editor_activity
+        self._result_failures_shown = None
         self._step_export_generation = 0
         self._step_export_job = None
         self._step_export_document = None
@@ -183,6 +187,8 @@ class Panel(QtGui.QDockWidget):
         self.main.menuBar().hide()
         self.main.statusBar().show()
         self.toolbar_labels = ToolbarLabels(self.main)
+        # The last rejected operation's error object (contract 3.2 F3b: the parameter adapter reads it).
+        self.last_operation_error = None
         self.make_history()
         self.make_editor()
         self.model_actions = []
@@ -218,6 +224,10 @@ class Panel(QtGui.QDockWidget):
         session_dir = Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime")))
         session_dir.mkdir(parents=True, exist_ok=True)
         self.bridge = Bridge(controller, session_dir)
+        # F4 D15: a batch stops at two thirds of the bridge timeout, so the GUI reports a clean,
+        # rolled-back batch_time_budget_exceeded instead of outcome_unknown.
+        timeout = getattr(self.bridge, "request_timeout", None)  # test transports may have none
+        controller.request_budget_s = timeout * 2 / 3 if isinstance(timeout, (int, float)) and timeout > 0 else None
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.tick)
         self.timer.start(25)
@@ -287,14 +297,18 @@ class Panel(QtGui.QDockWidget):
         self.parts.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.parts.customContextMenuRequested.connect(self.part_menu)
         parts_layout.addWidget(self.parts, 1)
+        # Contract 3.2 F3b: history, parameters and parts, 3:1:1, heights remembered in the profile.
+        self.parameter_section = ParameterSection(ControllerParameterAdapter(self))
         self.history_splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
         self.history_splitter.setObjectName("KurtShapeHistoryPartsSplit")
         self.history_splitter.setChildrenCollapsible(False)
-        self.history_splitter.addWidget(history)
-        self.history_splitter.addWidget(parts)
-        self.history_splitter.setStretchFactor(0, 3)
-        self.history_splitter.setStretchFactor(1, 1)
-        self.history_splitter.setSizes([500, 190])
+        for widget in (history, self.parameter_section, parts):
+            self.history_splitter.addWidget(widget)
+        for index, stretch in enumerate((3, 1, 1)):
+            self.history_splitter.setStretchFactor(index, stretch)
+        self.section_layout = SectionLayout(self.history_splitter, PreferenceStore())
+        self.section_layout.restore()
+        self.make_message_copyable(self.parameter_section.error)
         layout.addWidget(self.history_splitter, 1)
         self.status = QtGui.QLabel("Create or open a part studio")
         self.status.setWordWrap(True)
@@ -527,7 +541,7 @@ class Panel(QtGui.QDockWidget):
         self.file_actions.append(self.tool(self.document_bar, "Save", self.save, "Save project · Ctrl+S"))
         help_menu = QtGui.QMenu("Help", self.main)
         self.tool(help_menu, "Shortcuts", lambda: self.router.show_help(self.main), "Keyboard shortcuts · Shift+/")
-        self.tool(help_menu, "Example", lambda: self.operation("open", path=str(ROOT / "examples" / "acceptance-plate.FCStd")), "Open the development example")
+        self.tool(help_menu, "Example", lambda: self.parameter_section.flush_pending() and self.operation("open", path=str(ROOT / "examples" / "acceptance-plate.FCStd")), "Open the development example")
         self.document_bar.addAction(help_menu.menuAction())
         self.bind_tool_menu(self.document_bar.widgetForAction(help_menu.menuAction()), help_menu)
         self.tool(self.document_bar, "Settings", lambda: self.workspace_preferences.show(), "Settings · mouse navigation")
@@ -569,7 +583,7 @@ class Panel(QtGui.QDockWidget):
         self.model_actions.append(more.menuAction())
         self.tool_menus["More"] = more
         self.model_bar.addSeparator()
-        for name, callback, tip, icon in [("Rebuild", lambda: self.operation("rebuild"), "Rebuild the model", "Std_Refresh"), ("Check geometry", self.check_geometry, "Optional solid validity check · export checks automatically. Details appear in Messages.", "Part_CheckGeometry"), ("Fit", self.fit, "Fit · F", "Std_ViewFitAll"), ("Normal", self.normal, "Normal · N", "Std_ViewTop"), ("3D", self.isometric, "Isometric · Shift+7", "Std_ViewIsometric"), ("Show planes", self.toggle_planes, "Show / hide planes · P", "PartDesign_Plane")]:
+        for name, callback, tip, icon in [("Rebuild", lambda: self.operation("rebuild"), "Rebuild the model", "Std_Refresh"), ("Check geometry", self.check_geometry, "Optional solid validity check · export checks automatically. Details appear in Messages.", "Part_CheckGeometry"), ("Fit", self.fit, "Fit · F", "Std_ViewFitAll"), ("Normal", self.normal, "Normal · N", "Std_ViewTop"), ("3D", self.isometric, "Isometric · Shift+7", "Std_ViewIsometric"), ("Show planes", self.toggle_planes, "Show / hide all origin and construction planes · P", "PartDesign_Plane")]:
             action = self.tool(self.model_bar, name, callback, tip, icon, modeling=name in {"Rebuild", "Check geometry"}, command=icon)
             if name == "Check geometry":
                 action.setProperty("kurtshapeHelp", "Optional solid validity check.\nExport checks automatically.")
@@ -878,7 +892,7 @@ class Panel(QtGui.QDockWidget):
                 return None
             modeled = any(obj.TypeId == "Sketcher::SketchObject" or (hasattr(obj, "Shape") and not obj.Shape.isNull() and bool(obj.Shape.Solids)) for obj in self.document().Objects)
             if modeled:
-                if not self.operation("new", name=name.strip()):
+                if not self.parameter_section.flush_pending() or not self.operation("new", name=name.strip()):
                     return None
                 tokens = self.assembly_tokens()
             result = self.operation("create_assembly", id=self.unique("Assembly"), name=name.strip(), **tokens)
@@ -1172,6 +1186,26 @@ class Panel(QtGui.QDockWidget):
     def native_feature_task_active(self):
         return bool(Gui.Control.activeDialog()) and not bool(self.active_sketch())
 
+    def editor_activity(self, doc_name):
+        """What this panel is editing in ``doc_name``: feature_editor, task, placement, step_export,
+        geometry_check, parameter_edit (C25) or None. Read by Controller._close_document on the GUI thread."""
+        section = getattr(self, "parameter_section", None)
+        if section is not None and section.document_id and section.unapplied():
+            owner_doc = self.core.documents.get(section.document_id)
+            if owner_doc is not None and self.core._is_open(owner_doc) and owner_doc.Name == doc_name:
+                return "parameter_edit"
+        if self.studio_dialog is not None and getattr(self.studio_dialog, "source_document", None) == doc_name:
+            return "feature_editor"
+        if self.task_document == doc_name:
+            return "task"
+        if self.placement_document == doc_name:
+            return "placement"
+        for kind, job in (("step_export", self._step_export_job), ("geometry_check", self._geometry_check_job)):
+            document = job.get("document") if isinstance(job, dict) else None
+            if document is not None and getattr(document, "Name", None) == doc_name:
+                return kind
+        return None
+
     def tick(self):
         # Native preview evaluation may process Qt events while its hidden
         # document is active. Refresh only after it restores the live view.
@@ -1212,11 +1246,14 @@ class Panel(QtGui.QDockWidget):
         self.sketch_colors.apply()
         self.sketch_regions.apply()
         self.sketch_plane_editor.apply_visibility()
-        processed = False
+        processed = dequeued = False
+        if getattr(self.bridge, "deferred", None):  # test transports have no parked jobs
+            # Contract 3.2 F2: finish parked render_view requests (one process poll per tick while a job runs).
+            self.bridge.poll_deferred()
         if not self.bridge.pending.empty():
             failures_before = self.core.last_failures.copy()
-            processed = self.bridge.tick()
-            if processed:
+            dequeued = processed = self.bridge.tick()
+            if dequeued:
                 for identifier, failure in self.core.last_failures.items():
                     request = failure.get("request", {})
                     if failure == failures_before.get(identifier) or not failure.get("rejected") or request.get("op") not in self.core.ASSEMBLY_OPS:
@@ -1228,6 +1265,18 @@ class Panel(QtGui.QDockWidget):
                     label = document.Label + " · " if document and self.core._is_open(document) else ""
                     self.notify(label + failure.get("error", {}).get("message", "Assembly command failed"), "error")
         doc = self.document()
+        last_op = getattr(self.bridge, "last_op", None)
+        quiet = last_op is None or last_op in self.core.QUIET_OPS
+        if (dequeued and quiet and doc is not None and self.state is not None and self.last_document == doc.Name
+                and doc.getObject(METADATA) is not None):
+            # Contract 3.2 (C22, E-08): a quiet bridge read (or a request cancelled in the queue)
+            # changed nothing the panel shows, so it gets no trailing inspect and no refresh
+            # unless the document itself moved on. Only the panel's own, already managed document
+            # is read here: _meta() would attach metadata to a foreign active document.
+            meta = self.core._meta(doc)
+            if (meta.Revision == self.state["revision"] and meta.BuildStatus == self.last_status
+                    and not self.core.needs_refresh(doc)):
+                processed = False
         if self.studio_dialog and (not doc or self.studio_dialog.source_document != doc.Name):
             self.studio_dialog.reject()
         elif self.studio_dialog and self.core._meta(doc).Revision != self.studio_dialog.base_revision:
@@ -1279,6 +1328,7 @@ class Panel(QtGui.QDockWidget):
             self.feature_model.items.clear()
             self.part_model.items.clear()
             self.parameter.clear()
+            self.parameter_section.clear()
             self.status.setText("Create or open a part studio")
             self.document_name.setText("New part studio")
             self.editor.hide()
@@ -1289,6 +1339,7 @@ class Panel(QtGui.QDockWidget):
             return self._operation(op, **args)
 
     def _operation(self, op, **args):
+        self.last_operation_error = None
         if op != "inspect":
             self._cancel_step_export()
         if op not in {"inspect", "check_geometry"}:
@@ -1329,18 +1380,24 @@ class Panel(QtGui.QDockWidget):
                 return None
             self.state = response["result"]
             if staged_document and staged_document != self.state["document_id"]:
-                self.notify("Assembly command canceled because its source project is no longer active.", "error")
+                message = "Command canceled because its source project is no longer active."
+                self.last_operation_error = {"code": "document_changed", "message": message}
+                self.notify(message, "error")
                 return None
             args.update(document_id=self.state["document_id"], expected_revision=staged_revision or self.state["revision"])
-            if op in self.core.MODEL_OPS - {"create_body", "rebuild", "delete_features", "edit_extrusion", "repair_orphan_helpers"} and "body" not in args:
+            # Only operations that take a body get one (document-wide parameter ops do not).
+            if (op in self.core.MODEL_OPS - {"create_body", "rebuild", "delete_features", "edit_extrusion", "repair_orphan_helpers"}
+                    and "body" in self.core.ARGS.get(op, ()) and "body" not in args):
                 target = doc.getObject(args.get("feature") or args.get("profile") or args.get("sketch") or args.get("support", {}).get("feature") or "")
-                body = owner(doc, target) or self.active_body()
+                own = owner(doc, target)
+                body = self._request_body(doc, own) if own is not None else self._request_body(doc, self.active_body())
                 if body:
-                    args["body"] = body.Name
+                    args["body"] = body
         presentation = self.history_controller.suspend_planes() if op in {"save", "export"} else nullcontext()
         with presentation:
             response = self.core.dispatch({"op": op, **args, "measure": self.MEASURE})
         if not response["ok"]:
+            self.last_operation_error = response["error"]
             if self.document() and self.state:
                 self.state = self.core.inspect(self.document(), measure=self.MEASURE)
             if self.active_sketch() and self.core.identifier(self.document()) not in self.core.sketch_edits:
@@ -1363,7 +1420,9 @@ class Panel(QtGui.QDockWidget):
         if op == "create_body" and self.state.get("created_feature"):
             self.body_choice.setCurrentIndex(self.body_choice.findData(self.state["created_feature"]))
         navigation.apply_navigation()
-        action_name = {"pad": "Extrude", "pocket": "Remove material", "create_body": "New part", "edit_extrusion": "Feature update"}.get(op, op.replace("_", " ").capitalize())
+        action_name = {"pad": "Extrude", "pocket": "Remove material", "create_body": "New part", "edit_extrusion": "Feature update",
+                       "create_parameter": "Parameter add", "edit_parameter": "Parameter update",
+                       "rename_parameter": "Parameter rename", "delete_parameter": "Parameter delete"}.get(op, op.replace("_", " ").capitalize())
         self.notify(action_name + " complete")
         if op in {"open", "recover"}:
             groups = self.orphan_report()
@@ -1393,21 +1452,40 @@ class Panel(QtGui.QDockWidget):
                 "engine_unrecorded": "geometry engine not recorded",
                 "missing_shapes": "stored geometry is missing"}.get(state.get("rebuild_reason"), "pending model changes")
 
+    def report_result_failures(self):
+        """Append the result-check failure rows to Messages once per distinct failure set (contract 3.2 F1)."""
+        checks = (self.state or {}).get("result_checks") or {}
+        rows = checks.get("failed") or []
+        if not rows:
+            self._result_failures_shown = None
+            return
+        key = (self.state.get("document_id"), tuple((row.get("feature"), row.get("code"), bool(row.get("stale"))) for row in rows))
+        if key == self._result_failures_shown:
+            return
+        self._result_failures_shown = key
+        for row in rows:
+            self.append_message(str(row.get("feature")) + ": result check " + str(row.get("code"))
+                                + (" (stale)" if row.get("stale") else "") + " — " + str(row.get("message")))
+
     def status_detail(self):
         status = self.state["build_status"]
+        checks = self.state.get("result_checks") or {}
+        pending = " · checks pending" if checks.get("status") == "pending" else ""
         if status == "failed":
+            if checks.get("failed"):
+                return "Result check failed — see Messages"
             return "Invalid geometry — see Messages" if self.state.get("geometry_check") == "invalid" else "Build failed"
         if status == "needs_rebuild":
             return "Rebuild required · " + self.rebuild_reason_text(self.state)
         measured = self.state.get("measurements")
         if not measured:
-            return "Sketches only · mm"
+            return "Sketches only · mm" + pending
         detail = str(measured["solid_count"]) + " solid(s)"
         if measured.get("volume_mm3") is not None:
             detail += f" · {measured['volume_mm3']:,.2f} mm³"
         if self.state.get("geometry_check") == "valid":
             detail += " · checked"
-        return detail
+        return detail + pending
 
     def check_geometry(self):
         self._cancel_step_export()
@@ -1430,12 +1508,14 @@ class Panel(QtGui.QDockWidget):
         self.task_feedback("Preparing geometry check…")
         bundle = None
         error = None
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)  # pending result checks run here (3.2 F1 D11)
         try:
             with self.history_controller.suspend_planes():
                 bundle = self.core.prepare_geometry_check(doc)
         except Exception as exc:
             error = exc
         finally:
+            QtGui.QApplication.restoreOverrideCursor()
             self._geometry_check_preparing = False
             self._geometry_check_preparing_generation = None
         if not self._geometry_check_context_current(generation, doc):
@@ -1569,6 +1649,12 @@ class Panel(QtGui.QDockWidget):
             self._retire_geometry_check(job)
             if current and self._geometry_check_context_current(job["generation"], job["document"]):
                 self.notify(str(exc), "error")
+                # Contract 3.2 F1: the synchronous result validation ran before the capture; show its
+                # outcome (status line, Messages) even though the worker's own check was refused.
+                document = self.document()
+                if document is not None and document.Name == job["document"].Name and self.state is not None:
+                    self.state = self.core.inspect(document, measure=self.MEASURE)
+                    self.refresh()
             else:
                 self._restore_geometry_check_status(job["generation"])
             return
@@ -1746,6 +1832,7 @@ class Panel(QtGui.QDockWidget):
         self.parts.blockSignals(False)
         self.parts_title.setText(f"Parts ({count})")
         measured = self.state["measurements"]
+        self.report_result_failures()
         detail = self.status_detail()
         if self.state.get("import_source"):
             detail = "Imported STEP · " + (detail if measured or self.state["build_status"] in {"failed", "needs_rebuild"} else "Reference geometry only · mm")
@@ -1756,6 +1843,7 @@ class Panel(QtGui.QDockWidget):
         self.main.setWindowTitle(self.state["name"] + " — KurtShape")
         if not self.task and not self.active_sketch():
             self.parameters()
+        self.parameter_section.refresh()
         self.feedback_complete()
 
     def mark_active_part(self, item, body_name):
@@ -1829,6 +1917,7 @@ class Panel(QtGui.QDockWidget):
         self.filter_features()
         self.editor.hide()
         self.sync_edit_ui()
+        self.parameter_section.set_unavailable("Parameters are edited in part studios")
         self.feedback_complete()
 
     def filter_features(self, *args):
@@ -1849,6 +1938,47 @@ class Panel(QtGui.QDockWidget):
 
     def selected_ids(self):
         return self.history_controller.feature_ids()
+
+    @staticmethod
+    def _request_body(doc, body):
+        """The ``body`` value the controller accepts for this Body: its name, else its logical part id.
+
+        In a Part Studio a feature's native owner can be an internal tool Body (a sketch on a datum
+        plane after an Add belongs to the Add's tool Body), which the controller refuses as ``body``;
+        such a feature then gets no ``body`` and the controller derives its part itself.
+        """
+        if body is None:
+            return None
+        from .studio import current_body
+        for name in dict.fromkeys(filter(None, (body.Name, getattr(body, "KurtShapePartId", None)))):
+            try:
+                if current_body(doc, name) is not None:
+                    return name
+            except Exception:
+                continue
+        return None
+
+    def cancel_key(self):
+        """Escape: revert an edited parameter field first, otherwise cancel the task (3b D10)."""
+        return True if self.parameter_section.cancel_edit() else self.cancel_task()
+
+    def show_parameter_use(self, feature_id, parameter_key):
+        """Parameters section 'Used by': select the consumer and show the dimension it drives (3b §5)."""
+        name = next((row.get("name") for row in (self.state or {}).get("features", ()) if row.get("id") == feature_id),
+                    feature_id)
+        if feature_id in self.items and self.items[feature_id].isHidden():
+            self.filter.clear()
+        if self.feature_held(feature_id):
+            self.notify("Roll forward through " + str(name) + " to edit it")
+            return
+        if feature_id not in self.items:
+            self.notify("Used by " + str(name) + " (not a history row)")
+            return
+        self.select_feature(feature_id)
+        index = self.parameter.findText(parameter_key) if parameter_key else -1
+        if index >= 0:
+            self.parameter.setCurrentIndex(index)
+            self.parameter_value()
 
     def select_feature(self, key):
         if key in self.items:
@@ -2847,7 +2977,8 @@ class Panel(QtGui.QDockWidget):
             label = record["name"] + (" · unfinished sketch" if record.get("sketch") else " · checkpoint")
             action = menu.addAction(label)
             action.setToolTip(record.get("source_file") or str(path))
-            action.triggered.connect(lambda checked=False, p=str(path): self.operation("recover", path=p))
+            action.triggered.connect(lambda checked=False, p=str(path): self.parameter_section.flush_pending()
+                                    and self.operation("recover", path=p))
         if not records:
             menu.addAction("No recoverable projects").setEnabled(False)
 
@@ -2920,6 +3051,8 @@ class Panel(QtGui.QDockWidget):
         return self.operation("create_body", id=self.unique("Body"), name="Part " + str(len(self.sketch_owners()) + 1))
 
     def new(self):
+        if not self.parameter_section.flush_pending():
+            return None
         self.cancel_placement()
         if self.operation("new", name="Untitled part"):
             navigation.reset_new_document_view()
@@ -2927,6 +3060,8 @@ class Panel(QtGui.QDockWidget):
             self.editor.hide()
 
     def open(self):
+        if not self.parameter_section.flush_pending():
+            return None
         if self.active_sketch() or self.native_feature_task_active():
             self.notify("Finish or cancel the current edit before opening a project.")
             return
@@ -2940,6 +3075,8 @@ class Panel(QtGui.QDockWidget):
             return self.open_path(path)
 
     def open_path(self, path):
+        if not self.parameter_section.flush_pending():
+            return None
         op = "import_step" if Path(path).suffix.lower() in {".step", ".stp"} else "open"
         if op == "import_step":
             QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
@@ -2966,6 +3103,8 @@ class Panel(QtGui.QDockWidget):
             self.fit()
 
     def save(self, save_as=False):
+        if not self.parameter_section.flush_pending():
+            return None
         if not self.state:
             return
         if not self.state.get("managed", True):
@@ -3016,6 +3155,7 @@ class Panel(QtGui.QDockWidget):
         self._step_export_preparing_generation = generation
         self.task_feedback("Preparing STEP export…")
         bundle = error = None
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)  # pending result checks run here (3.2 F1 D11)
         try:
             with self.history_controller.suspend_planes():
                 bundle = self.core.prepare_step_export(
@@ -3023,6 +3163,7 @@ class Panel(QtGui.QDockWidget):
         except Exception as exc:
             error = exc
         finally:
+            QtGui.QApplication.restoreOverrideCursor()
             self._step_export_preparing = False
             self._step_export_preparing_generation = None
         if not self._step_export_context_current(generation, doc):
@@ -3177,6 +3318,8 @@ class Panel(QtGui.QDockWidget):
             self.notify("Exported " + job["bundle"]["destination"].name)
 
     def export(self):
+        if not self.parameter_section.flush_pending():
+            return None
         if not self.state:
             return
         if self.active_sketch() or self.native_feature_task_active():
@@ -3383,6 +3526,7 @@ class Panel(QtGui.QDockWidget):
         return not (failure and failure["sketch"] == state.get("active_sketch_edit"))
 
     def sync_edit_ui(self):
+        self.parameter_section.sync_editable()
         sketch = self.active_sketch() or (self.sketch_plane_editor.sketch() if self.sketch_plane_editor.picking else None)
         if sketch is None and not self.entering_sketch and not self.finishing_sketch:
             self.sketch_snapping.restore()
@@ -3882,12 +4026,28 @@ class Panel(QtGui.QDockWidget):
 
     def toggle_planes(self):
         doc = self.document()
-        if doc and self.active_body():
-            planes = [self.plane(doc, key) for key in ["XY", "XZ", "YZ"]]
-            visible = not any(obj.ViewObject.Visibility for obj in planes)
-            self.active_body().Origin.ViewObject.Visibility = visible
-            for obj in planes:
-                obj.ViewObject.Visibility = visible
+        if not doc:
+            return
+        # Restore temporary selection highlights before changing saved visibility.
+        self.history_controller.planes.restore()
+        # Datum planes belong to the document's history, not just its active Body.
+        # Origin children can report Visibility=True while their Origin is hidden.
+        planes = []
+        origins = {}
+        shown = False
+        for obj in doc.Objects:
+            if obj.TypeId not in {"App::Plane", "PartDesign::Plane"}:
+                continue
+            body = owner(doc, obj)
+            if getattr(obj, "KurtShapeInternal", False) or getattr(body, "KurtShapeInternal", False):
+                continue
+            planes.append(obj)
+            parent_visible = body is None or body.ViewObject.Visibility
+            if obj.TypeId == "App::Plane" and body:
+                origins[body.Origin.Name] = body.Origin
+                parent_visible = parent_visible and body.Origin.ViewObject.Visibility
+            shown = shown or (obj.ViewObject.Visibility and parent_visible)
+        self.set_visibilities(planes + list(origins.values()), not shown)
 
     def toggle_sketches(self):
         if self.document():
@@ -3903,9 +4063,7 @@ class Panel(QtGui.QDockWidget):
             hovered = Gui.Selection.getPreselection()
             if hovered and hovered.Object:
                 selected = [hovered.Object]
-        for obj in selected:
-            obj.ViewObject.Visibility = False
-        self.refresh()
+        self.set_visibilities(selected, False)
 
     def show_hidden(self):
         if self.document() and self.workspace_mode == "assembly":
@@ -3922,6 +4080,8 @@ class Panel(QtGui.QDockWidget):
             self.refresh()
 
     def rename_selected(self):
+        if self.parameter_section.owns_focus():
+            return self.parameter_section.rename_current()
         selected = Gui.Selection.getSelection()
         identifier = self.assembly_selected_id() if self.workspace_mode == "assembly" else None
         obj = self.document().getObject(identifier) if identifier else (selected[0] if len(selected) == 1 else (self.document().getObject(self.selected() or "") if self.document() else None))
@@ -3935,6 +4095,8 @@ class Panel(QtGui.QDockWidget):
                 self.operation("rename_feature", feature=obj.Name, name=name, **tokens)
 
     def delete_selected(self):
+        if self.parameter_section.owns_focus():
+            return self.parameter_section.delete_current()
         if self.active_sketch():
             return self.native_command("Std_Delete")
         if self.workspace_mode == "assembly":
@@ -3976,6 +4138,10 @@ class Panel(QtGui.QDockWidget):
         keys = self.selected_ids()
         if len(keys) > 1:
             menu.clear()
+            objects = [self.plane(self.document(), name.split(":")[1]) if name.startswith("plane:")
+                       else self.document().getObject(name) for name in keys]
+            menu.addAction("Hide selected", lambda: self.set_visibilities(objects, False))
+            menu.addAction("Show selected", lambda: self.set_visibilities(objects, True))
             menu.addAction("Delete selected features", self.delete_selected).setEnabled(not any(self.feature_held(name) for name in keys))
             menu.exec_(self.features.mapToGlobal(position))
             return
@@ -4007,11 +4173,30 @@ class Panel(QtGui.QDockWidget):
         return self.commit_rollback()
 
     def set_visibility(self, obj, visible):
-        obj.ViewObject.Visibility = visible
-        if obj.TypeId == "App::Plane":
-            body = owner(self.document(), obj)
-            if body:
-                body.Origin.ViewObject.Visibility = True
+        self.set_visibilities([obj], visible)
+
+    def set_visibilities(self, objects, visible):
+        # Plane selection temporarily reveals references and later restores their
+        # previous flags. End that overlay before writing the user's new flags.
+        self.history_controller.planes.restore()
+        objects = [obj for obj in objects if obj is not None and obj.ViewObject is not None]
+        if not visible:
+            blocked = self.features.blockSignals(True)
+            try:
+                for item in self.features.selectedItems():
+                    obj = self.history_controller.resolve(item.data(0, QtCore.Qt.UserRole))
+                    if obj in objects:
+                        item.setSelected(False)
+            finally:
+                self.features.blockSignals(blocked)
+            for obj in objects:
+                Gui.Selection.removeSelection(obj)
+        for obj in objects:
+            obj.ViewObject.Visibility = visible
+            if visible and obj.TypeId == "App::Plane":
+                body = owner(self.document(), obj)
+                if body:
+                    body.Origin.ViewObject.Visibility = True
         self.refresh()
 
     def feature_from_sketch(self, command):
@@ -4200,7 +4385,7 @@ class Panel(QtGui.QDockWidget):
             "feature.fillet": lambda: self.studio_tool("fillet"),
             "history.rollback_up": lambda: self.move_rollback(-1),
             "history.rollback_down": lambda: self.move_rollback(1),
-            "general.cancel": self.cancel_task, "general.accept": lambda: self.accept_task() if self.task or self.studio_dialog else False,
+            "general.cancel": self.cancel_key, "general.accept": lambda: self.accept_task() if self.task or self.studio_dialog else False,
             "general.accept_repeat": self.accept_repeat,
             "general.undo": lambda: self.history_move("undo"), "general.redo": lambda: self.history_move("redo"),
             "general.delete": self.delete_selected, "general.delete_backspace": self.delete_selected,
@@ -4270,6 +4455,9 @@ class Panel(QtGui.QDockWidget):
                 else:
                     self.apply_parameter()
                 return True
+        if watched is self.main and event.type() == QtCore.QEvent.Close and not self.parameter_section.flush_pending():
+            event.ignore()
+            return True
         if watched is self.main and event.type() == QtCore.QEvent.Close and (self.active_sketch() or (self.state or {}).get("active_sketch_edit")):
             if not self.finish_sketch():
                 event.ignore()
@@ -4277,6 +4465,8 @@ class Panel(QtGui.QDockWidget):
         return False
 
     def shutdown(self):
+        self.parameter_section.close()
+        self.section_layout.flush()
         self._step_export_closed = True
         self._cancel_step_export()
         self._geometry_check_closed = True

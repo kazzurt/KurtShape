@@ -79,6 +79,93 @@ def build_plate(folder):
         builder.close()
 
 
+# Zimmer 5978-14 step drill body with two U flutes on 30-degree helices (Y is the
+# tool axis, build_drill.py frame). Shared by test_result_checks and the
+# interaction probe: the expensive result-check fixture.
+STEP_R, BODY_R, PILOT_R, SHANK_R, NECK_R = 6.5, 4.0, 1.7, 3.25, 2.75
+CUT_Y, TAPER_Y, NECK_Y, BACK_Y, FRONT_Y, SHOULDER_Y, PILOT_END_Y = 56.0, 54.0, 53.5, 49.5, 26.0, -57.0, -62.5
+TIP_Y = PILOT_END_Y - PILOT_R / math.tan(math.radians(59))
+LEAD = math.pi * 2 * BODY_R / math.tan(math.radians(30.0))
+FLUTE_R, FLUTE_C, FLUTE_OUT = 2.9, 3.6, 8.0
+FLUTE_HEIGHT = BACK_Y - TIP_Y + 2.5
+FLUTED_VOLUME = 3998.494
+
+
+def _drill_call(core, state, op, measure, **arguments):
+    request = {"op": op, "document_id": state["document_id"], "expected_revision": state["revision"], **arguments}
+    if measure is not None:
+        request["measure"] = measure
+    return core.dispatch(request)
+
+
+def _drill_step(core, state, op, measure, **arguments):
+    response = _drill_call(core, state, op, measure, **arguments)
+    if not response.get("ok"):
+        raise AssertionError("Drill fixture step " + op + " failed: " + json.dumps(response, default=str)[:2000])
+    return response["result"]
+
+
+def build_drill(core, state=None, *, name="Drill", measure=None):
+    """Revolve the drill body and its flute start plane through typed operations.
+
+    Builds in the document of ``state`` (an inspect result), or in a new document
+    when ``state`` is None. Returns ``(state, part)`` with the latest accepted
+    state and the body's studio part id. ``measure`` is sent only when given.
+    """
+    if state is None:
+        response = core.dispatch({"op": "new", "name": name})
+        if not response.get("ok"):
+            raise AssertionError("Drill fixture document failed: " + json.dumps(response, default=str)[:2000])
+        state = response["result"]
+    lip = STEP_R - BODY_R
+    shoulder = BODY_R - PILOT_R
+    state = _drill_step(core, state, "create_sketch", measure, id="DrillProfile", plane="XY")
+    state = _drill_step(core, state, "add_polyline", measure, sketch="DrillProfile", points=[
+        [STEP_R, BACK_Y - 1], [STEP_R, FRONT_Y], [BODY_R, FRONT_Y - lip], [BODY_R, SHOULDER_Y],
+        [PILOT_R, SHOULDER_Y - shoulder], [PILOT_R, PILOT_END_Y], [0, TIP_Y], [0, CUT_Y], [SHANK_R, CUT_Y],
+        [SHANK_R, TAPER_Y], [NECK_R, NECK_Y], [NECK_R, BACK_Y], [STEP_R - 1, BACK_Y]])
+    state = _drill_step(core, state, "add_arc", measure, sketch="DrillProfile", cx=STEP_R - 1, cy=BACK_Y - 1,
+                        radius=1, start_angle=0, end_angle="90 deg")
+    state = _drill_step(core, state, "revolve", measure, id="DrillBody", profile="DrillProfile",
+                        axis={"origin": [0, 0, 0], "direction": [0, 1, 0]}, angle="360 deg", operation="new")
+    state = _drill_step(core, state, "create_plane", measure, id="FluteStart", origin=[0, BACK_Y, 0],
+                        normal=[0, -1, 0], x_direction=[1, 0, 0])
+    return state, state["studio"]["parts"][0]["id"]
+
+
+def add_flute_inputs(core, state, n, *, segment_length=None, measure=None):
+    """Flute ``n``'s helix path and section sketch; every step must succeed. Returns the new state."""
+    sign = 1 if n == 1 else -1
+    helix = {"segment_length": segment_length} if segment_length is not None else {}
+    state = _drill_step(core, state, "create_helix", measure, id=f"Flute{n}Helix", pitch=LEAD, height=FLUTE_HEIGHT,
+                        radius=FLUTE_C, axis={"origin": [0, BACK_Y, 0], "direction": [0, -1, 0]},
+                        start_angle=0 if sign > 0 else "180 deg", **helix)
+    state = _drill_step(core, state, "create_sketch", measure, id=f"Flute{n}Section", support={"feature": "FluteStart"})
+    centre = sign * FLUTE_C
+    state = _drill_step(core, state, "add_arc", measure, sketch=f"Flute{n}Section", cx=centre, cy=0, radius=FLUTE_R,
+                        start_angle="90 deg" if sign > 0 else "-90 deg", end_angle="270 deg" if sign > 0 else "90 deg")
+    return _drill_step(core, state, "add_polyline", measure, sketch=f"Flute{n}Section", points=[
+        [centre, -FLUTE_R], [sign * FLUTE_OUT, -FLUTE_R], [sign * FLUTE_OUT, FLUTE_R], [centre, FLUTE_R]])
+
+
+def sweep_flute(core, state, n, part, *, measure=None, **options):
+    """The flute's Remove sweep along its helix; returns the dispatch response unchanged."""
+    return _drill_call(core, state, "sweep", measure, id=f"Flute{n}", profile=f"Flute{n}Section",
+                       path=f"Flute{n}Helix", frenet=True, operation="remove", merge_scope=[part], **options)
+
+
+def add_flute(core, state, n, part, *, segment_length=None, measure=None, **options):
+    """Add flute ``n`` (1 or 2): its helix, section sketch, then the Remove sweep.
+
+    The helix and section steps must succeed. The sweep response is returned
+    unchanged, so callers assert acceptance or the expected rejection. Returns
+    ``(state, response)``: the latest accepted state (before the sweep) and the
+    sweep's response; on success the caller's next state is ``response["result"]``.
+    """
+    state = add_flute_inputs(core, state, n, segment_length=segment_length, measure=measure)
+    return state, sweep_flute(core, state, n, part, measure=measure, **options)
+
+
 class FixtureOwner:
     """An honest class-fixture cleanup adapter, never an extra TestCase."""
     def __init__(self, identifier):

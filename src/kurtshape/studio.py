@@ -8,20 +8,24 @@ from __future__ import annotations
 from collections import OrderedDict
 import json
 import math
+import time
 
 import FreeCAD as App
 import Part
-from . import document_index, geometry
+from . import document_index, extrusion_edit, geometry
 
 OPS = {"revolve", "sweep", "loft", "boolean_parts", "split_part",
        "transform_part", "delete_part", "linear_pattern_parts", "circular_pattern_parts",
        "mirror_parts", "rollback", "set_part_appearance"}
-RESULT_FIELDS = {"operation", "merge_scope", "name"}
+RESULT_FIELDS = {"operation", "merge_scope", "name", "refine"}
+# Result-operation and Boolean kinds; operation_schemas reads these enums.
+RESULT_OPERATIONS = ("new", "add", "remove", "intersect")
+BOOLEAN_KINDS = ("union", "subtract", "intersect")
 ARGS = {
     "pad": RESULT_FIELDS | {"face"}, "pocket": RESULT_FIELDS | {"face"},
-    "revolve": {"id", "name", "profile", "axis", "angle", "operation", "merge_scope", "body"},
-    "sweep": {"id", "name", "profile", "path", "operation", "merge_scope", "body", "frenet"},
-    "loft": {"id", "name", "sections", "operation", "merge_scope", "body", "ruled", "closed"},
+    "revolve": {"id", "name", "profile", "axis", "angle", "operation", "merge_scope", "body", "refine"},
+    "sweep": {"id", "name", "profile", "path", "operation", "merge_scope", "body", "frenet", "refine"},
+    "loft": {"id", "name", "sections", "operation", "merge_scope", "body", "ruled", "closed", "refine"},
     "boolean_parts": {"id", "name", "targets", "tools", "kind", "keep_tools"},
     "split_part": {"id", "name", "part", "plane", "face", "sketch"},
     "transform_part": {"id", "name", "part", "translation", "rotation", "coordinate_system", "copy"},
@@ -451,7 +455,7 @@ def _set_boolean_body_input(body, source):
     return changed
 
 
-def _snapshot(doc, body, feature, name):
+def _snapshot(doc, body, feature, name, refine=None):
     snap = doc.addObject("PartDesign::Body", name)
     _prop(snap, "App::PropertyBool", "KurtShapeInternal", True)
     binder = doc.addObject("PartDesign::ShapeBinder", name + "Source")
@@ -461,6 +465,8 @@ def _snapshot(doc, body, feature, name):
     # ShapeBinder supplies pose; SubShapeBinder preserves the source's native
     # element map while allowing the Body's root-scope BaseFeature link.
     _set_body_input(snap, feature)
+    if refine is not None:
+        _set_refine([(None, snap)], [], refine)
     snap.setExpression("Placement", binder.Name + ".Placement")
     _prop(snap, "App::PropertyLinkGlobal", "KurtShapeInputBinder", binder)
     if App.GuiUp:
@@ -576,6 +582,23 @@ def _record(doc, representative, req, outputs, consumed=(), snapshots=()):
         if getattr(body, "KurtShapePartName", ""):
             _name_part(doc, body, body.KurtShapePartName)
     return representative.Name
+
+
+def record_curve(doc, curve, req):
+    """Enter a top-level path curve (create_helix) in the feature history.
+
+    It joins the order like a sketch: an operation without parts, so a later
+    sweep keeps it as an input instead of claiming it as a helper. It does not
+    enable the Part Studio, which would change the document's Body defaults.
+    """
+    if enabled(doc):
+        return _record(doc, curve, req, [])
+    _prop(curve, "App::PropertyString", "KurtShapeStudioOperation", json.dumps(req, sort_keys=True))
+    _prop(curve, "App::PropertyBool", "KurtShapeInternal", False)
+    for name in ("KurtShapeOutputParts", "KurtShapeOutputTips", "KurtShapeConsumedParts", "KurtShapeInputPartIds"):
+        _prop(curve, "App::PropertyStringList", name, [])
+    _prop(curve, "App::PropertyLinkListGlobal", "KurtShapeInputSnapshots", [])
+    return curve.Name
 
 
 def operation_members(doc, owner_name):
@@ -767,7 +790,9 @@ def present(doc):
 def hide_internal(doc):
     if App.GuiUp:
         for obj in doc.Objects:
-            neutral_result = obj.TypeId.startswith("Part::") and bool(getattr(obj, "KurtShapeStudioOperation", ""))
+            # Path curves (create_helix) are inputs the user sees, like sketches.
+            neutral_result = (obj.TypeId.startswith("Part::") and bool(getattr(obj, "KurtShapeStudioOperation", ""))
+                              and not getattr(obj, "KurtShapeCurve", False))
             if (getattr(obj, "KurtShapeInternal", False) or neutral_result) and hasattr(obj, "ViewObject"):
                 obj.ViewObject.Visibility = False
         # A Body draws its current native Tip through that child's view provider.
@@ -973,12 +998,14 @@ def sync_auto_scopes(doc):
             primary_key = replacement
         desired = [primary_key] + [key for key in desired if key != primary_key]
         old_inputs = dict(zip(representative.KurtShapeInputPartIds, representative.KurtShapeInputSnapshots))
+        # New inputs and results follow the operation's accepted native Refine.
+        refine = bool(getattr(representative, "Refine", True))
         snapshots = []
         for key in desired:
             body, tip = available[key]
             snapshot = old_inputs.get(key)
             if not snapshot:
-                snapshot = _snapshot(doc, body, tip, representative.Name + "AutoInput")
+                snapshot = _snapshot(doc, body, tip, representative.Name + "AutoInput", refine)
                 _prop(snapshot, "App::PropertyString", "KurtShapeOperationOwner", representative.Name)
             elif "KurtShapeInputBinder" in snapshot.PropertiesList:
                 _set_body_input(snapshot, tip)
@@ -1032,7 +1059,7 @@ def sync_auto_scopes(doc):
                     original = available[key][0]
                     body, boolean = _native_boolean(doc, snapshot, [neutral], representative.Name + "AutoResult",
                             key, getattr(original, "KurtShapePartName", original.Label),
-                            "subtract" if operation == "remove" else "intersect")
+                            "subtract" if operation == "remove" else "intersect", refine)
                     _prop(body, "App::PropertyString", "KurtShapeOperationOwner", representative.Name)
                     _prop(boolean, "App::PropertyBool", "KurtShapeInternal", True)
                     _prop(boolean, "App::PropertyString", "KurtShapeOperationOwner", representative.Name)
@@ -1080,7 +1107,7 @@ def inspect(doc):
             "rollback_index": _cutoff(doc), "parts": parts}
 
 
-def _inputs(doc, ids, prefix):
+def _inputs(doc, ids, prefix, refine=None):
     if not isinstance(ids, list) or not ids or len(set(ids)) != len(ids):
         raise _error("invalid_argument", "Choose a nonempty list of distinct current part IDs")
     available = _state(doc, _cutoff(doc))
@@ -1090,24 +1117,29 @@ def _inputs(doc, ids, prefix):
         entry = available.get(part_id(body))
         if not entry:
             raise _error("missing_part", "The selected part has no solid at the rollback bar", part=key)
-        snap = _snapshot(doc, body, entry[1], prefix + "Input")
+        snap = _snapshot(doc, body, entry[1], prefix + "Input", refine)
         result.append((part_id(body), snap))
     doc.recompute()
     return result
 
 
-def _native_boolean(doc, source, tools, name, key, label, kind):
-    result = _output(doc, source, name + "Part", key, label)
-    doc.recompute()
-    tip = result.Tip
-    # Boolean.Group claims its tool Bodies in a GeoFeatureGroup. Every Boolean
-    # therefore owns private native wrappers around a shared tool's native Tip.
-    private_tools = [_boolean_tool(doc, result, tool, name + "BooleanTool") for tool in tools]
-    boolean = result.newObject("PartDesign::Boolean", name)
-    boolean.BaseFeature = tip
-    boolean.Type = {"union": 0, "subtract": 1, "intersect": 2}[kind]
-    boolean.Group = private_tools
-    boolean.Refine = True
+def _set_refine(snapshots, booleans, refine):
+    """Native Refine of a result's Booleans and of its input snapshot binders.
+
+    A snapshot's SubShapeBinder refines the input part again, so an unrefined
+    result needs both: refining merges per-turn faces of helical cuts into
+    multi-turn faces that the next Boolean misses or turns inside out.
+    """
+    for _, snapshot in snapshots:
+        binder = getattr(snapshot, "KurtShapeGeometryBinder", None)
+        if binder is not None and "Refine" in binder.PropertiesList and binder.Refine != refine:
+            binder.Refine = refine
+    for boolean in booleans:
+        if boolean.Refine != refine:
+            boolean.Refine = refine
+
+
+def _evaluate_boolean(doc, boolean):
     # Exact first. Native automatic fuzz scales with the combined bounds, which
     # through-all tools inflate (a 0.5 m tool fuzzes ~6e-5 mm); near-tangent
     # sections then carried ~3e-4 mm edge tolerances and later fillets came
@@ -1120,6 +1152,21 @@ def _native_boolean(doc, source, tools, name, key, label, kind):
             shape.isNull() or len(shape.Solids) != 1 or _native_failed(boolean)):
         boolean.FuzzyTolerance = -1.0
         doc.recompute()
+
+
+def _native_boolean(doc, source, tools, name, key, label, kind, refine=True):
+    result = _output(doc, source, name + "Part", key, label)
+    doc.recompute()
+    tip = result.Tip
+    # Boolean.Group claims its tool Bodies in a GeoFeatureGroup. Every Boolean
+    # therefore owns private native wrappers around a shared tool's native Tip.
+    private_tools = [_boolean_tool(doc, result, tool, name + "BooleanTool") for tool in tools]
+    boolean = result.newObject("PartDesign::Boolean", name)
+    boolean.BaseFeature = tip
+    boolean.Type = {"union": 0, "subtract": 1, "intersect": 2}[kind]
+    boolean.Group = private_tools
+    boolean.Refine = refine
+    _evaluate_boolean(doc, boolean)
     return result, boolean
 
 
@@ -1234,7 +1281,7 @@ def _tool(controller, doc, req, name):
             raise open_profile_error(profile)
     if op in {"pad", "pocket"}:
         end_type = req.get("end_type", "blind")
-        if end_type not in {"blind", "through_all", "up_to_face"}:
+        if end_type not in extrusion_edit.END_TYPES:
             raise _error("invalid_argument", "end_type must be blind, through_all or up_to_face")
         if end_type == "up_to_face" or "up_to_face" in req:
             from . import selectors, reference_tools
@@ -1305,6 +1352,9 @@ def _tool(controller, doc, req, name):
             doc.recompute()
         else:
             spine = _world_profile(doc, path, name + "Path")
+        if App.GuiUp and getattr(path, "KurtShapeCurve", False):
+            # Consumed like a profile sketch.
+            path.ViewObject.Visibility = False
         source = _world_profile(doc, profile, name + "Profile")
         tool = doc.addObject("Part::Sweep", name)
         tool.Sections = [source]
@@ -1335,10 +1385,230 @@ def _tool(controller, doc, req, name):
     return tool
 
 
+def _negligible(before, tool):
+    """Largest volume change that counts as "nothing" for one part.
+
+    OCCT's volume of curved (BSpline) solids carries noise of about 1e-7 of
+    the part's volume: a helical cut that OCCT silently missed still "removed"
+    0.005 mm3 of a 9486 mm3 drill. Pocket's 1e-7 mm3 stays the floor. Taking
+    the smaller of the part and tool scales keeps small real cuts on large
+    parts (a pin hole in a block) above the limit.
+    """
+    return max(1e-7, min(1e-6 * abs(before), 1e-5 * abs(tool)))
+
+
+def _union_box(boxes):
+    low = [min(box["min"][axis] for box in boxes) for axis in range(3)]
+    high = [max(box["max"][axis] for box in boxes) for axis in range(3)]
+    return {"min": low, "max": high, "size": [b - a for a, b in zip(low, high)]}
+
+
+def _outside(inner, outer):
+    """Largest distance the inner box sticks out of the outer box (0 if inside)."""
+    return max(max(outer["min"][axis] - inner["min"][axis], inner["max"][axis] - outer["max"][axis], 0.0)
+               for axis in range(3))
+
+
+def _measure(facts, obj, shape, field, own=True):
+    """A volume or tight box; through the GeometryCache when ``shape`` is the object's own (3.2 F1 §5.5)."""
+    if facts is not None and obj is not None and own:
+        return facts.facts(obj, (field,))[field]
+    return geometry.scalar(shape, "volume") if field == "volume" else geometry.tight_bounding_box(shape)
+
+
+def _result_pair(output):
+    """``(body, tip, shape, own)`` for a Body (its Tip) or an explicit ``(body, tip)`` pair at a history position.
+
+    ``own`` is True when ``shape`` is the Body's current shape (cacheable by the Body's identity).
+    """
+    if isinstance(output, tuple):
+        body, tip = output
+        if body is None or tip is None:
+            return body, tip, None, False
+        if body.Tip is not None and body.Tip.Name == tip.Name:
+            return body, tip, body.Shape, True
+        shape = tip.Shape.copy()
+        shape.Placement = body.Placement.multiply(shape.Placement)
+        return body, tip, shape, False
+    return output, output.Tip, output.Shape, True
+
+
+def _check_result(doc, name, operation, tool_body, snapshots, outputs, kernel=True, recompute=True, facts=None):
+    """Post-conditions of one Add/Remove/Intersect result; returns its report.
+
+    Native success and one solid are checked first, then (with `kernel`)
+    BRepCheck; volumes must be possible for the Boolean kind, and (with
+    `kernel`) tight result bounds must stay inside what the Boolean can reach
+    and an Add must add material.
+    A failed OCCT Boolean can pass BRepCheck: a refined helical cut that
+    removed its whole tool volume (cutting a solid inside out) did. Every
+    rejection names the operation as `feature` and the affected `part`.
+    """
+    began = time.perf_counter()
+    if recompute:
+        doc.recompute()
+    cache = facts
+    if tool_body is None or tool_body.Shape.isNull():
+        raise _error("build_failed", f"{name} has no tool solid to check", feature=name)
+    tool_volume = _measure(cache, tool_body, tool_body.Shape, "volume")
+    if operation == "add":
+        rows = [(snapshots[0][0], [source for _, source in snapshots], outputs[0])]
+    else:
+        rows = [(key, [source], output) for (key, source), output in zip(snapshots, outputs)]
+    facts = []
+    for key, sources, output in rows:
+        body, tip, shape, own = _result_pair(output)
+        if body is None or tip is None or shape is None:
+            raise _error("build_failed", f"{name} lost a recorded output for part {key}", feature=name, part=key)
+        if any(source is None or source.Shape.isNull() for source in sources):
+            raise _error("build_failed", f"{name} lost a recorded input snapshot for part {key}", feature=name, part=key)
+        if shape.isNull() or len(shape.Solids) != 1 or _native_failed(body) or tip and _native_failed(tip):
+            raise _error("build_failed", f"{name} did not produce one valid solid for part {key}",
+                         feature=name, part=key, body=body.Name, status=tip.getStatusString() if tip else body.getStatusString())
+        facts.append((key, sources, (body, shape, own), [_measure(cache, source, source.Shape, "volume") for source in sources],
+                      _measure(cache, body, shape, "volume", own)))
+    if kernel:
+        for key, sources, (body, shape, own), before, after in facts:
+            check = geometry.check_shape(shape.copy())
+            if not check["valid"]:
+                raise _error("invalid_geometry", f"{name} produced an invalid solid for part {key} (BRepCheck)",
+                             feature=name, part=key, check="brepcheck", issues=check["issues"])
+    if tool_volume <= 1e-7:
+        raise _error("invalid_geometry", f"The {name} tool solid has no positive volume (empty or inside out)",
+                     feature=name, check="tool", tool_volume_mm3=tool_volume)
+    for key, sources, (body, shape, own), before, after in facts:
+        slack = max(1e-7, 1e-6 * (sum(abs(value) for value in before) + abs(tool_volume)))
+        if operation == "remove":
+            low, high = sum(before) - tool_volume, sum(before)
+        elif operation == "intersect":
+            low, high = 0.0, min(sum(before), tool_volume)
+        else:
+            low, high = max(max(before), tool_volume), sum(before) + tool_volume
+        if not low - slack <= after <= high + slack:
+            raise _error("invalid_geometry", f"{name} left part {key} with {after:.6g} mm3, outside the "
+                         f"{low:.6g}..{high:.6g} mm3 a {operation} with a {tool_volume:.6g} mm3 tool can give",
+                         feature=name, part=key, check="volume", volume_before_mm3=sum(before),
+                         volume_after_mm3=after, tool_volume_mm3=tool_volume)
+    if kernel:
+        tool_box = _measure(cache, tool_body, tool_body.Shape, "bbox") if operation != "remove" else None
+        for key, sources, (body, shape, own), before, after in facts:
+            boxes = [_measure(cache, source, source.Shape, "bbox") for source in sources]
+            reach = _union_box(boxes + [tool_box]) if operation == "add" else boxes[0]
+            box = _measure(cache, body, shape, "bbox", own)
+            outside = _outside(box, reach)
+            if operation == "intersect":
+                outside = max(outside, _outside(box, tool_box))
+            if outside > max(1e-3, 1e-6 * math.dist(reach["min"], reach["max"])):
+                raise _error("invalid_geometry", f"{name} result for part {key} reaches {outside:.6g} mm beyond "
+                             f"what a {operation} can give (failed Boolean)", feature=name, part=key, check="bounds",
+                             outside_mm=outside, bbox_mm=box, allowed_bbox_mm=reach)
+    parts = [{"part": key, "body": body.Name, "volume_before_mm3": sum(before), "volume_after_mm3": after,
+              "volume_delta_mm3": after - sum(before), **({"merged_parts": [row[0] for row in snapshots]}
+                                                         if operation == "add" else {})}
+             for key, sources, (body, shape, own), before, after in facts]
+    if operation == "remove" and not any(sum(before) - after > _negligible(sum(before), tool_volume)
+                                         for key, sources, (body, shape, own), before, after in facts):
+        raise _error("empty_cut", f"{name} removed no material from the selected scope", feature=name, parts=parts,
+                     tool_volume_mm3=tool_volume)
+    # The live GUI preview shows a reversed Add's tool on the unchanged part;
+    # acceptance rejects it.
+    if operation == "add" and len(snapshots) == 1 and kernel:
+        key, sources, (body, shape, own), before, after = facts[0]
+        if after - before[0] <= _negligible(before[0], tool_volume):
+            raise _error("empty_add", f"{name} added no material to part {key}", feature=name, parts=parts,
+                         tool_volume_mm3=tool_volume)
+    return {"feature": name, "operation": operation, "tool_volume_mm3": tool_volume,
+            "volume_delta_mm3": sum(row["volume_delta_mm3"] for row in parts), "parts": parts,
+            "geometry_check": "valid" if kernel else "not_checked", "check_ms": (time.perf_counter() - began) * 1000}
+
+
+def _checked_result(doc, req, name, operation, tool_body, snapshots, outputs, booleans, refine):
+    """Verify a result; a refined result that fails is retried once unrefined."""
+    # "live": the GUI's per-edit preview, without BRepCheck, bounds or empty Add.
+    kernel = req.get("_result_checks") != "live"
+    try:
+        report = _check_result(doc, name, operation, tool_body, snapshots, outputs, kernel)
+        report["refine"] = {"requested": refine, "applied": refine, "retried_unrefined": False}
+        return report
+    except Exception as exc:
+        code = getattr(exc, "code", None)
+        if not refine or code not in {"build_failed", "invalid_geometry", "empty_cut", "empty_add"}:
+            raise
+        refined = {"code": code, "message": str(exc), **{key: value for key, value in exc.details.items()
+                                                          if key in {"check", "part", "issues"}}}
+    _set_refine(snapshots, booleans, False)
+    for boolean in booleans:
+        _evaluate_boolean(doc, boolean)
+    try:
+        report = _check_result(doc, name, operation, tool_body, snapshots, outputs, kernel)
+    except Exception as exc:
+        if hasattr(exc, "details"):
+            exc.details["refine"] = {"requested": True, "retried_unrefined": True, "refined_failure": refined,
+                                     "hint": "The unrefined retry failed too. A refined earlier result in this part "
+                                             "(for example a previous helical cut) can cause this; rebuild it with "
+                                             "refine:false"}
+        raise
+    report["refine"] = {"requested": True, "applied": False, "retried_unrefined": True, "refined_failure": refined}
+    return report
+
+
+def operation_inputs(doc, rep):
+    """``(operation, tool_body, snapshots, outputs, booleans)`` of a recorded result operation.
+
+    snapshots are ``(part id, snapshot Body)`` pairs, outputs ``(output Body, recorded tip)`` pairs
+    and booleans the PartDesign::Boolean tips, as the operation left them (F1 D2).
+    """
+    request = json.loads(getattr(rep, "KurtShapeStudioOperation", "") or "{}")
+    operation = request.get("operation", "remove" if request.get("op") == "pocket" else "new")
+    tool_body = getattr(rep, "KurtShapeNeutralToolBody", None)
+    snapshots = list(zip(getattr(rep, "KurtShapeInputPartIds", []), getattr(rep, "KurtShapeInputSnapshots", [])))
+    names, tips = list(getattr(rep, "KurtShapeOutputParts", [])), list(getattr(rep, "KurtShapeOutputTips", []))
+    outputs = [(doc.getObject(body), doc.getObject(tips[index]) if index < len(tips) else None)
+               for index, body in enumerate(names)]
+    booleans = [tip for _, tip in outputs if tip is not None and tip.TypeId == "PartDesign::Boolean"]
+    return operation, tool_body, snapshots, outputs, booleans
+
+
+def refine_state(rep):
+    """``{requested, applied}``: the recorded refine request and whether every Boolean tip is refined now."""
+    request = json.loads(getattr(rep, "KurtShapeStudioOperation", "") or "{}")
+    requested = request.get("refine", True)
+    booleans = operation_inputs(rep.Document, rep)[4]
+    applied = all(bool(getattr(boolean, "Refine", False)) for boolean in booleans) if booleans else bool(requested)
+    return {"requested": bool(requested) if isinstance(requested, bool) else True, "applied": applied}
+
+
+def check_operation(doc, rep, kernel=True, facts=None):
+    """Run the 3.1 post-conditions of a recorded result operation at its own history position.
+
+    No recompute: the recorded tips, tool Body and snapshots are read as they are, so a
+    later feature (a fillet moving the Body Tip) never enters the check. Adds the refine state.
+    """
+    operation, tool_body, snapshots, outputs, _ = operation_inputs(doc, rep)
+    report = _check_result(doc, rep.Name, operation, tool_body, snapshots, outputs, kernel, recompute=False, facts=facts)
+    state = refine_state(rep)
+    report["refine"] = {"requested": state["requested"], "applied": state["applied"], "retried_unrefined": False}
+    return report
+
+
+def retry_unrefined(controller, doc, rep):
+    """The creation-time unrefined retry for a history failure (F1 D6), inside the request's transaction.
+
+    Unrefines the snapshots and Boolean tips, evaluates the Booleans exactly and then with native
+    automatic fuzz where exact fails, and runs one managed recompute; the caller re-gates and re-keys.
+    """
+    _, _, snapshots, _, booleans = operation_inputs(doc, rep)
+    _set_refine(snapshots, booleans, False)
+    for boolean in booleans:
+        _evaluate_boolean(doc, boolean)
+    controller._recompute(doc)
+
+
 def _result_operation(controller, doc, req, name):
     operation = req.get("operation", "remove" if req["op"] == "pocket" else "new")
-    if operation not in {"new", "add", "remove", "intersect"}:
+    if operation not in RESULT_OPERATIONS:
         raise _error("invalid_argument", "Operation must be new, add, remove or intersect")
+    refine = _bool(req, "refine", True)
     tool = _tool(controller, doc, req, name if operation == "new" else name + "Tool")
     tool_body = _output(doc, tool, name + "ToolBody")
     _prop(tool_body, "App::PropertyBool", "KurtShapeInternal", True)
@@ -1375,7 +1645,7 @@ def _result_operation(controller, doc, req, name):
         raise _error("invalid_argument", "Merge scope must be auto or a nonempty part list")
     if not chosen:
         raise _error("empty_merge_scope", "The result does not touch a part in the selected scope")
-    snapshots = _inputs(doc, chosen, name)
+    snapshots = _inputs(doc, chosen, name, refine)
     through = req.get("end_type") == "through_all" or req["op"] == "pocket" and req.get("through_all", True)
     if through and tool.TypeId == "Part::Extrusion":
         bounds = doc.addObject("Part::Compound", name + "ScopeBounds")
@@ -1392,7 +1662,8 @@ def _result_operation(controller, doc, req, name):
     if operation == "add":
         first = current_part(doc, snapshots[0][0])
         result, rep = _native_boolean(doc, snapshots[0][1], [tool_body] + [x[1] for x in snapshots[1:]],
-                                      name, snapshots[0][0], getattr(first, "KurtShapePartName", first.Label), "union")
+                                      name, snapshots[0][0], getattr(first, "KurtShapePartName", first.Label), "union",
+                                      refine)
         outputs.append(result)
         reps.append(rep)
     else:
@@ -1400,19 +1671,23 @@ def _result_operation(controller, doc, req, name):
             original = current_part(doc, key)
             result, rep = _native_boolean(doc, source, [tool_body], name if index == 0 else name + "Result", key,
                                           getattr(original, "KurtShapePartName", original.Label),
-                                          "subtract" if operation == "remove" else "intersect")
+                                          "subtract" if operation == "remove" else "intersect", refine)
             outputs.append(result)
             reps.append(rep)
-    _validate(doc, outputs)
-    if operation == "remove" and not any(geometry.scalar(result.Shape, "volume") < geometry.scalar(source.Shape, "volume") - 1e-7
-                                          for result, (key, source) in zip(outputs, snapshots)):
-        raise _error("empty_cut", "Remove did not remove material from the selected scope")
+    report = _checked_result(doc, req, name, operation, tool_body, snapshots, outputs, reps, refine)
+    controller._reports["result_report"] = report
     _prop(reps[0], "App::PropertyLinkGlobal", "KurtShapeTool", tool)
     _prop(reps[0], "App::PropertyLinkGlobal", "KurtShapeNeutralToolBody", tool_body)
     if through and tool.TypeId == "Part::Extrusion":
         _prop(reps[0], "App::PropertyLinkGlobal", "KurtShapeScopeBounds", bounds)
     _prop(reps[0], "App::PropertyStringList", "KurtShapeMergePartIds", chosen)
-    return _record(doc, reps[0], req, outputs, chosen, snapshots)
+    recorded = _record(doc, reps[0], req, outputs, chosen, snapshots)
+    checks = getattr(controller, "result_checks", None)
+    if checks is not None and req.get("_result_checks") != "live":
+        # Seed the history validator (contract 3.2 F1 D9): the post-dispatch validation reuses this
+        # verdict through its creation key instead of running a second BRepCheck.
+        checks.remember(doc, reps[0].Name, report)
+    return recorded
 
 
 def _transform(req):
@@ -1526,7 +1801,7 @@ def handle(controller, doc, req):
         return _record(doc, record, req, [], [key])
     if op == "boolean_parts":
         kind = req.get("kind", "union")
-        if kind not in {"union", "subtract", "intersect"}:
+        if kind not in BOOLEAN_KINDS:
             raise _error("invalid_argument", "Boolean kind must be union, subtract or intersect")
         targets, tools = req.get("targets"), req.get("tools")
         if not isinstance(targets, list) or not targets or not isinstance(tools, list) or not tools or set(targets) & set(tools):
@@ -1624,7 +1899,7 @@ def handle(controller, doc, req):
         return _record(doc, representative, req, [output], [] if copy else [part_id(original)], snapshots)
     if op in {"linear_pattern_parts", "circular_pattern_parts", "mirror_parts"}:
         operation = req.get("operation", "new")
-        if operation not in {"new", "add", "remove", "intersect"}:
+        if operation not in RESULT_OPERATIONS:
             raise _error("invalid_argument", "Operation must be new, add, remove or intersect")
         # Feature-pattern semantics: the source parts act together with their
         # copies, as consumed tools (boolean_parts tools), never as targets.

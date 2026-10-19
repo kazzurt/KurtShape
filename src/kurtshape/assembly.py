@@ -85,6 +85,8 @@ def _id(doc, value, fallback):
         return fallback
     if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", value):
         raise _error("invalid_id", "Native IDs must begin with a letter and contain letters, digits or underscores")
+    if value.lower() == "params":
+        raise _error("invalid_id", "The id Params is reserved for the model parameter set", reason="reserved_id")
     if doc.getObject(value):
         raise _error("duplicate_id", "The native object ID already exists", feature=value)
     return value

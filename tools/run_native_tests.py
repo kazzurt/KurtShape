@@ -6,6 +6,7 @@ import ast
 from collections import Counter
 import hashlib
 import importlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -43,6 +44,9 @@ SUITES = {
         "test_step_capture.StepDigestCandidateTests",
         "test_geometry_check_jobs.GeometryCheckJobTests",
         "test_geometry_check_jobs.GeometryCheckWorkerLifetimeTests",
+        "test_render_jobs.RenderWorkerLifetimeTests", "test_model_render.ModelRenderTests",
+        "test_render_jobs.RenderJobTests", "test_render_jobs.RenderOwnershipTests",
+        "test_parameters.ParameterTests", "test_parameters.ParameterPruningTests", "test_batch.BatchTests",
         "test_snapshot_transport.SnapshotTransportTests",
         "test_reference_tools.ReferenceToolTests", "test_datum_planes.DatumPlaneFrameTests",
         "test_selectors.SelectorTests",
@@ -50,6 +54,8 @@ SUITES = {
         "test_selector_parameters.SelectorParameterTests",
         "test_scope_membership.ScopeMembershipTests",
         "test_part_studio.PartStudioTests", "test_pattern_tools.PatternToolTests",
+        "test_result_checks.ResultCheckTests",
+        "test_result_validation.ResultValidationTests", "test_result_validation.ResultValidationPerfTests",
         "test_selector_consumers.SelectorConsumerTests",
         "test_multi_edge_references.MultiEdgeReferenceTests",
         "test_runtime_layout.RuntimeLayoutTests", "test_settings.SettingsTests",
@@ -60,14 +66,32 @@ SUITES = {
         "test_responsiveness.InteractionTimingTests", "test_responsiveness.HistoryModelTests",
         "test_responsiveness.SketchStallDiagnosticsTests",
         "test_responsiveness.RecoverySchedulingTests",
+        "test_validation_tooling.ValidationToolingTests",
+        "test_dispatch_pipeline.DispatchPipelineTests", "test_contract32_conventions.Contract32ConventionTests",
+        "test_document_lifecycle.DocumentLifecycleTests", "test_compact_inspection.CompactInspectionTests",
+        "test_parameter_panel.ParameterPanelTests", "test_parameter_panel.SectionLayoutTests", "test_parameter_panel.ParameterAdapterTranslationTests",
+        "test_operation_schemas.OperationSchemaTests",
     ),
-    "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge_native.NativeBridgeStatusTests"),
+    "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
+               "test_build_identity.BuildIdentityTests"),
     "shortcuts": ("test_shortcuts.RouterTests", "test_shortcuts.QtRoutingTests", "test_tool_session.ToolSessionTests",
                   "test_tool_search.ToolSearchTests"),
     "workflows": (),
 }
 EXTERNAL_SKIP_PREFIX = "external fixture:"
 PERF_SKIP_PREFIX = "perf:"
+
+
+def kurtshape_build_sha256():
+    """The loaded-build digest of src/kurtshape as build_identity computes it (module loaded by path).
+
+    A report can then be matched to a running app's capabilities.build.source_sha256.
+    """
+    path = ROOT / "src" / "kurtshape" / "build_identity.py"
+    spec = importlib.util.spec_from_file_location("kurtshape_build_identity_standalone", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.snapshot(path.parent)["sha256"]
 
 
 def source_snapshot():
@@ -78,7 +102,11 @@ def source_snapshot():
               ROOT / "tools" / "native_validation_snapshot.py",
               ROOT / "tools" / "perf" / "bench_core.py",
               ROOT / "tools" / "perf" / "report.py",
-              ROOT / "tools" / "perf" / "budgets.json"]
+              ROOT / "tools" / "perf" / "budgets.json",
+              # Imported by test_validation_tooling (A/B acceptance tooling).
+              ROOT / "tools" / "perf" / "compare_ab.py",
+              ROOT / "tools" / "perf" / "run_ab.py",
+              ROOT / "tools" / "perf" / "interaction_probe.py"]
     return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in files}
 
@@ -249,12 +277,46 @@ def counts(cases):
             "expected_failures": tally["expected_failure"]}
 
 
-def child_suite(name, report_path):
+def select_tests(only):
+    """Route MODULE[.CLASS[.METHOD]] names to their registered suites, in SUITES order.
+
+    A bare module selects every class of that module registered in SUITES. A name
+    that is not covered by a SUITES entry raises ValueError: --only never runs an
+    unregistered class, so partial runs cannot hide the inventory gate.
+    """
+    selection = {}
+    unknown = []
+    for name in dict.fromkeys(only):
+        if not isinstance(name, str) or not name or name != name.strip() or ".." in name:
+            unknown.append(repr(name))
+            continue
+        routes = []
+        for suite, classes in SUITES.items():
+            for registered in classes:
+                if name == registered or name.startswith(registered + "."):
+                    routes.append((suite, name))
+                elif registered.startswith(name + ".") and "." not in registered[len(name) + 1:]:
+                    routes.append((suite, registered))
+        if not routes:
+            unknown.append(name)
+            continue
+        for suite, target in routes:
+            selection.setdefault(suite, [])
+            if target not in selection[suite]:
+                selection[suite].append(target)
+    if unknown:
+        raise ValueError("not registered in SUITES: " + ", ".join(unknown))
+    return {suite: selection[suite] for suite in SUITES if suite in selection}
+
+
+def child_suite(name, report_path, only=None):
     sys.path.insert(0, str(ROOT / "src"))
     sys.path.insert(0, str(ROOT / "tests"))
     before = source_snapshot()
     started = time.perf_counter()
     report = {"name": name, "passed": False, "cases": [], "engine": {}}
+    if only:
+        report["selection"] = list(only)
     try:
         if name == "native":
             def deny_network(*args, **kwargs):
@@ -265,6 +327,8 @@ def child_suite(name, report_path):
             report["network"] = "Python connect/create_connection/DNS denied"
         else:
             report["network"] = "Loopback available for bridge transport regression"
+        if name == "workflows" and only:
+            raise RuntimeError("The workflows suite has no selectable test classes")
         if name == "workflows":
             module = importlib.import_module("validate_modeling_workflows")
             code = module.main()
@@ -278,7 +342,7 @@ def child_suite(name, report_path):
             report["checks"] = module.REPORT["checks"]
             report["passed"] = code == 0
         else:
-            suite = unittest.defaultTestLoader.loadTestsFromNames(SUITES[name])
+            suite = unittest.defaultTestLoader.loadTestsFromNames(list(only) if only else SUITES[name])
             result = unittest.TextTestRunner(verbosity=2, resultclass=RecordingResult).run(suite)
             report["cases"] = result.cases
             report["passed"] = result.wasSuccessful()
@@ -321,13 +385,24 @@ def reap_owned_process(process):
         process.wait(timeout=10)
 
 
-def run_suite(name, folder, timeout):
-    folder.mkdir(parents=True, exist_ok=True)
-    report_path = folder / "suite-result.json"
+def child_command(name, report_path, only=None):
     command = [sys.executable, "-B", str(Path(__file__).resolve()),
                "--in-process", name, "--report", str(report_path)]
+    for item in only or ():
+        command += ["--only", item]
+    return command
+
+
+def run_suite(name, folder, timeout, only=None, perf=False):
+    folder.mkdir(parents=True, exist_ok=True)
+    report_path = folder / "suite-result.json"
+    command = child_command(name, report_path, only)
+    environment = isolated_environment(folder)
+    if perf:
+        # Child only: support.perf_only classes run; the parent environment is untouched.
+        environment["KURTSHAPE_PERF"] = "1"
     started = time.perf_counter()
-    process = subprocess.Popen(command, cwd=ROOT, env=isolated_environment(folder),
+    process = subprocess.Popen(command, cwd=ROOT, env=environment,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                text=True, encoding="utf-8", errors="replace",
                                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
@@ -346,7 +421,12 @@ def run_suite(name, folder, timeout):
         reap_owned_process(process)
         raise
     (folder / "suite-output.txt").write_text(output, encoding="utf-8")
-    print(output, end="", flush=True)
+    try:
+        print(output, end="", flush=True)
+    except UnicodeEncodeError:
+        # A redirected console may be cp1252; the child's text (an en dash in a message) must not fail the suite.
+        encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+        print(output.encode(encoding, "replace").decode(encoding), end="", flush=True)
     if report_path.is_file():
         report = json.loads(report_path.read_text(encoding="utf-8"))
     else:
@@ -426,6 +506,10 @@ def main():
     parser.add_argument("--require-external", action="store_true")
     parser.add_argument("--timeout", type=float, default=1800)
     parser.add_argument("--keep-temp", action="store_true")
+    parser.add_argument("--only", action="append", metavar="MODULE[.CLASS[.METHOD]]",
+                        help="run only these registered tests (repeatable); a partial run, never the regression result")
+    parser.add_argument("--perf", action="store_true",
+                        help="set KURTSHAPE_PERF=1 in the suite children so perf_only classes run")
     parser.add_argument("--in-process", choices=tuple(SUITES), help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.timeout <= 0:
@@ -433,10 +517,21 @@ def main():
     if args.in_process:
         if not args.report or not os.environ.get("KURTSHAPE_TEST_RUN_DIR"):
             parser.error("--in-process requires the parent run environment and --report")
-        return child_suite(args.in_process, args.report)
+        return child_suite(args.in_process, args.report, args.only)
+    selection = None
+    if args.only:
+        if os.environ.get("KURTSHAPE_WRITE_EVIDENCE"):
+            # A partial report must never become tracked validation/ evidence.
+            parser.error("--only cannot be combined with KURTSHAPE_WRITE_EVIDENCE")
+        try:
+            selection = select_tests(args.only)
+        except ValueError as exc:
+            parser.error(str(exc))
+        if args.suite and not set(selection) <= set(args.suite):
+            parser.error("--only selects tests outside --suite: " + ", ".join(sorted(set(selection) - set(args.suite))))
     before = source_snapshot()
     missing = unassigned_test_cases()
-    requested = list(dict.fromkeys(args.suite or SUITES))
+    requested = list(selection) if selection else list(dict.fromkeys(args.suite or SUITES))
     base = Path(os.environ.get("KURTSHAPE_TEST_TMP", ROOT / "runtime" / "test-tmp")).resolve()
     register_runtime_folder(base)
     base.mkdir(parents=True, exist_ok=True)
@@ -445,18 +540,26 @@ def main():
     junit_path = Path(args.junit) if args.junit else report_path.with_suffix(".xml")
     report = {"passed": False, "method": "Fresh isolated Python subprocess per suite",
               "suites": [], "unassigned_test_cases": missing, "run_dir": str(run),
+              "kurtshape_build_sha256": kurtshape_build_sha256(),
               "limits": "Headless native and Qt regressions; no GUI acceptance or native C++ networking interception"}
+    if selection:
+        report["selection"] = list(dict.fromkeys(args.only))
+    if args.perf:
+        report["perf"] = True
     started = time.perf_counter()
     if missing:
         print("Unassigned TestCase classes: " + ", ".join(missing), file=sys.stderr)
     else:
         for name in requested:
             print(f"Running {name} suite in {run / name}", flush=True)
+            only = selection.get(name) if selection else None
             try:
-                suite = run_suite(name, run / name, args.timeout)
+                suite = run_suite(name, run / name, args.timeout, only, args.perf)
             except Exception:
                 suite = {"name": name, "passed": False, "cases": [], "counts": counts([]),
                          "seconds": 0.0, "source_unchanged": False, "error": traceback.format_exc()}
+            if only:
+                suite["selection"] = list(only)
             rejected = []
             for skip in suite.get("skips", []):
                 reason = skip["reason"]

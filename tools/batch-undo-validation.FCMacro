@@ -1,0 +1,272 @@
+"""GUI behaviour of contract 3.2 U6: an atomic batch through the real bridge in a hidden private FreeCAD.
+
+Run by tools/run_gui_recipe.ps1 -Recipe batch-undo: a hidden private FreeCAD process (own -u/-s
+configuration, never Kurt's window or profile) starts the production ui.start() Panel with the real
+Bridge and sends batch requests over loopback HTTP; the panel's own tick serves them. It asserts:
+  1. a batch preview leaves the document and the GUI unchanged (revision, undo/redo, objects, intent,
+     Modified flag, selection, camera, active document);
+  2. a failing batch leaves them unchanged too and names its failing step;
+  3. a 4-feature batch commits as one native undo step and one revision change, and the tree shows the
+     four features;
+  4. one panel undo removes all four features and one panel redo restores them;
+  5. the GUI sets the batch time budget below the bridge timeout.
+"""
+import http.client
+import json
+import os
+from pathlib import Path
+import sys
+import threading
+import time
+import traceback
+import uuid
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime"), session
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path[:0] = [str(root / "src"), str(root / "tools"), str(root / "tools" / "perf")]
+from kurtshape import ui
+from kurtshape.core import intent_signature
+from kurtshape_evidence import evidence_dir
+
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("batch-undo")
+report = {"passed": False, "checks": [], "pid": os.getpid(), "qpa": app.platformName(),
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "method": "Hidden private FreeCAD GUI; production ui.start() Panel with the real Bridge; loopback batch and "
+                    "batch-preview requests served by the panel tick; undo/redo through the panel",
+          "limits": ["No physical display; the tree is read through FreeCAD's view providers and the panel's state."]}
+panel = None
+cleaned = False
+BATCH_FEATURES = ["Top", "BossSketch", "Boss", "BossRound"]
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition, detail=None):
+    if not condition:
+        raise AssertionError(label + ("" if detail is None else ": " + str(detail)))
+    report["checks"].append(label)
+    save()
+
+
+def post(payload, timeout=60):
+    connection = http.client.HTTPConnection("127.0.0.1", panel.bridge.server.server_port, timeout=timeout)
+    try:
+        connection.request("POST", "/operation", body=json.dumps(payload),
+                           headers={"Authorization": "Bearer " + panel.bridge.token, "Content-Type": "application/json"})
+        response = connection.getresponse()
+        return response.status, json.loads(response.read())
+    finally:
+        connection.close()
+
+
+def bridge(request, timeout=60):
+    """Send one request from a worker thread while the GUI event loop (and so the panel tick) runs."""
+    result = {}
+
+    def send():
+        try:
+            result["status"], result["response"] = post(request, timeout)
+        except Exception:
+            result["error"] = traceback.format_exc()
+    worker = threading.Thread(target=send, daemon=True)
+    worker.start()
+    deadline = time.monotonic() + timeout
+    while worker.is_alive() and time.monotonic() < deadline:
+        QtTest.QTest.qWait(10)
+    if "response" not in result:
+        raise AssertionError("bridge request got no response: " + json.dumps(result, default=str)[:800])
+    QtTest.QTest.qWait(300)  # the trailing tick and refresh run here
+    return result["response"]
+
+
+def steps():
+    return [{"op": "create_plane", "id": "Top", "origin": [0, 0, 10], "normal": [0, 0, 1]},
+            {"op": "create_sketch", "id": "BossSketch", "as": "sk", "support": {"feature": "Top"}},
+            {"op": "add_circle", "sketch": {"$ref": "sk"}, "x": 30, "y": 20, "diameter": 12},
+            {"op": "pad", "id": "Boss", "as": "boss", "profile": {"$ref": "sk"}, "length": 5, "operation": "add",
+             "merge_scope": ["Body"]},
+            {"op": "fillet", "id": "BossRound", "radius": 1,
+             "edges": [{"kind": "closest", "point": [30, 26, 15],  # on the top circle, off its seam
+                        "query": {"kind": "owned_by", "part": "Body", "entity_type": "edge"}}]}]
+
+
+def envelope(op, **args):
+    state = panel.state
+    return {"op": op, "document_id": state["document_id"], "expected_revision": state["revision"],
+            "request_id": str(uuid.uuid4()), **args}
+
+
+def invariants(doc):
+    core = panel.core
+    gui = Gui.getDocument(doc.Name)
+    view = gui.activeView()
+    return {"active": App.ActiveDocument.Name if App.ActiveDocument else None,
+            "selection": sorted((item.DocumentName, item.ObjectName, tuple(item.SubElementNames))
+                                for item in Gui.Selection.getSelectionEx("", 0)),
+            "camera": view.getCamera() if view is not None and hasattr(view, "getCamera") else None,
+            "objects": sorted(obj.Name for obj in doc.Objects), "intent": intent_signature(doc),
+            "modified": gui.Modified, "undo_names": list(doc.UndoNames), "redo_names": list(doc.RedoNames),
+            "pending": doc.HasPendingTransaction, "revision": core._meta(doc).Revision}
+
+
+def tree_shows(doc, names):
+    gui = Gui.getDocument(doc.Name)
+    return all(doc.getObject(name) is not None and gui.getObject(name) is not None for name in names)
+
+
+def run():
+    global panel
+    try:
+        from bench_core import prepare_environment
+        scratch = prepare_environment(session / "batch-undo-files")  # a granted project root
+        panel = ui.start()
+        core = panel.core
+        check("Production panel started with the real loopback Bridge",
+              type(panel.bridge).__name__ == "Bridge" and panel.bridge.server.server_port > 0)
+        check("The GUI batch budget is two thirds of the bridge timeout",
+              core.request_budget_s is not None and abs(core.request_budget_s - panel.bridge.request_timeout * 2 / 3) < 1e-9,
+              (core.request_budget_s, panel.bridge.request_timeout))
+        check("New document", panel.operation("new", name="Batch GUI") is not None, panel.message.text())
+        check("Profile", panel.operation("sketch_rectangle", id="Base", width=60, height=40) is not None, panel.message.text())
+        check("Block", panel.operation("pad", id="Block", profile="Base", length=10, operation="new") is not None,
+              panel.message.text())
+        check("Saved", panel.operation("save", path=str(scratch / "batch-gui.FCStd")) is not None, panel.message.text())
+        doc = panel.document()
+        bystander = App.newDocument("Bystander")
+        bystander.addObject("Part::Box", "Box")
+        bystander.recompute()
+        App.setActiveDocument(doc.Name)
+        Gui.ActiveDocument = Gui.getDocument(doc.Name)
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, "Base")
+        Gui.getDocument(doc.Name).activeView().viewFront()
+        QtTest.QTest.qWait(300)
+        before = invariants(doc)
+        check("Fixture is clean, selected and active", before["modified"] is False and before["selection"]
+              and before["active"] == doc.Name, before)
+
+        # 1. A batch preview changes nothing.
+        response = bridge(envelope("preview", proposal={"op": "batch", "label": "boss", "steps": steps()}))
+        check("Batch preview accepted", response.get("ok") and response["result"]["accepted"] is True,
+              json.dumps(response)[:800])
+        check("Batch preview reports every step", response["result"]["batch_report"]["completed_steps"] == 5,
+              response["result"]["batch_report"])
+        check("Preview leaves the document and the GUI unchanged", invariants(doc) == before, (invariants(doc), before))
+        check("No transaction is left active after the preview", App.getActiveTransaction() is None)
+
+        # 2. A failing batch changes nothing and names its step.
+        failing = steps()[:4] + [{"op": "fillet", "id": "BossRound", "radius": 40,
+                                  "edges": [{"kind": "closest", "point": [30, 26, 15],
+                                             "query": {"kind": "owned_by", "part": "Body", "entity_type": "edge"}}]}]
+        response = bridge(envelope("batch", label="too big", steps=failing))
+        check("Failing batch rejected at its fillet step",
+              response.get("ok") is False and response["error"]["batch"]["step"] == 4
+              and response["error"]["batch"]["rolled_back"] is True, json.dumps(response)[:800])
+        after_failure = invariants(doc)
+        check("Failing batch leaves the content and the GUI flag unchanged",
+              {key: after_failure[key] for key in ("objects", "intent", "modified", "undo_names", "revision", "active")}
+              == {key: before[key] for key in ("objects", "intent", "modified", "undo_names", "revision", "active")},
+              (after_failure, before))
+        check("No transaction is left active after the failure", App.getActiveTransaction() is None
+              and not doc.HasPendingTransaction)
+
+        # 3. The batch commits as one undo step and one revision change; the tree shows its features.
+        undo_before = list(doc.UndoNames)
+        response = bridge(envelope("batch", label="boss with round", steps=steps()))
+        check("Batch committed", response.get("ok") is True, json.dumps(response)[:800])
+        result = response["result"]
+        check("The four features were created",
+              result["batch_report"]["created_features"] == BATCH_FEATURES, result["batch_report"]["created_features"])
+        check("One native undo step named after the label",
+              doc.UndoNames[0] == "KurtShape: batch boss with round" and doc.UndoNames[1:] == undo_before[:len(doc.UndoNames) - 1],
+              (list(doc.UndoNames), undo_before))
+        check("One revision change", result["revision"] != before["revision"] and panel.state["revision"] == result["revision"],
+              (result["revision"], panel.state.get("revision")))
+        check("The tree shows the four features", tree_shows(doc, BATCH_FEATURES))
+        check("The panel's history lists them",
+              all(name in panel.state["studio"]["feature_order"] for name in BATCH_FEATURES), panel.state["studio"])
+        volume = result["measurements"]["volume_mm3"]
+
+        # 4. One undo removes all four; one redo restores them.
+        check("Panel undo", panel.operation("undo") is not None, panel.message.text())
+        check("One undo removed all four features", all(doc.getObject(name) is None for name in BATCH_FEATURES),
+              sorted(obj.Name for obj in doc.Objects))
+        check("Undo restored the objects and intent of before",
+              sorted(obj.Name for obj in doc.Objects) == before["objects"] and intent_signature(doc) == before["intent"])
+        check("Panel redo", panel.operation("redo") is not None, panel.message.text())
+        check("One redo restored all four features", tree_shows(doc, BATCH_FEATURES))
+        state = core.dispatch({"op": "inspect", "document_id": panel.state["document_id"]})["result"]
+        check("Redo restored a valid result of the same volume",
+              state["build_status"] == "valid" and abs(state["measurements"]["volume_mm3"] - volume) < 1e-6 * volume,
+              (state["build_status"], state["measurements"], volume))
+        report["passed"] = True
+        save()
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["passed"] = False
+        save()
+    finally:
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    except Exception:
+        report.setdefault("cleanup_errors", []).append(traceback.format_exc())
+        report["passed"] = False
+        save()
+    finally:
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["error"] = "batch-undo exceeded 240 seconds"
+    report["passed"] = False
+    save()
+    cleanup()
+
+
+save()
+QtCore.QTimer.singleShot(240000, timeout)
+QtCore.QTimer.singleShot(1200, run)

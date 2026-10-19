@@ -1,0 +1,365 @@
+"""GUI behaviour of contract 3.2 U3 (F1): result checks on edits and rebuilds.
+
+Run by tools/run_gui_recipe.ps1 -Recipe result-validation: a hidden private FreeCAD process
+(own -u/-s configuration, never Kurt's window or profile) starts the production ui.start()
+Panel with the real Bridge and drives it through panel operations, the Extrude dialog, the
+native Sketcher lease and loopback bridge requests served by the panel tick. It asserts:
+  1. inspect stays valid after an Extrude-dialog edit of a studio Add (the GUI-only property
+     writes after the commit do not stale the result table);
+  2. creation seeding hits with displayed (tessellated) tips: a studio Remove created through
+     the panel runs exactly one BRepCheck and no history check;
+  3. save/close/reopen through the bridge runs 0 history checks and reports valid;
+  4. a native Sketcher lease whose finish empties TopCut is refused: the Messages pane shows the
+     TopCut row, the editor stays open, and cancelling restores a valid model;
+  5. a property-editor-style native change shows " · checks pending"; Check Geometry validates
+     synchronously (the failed row reaches Messages and the status line) and then runs the worker;
+  6. rollback steps over unchanged operations run 0 history checks.
+"""
+import http.client
+import json
+import os
+from pathlib import Path
+import sys
+import threading
+import time
+import traceback
+import uuid
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime"), session
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path[:0] = [str(root / "src"), str(root / "tools"), str(root / "tools" / "perf")]
+from kurtshape import geometry, result_checks, studio, ui
+from kurtshape_evidence import evidence_dir
+from preview_validation import wait_for_exact
+
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("result-validation")
+report = {"passed": False, "checks": [], "pid": os.getpid(), "qpa": app.platformName(), "phases": {},
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "method": "Hidden private FreeCAD GUI; production ui.start() Panel with the real Bridge; dialog, Sketcher lease and loopback requests",
+          "limits": ["No physical display.", "Hidden-GUI timings are recorded for the record, not compared."]}
+panel = None
+cleaned = False
+counts = {"check_operation": 0, "check_shape": 0}
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition, detail=None):
+    if not condition:
+        raise AssertionError(label + ("" if detail is None else ": " + str(detail)))
+    report["checks"].append(label)
+    save()
+
+
+def reset_counts():
+    counts.update(check_operation=0, check_shape=0)
+
+
+def until(predicate, milliseconds=60000):
+    deadline = time.perf_counter() + milliseconds / 1000
+    while not predicate() and time.perf_counter() < deadline:
+        QtTest.QTest.qWait(20)
+    return predicate()
+
+
+def post(payload, timeout=120):
+    connection = http.client.HTTPConnection("127.0.0.1", panel.bridge.server.server_port, timeout=timeout)
+    try:
+        connection.request("POST", "/operation", body=json.dumps(payload),
+                           headers={"Authorization": "Bearer " + panel.bridge.token, "Content-Type": "application/json"})
+        response = connection.getresponse()
+        return response.status, json.loads(response.read())
+    finally:
+        connection.close()
+
+
+def bridge(request, timeout=120):
+    """Send one request from a worker thread while the GUI event loop (and so the panel tick) runs."""
+    result = {}
+
+    def send():
+        try:
+            result["status"], result["response"] = post(request, timeout)
+        except Exception:
+            result["error"] = traceback.format_exc()
+    worker = threading.Thread(target=send, daemon=True)
+    worker.start()
+    deadline = time.monotonic() + timeout
+    while worker.is_alive() and time.monotonic() < deadline:
+        QtTest.QTest.qWait(10)
+    if "response" not in result:
+        raise AssertionError("bridge request got no response: " + json.dumps(result, default=str)[:800])
+    QtTest.QTest.qWait(200)
+    return result["response"]
+
+
+def envelope(op, **args):
+    state = panel.state
+    return {"op": op, "document_id": state["document_id"], "expected_revision": state["revision"],
+            "request_id": str(uuid.uuid4()), **args}
+
+
+def call(op, **args):
+    state = panel.operation(op, **args)
+    if state is None:
+        raise AssertionError(op + " failed: " + panel.message.text())
+    return state
+
+
+def double_click(key):
+    item = panel.items[key]
+    panel.features.scrollToItem(item)
+    rect = panel.features.visualItemRect(item)
+    QtTest.QTest.mouseClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, rect.center())
+    QtTest.QTest.mouseDClick(panel.features.viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, rect.center())
+    QtTest.QTest.qWait(80)
+
+
+def type_into(widget, text):
+    widget.setFocus()
+    widget.selectAll()
+    QtTest.QTest.keyClicks(widget, text)
+    QtTest.QTest.qWait(30)
+
+
+def checks_block():
+    return (panel.state or {}).get("result_checks") or {}
+
+
+def run():
+    global panel
+    try:
+        from bench_core import prepare_environment
+        scratch = prepare_environment(session / "result-validation-files")
+        panel = ui.start()
+        core = panel.core
+        check("Production panel started with the real loopback Bridge",
+              type(panel.bridge).__name__ == "Bridge" and panel.bridge.server.server_port > 0)
+        original_operation, original_shape = studio.check_operation, geometry.check_shape
+
+        def counting_operation(*args, **kwargs):
+            counts["check_operation"] += 1
+            return original_operation(*args, **kwargs)
+
+        def counting_shape(*args, **kwargs):
+            counts["check_shape"] += 1
+            return original_shape(*args, **kwargs)
+        studio.check_operation, geometry.check_shape = counting_operation, counting_shape
+
+        # Kurt's model through the panel ------------------------------------------------------
+        call("new", name="Result validation GUI")
+        doc = panel.document()
+        call("sketch_rectangle", id="Base", width=20, height=20)
+        call("pad", id="Block", profile="Base", length=10, operation="new")
+        call("create_sketch", id="Cap", plane="XY")
+        call("add_rectangle", sketch="Cap", width=20, height=20)
+        call("pad", id="Raise", profile="Cap", length=15, operation="add", merge_scope=["Body"])
+        call("create_plane", id="TopPlane", origin=[0, 0, 15], normal=[0, 0, 1])
+        call("create_sketch", id="TopSketch", support={"feature": "TopPlane"})
+        call("add_rectangle", sketch="TopSketch", x=8, y=8, width=4, height=4)
+        QtTest.QTest.qWait(200)
+        # 2. creation seeding with displayed tips
+        reset_counts()
+        call("pocket", id="TopCut", profile="TopSketch", length=3, through_all=False, reversed=True, operation="remove", merge_scope=["Body"])
+        QtTest.QTest.qWait(300)
+        report["phases"]["creation"] = dict(counts)
+        check("A studio Remove created through the panel runs exactly one BRepCheck", counts["check_shape"] == 1, dict(counts))
+        check("Creation seeds the history validator (no history check)", counts["check_operation"] == 0, dict(counts))
+        check("The model reports valid result checks", checks_block().get("status") == "valid", checks_block())
+        check("Status line shows no pending checks", "checks pending" not in panel.status.text(), panel.status.text())
+
+        # 1. Extrude-dialog edit of the Add -----------------------------------------------------
+        double_click("Raise")
+        check("Double-click reopens the Add in the feature dialog", panel.editor.isVisible() and panel.editor_title.text() == "Raise")
+        type_into(panel.depth.lineEdit(), "14 mm")
+        result = wait_for_exact(panel.extrusion_preview)
+        check("The live edit preview is valid", result is not None and result.valid, getattr(result, "error", None))
+        reset_counts()
+        QtTest.QTest.keyClick(panel.depth.lineEdit(), QtCore.Qt.Key_Return)
+        check("Enter commits the edit", until(lambda: not panel.editor.isVisible() and panel.state is not None
+                                               and abs(doc.Raise.KurtShapeTool.LengthFwd.Value - 14) < 1e-9, 20000), panel.message.text())
+        QtTest.QTest.qWait(400)
+        report["phases"]["dialog_edit"] = dict(counts)
+        check("The dialog edit validated the Add and its downstream Remove", counts["check_operation"] == 2, dict(counts))
+        check("Inspect is valid after the dialog edit (GUI-only writes do not stale the table)",
+              checks_block().get("status") == "valid" and panel.state["build_status"] == "valid", checks_block())
+        response = bridge({"op": "inspect", "document_id": panel.state["document_id"], "detail": "compact"})
+        check("Compact inspect over the bridge agrees", response.get("ok") and response["result"]["result_checks"]["status"] == "valid", response)
+
+        # 3. reopen runs 0 checks -------------------------------------------------------------
+        path = scratch / "result-validation-gui.FCStd"
+        call("save", path=str(path))
+        document_id = panel.state["document_id"]
+        response = bridge(envelope("close_document"))
+        check("close_document closed the saved document", response.get("ok") is True, response)
+        QtTest.QTest.qWait(300)
+        reset_counts()
+        response = bridge({"op": "open", "path": str(path), "request_id": str(uuid.uuid4())})
+        check("Reopen over the bridge succeeded", response.get("ok") is True, response)
+        QtTest.QTest.qWait(500)
+        report["phases"]["reopen"] = dict(counts)
+        check("Reopen runs no history check", counts["check_operation"] == 0, dict(counts))
+        check("Reopened document reports valid result checks", response["result"]["result_checks"]["status"] == "valid", response["result"]["result_checks"])
+        check("The Panel switched to the reopened document",
+              until(lambda: panel.state is not None and panel.state["document_id"] == document_id, 10000), panel.state and panel.state["document_id"])
+        doc = panel.document()
+
+        # 4. native Sketcher lease that empties TopCut --------------------------------------------
+        panel.select_feature("TopSketch")
+        QtTest.QTest.qWait(100)
+        sketch = panel.edit_sketch()
+        check("The TopCut sketch entered managed native editing", sketch is not None and panel.active_sketch(), panel.message.text())
+        native = doc.getObject("TopSketch")
+        index = next(i for i, c in enumerate(native.Constraints) if c.Name == "OriginX")
+        doc.openTransaction("Sketcher move")
+        native.setDatum(index, App.Units.Quantity("100 mm"))
+        doc.recompute()
+        doc.commitTransaction()
+        QtTest.QTest.qWait(200)
+        messages_before = panel.messages.toPlainText()
+        finished = panel.finish_sketch()
+        QtTest.QTest.qWait(400)
+        check("Finishing a lease that empties TopCut is refused", not finished, finished)
+        text = panel.message.text()
+        check("The refusal names TopCut and the empty-cut post-condition",
+              text.startswith("Change not applied") and "TopCut" in text and ("no material" in text or "empty" in text.lower()), text)
+        check("The sketch editor stays open with the draft", panel.active_sketch() and Gui.getDocument(doc.Name).getInEdit() is not None)
+        check("Cancelling restores the accepted sketch", panel.finish_sketch(cancel=True) is not None, panel.message.text())
+        QtTest.QTest.qWait(400)
+        check("After cancel the model is valid again", checks_block().get("status") == "valid" and panel.state["build_status"] == "valid", checks_block())
+        check("TopSketch is back at its accepted position",
+              abs(next(c for c in doc.getObject("TopSketch").Constraints if c.Name == "OriginX").Value - 8) < 1e-9)
+
+        # 5. property-editor-style native change → pending → Check Geometry ----------------------
+        def native_change(value):
+            reset_counts()
+            tool = doc.Raise.KurtShapeTool
+            doc.openTransaction("Property editor")
+            tool.LengthFwd = value
+            doc.commitTransaction()
+            doc.recompute()
+            QtTest.QTest.qWait(600)
+            panel.tick()
+            if panel.state:
+                panel.refresh()
+            QtTest.QTest.qWait(300)
+            return {"status": panel.status.text(), "result_checks": checks_block(), "counts": dict(counts)}
+
+        report["phases"]["native_edit"] = native_change(13)
+        check("A native property change shows pending checks", "checks pending" in panel.status.text() and checks_block().get("status") == "pending",
+              report["phases"]["native_edit"])
+        check("The native change ran no history check", counts["check_operation"] == 0, dict(counts))
+        panel.check_geometry()
+        check("Check Geometry finished its job after the synchronous validation",
+              until(lambda: panel._geometry_check_job is None and not panel._geometry_check_preparing, 60000))
+        QtTest.QTest.qWait(500)
+        report["phases"]["check_geometry"] = {"status": panel.status.text(), "result_checks": checks_block(), "counts": dict(counts),
+                                             "messages": panel.messages.toPlainText()[-1500:]}
+        check("Check Geometry validated the pending operations synchronously", counts["check_operation"] == 2, dict(counts))
+        check("After Check Geometry the model is valid and no longer pending",
+              checks_block().get("status") == "valid" and "checks pending" not in panel.status.text(), report["phases"]["check_geometry"])
+        # The worker's own BRepCheck of a Part Studio document is refused by its archive-equivalence oracle
+        # ("The loaded archive does not match the captured geometry"); reproduced on the frozen 3.1 tree
+        # (runtime/test-tmp/u3-probe-7-f31/child-output.txt), so it predates contract 3.2 and is recorded, not asserted.
+        report["phases"]["check_geometry"]["worker_outcome"] = {"message": panel.message.text(), "geometry_check": panel.state.get("geometry_check")}
+        save()
+        # A native change that empties TopCut: pending again; check_geometry over the bridge exposes the failure.
+        report["phases"]["native_edit_failing"] = native_change(11)
+        check("The emptying native change shows pending checks", checks_block().get("status") == "pending", report["phases"]["native_edit_failing"])
+        response = bridge(envelope("check_geometry"))
+        check("check_geometry over the bridge validated and exposed the failure",
+              response.get("ok") is True and response["result"]["result_checks"]["status"] == "failed"
+              and response["result"]["result_check_report"]["mode"] == "check", response)
+        QtTest.QTest.qWait(500)
+        report["phases"]["bridge_check"] = {"status": panel.status.text(), "result_checks": checks_block(), "messages": panel.messages.toPlainText()[-800:]}
+        check("The status line reports the result failure", panel.status.text().startswith("Result check failed"), panel.status.text())
+        check("The TopCut row reached Messages", "TopCut: result check empty_cut" in panel.messages.toPlainText(), panel.messages.toPlainText()[-600:])
+        check("Inspect exposes the failure without rejecting", checks_block().get("status") == "failed" and panel.state["build_status"] == "failed", checks_block())
+        response = bridge(envelope("edit_extrusion", feature="Raise", length=15))
+        check("Correcting the Add over the bridge is accepted and valid",
+              response.get("ok") is True and response["result"]["result_checks"]["status"] == "valid", response)
+
+        # 6. rollback steps over unchanged operations ------------------------------------------
+        QtTest.QTest.qWait(300)
+        order = panel.state["studio"]["feature_order"]
+        reset_counts()
+        for index in (len(order) - 1, len(order) - 2, len(order) - 1, len(order)):
+            response = bridge(envelope("rollback", index=index))
+            if not response.get("ok"):
+                raise AssertionError("rollback failed: " + json.dumps(response)[:500])
+        report["phases"]["rollback"] = dict(counts)
+        check("Rollback steps over unchanged operations run no history check", counts["check_operation"] == 0, dict(counts))
+        check("The model is valid after rolling forward", checks_block().get("status") == "valid" and panel.state["build_status"] == "valid", checks_block())
+        report["passed"] = True
+        save()
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["passed"] = False
+        save()
+    finally:
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            if panel.active_sketch():
+                panel.finish_sketch(cancel=True)
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            document = App.getDocument(name)
+            if document.HasPendingTransaction:
+                document.abortTransaction()
+            document.setClosable(True)
+            App.closeDocument(name)
+    except Exception:
+        report.setdefault("cleanup_errors", []).append(traceback.format_exc())
+        report["passed"] = False
+        save()
+    finally:
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["error"] = "result-validation exceeded 600 seconds"
+    report["passed"] = False
+    save()
+    cleanup()
+
+
+save()
+QtCore.QTimer.singleShot(600000, timeout)
+QtCore.QTimer.singleShot(1200, run)

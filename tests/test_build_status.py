@@ -54,6 +54,47 @@ def no_kernel_checks(testcase):
         testcase.assertEqual(native_calls, [], "Interactive path invoked a direct native BRepCheck")
 
 
+@contextmanager
+def no_result_checks(testcase):
+    """Assert a path runs no result validation and no native recompute.
+
+    Counts the BRepCheck gate (geometry.check_shape), studio result post-conditions
+    (studio._check_result, which recomputes and measures volumes even in "live"
+    mode) and the exact boxes result checks take (geometry.tight_bounding_box, the
+    only caller of optimalBoundingBox). Measurement boxes requested through
+    geometry.COMPUTE are not result checks and are not counted. Native recomputes
+    are counted with a document observer, because Controller._recompute's
+    'native_recompute' timing misses direct doc.recompute() calls; it counts calls,
+    so a selector-managed document recomputing object by object counts each one.
+    The yielded dict holds the four counts; all must be zero on exit.
+    """
+    from kurtshape import studio
+    counts = {"check_shape": 0, "result_checks": 0, "tight_boxes": 0, "native_recomputes": 0}
+    shape_check, result_check, tight_box = geometry.check_shape, studio._check_result, geometry.tight_bounding_box
+
+    def counted(key, function):
+        def wrapper(*args, **kwargs):
+            counts[key] += 1
+            return function(*args, **kwargs)
+        return wrapper
+
+    class RecomputeCounter:
+        def slotRecomputedDocument(self, doc):
+            counts["native_recomputes"] += 1
+
+    observer = RecomputeCounter()
+    with patch.object(geometry, "check_shape", counted("check_shape", shape_check)), \
+            patch.object(studio, "_check_result", counted("result_checks", result_check)), \
+            patch.object(geometry, "tight_bounding_box", counted("tight_boxes", tight_box)):
+        App.addDocumentObserver(observer)
+        try:
+            yield counts
+        finally:
+            App.removeDocumentObserver(observer)
+    testcase.assertEqual(counts, {key: 0 for key in counts},
+                         "Path ran result validation or a native recompute")
+
+
 def rewrite_archive(source, target, transform_xml=None, omit=()):
     """Rewrite only explicit private fixture seams; preserve all other payloads."""
     with zipfile.ZipFile(source) as original, zipfile.ZipFile(target, "x") as rewritten:
@@ -708,7 +749,7 @@ class BuildStatusTests(unittest.TestCase):
         self.assertTrue(capabilities["ok"], capabilities)
         result = capabilities["result"]
         self.assertEqual(result["contract"], 3)
-        self.assertEqual(result["contract_revision"], 0)
+        self.assertEqual(result["contract_revision"], 2)
         self.assertEqual(result["measurement"]["levels"], [False, True, "full"])
         self.assertIs(result["measurement"]["default"], True)
         self.assertEqual(result["geometry_check"]["operation"], "check_geometry")

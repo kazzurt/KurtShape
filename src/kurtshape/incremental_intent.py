@@ -19,6 +19,31 @@ class IntentCache:
                 return result
         raise RuntimeError("Native document changed while reading intent; retry")
 
+    def row(self, doc, state, obj, read_intent):
+        """The cached JSON payload of one object at its current (epoch, version), read once when missing.
+
+        Shared by the document signature and the contract 3.2 result-check digests, so one
+        native read per changed object serves both.
+        """
+        if doc != self.document:
+            raise ValueError("Intent cache belongs to another native document")
+        epoch = state["intent_epoch"]
+        if epoch != self.epoch:
+            self.records.clear()
+            self.epoch = epoch
+        version = state["intent_versions"].get(obj.Name, 0)
+        stored = self.records.get(obj.Name)
+        if stored is None or stored[0] != version:
+            rows = read_intent(doc, [obj])
+            payload = json.dumps(rows[0], sort_keys=True).encode() if rows else None
+            stored = (version, payload)
+            self.object_reads += 1
+            if state["intent_epoch"] == epoch and state["intent_versions"].get(obj.Name, 0) == version:
+                self.records[obj.Name] = stored
+        else:
+            self.hits += 1
+        return stored[1]
+
     def _signature_once(self, doc, state, read_intent):
         if doc != self.document:
             raise ValueError("Intent cache belongs to another native document")

@@ -113,6 +113,46 @@ class NativeBridgeStatusTests(unittest.TestCase):
         self.assertTrue(bridge.pending.empty())
         return replies[0]
 
+    def test_session_file_and_capabilities_share_build_identity(self):
+        from kurtshape import build_identity, contract
+        bridge = Bridge(self.core, self.folder, request_timeout=2)
+        try:
+            session = json.loads(bridge.path.read_text(encoding="utf-8"))
+        finally:
+            bridge.close()
+            bridge.thread.join(timeout=2)
+        capabilities = self.core.dispatch({"op": "capabilities"})["result"]
+        self.assertEqual(session["build"], build_identity.summary())
+        self.assertEqual(session["build"]["source_sha256"], capabilities["build"]["source_sha256"])
+        self.assertEqual(session["build"]["id"], capabilities["build"]["id"])
+        self.assertEqual(session["read_operations"], sorted(Controller.READ_OPS))
+        self.assertEqual(session["read_operations"], capabilities["read_operations"])
+        self.assertEqual(session["non_mutating_operations"], capabilities["non_mutating_operations"])
+        self.assertEqual(session["request_size_limit"], contract.REQUEST_SIZE_LIMIT)
+        self.assertEqual(session["request_size_limit"], capabilities["request_size_limit_bytes"])
+        self.assertEqual(session["contract_revision"], 2)
+
+    def test_controller_construction_starts_no_git_probe(self):
+        import subprocess
+        from kurtshape import build_identity
+        with patch.object(build_identity, "start_git_probe") as probe, \
+                patch.object(subprocess, "Popen", side_effect=AssertionError("a Controller must start no process")):
+            core = Controller()
+            try:
+                core.dispatch({"op": "new", "name": "No probe"})
+            finally:
+                for doc in list(core.documents.values()):
+                    if core._is_open(doc):
+                        App.closeDocument(doc.Name)
+                core.close()
+            probe.assert_not_called()
+            bridge = Bridge(self.core, self.folder, request_timeout=2)
+            try:
+                probe.assert_called_once_with()
+            finally:
+                bridge.close()
+                bridge.thread.join(timeout=2)
+
     def test_canonical_http_status_and_replay_preserve_real_controller_state_without_tick(self):
         from native_validation_snapshot import snapshot_document
         self.plate()

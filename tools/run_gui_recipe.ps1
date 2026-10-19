@@ -1,13 +1,17 @@
 param(
-    [ValidateSet('step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
+    [ValidateSet('plane-visibility','step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
         'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline','responsiveness-preview',
-        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open')]
+        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen')]
     [string]$Recipe = 'interface',
     [ValidateRange(1,7200)][int]$TimeoutSeconds = 900,
     [switch]$WriteEvidence,
     [ValidateRange(1,1000)][int]$Holes = 20,
     [ValidateRange(1,100)][int]$Repeat = 3,
-    [string]$PreviewSource = ''
+    [string]$PreviewSource = '',
+    # Copied to user-data\user.cfg before FreeCAD starts (second process of a persistence pair).
+    [string]$SeedUserConfig = '',
+    # bench-gui: number of parameters its parameter metrics create (0 = none; contract 3.2 parameters).
+    [ValidateRange(0,500)][int]$Parameters = 0
 )
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
@@ -20,6 +24,7 @@ function Convert-GuiRecipeUtc {
     return [DateTimeOffset]::Parse($Value, [Globalization.CultureInfo]::InvariantCulture).UtcDateTime
 }
 $recipes = @{
+    'plane-visibility' = @('plane-visibility-validation.FCMacro', 'plane-visibility\gui-result.json', 0)
     'step-export' = @('step-export-validation.FCMacro', 'step-export\gui-result.json', 0)
     'extrusion-edit' = @('extrusion-edit-gui-validation.FCMacro', 'extrusion-edit\gui-result.json', 0)
     'history-lifecycle' = @('history-lifecycle-validation.FCMacro', 'history-lifecycle\gui-result.json', 0)
@@ -66,12 +71,26 @@ $recipes = @{
     'carrier-spike' = @('part-model-spike-gui-validation.FCMacro', 'u2-part-model-spike\gui-carrier-result.json', 0)
     'part-studio' = @('u2-part-model-gui-validation.FCMacro', 'u2-part-model\gui-result.json', 0)
     'bench-gui' = @('perf\bench_gui.FCMacro', 'perf\bench-gui.json', 0)
+    'interaction-idle' = @('interaction-idle-validation.FCMacro', 'interaction-idle\gui-result.json', 0)
+    'document-lifecycle' = @('document-lifecycle-gui-validation.FCMacro', 'document-lifecycle\gui-result.json', 0)
+    'result-validation' = @('result-validation-gui-validation.FCMacro', 'result-validation\gui-result.json', 0)
+    'render-view' = @('render-view-validation.FCMacro', 'render-view\gui-result.json', 0)
+    'batch-undo' = @('batch-undo-validation.FCMacro', 'batch-undo\gui-result.json', 0)
+    'parameter-panel' = @('parameter-panel-validation.FCMacro', 'parameter-panel\gui-result.json', 0)
+    'parameter-panel-reopen' = @('parameter-panel-reopen-validation.FCMacro', 'parameter-panel-reopen\gui-result.json', 0)
 }
 $recipeDefinition = $recipes[$Recipe]
 $macroPath = Join-Path $PSScriptRoot $recipeDefinition[0]
 $executable = Join-Path $repositoryRoot 'runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\freecad.exe'
 if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) { throw ('Pinned GUI runtime is missing: ' + $executable) }
 if (-not (Test-Path -LiteralPath $macroPath -PathType Leaf)) { throw ('Recipe macro is missing: ' + $macroPath) }
+if ($SeedUserConfig) {
+    if ($Recipe -eq 'theme-startup') { throw 'theme-startup seeds its own user.cfg; do not combine it with -SeedUserConfig.' }
+    $SeedUserConfig = [IO.Path]::GetFullPath($SeedUserConfig)
+    if (-not (Test-Path -LiteralPath $SeedUserConfig -PathType Leaf)) { throw ('Seed user.cfg is missing: ' + $SeedUserConfig) }
+}
+if ($PreviewSource -and $Recipe -notin @('responsiveness-preview','interaction-idle')) { throw ('-PreviewSource applies to responsiveness-preview and interaction-idle only: ' + $Recipe) }
+if ($Parameters -and $Recipe -ne 'bench-gui') { throw ('-Parameters applies to bench-gui only: ' + $Recipe) }
 $runName = 'run-' + [Guid]::NewGuid().ToString('N')
 $session = Join-Path $repositoryRoot ('runtime\ci-gui\' + $Recipe + '\' + $runName)
 
@@ -92,7 +111,7 @@ while ($ancestor) {
 if (Test-Path -LiteralPath $session) { throw ('GUI recipe requires a new private session: ' + $session) }
 $environmentNames = @('KURTSHAPE_ROOT','KURTSHAPE_SESSION_DIR','KURTSHAPE_EVIDENCE_DIR','KURTSHAPE_WRITE_EVIDENCE',
     'FREECAD_USER_HOME','TEMP','TMP','APPDATA','LOCALAPPDATA','KURTSHAPE_TEST_TMP','PYTHONDONTWRITEBYTECODE',
-    'QT_QPA_PLATFORM','KURTSHAPE_DEMO','KURTSHAPE_STARTUP_BASELINE','KURTSHAPE_NO_DEMO','BENCH_HOLES','BENCH_REPEAT','BENCH_GUI_OUT','PREVIEW_BENCH_SOURCE')
+    'QT_QPA_PLATFORM','KURTSHAPE_DEMO','KURTSHAPE_STARTUP_BASELINE','KURTSHAPE_NO_DEMO','BENCH_HOLES','BENCH_REPEAT','BENCH_GUI_OUT','PREVIEW_BENCH_SOURCE','BENCH_PARAMETERS')
 $environmentBefore = @{}
 foreach ($name in $environmentNames) {
     $environmentBefore[$name] = @{present=(Test-Path -LiteralPath ('Env:' + $name));value=[Environment]::GetEnvironmentVariable($name, 'Process')}
@@ -109,9 +128,16 @@ if ($Recipe -eq 'theme-startup') {
     $themeSeedPath = Join-Path $repositoryRoot 'runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\data\Gui\PreferencePacks\FreeCAD Dark\FreeCAD Dark.cfg'
     Copy-Item -LiteralPath $themeSeedPath -Destination (Join-Path $session 'user-data\user.cfg')
 }
+if ($SeedUserConfig) {
+    # A previous private session's preferences (for example persisted panel sizes) for a reopen check.
+    Copy-Item -LiteralPath $SeedUserConfig -Destination (Join-Path $session 'user-data\user.cfg')
+}
 Remove-Item Env:QT_QPA_PLATFORM -ErrorAction SilentlyContinue
 Remove-Item Env:KURTSHAPE_DEMO -ErrorAction SilentlyContinue
 Remove-Item Env:KURTSHAPE_STARTUP_BASELINE -ErrorAction SilentlyContinue
+foreach ($name in @('BENCH_HOLES','BENCH_REPEAT','BENCH_GUI_OUT','PREVIEW_BENCH_SOURCE','BENCH_PARAMETERS')) {
+    Remove-Item -LiteralPath ('Env:' + $name) -ErrorAction SilentlyContinue
+}
 if ($Recipe -eq 'review-baseline') { $env:KURTSHAPE_STARTUP_BASELINE = '1' }
 $env:KURTSHAPE_NO_DEMO = '1'
 $reportPath = Join-Path (Get-KurtShapeEvidenceDirectory) $recipeDefinition[1]
@@ -119,12 +145,22 @@ if ($Recipe -eq 'bench-gui') {
     $env:BENCH_HOLES = [string]$Holes
     $env:BENCH_REPEAT = [string]$Repeat
     $env:BENCH_GUI_OUT = $reportPath
+    $env:BENCH_PARAMETERS = [string]$Parameters
 }
 if ($Recipe -eq 'responsiveness-preview') {
     $env:BENCH_HOLES = [string]$Holes
     $env:BENCH_REPEAT = [string]$Repeat
     if ($PreviewSource) { $env:PREVIEW_BENCH_SOURCE = [IO.Path]::GetFullPath($PreviewSource) }
     else { Remove-Item Env:PREVIEW_BENCH_SOURCE -ErrorAction SilentlyContinue }
+}
+if ($Recipe -eq 'interaction-idle') {
+    # A prepared plate FCStd (copied into the session, never opened in place); otherwise the macro
+    # builds plate60, or a plate with -Holes holes when -Holes is given explicitly.
+    if ($PSBoundParameters.ContainsKey('Holes')) { $env:BENCH_HOLES = [string]$Holes }
+    if ($PreviewSource) {
+        $env:PREVIEW_BENCH_SOURCE = [IO.Path]::GetFullPath($PreviewSource)
+        if (-not (Test-Path -LiteralPath $env:PREVIEW_BENCH_SOURCE -PathType Leaf)) { throw ('Preview source is missing: ' + $env:PREVIEW_BENCH_SOURCE) }
+    }
 }
 $logPath = Join-Path $session 'freecad.log'
 $stdoutPath = Join-Path $session 'freecad-stdout.txt'
@@ -198,6 +234,9 @@ try {
     }
     $nativeReport = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     if ($nativeReport.passed -isnot [bool] -or -not $nativeReport.passed) { throw ('GUI recipe report did not pass: ' + $reportPath) }
+    if ($Recipe -eq 'parameter-panel' -and (-not $nativeReport.owned_documents_closed -or $nativeReport.check_count -ne @($nativeReport.checks).Count -or $nativeReport.check_count -lt 75)) {
+        throw ('parameter-panel report is incomplete (check count or owned documents): ' + $reportPath)
+    }
     if ($Recipe -in @('onshape-workflows', 'part-studio')) {
         $scopeWarnings = @(Select-String -LiteralPath $logPath,$stdoutPath,$stderrPath -Pattern 'go out of the allowed scope' |
             ForEach-Object { $_.Line.Trim() } | Select-Object -Unique)

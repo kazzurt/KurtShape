@@ -1,0 +1,340 @@
+"""GUI behaviour of contract 3.2 U2: the GUI Modified basis, F-05, close_document and quiet bridge reads.
+
+Run by tools/run_gui_recipe.ps1 -Recipe document-lifecycle: a hidden private FreeCAD process
+(own -u/-s configuration, never Kurt's window or profile) starts the production ui.start()
+Panel with the real Bridge and drives it through loopback HTTP requests served by the
+panel's own tick. It asserts:
+  1. the GUI basis of the modified flag: new → modified, save → clean, mutation → modified,
+     adopt → clean;
+  2. a pre-write rejection (missing_reference) and post-write rejections (a contained Add →
+     empty_add, an air cut → empty_cut) leave a saved document Modified == False (F-05);
+  3. close_document on a dirty document → unsaved_changes with no modal dialog;
+  4. discard:true closes without a modal and the Panel resets;
+  5. an open studio dialog → user_editing and the dialog stays open;
+  6. 20 compact inspects plus capabilities and operation_schema cause 0 Panel.refresh calls
+     and no Panel inspect beyond the requests themselves (E-08); one mutation still refreshes;
+  7. GUI-thread time per bridge read is recorded (tick durations while a read is served).
+"""
+import http.client
+import json
+import os
+from pathlib import Path
+import statistics
+import sys
+import threading
+import time
+import traceback
+import uuid
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime"), session
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path[:0] = [str(root / "src"), str(root / "tools"), str(root / "tools" / "perf")]
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("document-lifecycle")
+report = {"passed": False, "checks": [], "pid": os.getpid(), "qpa": app.platformName(), "phases": {},
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "method": "Hidden private FreeCAD GUI; production ui.start() Panel with the real Bridge; loopback requests served by the panel tick",
+          "limits": ["No physical display; QApplication.activeModalWidget() stands for 'no dialog appeared'.",
+                     "Hidden-GUI timings are recorded for the record, not compared."]}
+panel = None
+cleaned = False
+stats = {}
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition, detail=None):
+    if not condition:
+        raise AssertionError(label + ("" if detail is None else ": " + str(detail)))
+    report["checks"].append(label)
+    save()
+
+
+def summary(values):
+    if not values:
+        return {"n": 0}
+    ordered = sorted(values)
+    return {"n": len(values), "median": statistics.median(values), "p95": ordered[max(0, int(len(values) * .95) - 1)],
+            "max": max(values), "total": sum(values)}
+
+
+def reset():
+    stats.clear()
+    stats.update(tick=[], dispatch={}, refresh=0, serving_tick_ms=[])
+
+
+def post(payload, timeout=60):
+    connection = http.client.HTTPConnection("127.0.0.1", panel.bridge.server.server_port, timeout=timeout)
+    try:
+        connection.request("POST", "/operation", body=json.dumps(payload),
+                           headers={"Authorization": "Bearer " + panel.bridge.token, "Content-Type": "application/json"})
+        response = connection.getresponse()
+        return response.status, json.loads(response.read())
+    finally:
+        connection.close()
+
+
+def bridge(request, timeout=60):
+    """Send one request from a worker thread while the GUI event loop (and so the panel tick) runs."""
+    result = {}
+
+    def send():
+        began = time.perf_counter()
+        try:
+            result["status"], result["response"] = post(request, timeout)
+            result["ms"] = (time.perf_counter() - began) * 1000
+        except Exception:
+            result["error"] = traceback.format_exc()
+    worker = threading.Thread(target=send, daemon=True)
+    worker.start()
+    deadline = time.monotonic() + timeout
+    while worker.is_alive() and time.monotonic() < deadline:
+        QtTest.QTest.qWait(10)
+    if "response" not in result:
+        raise AssertionError("bridge request got no response: " + json.dumps(result, default=str)[:800])
+    QtTest.QTest.qWait(150)  # the trailing tick (refresh or not) runs here
+    return result["response"]
+
+
+def envelope(op, **args):
+    state = panel.state
+    return {"op": op, "document_id": state["document_id"], "expected_revision": state["revision"],
+            "request_id": str(uuid.uuid4()), **args}
+
+
+def gui_modified(doc):
+    return Gui.getDocument(doc.Name).Modified
+
+
+def run():
+    global panel
+    try:
+        from bench_core import prepare_environment
+        scratch = prepare_environment(session / "document-lifecycle-files")  # a granted project root
+        panel = ui.start()
+        core = panel.core
+        check("Production panel started with the real loopback Bridge",
+              type(panel.bridge).__name__ == "Bridge" and panel.bridge.server.server_port > 0)
+        check("The panel registered its editor_activity hook", callable(core.editor_activity))
+        # Count dispatches by op, refresh calls and the tick time spent while serving the bridge.
+        dispatch, refresh, tick = core.dispatch, panel.refresh, panel.tick
+        panel.timer.timeout.disconnect()
+
+        def counted_dispatch(request):
+            op = request.get("op") if isinstance(request, dict) else None
+            stats["dispatch"][op] = stats["dispatch"].get(op, 0) + 1
+            return dispatch(request)
+
+        def counted_refresh():
+            stats["refresh"] += 1
+            return refresh()
+
+        def timed_tick():
+            serving = not panel.bridge.pending.empty()
+            b = time.perf_counter()
+            try:
+                tick()
+            finally:
+                elapsed = (time.perf_counter() - b) * 1000
+                stats["tick"].append(elapsed)
+                if serving:
+                    stats["serving_tick_ms"].append(elapsed)
+        core.dispatch, panel.refresh = counted_dispatch, counted_refresh
+        panel.timer.timeout.connect(timed_tick)
+        reset()
+
+        # 1. GUI basis -------------------------------------------------------------------------
+        state = panel.operation("new", name="Lifecycle GUI")
+        check("New document created through the panel", state is not None, panel.message.text())
+        doc = panel.document()
+        check("A new document reports the GUI basis", state["modified_basis"] == "gui", state["modified_basis"])
+        check("A new document is unsaved", state["unsaved"] is True and state["modified"] is True, state)
+        check("Panel sketch_rectangle accepted", panel.operation("sketch_rectangle", id="Base", width=20, height=20) is not None, panel.message.text())
+        check("Panel pad accepted", panel.operation("pad", id="Block", profile="Base", length=10, operation="new") is not None, panel.message.text())
+        path = scratch / "lifecycle-gui.FCStd"
+        saved = panel.operation("save", path=str(path))
+        check("Save accepted", saved is not None, panel.message.text())
+        check("Save clears the GUI Modified flag", gui_modified(doc) is False)
+        QtTest.QTest.qWait(200)
+        check("After save the panel state reports modified:false, unsaved:false",
+              panel.state["modified"] is False and panel.state["unsaved"] is False and panel.state["modified_basis"] == "gui", panel.state)
+        check("Panel sketch_rectangle (inner) accepted", panel.operation("sketch_rectangle", id="Inner", x=5, y=5, width=5, height=5) is not None, panel.message.text())
+        check("A mutation marks the GUI document modified", gui_modified(doc) is True and panel.state["modified"] is True)
+        saved = panel.operation("save", path=str(path))
+        check("Second save clears the flag again", saved is not None and gui_modified(doc) is False)
+
+        # 2. F-05: rejections leave a saved document clean ----------------------------------------
+        response = bridge(envelope("pad", id="Nothing", profile="Missing", length=2, operation="add"))
+        check("Pre-write rejection reports missing_reference", response.get("error", {}).get("code") == "missing_reference", response)
+        check("Pre-write rejection leaves Modified false", gui_modified(doc) is False)
+        response = bridge(envelope("pad", id="Contained", profile="Inner", length=3, operation="add"))
+        check("Contained Add rejects with empty_add", response.get("error", {}).get("code") == "empty_add", response)
+        check("Post-write rejection (empty_add) leaves Modified false", gui_modified(doc) is False)
+        check("Panel sketch_circle (outside) accepted", panel.operation("sketch_circle", id="Air", x=40, y=40, diameter=2) is not None, panel.message.text())
+        panel.operation("save", path=str(path))
+        check("Save before the air cut clears the flag", gui_modified(doc) is False)
+        response = bridge(envelope("pocket", id="AirCut", profile="Air", length=2, through_all=False, reversed=False, operation="remove"))
+        check("Air cut rejects (empty_cut or empty_merge_scope)", response.get("error", {}).get("code") in {"empty_cut", "empty_merge_scope"}, response)
+        check("Post-write rejection (air cut) leaves Modified false", gui_modified(doc) is False)
+        check("Rejections never pop a modal dialog", QtWidgets.QApplication.activeModalWidget() is None)
+
+        # 6. Quiet reads (E-08) -------------------------------------------------------------------
+        QtTest.QTest.qWait(300)
+        reset()
+        serving = []
+        for _ in range(20):
+            response = bridge({"op": "inspect", "document_id": panel.state["document_id"], "detail": "compact"})
+            check_ok = response.get("ok") is True
+            if not check_ok:
+                raise AssertionError("compact inspect failed: " + json.dumps(response)[:500])
+            serving.extend(stats["serving_tick_ms"])
+        response = bridge({"op": "capabilities"})
+        check("Bridge capabilities answered", response.get("ok") is True and response["result"]["contract_revision"] == 2, response)
+        response = bridge({"op": "operation_schema", "operations": ["pad"]})
+        check("Bridge operation_schema answered", response.get("ok") is True and "pad" in response["result"]["operations"], response)
+        QtTest.QTest.qWait(300)
+        quiet = {"dispatch_by_op": dict(stats["dispatch"]), "refresh_calls": stats["refresh"],
+                 "serving_tick_ms": summary(stats["serving_tick_ms"]), "tick_ms": summary(stats["tick"])}
+        report["phases"]["quiet_reads"] = quiet
+        save()
+        check("Quiet reads cause no Panel.refresh", stats["refresh"] == 0, quiet)
+        check("Quiet reads add no Panel inspect beyond the 20 requests", stats["dispatch"].get("inspect") == 20, quiet)
+        check("Quiet reads dispatch nothing else", set(stats["dispatch"]) <= {"inspect", "capabilities", "operation_schema"}, quiet)
+        reset()
+        response = bridge(envelope("set_parameter", feature="Base", parameter="Width", value=22))
+        check("Bridge mutation accepted", response.get("ok") is True, response)
+        QtTest.QTest.qWait(300)
+        report["phases"]["mutation"] = {"dispatch_by_op": dict(stats["dispatch"]), "refresh_calls": stats["refresh"]}
+        save()
+        check("A mutation still refreshes the panel", stats["refresh"] >= 1 and stats["dispatch"].get("inspect", 0) >= 1, report["phases"]["mutation"])
+        check("The mutation marked the document modified", gui_modified(doc) is True)
+
+        # 5. An open studio dialog refuses the close ---------------------------------------------
+        part = panel.state["studio"]["parts"][0]["id"]
+        dialog = panel.studio_tool("fillet", part=part)
+        QtTest.QTest.qWait(200)
+        check("Studio fillet dialog opened", panel.studio_dialog is not None, dialog)
+        response = bridge(envelope("close_document", discard=True))
+        check("close_document while a feature editor is open → user_editing",
+              response.get("error", {}).get("code") == "user_editing" and response["error"].get("tool") == "feature_editor", response)
+        check("The dialog stayed open", panel.studio_dialog is not None)
+        panel.studio_dialog.reject()
+        QtTest.QTest.qWait(300)
+        check("The dialog closed on reject", panel.studio_dialog is None)
+
+        # 3. and 4. close_document ----------------------------------------------------------------
+        response = bridge(envelope("close_document"))
+        check("close_document on a dirty document → unsaved_changes",
+              response.get("error", {}).get("code") == "unsaved_changes" and "modified" in response["error"]["reasons"], response)
+        check("The refusal reports the GUI basis", response["error"]["modified_basis"] == "gui", response)
+        check("No modal dialog appeared", QtWidgets.QApplication.activeModalWidget() is None)
+        check("The document is still open", doc.Name in App.listDocuments())
+        name = doc.Name
+        closed_id = panel.state["document_id"]
+        response = bridge(envelope("close_document", discard=True))
+        check("close_document with discard closed the document", response.get("ok") is True and response["result"]["closed"]["discarded_unsaved_changes"], response)
+        check("The discard checkpoint exists", Path(response["result"]["closed"]["recovery_manifest"]).is_file(), response["result"]["closed"])
+        check("No modal dialog appeared on discard", QtWidgets.QApplication.activeModalWidget() is None)
+        check("The native document is gone", name not in App.listDocuments())
+        QtTest.QTest.qWait(400)
+        # With no other document the panel resets; with another one open (ui.start may create a
+        # default document) it switches to it. Either way the closed document is gone from the panel.
+        remaining = panel.state["document_id"] if panel.state else None
+        report["after_close"] = {"panel_state_document": remaining, "status": panel.status.text(),
+                                 "open_documents": list(App.listDocuments())}
+        check("The Panel left the closed document", remaining != closed_id, report["after_close"])
+        check("The Panel reset or switched to another open document",
+              (panel.state is None and panel.status.text() == "Create or open a part studio")
+              or (panel.state is not None and panel.document() is not None and panel.document().Name in App.listDocuments()),
+              report["after_close"])
+
+        # 1b. adopt clears the GUI flag ----------------------------------------------------------
+        plain = App.newDocument("PlainReference")
+        plain.addObject("PartDesign::Body", "Body")
+        box = plain.addObject("Part::Box", "Box")
+        box.Length = box.Width = box.Height = 5
+        plain.recompute()
+        plain_path = scratch / "plain-reference.FCStd"
+        plain.saveAs(str(plain_path))
+        App.closeDocument(plain.Name)
+        state = panel.operation("open", path=str(plain_path))
+        check("Native reference file opened", state is not None and state["managed"] is False, panel.message.text())
+        adopted = panel.operation("adopt", path=str(scratch / "adopted-gui.FCStd"))
+        check("Adopt accepted", adopted is not None and adopted["managed"] is True, panel.message.text())
+        QtTest.QTest.qWait(300)
+        check("Adopt clears the GUI Modified flag", gui_modified(panel.document()) is False)
+        check("Adopt response reports modified:false", adopted["modified"] is False and adopted["unsaved"] is False, adopted)
+        report["gui_thread_ms_per_bridge_read"] = summary(serving)
+        report["passed"] = True
+        save()
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["passed"] = False
+        save()
+    finally:
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    except Exception:
+        report.setdefault("cleanup_errors", []).append(traceback.format_exc())
+        report["passed"] = False
+        save()
+    finally:
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    report["error"] = "document-lifecycle exceeded 300 seconds"
+    report["passed"] = False
+    save()
+    cleanup()
+
+
+save()
+QtCore.QTimer.singleShot(300000, timeout)
+QtCore.QTimer.singleShot(1200, run)

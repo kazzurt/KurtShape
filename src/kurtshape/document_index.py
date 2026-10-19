@@ -15,6 +15,8 @@ _DEPENDENCIES = {
     "part_states": {"structure", "history", "topology"},
     "selector_topology": {"structure", "topology"},
     "selector_contexts": {"structure", "history", "topology", "placement"},
+    # Contract 3.2 F3a: the located parameter set (objects and markers), and usage counts (any change).
+    "parameter_set": {"structure", "metadata"},
 }
 
 

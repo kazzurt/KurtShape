@@ -59,6 +59,8 @@ CUT_ARGS = {"counterbore": {"diameter", "depth"}, "countersink": {"diameter", "a
 # Native Hole BaseProfileType bits: 1 standalone points, 2 circles, 4 arcs.
 PROFILE_POINTS_AND_CIRCLES = 3
 MAX_HOLES = 256
+# Hole end types; operation_schemas reads this enum.
+END_TYPES = ("blind", "through_all")
 DEFAULT_POINT_ANGLE = "118 deg"
 DEFAULT_COUNTERSINK_ANGLE = "90 deg"
 # Included angles outside this range give degenerate cones (a 1e-9 rad point
@@ -442,7 +444,7 @@ def handle(core, doc, req):
 
     diameter = number(req.get("diameter"), "diameter", True)
     end_type = req.get("end_type", "blind")
-    if end_type not in {"blind", "through_all"}:
+    if end_type not in END_TYPES:
         raise OperationError("invalid_argument", "end_type must be blind or through_all")
     through = end_type == "through_all"
     if through:
@@ -511,12 +513,17 @@ def _intent(hole):
 
 
 def _keeps(hole, before, edited):
-    """Native onChanged handlers rewrite dependent values (a counterbore grows with the diameter); reject that."""
+    """Native onChanged handlers rewrite dependent values (a counterbore grows with the diameter); reject that.
+
+    ``edited`` is one property or a set of them (one parameter can drive Diameter and Depth together).
+    """
+    edited = {edited} if isinstance(edited, str) else set(edited)
+    label = ", ".join(sorted(edited))
     for prop, value in before.items():
         actual = getattr(hole, prop).Value
-        if prop != edited and abs(actual - value) > 1e-9 * max(1.0, abs(value)):
+        if prop not in edited and abs(actual - value) > 1e-9 * max(1.0, abs(value)):
             raise _error("invalid_argument", f"Native hole would change {prop} from {value:g} to {actual:.6g} for this "
-                         f"{edited}; edit {prop} first or recreate the hole", feature=hole.Name, parameter=edited,
+                         f"{label}; edit {prop} first or recreate the hole", feature=hole.Name, parameter=label,
                          changed=prop, native=actual)
 
 
@@ -537,19 +544,22 @@ def set_parameter(core, doc, hole, prop, value):
     _edited(core, doc, hole)
 
 
-def set_expression(core, doc, hole, prop, expression):
-    """set_expression on a Hole; ``expression`` None clears it."""
-    from .core import OperationError
-    before = _intent(hole)
-    hole.setExpression(prop, expression)
-    core._recompute(doc)
-    if {"Invalid", "Error"} & set(hole.State):
-        raise OperationError("invalid_expression", "Formula is invalid, has a missing reference, or has incompatible units",
-                             status=hole.getStatusString())
-    if expression is not None:
-        _clamped(hole, prop, hole.evalExpression(expression).Value)
-    _keeps(hole, before, prop)
-    _edited(core, doc, hole)
+def recheck(core, doc, hole, before, edited):
+    """The hole's checks after formula-driven edits, run by parameters.verify_applied after the step's recompute.
+
+    No recompute and no BRepCheck: each edited property took its formula's value (native clamping
+    rejects), the other dimensions kept theirs, then the hole operation's own settings checks and
+    result validation (contract 3.2 F3a §8.4).
+    """
+    edited = {edited} if isinstance(edited, str) else set(edited)
+    for prop in sorted(edited):
+        expression = next((text for path, text in hole.ExpressionEngine if path.lstrip(".") == prop), None)
+        if expression is not None:
+            _clamped(hole, prop, hole.evalExpression(expression).Value)
+    _keeps(hole, before, edited)
+    diameter, depth, point_angle, cut = _settings(hole)
+    _check_settings(diameter, depth, point_angle, cut)
+    _validate(hole, hole.BaseFeature, diameter, depth, point_angle, cut, bool(hole.Reversed), _expected_count(hole))
 
 
 def _validate(hole, tip, diameter, depth, point_angle, cut, reversed_direction, expected=None):

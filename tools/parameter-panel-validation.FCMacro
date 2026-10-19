@@ -1,0 +1,666 @@
+"""Contract 3.2 F3b: the Parameters section of the left panel in a hidden private FreeCAD (3b §13).
+
+Run by tools/run_gui_recipe.ps1 -Recipe parameter-panel: one hidden FreeCAD process with its own
+-u profile under runtime/, the production ui.start() Panel without a socket transport, real Qt
+input (QTest keys and clicks, synthetic focus events) and the real parameters backend. Never Kurt's
+window or profile. Covered here: layout, add/rename/delete through the section, GUI binding through
+Copy reference and the Formula field, the commit boundary (typing never dispatches, Enter commits
+once), undo/redo, rejected downstream and unit edits, conflicts and clean-field follow, freezing a
+formula, no commit on window deactivation, Ctrl+S flush, routing of Delete/Ctrl+C/Ctrl+V, Used by,
+the assembly round trip, bridge-like document switch and create, splitter persistence, save/reopen
+persistence, the stale banner and captures. Left to the offscreen unit tests (test_parameter_panel):
+the read-only state during a sketch lease, the context-menu flush and Escape during a geometry check.
+"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import socket
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "tools"))
+from kurtshape_evidence import evidence_dir
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.path.insert(0, str(root / "src"))
+source_files = ["ui.py", "parameter_panel.py", "parameters.py", "general_actions.py", "core.py", "theme.py"]
+
+
+def source_hashes():
+    return {name: hashlib.sha256((root / "src" / "kurtshape" / name).read_bytes()).hexdigest() for name in source_files}
+
+
+startup_hashes = source_hashes()
+
+
+def deny_network(*args, **kwargs):
+    raise RuntimeError("Python networking denied for parameter panel validation")
+
+
+socket.socket.connect = deny_network
+socket.socket.connect_ex = deny_network
+socket.socket.sendto = deny_network
+socket.create_connection = deny_network
+socket.getaddrinfo = deny_network
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+import shiboken6
+from kurtshape import ui
+from kurtshape import parameter_panel as pp
+
+
+class NoSocketTransport:
+    def __init__(self, *args, **kwargs):
+        self.pending = queue.Queue()
+        self.deferred = []
+        self.last_op = None
+        self.request_timeout = 30
+
+    def tick(self):
+        return False
+
+    def poll_deferred(self):
+        return None
+
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+app = QtWidgets.QApplication.instance()
+for font in ("segoeui.ttf", "segoeuib.ttf"):
+    path = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts" / font
+    if path.is_file():
+        QtGui.QFontDatabase.addApplicationFont(str(path))
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopupFilter(app)
+app.installEventFilter(hidden)
+output = evidence_dir("parameter-panel")
+report = {"passed": False, "checks": [], "screens": [], "source_sha256": startup_hashes,
+          "method": "Production Panel and ParameterSection, real parameters backend, QTest keys and clicks, synthetic "
+                    "focus events; fresh hidden native process and profile.",
+          "limits": ["Python networking denied; C++ networking is not intercepted.",
+                     "Focus reasons for Alt-Tab and MDI tab clicks are synthetic events.",
+                     "The physical splitter feel on Kurt's DPI and Kurt's live profile after a restart are not verified.",
+                     "Sketch-lease read-only state, context-menu flush and Escape during a geometry check are covered "
+                     "offscreen by test_parameter_panel, not here."],
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}, "runtime_profile": str(session.relative_to(root))}
+panel = None
+section = None
+cleaned = False
+started = time.perf_counter()
+mutations = []
+
+
+def save_report():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=60):
+    QtTest.QTest.qWait(ms)
+    if report.get("aborted"):
+        raise RuntimeError("Parameter panel validation exceeded its time bound")
+
+
+def check(label, condition, detail=None):
+    if not condition:
+        raise AssertionError(label + ": " + (str(detail) if detail is not None else (panel.message.text() if panel else "startup")))
+    report["checks"].append(label)
+    save_report()
+
+
+def call(op, **args):
+    result = panel.operation(op, **args)
+    if not result:
+        raise AssertionError(op + ": " + panel.message.text())
+    wait()
+    return result
+
+
+def capture(label):
+    wait(120)
+    pixmap = section.grab()
+    check(label + ": nonempty capture", not pixmap.isNull())
+    pixmap.save(str(output / (label + ".png")))
+    report["screens"].append(label + ".png")
+
+
+def field(name):
+    return section.rows[name].field
+
+
+def row(name):
+    return next(item for item in panel.state["parameters"] if item["name"] == name)
+
+
+def edits():
+    return [request for request in mutations if request.get("op") == "edit_parameter"]
+
+
+def type_into(name, text):
+    target = field(name)
+    target.setFocus(QtCore.Qt.MouseFocusReason)
+    wait(30)
+    target.selectAll()
+    QtTest.QTest.keyClicks(target, text)
+    wait(30)
+    return target
+
+
+def enter(target):
+    QtTest.QTest.keyClick(target, QtCore.Qt.Key_Return)
+    wait(150)
+
+
+def bridge_like(op, **args):
+    """A request as the bridge would deliver it, then the panel's own tick."""
+    doc = panel.document()
+    state = panel.core.dispatch({"op": "inspect", "document_id": panel.core.identifier(doc)})["result"]
+    response = panel.core.dispatch({"op": op, "document_id": state["document_id"], "expected_revision": state["revision"], **args})
+    panel.core.observer.state(doc)["refresh"] = True
+    panel.tick()
+    wait(80)
+    return response
+
+
+def add_via_dialog(name, kind_index, value):
+    QtTest.QTest.mouseClick(section.add_button, QtCore.Qt.LeftButton)
+    wait(80)
+    dialog = section.dialog
+    check("Add opens the parameter dialog for " + name, dialog is not None and dialog.isVisible())
+    dialog.name_edit.setFocus()
+    dialog.name_edit.selectAll()
+    QtTest.QTest.keyClicks(dialog.name_edit, name)
+    dialog.type_choice.setCurrentIndex(kind_index)
+    dialog.value_edit.selectAll()
+    QtTest.QTest.keyClicks(dialog.value_edit, value)
+    QtTest.QTest.mouseClick(dialog.accept_button, QtCore.Qt.LeftButton)
+    wait(150)
+    return dialog
+
+
+def answer_message_box(button_text, seconds=3.0):
+    """Answer the next message box within ``seconds``; a box that never comes ends the wait."""
+    observed = {}
+    deadline = time.monotonic() + seconds
+
+    def answer():
+        box = next((widget for widget in app.topLevelWidgets() if isinstance(widget, QtWidgets.QMessageBox) and widget.isVisible()), None)
+        if box is None:
+            if time.monotonic() < deadline:
+                QtCore.QTimer.singleShot(50, answer)
+            return
+        observed["text"] = box.text()
+        target = next((button for button in box.buttons() if button_text in button.text()), None) or box.button(QtWidgets.QMessageBox.Cancel)
+        QtTest.QTest.mouseClick(target, QtCore.Qt.LeftButton)
+    QtCore.QTimer.singleShot(80, answer)
+    return observed
+
+
+def bind_through_formula(feature, parameter_key, name):
+    """GUI binding: Copy reference, select the feature, paste into the Formula field, Enter."""
+    section.copy_reference(name)
+    reference = QtGui.QApplication.clipboard().text()
+    panel.select_feature(feature)
+    wait(80)
+    index = panel.parameter.findText(parameter_key)
+    check("The feature editor offers " + parameter_key + " of " + feature, index >= 0)
+    panel.parameter.setCurrentIndex(index)
+    panel.formula.setFocus()
+    panel.formula.clear()
+    QtTest.QTest.keyClicks(panel.formula, reference)
+    QtTest.QTest.keyClick(panel.formula, QtCore.Qt.Key_Return)
+    wait(150)
+    return reference
+
+
+def dimension(feature, kind="Diameter"):
+    row_ = next(item for item in panel.state["features"] if item["id"] == feature)
+    return next((key, info) for key, info in row_["parameters"].items() if info.get("constraint_type") == kind)
+
+
+def volume():
+    """The model volume (the panel itself inspects without measurements)."""
+    state = panel.core.dispatch({"op": "inspect", "document_id": panel.state["document_id"], "measure": True})["result"]
+    return round((state.get("measurements") or {}).get("volume_mm3") or 0.0, 6)
+
+
+def validate():
+    global panel, section
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        section = panel.parameter_section
+        dispatch = panel.core.dispatch
+
+        def counted(request):
+            if isinstance(request, dict) and request.get("op") not in panel.core.READ_OPS:
+                mutations.append(dict(request))
+            return dispatch(request)
+        panel.core.dispatch = counted
+        scratch = session / "parameter-panel-files"
+        scratch.mkdir(parents=True, exist_ok=True)
+        panel.core.settings.roots.add(scratch)
+
+        # 1. Layout ----------------------------------------------------------------------------
+        splitter = panel.history_splitter
+        check("Three noncollapsible sections in order history / parameters / parts",
+              splitter.count() == 3 and not splitter.childrenCollapsible() and splitter.widget(1) is section
+              and splitter.objectName() == "KurtShapeHistoryPartsSplit")
+        for name in list(App.listDocuments()):  # the startup document
+            App.closeDocument(name)
+        wait(100)
+        panel.tick()
+        wait(100)
+        check("No document: placeholder and '+' disabled", not section.add_button.isEnabled()
+              and section.empty.text() == pp.NO_DOCUMENT)
+        capture("no-document")
+
+        # 2-3. New document, add via the dialog ---------------------------------------------------
+        call("new", name="Parameter panel validation")
+        doc = panel.document()
+        check("New document: empty placeholder and '+' enabled", section.add_button.isEnabled() and section.empty.text() == pp.EMPTY)
+        features_before = [item["id"] for item in panel.state["features"]]
+        undo = doc.UndoCount
+        add_via_dialog("shaft_diameter", 0, "10")
+        check("Added through the dialog: Parameters (1)", section.title.text() == "Parameters (1)" and "shaft_diameter" in section.rows)
+        check("The parameter set is not a Features row", [item["id"] for item in panel.state["features"]] == features_before)
+        check("One undo step for the add", doc.UndoCount == undo + 1)
+        check("Status says the add completed", "Parameter add complete" in panel.message.text())
+
+        # 4. Reserved name ----------------------------------------------------------------------
+        dialog = add_via_dialog("t", 0, "2")
+        check("A unit-symbol name keeps the dialog open with a plain reason",
+              section.dialog is dialog and dialog.isVisible() and "unit" in dialog.message.text() and dialog.focusWidget() is dialog.name_edit,
+              dialog.message.text())
+        dialog.reject()
+        wait(80)
+
+        # 5. More parameters --------------------------------------------------------------------
+        add_via_dialog("shoulder_diameter", 0, "=shaft_diameter + 2 mm")
+        add_via_dialog("chamfer_angle", 1, "30")
+        add_via_dialog("flute_count", 2, "2")
+        check("Four parameters", section.title.text() == "Parameters (4)", section.title.text())
+        check("Angle shows degrees and stores radians",
+              section.rows["chamfer_angle"].item.text(2) == "°" and abs(row("chamfer_angle")["value"] - 0.5235987755982988) < 1e-12,
+              row("chamfer_angle"))
+        check("The formula row shows its value", field("shoulder_diameter").text() == "12" and field("shoulder_diameter").formula)
+
+        # 6. Binding through the GUI ------------------------------------------------------------
+        call("sketch_rectangle", id="Base", width=40, height=40)
+        call("pad", id="Block", profile="Base", length=10, operation="new")
+        call("create_plane", id="Top", base_plane="XY", offset=10)
+        call("create_sketch", id="ShaftSk", support={"feature": "Top"})
+        call("add_circle", sketch="ShaftSk", x=20, y=20, diameter=5)
+        call("pad", id="Shaft", profile="ShaftSk", length=8, operation="add", merge_scope=["Body"])
+        call("sketch_circle", id="CollarSk", x=20, y=20, diameter=9, support={"feature": "Top"}, body="Body")
+        call("pad", id="Collar", profile="CollarSk", length=2, operation="add", merge_scope=["Body"])
+        # The collar first (12 mm), so the 10 mm shaft never swallows it.
+        collar_key, _ = dimension("CollarSk")
+        bind_through_formula("CollarSk", collar_key, "shoulder_diameter")
+        check("The collar sketch reads the formula parameter", dimension("CollarSk")[1]["value"] == 12.0,
+              (dimension("CollarSk"), panel.message.text()))
+        shaft_key, _ = dimension("ShaftSk")
+        reference = bind_through_formula("ShaftSk", shaft_key, "shaft_diameter")
+        check("Copy reference gives the backend's reference", reference == row("shaft_diameter")["expression_ref"], reference)
+        check("The shaft sketch reads the parameter", dimension("ShaftSk")[1]["expression"] == reference,
+              (dimension("ShaftSk"), panel.message.text()))
+
+        # 7. Commit boundary --------------------------------------------------------------------
+        panel.refresh()
+        mutations.clear()
+        before_volume, undo = volume(), doc.UndoCount
+        target = type_into("shaft_diameter", "12")
+        check("Typing never dispatches", not mutations, mutations)
+        enter(target)
+        check("Enter commits exactly one edit_parameter", len(edits()) == 1 and len(mutations) == 1, mutations)
+        check("One undo step per commit", doc.UndoCount == undo + 1)
+        check("The circle and the formula parameter follow",
+              dimension("ShaftSk")[1]["value"] == 12.0 and row("shoulder_diameter")["native_value"] == 14.0)
+        check("The volume changed", volume() != before_volume)
+        capture("default")
+
+        # 8. Undo / redo ------------------------------------------------------------------------
+        panel.history_move("undo")
+        wait(150)
+        check("Undo restores 10 / 12", row("shaft_diameter")["native_value"] == 10.0 and row("shoulder_diameter")["native_value"] == 12.0
+              and field("shaft_diameter").text() == "10")
+        panel.history_move("redo")
+        wait(150)
+        check("Redo restores 12 / 14", row("shaft_diameter")["native_value"] == 12.0 and field("shaft_diameter").text() == "12")
+
+        # 9. Rejected downstream edit -----------------------------------------------------------
+        mutations.clear()
+        revision, before_volume = panel.state["revision"], volume()
+        target = type_into("shaft_diameter", "0")
+        enter(target)
+        check("A failing downstream edit is rejected and the text kept",
+              target.text() == "0" and target.property("validation") == "invalid" and "kept 12 mm" in section.error.text(),
+              (target.text(), target.property("validation"), section.error.text()))
+        check("Revision and volume unchanged after the rejection", panel.state["revision"] == revision and volume() == before_volume)
+        check("The rejection carries the downstream failure code and reaches Messages",
+              target.rejected is not None and target.rejected.code in {"build_failed", "empty_cut", "empty_add", "invalid_geometry"}
+              and panel.last_operation_error is not None and panel.last_operation_error.get("code") == target.rejected.code,
+              (target.rejected, panel.last_operation_error))
+        capture("error")
+        enter(target)
+        check("Enter retries the rejected text", len(edits()) == 2, mutations)
+        QtTest.QTest.keyClick(target, QtCore.Qt.Key_Escape)
+        wait(80)
+        check("Escape restores the accepted value without a dispatch", target.text() == "12" and not target.edited and len(edits()) == 2)
+
+        # 10. Unit mismatch -----------------------------------------------------------------------
+        target = type_into("shaft_diameter", "30 deg")
+        enter(target)
+        check("An angle in a length field is a value error; the value is kept",
+              target.property("validation") == "invalid" and row("shaft_diameter")["native_value"] == 12.0, section.error.text())
+        QtTest.QTest.keyClick(target, QtCore.Qt.Key_Escape)
+        wait(60)
+
+        # 11. Conflict --------------------------------------------------------------------------
+        target = type_into("shaft_diameter", "13")
+        mutations.clear()
+        bridge_like("edit_parameter", name="shaft_diameter", value=15)
+        mutations.clear()
+        check("An edited field keeps its text when the value changes elsewhere", target.text() == "13" and target.edited)
+        check("The conflict is shown", "changed elsewhere" in section.error.text(), section.error.text())
+        capture("conflict")
+        QtWidgets.QApplication.sendEvent(target, QtGui.QFocusEvent(QtCore.QEvent.FocusOut, QtCore.Qt.MouseFocusReason))
+        wait(80)
+        check("A focus-out never overwrites a conflict", not mutations, mutations)
+        target.setFocus(QtCore.Qt.MouseFocusReason)
+        wait(30)
+        enter(target)
+        check("Enter overwrites: one dispatch, value 13", len(edits()) == 1 and row("shaft_diameter")["native_value"] == 13.0)
+
+        # 12. Clean field follows ---------------------------------------------------------------
+        target = field("shaft_diameter")
+        target.setFocus(QtCore.Qt.MouseFocusReason)
+        wait(30)
+        bridge_like("edit_parameter", name="shaft_diameter", value=16)
+        check("A focused clean field follows a change elsewhere", field("shaft_diameter").text() == "16",
+              field("shaft_diameter").text())
+
+        # 13. Freeze a formula ------------------------------------------------------------------
+        panel.features.setFocus()
+        wait(30)
+        mutations.clear()
+        current = pp.format_number(row("shoulder_diameter")["native_value"])
+        target = type_into("shoulder_diameter", current)
+        enter(target)
+        check("Typing the formula's value freezes it in one request",
+              len(edits()) == 1 and edits()[0].get("expression", "missing") is None and row("shoulder_diameter")["expression"] is None,
+              edits())
+        check("The formula marker is gone", not field("shoulder_diameter").formula)
+        panel.history_move("undo")
+        wait(150)
+        check("Undo restores the formula", row("shoulder_diameter")["expression"] is not None)
+
+        # 14. No commit on window deactivation --------------------------------------------------
+        mutations.clear()
+        target = type_into("shaft_diameter", "17")
+        QtWidgets.QApplication.sendEvent(target, QtGui.QFocusEvent(QtCore.QEvent.FocusOut, QtCore.Qt.ActiveWindowFocusReason))
+        wait(80)
+        check("Window deactivation commits nothing and marks the edit pending",
+              not mutations and target.property("validation") == "pending", (mutations, target.property("validation")))
+        target.setFocus(QtCore.Qt.MouseFocusReason)
+        wait(30)
+        enter(target)
+        check("Enter applies the pending edit", row("shaft_diameter")["native_value"] == 17.0)
+
+        # 17. Ctrl+S flush ----------------------------------------------------------------------
+        path = scratch / "parameter-panel.FCStd"
+        call("save", path=str(path))
+        mutations.clear()
+        target = type_into("shaft_diameter", "12")
+        QtTest.QTest.keyClick(target, QtCore.Qt.Key_S, QtCore.Qt.ControlModifier)
+        wait(250)
+        check("Ctrl+S applies the edit, then saves", [request["op"] for request in mutations][:2] == ["edit_parameter", "save"], mutations)
+        target = type_into("shaft_diameter", "0")
+        enter(target)
+        mtime = path.stat().st_mtime_ns
+        mutations.clear()
+        QtTest.QTest.keyClick(target, QtCore.Qt.Key_S, QtCore.Qt.ControlModifier)
+        wait(250)
+        check("Ctrl+S with a rejected edit refuses the save without resending the known failure",
+              path.stat().st_mtime_ns == mtime and not any(request["op"] in {"save", "edit_parameter"} for request in mutations),
+              mutations)
+        QtTest.QTest.keyClick(target, QtCore.Qt.Key_Escape)
+        wait(60)
+
+        # 18. Rename ----------------------------------------------------------------------------
+        QtCore.QTimer.singleShot(0, lambda: None)
+        section.rename("shaft_diameter")
+        wait(80)
+        dialog = section.dialog
+        dialog.name_edit.selectAll()
+        QtTest.QTest.keyClicks(dialog.name_edit, "shaft_dia")
+        QtTest.QTest.mouseClick(dialog.accept_button, QtCore.Qt.LeftButton)
+        wait(150)
+        check("Rename rewrites consumers and the dependent formula",
+              "shaft_dia" in section.rows and dimension("ShaftSk")[1]["expression"].endswith(".shaft_dia")
+              and "shaft_dia" in (row("shoulder_diameter")["expression"] or ""), (dimension("ShaftSk"), row("shoulder_diameter")))
+        panel.history_move("undo")
+        wait(150)
+        check("Undo restores the old name", "shaft_diameter" in section.rows and dimension("ShaftSk")[1]["expression"].endswith(".shaft_diameter"))
+
+        # 20. Routing ---------------------------------------------------------------------------
+        panel.select_feature("Block")
+        wait(60)
+        section.tree.setCurrentItem(section.rows["shaft_diameter"].item)  # in use: Delete asks first
+        section.tree.setFocus()
+        wait(40)
+        observed = answer_message_box("Cancel")
+        mutations.clear()
+        QtTest.QTest.keyClick(section.tree, QtCore.Qt.Key_Delete)
+        wait(400)
+        check("Delete in the parameter list runs the parameter flow, not the feature delete",
+              "ShaftSk" in observed.get("text", "") and "shaft_diameter" in section.rows and doc.getObject("Block") is not None
+              and not any(request["op"] in {"delete_feature", "delete_features", "delete_parameter"} for request in mutations),
+              (observed, mutations))
+        section.tree.setCurrentItem(section.rows["shoulder_diameter"].item)
+        section.tree.setFocus()
+        QtTest.QTest.keyClick(section.tree, QtCore.Qt.Key_C, QtCore.Qt.ControlModifier)
+        wait(60)
+        check("Ctrl+C copies the reference", QtGui.QApplication.clipboard().text() == row("shoulder_diameter")["expression_ref"])
+        mutations.clear()
+        QtTest.QTest.keyClick(section.tree, QtCore.Qt.Key_V, QtCore.Qt.ControlModifier)
+        wait(60)
+        check("Ctrl+V notifies and duplicates nothing", not any(request["op"] == "duplicate_feature" for request in mutations))
+
+        # 19. Delete in use ---------------------------------------------------------------------
+        before_value = dimension("CollarSk")[1]["value"]
+        feature_rows = [item["id"] for item in panel.state["features"]]
+        observed = answer_message_box("keep current values")
+        outcome = section.delete("shoulder_diameter")
+        wait(250)
+        check("The confirmation lists the consuming feature", "CollarSk" in observed.get("text", "") or "Collar" in observed.get("text", ""),
+              (observed, outcome, section.error.text(), section.adapter.usage("shoulder_diameter"), section.block_reason,
+               panel.message.text()))
+        check("Delete keeps consumer values and removes their formulas",
+              "shoulder_diameter" not in section.rows and dimension("CollarSk")[1]["value"] == before_value
+              and dimension("CollarSk")[1]["expression"] is None)
+        check("Deleting a parameter leaves the Features rows unchanged", [item["id"] for item in panel.state["features"]] == feature_rows)
+        panel.history_move("undo")
+        wait(150)
+
+        # 21. Used by ---------------------------------------------------------------------------
+        panel.filter.setText("zzz")
+        wait(60)
+        section.adapter.show_use("ShaftSk", shaft_key)
+        wait(120)
+        check("Used by clears the filter and selects the consumer", panel.filter.text() == "" and panel.selected() == "ShaftSk")
+        check("Used by shows the driven dimension", panel.parameter.currentText() == shaft_key)
+
+        # 23. Assembly round trip ---------------------------------------------------------------
+        panel.set_workspace_mode("assembly")
+        wait(150)
+        check("The assembly workspace shows the placeholder", section.empty.isVisible() and "part studios" in section.empty.text())
+        panel.set_workspace_mode("part_studio")
+        wait(150)
+        check("Back in the part studio the rows reappear", "shaft_diameter" in section.rows and section.tree.isVisible())
+
+        # 25. Bridge-like create ----------------------------------------------------------------
+        created = section.created
+        bridge_like("create_parameter", name="bridge_made", type="length", value=3)
+        check("A bridge create adds exactly one row", "bridge_made" in section.rows and section.created == created + 1)
+
+        # 26. Splitter persistence --------------------------------------------------------------
+        handle = splitter.handle(2)
+        start = handle.rect().center()
+        QtTest.QTest.mousePress(handle, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, start)
+        QtTest.QTest.mouseMove(handle, start + QtCore.QPoint(0, -30))
+        QtTest.QTest.mouseRelease(handle, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, start + QtCore.QPoint(0, -30))
+        wait(600)
+        stored = App.ParamGet(pp.LAYOUT_GROUP).GetString(pp.LAYOUT_KEY)
+        check("Dragged heights are stored after the debounce", stored == ",".join(map(str, splitter.sizes())), (stored, splitter.sizes()))
+        user_cfg = Path(os.environ["FREECAD_USER_HOME"])
+        check("The private profile holds the layout key",
+              any(pp.LAYOUT_KEY in candidate.read_text(encoding="utf-8", errors="ignore")
+                  for candidate in user_cfg.rglob("user.cfg")))
+
+        # 27. Native persistence ----------------------------------------------------------------
+        call("save", path=str(path))
+        App.closeDocument(doc.Name)
+        wait(150)
+        panel.tick()
+        call("open", path=str(path))
+        doc = panel.document()
+        check("Reopened parameters keep names, types, values and formulas",
+              {"shaft_diameter", "shoulder_diameter", "chamfer_angle", "flute_count", "bridge_made"} <= set(section.rows)
+              and row("shoulder_diameter")["expression"] is not None and row("chamfer_angle")["type"] == "angle")
+        check("The parameter set is still not a Features row", "Params" not in [item["id"] for item in panel.state["features"]])
+        undo, collar = doc.UndoCount, dimension("CollarSk")[1]["value"]
+        target = type_into("shoulder_diameter", "=shaft_diameter + 3 mm")
+        enter(target)
+        check("Editing the formula after reopening drives the model",
+              dimension("CollarSk")[1]["value"] == collar + 1 and doc.UndoCount == undo + 1)
+
+        # 28. Stale state -----------------------------------------------------------------------
+        params = doc.getObject(row("shaft_diameter")["expression_ref"].split(".")[0])
+        params.setExpression("flute_count", "no_such_name * 2")
+        setattr(params, "shaft_diameter", 11)
+        doc.recompute()
+        panel.core.observer.state(doc)["refresh"] = True
+        panel.tick()
+        wait(120)
+        check("The banner names the failing parameter and formula rows are drawn stale",
+              section.banner.isVisible() and "flute_count" in section.banner.text()
+              and field("shoulder_diameter").property("stale") in {True, "true"},
+              (section.banner.text(), field("shoulder_diameter").property("stale")))
+        target = type_into("flute_count", "3")
+        enter(target)
+        panel.tick()
+        wait(120)
+        check("Fixing the formula in the panel clears the banner", not section.banner.isVisible(), section.banner.text())
+
+        # 24. Document switches (and C25: close_document refuses an unapplied edit) -------------------
+        target = type_into("bridge_made", "5")
+        state = panel.core.dispatch({"op": "inspect", "document_id": panel.state["document_id"]})["result"]
+        refused = panel.core.dispatch({"op": "close_document", "document_id": state["document_id"],
+                                       "expected_revision": state["revision"], "discard": True})
+        check("close_document refuses while a parameter edit is unapplied (C25)",
+              refused.get("ok") is False and refused["error"]["code"] == "user_editing"
+              and refused["error"].get("tool") == "parameter_edit", refused)
+        mutations.clear()
+        panel.new()
+        wait(200)
+        check("GUI New applies the pending edit first", [request["op"] for request in mutations][:2] == ["edit_parameter", "new"],
+              mutations)
+        App.setActiveDocument(doc.Name)  # back to the parameter document (still open)
+        Gui.ActiveDocument = Gui.getDocument(doc.Name)
+        panel.tick()
+        wait(150)
+        mutations.clear()
+        target = type_into("bridge_made", "4")
+        panel.core.dispatch({"op": "new", "name": "Switched"})
+        panel.tick()
+        wait(150)
+        check("A bridge New retires the edited field without dispatching to the new document",
+              target.retired and not any(request["op"] == "edit_parameter" for request in mutations)
+              and "discarded" in panel.message.text(), (target.retired, mutations, panel.message.text()))
+        check("The section shows the new, empty document", section.empty.text() == pp.EMPTY)
+        QtTest.QTest.mouseClick(section.add_button, QtCore.Qt.LeftButton)
+        wait(80)
+        dialog = section.dialog
+        panel.core.dispatch({"op": "new", "name": "Switched again"})
+        panel.tick()
+        wait(150)
+        check("The parameter dialog is rejected when a bridge request switches documents",
+              dialog is not None and section.dialog is None and (not shiboken6.isValid(dialog) or not dialog.isVisible()))
+
+        # 29. Fifty parameters ------------------------------------------------------------------
+        for index in range(50):
+            bridge_like("create_parameter", name="p%02d" % index, type="length", value=index + 1)
+        check("Fifty rows", section.title.text() == "Parameters (50)", section.title.text())
+        capture("fifty-parameters")
+
+        report["source_unchanged"] = source_hashes() == startup_hashes
+        assert report["source_unchanged"], "Source changed during isolated GUI acceptance; rerun after production freeze"
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        report["passed"] = False
+    finally:
+        report["seconds"] = time.perf_counter() - started
+        report["check_count"] = len(report["checks"])
+        save_report()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+        report["owned_documents_closed"] = not App.listDocuments()
+        save_report()
+    finally:
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    if not report.get("seconds"):
+        report["aborted"] = True
+        report["error"] = "Parameter panel validation exceeded 240 seconds"
+        save_report()
+        cleanup()
+
+
+QtCore.QTimer.singleShot(240000, timeout)
+QtCore.QTimer.singleShot(1500, validate)

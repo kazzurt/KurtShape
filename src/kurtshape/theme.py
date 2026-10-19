@@ -161,6 +161,18 @@ QPushButton#KurtShapeReferencePick:focus { border-color: %(accent)s; }
 QPushButton#KurtShapeReferencePick:disabled { color: %(disabled_ink)s; background: %(disabled)s; border-color: transparent; }
 QToolButton#KurtShapeReferenceRemove, QToolButton#KurtShapeReferenceRowRemove, QToolButton#KurtShapeReferenceMenu { min-height: 14px; min-width: 14px; padding: 2px; }
 QToolButton#KurtShapeReferenceMenu::menu-indicator { image: none; width: 0; height: 0; }
+QWidget#KurtShapeParameterHeader { background: %(chrome)s; }
+QToolButton#KurtShapeAddParameter { color: %(ink)s; font-size: 15px; font-weight: 600; min-width: 18px; min-height: 18px; padding: 0 5px; }
+QToolButton#KurtShapeAddParameter:disabled { background: transparent; border-color: transparent; }
+QLineEdit#KurtShapeParameterValue { background: transparent; border-color: transparent; padding: 1px 3px; min-height: 16px; }
+QLineEdit#KurtShapeParameterValue:hover { background: %(surface)s; border-color: %(divider)s; }
+QLineEdit#KurtShapeParameterValue:focus { background: %(surface)s; border-color: %(accent)s; }
+QLineEdit#KurtShapeParameterValue[validation="pending"] { background: %(surface)s; border-color: %(warning)s; }
+QLineEdit#KurtShapeParameterValue[validation="invalid"] { background: %(surface)s; border-color: %(error)s; }
+QLineEdit#KurtShapeParameterValue[stale="true"] { color: %(disabled_ink)s; }
+QLineEdit#KurtShapeParameterValue:read-only { color: %(disabled_ink)s; }
+QLabel#KurtShapeParameterEmpty { color: %(muted)s; background: %(surface)s; }
+QLabel#KurtShapeParameterError, QLabel#KurtShapeParameterState { background: %(surface)s; }
 """ % COLORS
 
 

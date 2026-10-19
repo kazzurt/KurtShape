@@ -15,7 +15,9 @@ import re
 from . import reference_tools, selectors, studio
 from .bodies import origin_plane, owner
 
-OPS = {"create_plane", "extrude_face", "move_face"}
+OPS = {"create_plane", "extrude_face", "move_face", "create_helix"}
+# Helix handedness; operation_schemas reads this enum.
+HANDEDNESS = ("right", "left")
 # Mutually exclusive datum-plane definitions. Fields shared by every mode are
 # id, name, body and offset; "offset" mode is the original support/origin plane.
 PLANE_MODES = {
@@ -26,9 +28,13 @@ PLANE_MODES = {
 }
 ARGS = {
     "create_plane": {"id", "name", "body", "offset"} | {key for keys in PLANE_MODES.values() for key in keys},
-    "extrude_face": {"id", "name", "face", "length", "reversed", "operation", "merge_scope"},
+    "extrude_face": {"id", "name", "face", "length", "reversed", "operation", "merge_scope", "refine"},
     "move_face": {"id", "name", "part", "faces", "distance"},
+    "create_helix": {"id", "name", "pitch", "height", "radius", "axis", "x_direction", "start_angle", "handedness",
+                     "segment_length"},
 }
+HELIX_MAX_TURNS = 1000
+HELIX_MAX_EDGES = 1000
 
 
 def _error(code, message, **details):
@@ -541,9 +547,93 @@ def _move_face(core, doc, req):
     return studio._record(doc, representative, req, [output], [key], snapshots)
 
 
+def _turns(value, name):
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+        raise _error("invalid_argument", name + " must be a positive number of turns")
+    return float(value)
+
+
+def check_helix_size(pitch, height, segment_length):
+    """Bound the native work: FreeCAD builds every turn and segment eagerly."""
+    turns = height / pitch
+    if turns > HELIX_MAX_TURNS:
+        raise _error("invalid_argument", f"A helix may have at most {HELIX_MAX_TURNS} turns (height / pitch)",
+                     turns=turns)
+    if math.ceil(turns / segment_length - 1e-9) > HELIX_MAX_EDGES:
+        raise _error("invalid_argument", f"A helix may have at most {HELIX_MAX_EDGES} segments "
+                     "(turns / segment_length)", turns=turns, segment_length=segment_length)
+
+
+def _create_helix(core, doc, req):
+    """Native top-level Part::Helix, a sweep path recorded in the studio history.
+
+    The helix starts at axis.origin + radius * (cos a * x + sin a * y), with x
+    the x_direction (projected perpendicular to the axis), y = axis × x and a
+    the start_angle, and rises along the axis direction. Right-handed turns
+    counter-clockwise seen from the axis tip. Each segment_length turns form
+    one edge; an undivided multi-turn helix gives sweep faces that OCCT
+    Booleans silently miss, hence one turn per edge by default.
+    """
+    pitch = _number(req.get("pitch"), "pitch", True)
+    height = _number(req.get("height"), "height", True)
+    radius = _number(req.get("radius"), "radius", True)
+    segment_length = _turns(req.get("segment_length", 1), "segment_length")
+    check_helix_size(pitch, height, segment_length)
+    axis = req.get("axis", {})
+    if not isinstance(axis, dict) or set(axis) - {"origin", "direction"}:
+        raise _error("invalid_argument", "axis requires origin and direction")
+    origin = studio._vector(axis.get("origin"), "axis.origin", [0, 0, 0])
+    direction = studio._vector(axis.get("direction"), "axis.direction", [0, 0, 1], True)
+    x = (_perpendicular(_direction(req["x_direction"], "x_direction"), direction, "x_direction", "helix axis")
+         if "x_direction" in req else default_x_direction(direction))
+    angle = studio._number(req.get("start_angle", 0), "start_angle", unit="rad")
+    start = App.Rotation(direction, math.degrees(angle)).multVec(x)
+    handedness = req.get("handedness", "right")
+    if handedness not in HANDEDNESS:
+        raise _error("invalid_argument", "handedness must be right or left")
+    helix = doc.addObject("Part::Helix", core._id(doc, req, "Helix"))
+    if req.get("name"):
+        helix.Label = req["name"]
+    helix.Pitch, helix.Height, helix.Radius = pitch, height, radius
+    helix.SegmentLength = segment_length
+    helix.LocalCoord = "Right-handed" if handedness == "right" else "Left-handed"
+    helix.Placement = App.Placement(origin, App.Rotation(start, App.Vector(), direction, "ZXY"))
+    studio._prop(helix, "App::PropertyBool", "KurtShapeCurve", True)
+    core._recompute(doc)
+    if helix.Shape.isNull() or not helix.Shape.Edges or studio._native_failed(helix):
+        raise _error("build_failed", "The native helix could not be built", status=helix.getStatusString())
+    first = helix.Shape.Edges[0]
+    if (first.valueAt(first.FirstParameter) - (origin + start * radius)).Length > 1e-6:
+        raise _error("build_failed", "The native helix did not start at the requested point")
+    return studio.record_curve(doc, helix, req)
+
+
+def _vector_or_none(value):
+    return _vector_list(value) if value is not None else None
+
+
+def helix_summary(obj):
+    """Inspection record of a native helix: frame, size and its end points."""
+    rotation = obj.Placement.Rotation
+    edges = [] if obj.Shape.isNull() else obj.Shape.Edges
+    start = edges[0].valueAt(edges[0].FirstParameter) if edges else None
+    segment = obj.SegmentLength
+    pitch, height = obj.Pitch.Value, obj.Height.Value
+    return {"pitch_mm": pitch, "height_mm": height, "radius_mm": obj.Radius.Value,
+            "turns": height / pitch if pitch > 0 else None,
+            "handedness": "left" if str(obj.LocalCoord) == "Left-handed" else "right",
+            "segment_length_turns": float(getattr(segment, "Value", segment)), "edge_count": len(edges),
+            "axis": {"origin": _vector_list(obj.Placement.Base), "direction": _vector_list(rotation.multVec(_Z))},
+            "start_direction": _vector_list(rotation.multVec(_X)), "start_point_mm": _vector_or_none(start),
+            "start_tangent": _vector_or_none(edges[0].tangentAt(edges[0].FirstParameter) if edges else None),
+            "end_point_mm": _vector_or_none(edges[-1].valueAt(edges[-1].LastParameter) if edges else None)}
+
+
 def handle(core, doc, req):
     if req["op"] == "create_plane":
         return _create_plane(core, doc, req)
+    if req["op"] == "create_helix":
+        return _create_helix(core, doc, req)
     if req["op"] == "move_face":
         return _move_face(core, doc, req)
     if req["op"] == "extrude_face":

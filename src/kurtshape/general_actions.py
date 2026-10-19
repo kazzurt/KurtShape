@@ -86,6 +86,10 @@ class GeneralActions:
 
     def copy(self):
         import FreeCADGui as Gui
+        section = getattr(self.panel, "parameter_section", None)
+        if section is not None and section.owns_focus():
+            section.copy_reference()  # the backend's reference string, verbatim (3b §5)
+            return True
         try:
             doc = self._document()
             sketch = self.panel.active_sketch()
@@ -138,6 +142,10 @@ class GeneralActions:
 
     def paste(self):
         import FreeCADGui as Gui
+        section = getattr(self.panel, "parameter_section", None)
+        if section is not None and section.owns_focus():
+            section.paste()  # never duplicate_feature from the parameter list
+            return True
         try:
             doc = self._document()
             sketch = self.panel.active_sketch()
@@ -179,6 +187,9 @@ class GeneralActions:
 
     def _can_switch(self):
         import FreeCADGui as Gui
+        section = getattr(self.panel, "parameter_section", None)
+        if section is not None and not section.flush_pending():
+            return False
         live_lease = any(identifier in self.panel.core.sketch_edits and self.panel.core._is_open(doc)
                          for identifier, doc in self.panel.core.documents.items())
         gui_document = Gui.activeDocument()

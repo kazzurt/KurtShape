@@ -53,16 +53,44 @@ STEP/STL are exports.
    A user-chosen Save destination adds that folder. Do not widen grants silently.
 5. Preserve originals, use descriptive model folders and retain the build recipe.
    Do not overwrite an FCStd open in another app process.
+6. Result checks (contract 3.2, OPERATION_CONTRACT §3.2.1): an edit that would leave a
+   studio Add/Remove/Intersect empty or invalid is rejected with the creation code; the
+   error's `feature` is the failing operation and `trigger` the one you edited, so compare
+   them. Read `result_check_report` on accepted mutations and `result_checks` on `inspect`:
+   `pending` after native edits (run `check_geometry`), `failed` after rollback/rebuild
+   (fix the model before `export`, which validates first). Use `preview` before a risky edit;
+   its `valid` tells you whether the commit would be accepted.
+7. Parameters (§3.2.3): model the key dimensions as parameters so Kurt can correct them
+   in the left panel's Parameters section. `create_parameter` (`type` length, angle or
+   number), then bind a dimension with `set_expression` using the `expression_ref` the
+   response returns (never a hard-coded `Params.x`), or promote existing dimensions with
+   `create_parameter … bind:[{feature, parameter}]`. `edit_parameter` rebuilds what depends
+   on it; a failure rolls back and `error.parameter.accepted` says what stands.
+8. Batches (§3.2.4): for a dependent sequence, `preview` one `{"op":"batch", steps}`
+   proposal, check `accepted`, then send `batch` with the same steps,
+   `expected_revision = base_revision` and a new `request_id`. A failed batch changes
+   nothing; `error.batch.step` names the step to fix. Reference earlier steps with
+   `{"$ref": alias}` / `{"$part": alias}` and give features explicit `id`s when formulas or
+   reconciliation need them. Keep batches short; in the app they stop at 20 s, and on a
+   large part each step costs about 1 s there, so send about 12 steps at a time.
+9. Images (§3.2.2): `render_view` returns PNGs of the current model (views, sections,
+   labelled highlights) without touching Kurt's view; check a result visually before
+   reporting it.
 
 ### Slow operations and retries
 
-The stock client has a bounded HTTP wait. **`outcome_unknown` or a transport
-timeout is not proof a feature failed.** Keep the original request ID. Query
-`request_status` with the original `request_id` in the same bridge session (see the contract), wait
-while pending, and inspect the document after completion. Identical retries
-must use the same request ID and identical body. Never issue a new mutation ID
-just because a fillet was slow. If the session restarted or the ledger expired,
-inspect state and reconcile before deciding what to do next.
+**`outcome_unknown` or a transport timeout is not proof a feature failed.**
+`tools/assistant_client.py` reconciles for you: it keeps the request ID, polls
+`request_status` and returns the stored response, or says `pending` (exit 2:
+reconcile later with `--reconcile --request-id <id>`), `unknown` (exit 3: inspect
+before acting) or safe to retry (exit 4: inspect, then send a mutation again with a
+new request ID). Identical retries of a pending or unknown request must use the
+same request ID and identical body; never issue a new mutation ID just because a
+fillet was slow. After a restart (`not_recorded`) the old revision is stale, so
+inspect and reconcile by explicit ids. `python -B tools/assistant_client.py
+--build-check` says whether the running app was started from this checkout's
+current code (`current`), predates your edits (`stale`: ask Kurt before restarting) or
+runs another tree.
 
 ### Development
 

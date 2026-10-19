@@ -1,0 +1,169 @@
+"""Check plane controls on a private BREF copy; never access the user's GUI."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import shutil
+import sys
+import traceback
+from unittest.mock import patch
+
+sys.dont_write_bytecode = True
+root = Path(os.environ['KURTSHAPE_ROOT']).resolve()
+session = Path(os.environ['KURTSHAPE_SESSION_DIR']).resolve()
+assert session.is_relative_to(root / 'runtime')
+assert Path(os.environ['FREECAD_USER_HOME']).resolve().is_relative_to(session)
+sys.path.insert(0, str(root / 'src'))
+sys.path.insert(0, str(root / 'tools'))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir('plane-visibility')
+report = {'passed': False, 'checks': [], 'pid': os.getpid(),
+          'method': 'Private hidden native GUI; production Panel toggle and history menus; save/reopen; source model hash and exact solid signatures.'}
+panel = None
+cleaned = False
+
+def save():
+    (output / 'gui-result.json').write_text(json.dumps(report, indent=2, default=str), encoding='utf-8')
+
+def check(label, condition):
+    assert condition, label
+    report['checks'].append(label)
+    save()
+
+def call(op, **args):
+    assert panel.operation(op, **args), panel.message.text()
+    QtTest.QTest.qWait(80)
+    return panel.document()
+
+def planes(doc):
+    return [obj for obj in doc.Objects if obj.TypeId in {'App::Plane', 'PartDesign::Plane'}
+            and not getattr(ui.owner(doc, obj), 'KurtShapeInternal', False)]
+
+def signature(doc):
+    return [(obj.Name, obj.Shape.Volume, len(obj.Shape.Faces), len(obj.Shape.Edges),
+             str(obj.Placement), obj.ViewObject.Visibility)
+            for obj in ui.native_results(doc)]
+
+def choose_menu(label, objects):
+    panel.features.clearSelection()
+    for obj in objects:
+        panel.items[obj.Name].setSelected(True)
+    QtTest.QTest.qWait(100)
+    item = panel.items[objects[0].Name]
+    panel.features.scrollToItem(item)
+    selected_action = []
+    def activate(menu, *args):
+        actions = {action.text(): action for action in menu.actions()}
+        report.setdefault('menus', []).append(list(actions))
+        assert label in actions, list(actions)
+        actions[label].trigger()
+        selected_action.append(label)
+    # Exercise the real constructed QActions without a nested popup event loop.
+    with patch.object(QtGui.QMenu, 'exec_', activate):
+        panel.history_menu(panel.features.visualItemRect(item).center())
+    check(label + ' is available and triggers from the history menu', selected_action == [label])
+
+def cleanup():
+    global cleaned
+    if cleaned: return
+    cleaned = True
+    if panel: panel.shutdown()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        if doc.HasPendingTransaction: doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+def run():
+    global panel
+    try:
+        source = root.parent.parent / 'projects/bref-im-df-interface/BREF-IM-DF-interface.FCStd'
+        source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+        private_copy = session / 'bref-plane-visibility.FCStd'
+        shutil.copy2(source, private_copy)
+        panel = ui.start()
+        panel.timer.stop()
+        panel.recovery_timer.stop()
+        # Save grants are private to this test session.
+        panel.core.settings.roots = {session}
+        doc = call('open', path=str(private_copy))
+        baseline = signature(doc)
+        datum = [obj for obj in planes(doc) if obj.TypeId == 'PartDesign::Plane']
+        report.update(datum_planes=len(datum), solid_parts=len(baseline), original_sha256=source_hash)
+        check('BREF fixture contains four parts and multiple custom datum planes', len(baseline) == 4 and len(datum) > 8)
+        for obj in datum: obj.ViewObject.Visibility = True
+        for body in ui.bodies(doc): body.Origin.ViewObject.Visibility = False
+        panel.toggle_planes()
+        check('P hides every custom and origin plane despite hidden Origins', not any(obj.ViewObject.Visibility for obj in planes(doc)))
+        check('Hiding planes preserves all four visible solid geometries and placements', signature(doc) == baseline)
+        panel.toggle_planes()
+        check('P shows custom planes and origin plane children again', all(obj.ViewObject.Visibility for obj in planes(doc)))
+        choose_menu('Hide selected', datum[:2])
+        check('Multi-hide affects both selected planes and leaves other planes visible', all(not obj.ViewObject.Visibility for obj in datum[:2]) and datum[2].ViewObject.Visibility)
+        choose_menu('Show selected', datum[:2])
+        check('Multi-show restores both selected planes', all(obj.ViewObject.Visibility for obj in datum[:2]))
+        panel.toggle_planes()
+        panel.features.clearSelection()
+        Gui.Selection.clearSelection()
+        check('Hide-all also hides origin groups', not any(body.Origin.ViewObject.Visibility for body in ui.bodies(doc)))
+        call('save', path=str(private_copy))
+        response = panel.core.dispatch({'op': 'close_document',
+                                        'document_id': panel.state['document_id'],
+                                        'expected_revision': panel.state['revision']})
+        assert response['ok'], response
+        panel.state = None
+        doc = call('open', path=str(private_copy))
+        report['reopened_visible_planes'] = [
+            {'id': obj.Name, 'type': obj.TypeId,
+             'body': getattr(ui.owner(doc, obj), 'Name', None),
+             'body_visible': getattr(getattr(ui.owner(doc, obj), 'ViewObject', None), 'Visibility', None)}
+            for obj in planes(doc) if obj.ViewObject.Visibility]
+        save()
+        check('All planes remain hidden after save and reopen', not any(obj.ViewObject.Visibility for obj in planes(doc)))
+        check('Saved copy retains unchanged solid geometry and placement', signature(doc) == baseline)
+        check('Original BREF native file remains byte-for-byte unchanged', hashlib.sha256(source.read_bytes()).hexdigest() == source_hash)
+        report['passed'] = True
+        save()
+    except Exception:
+        report['error'] = traceback.format_exc()
+        save()
+    finally:
+        cleanup()
+
+def timeout():
+    report['error'] = 'Plane visibility check exceeded 150 seconds'
+    save()
+    cleanup()
+
+QtCore.QTimer.singleShot(150000, timeout)
+QtCore.QTimer.singleShot(1200, run)

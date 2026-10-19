@@ -32,6 +32,40 @@ def perf_only(testcase):
         testcase.skipTest(PERF_SKIP_PREFIX + " set KURTSHAPE_PERF=1 to run performance checks")
 
 
+OFFSCREEN_FONT_FILES = ("segoeui.ttf", "segoeuib.ttf", "seguisb.ttf")
+_OFFSCREEN_FONTS_LOADED = set()
+
+
+def offscreen_qt_fonts(testcase, family="Segoe UI", point_size=9):
+    """Give offscreen Qt real glyphs for widget grabs; restore the app font afterwards.
+
+    The offscreen platform has no system font database, so text renders as boxes
+    unless fonts are registered explicitly. The native child shares one
+    QApplication across classes, so the previous application font is restored in
+    a cleanup. Returns False, leaving the application font unchanged, when the
+    font files are missing or cannot be loaded; the caller then skips only its
+    image assertions.
+    """
+    from PySide6 import QtGui, QtWidgets
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        raise RuntimeError("offscreen_qt_fonts needs an existing QApplication")
+    folder = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts"
+    paths = [folder / name for name in OFFSCREEN_FONT_FILES]
+    if not all(path.is_file() for path in paths):
+        return False
+    for path in paths:
+        if str(path) in _OFFSCREEN_FONTS_LOADED:
+            continue
+        if QtGui.QFontDatabase.addApplicationFont(str(path)) < 0:
+            return False
+        _OFFSCREEN_FONTS_LOADED.add(str(path))
+    previous = QtGui.QFont(app.font())
+    testcase.addCleanup(app.setFont, previous)
+    app.setFont(QtGui.QFont(family, point_size))
+    return True
+
+
 def _scratch(testcase, directory, prefix):
     temporary = tempfile.TemporaryDirectory(dir=directory, prefix=prefix, ignore_cleanup_errors=True)
     testcase.addCleanup(temporary.cleanup)

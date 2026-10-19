@@ -11,6 +11,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 class RecoveryStore:
     interval_seconds = 30
+    # Discard checkpoints kept per recovery directory (contract 3.2 close_document discard:true).
+    discard_keep = 20
 
     def __init__(self, session_directory):
         self.directory = Path(session_directory) / "project-recovery"
@@ -67,6 +69,43 @@ class RecoveryStore:
         manifest = self._publish_cached(stage, path, record, shared)
         self.last[meta.DocumentId] = (time.monotonic(), meta.Revision)
         return manifest
+
+    def capture_discarded(self, doc, meta):
+        """Checkpoint a document whose unsaved changes are being discarded; returns the manifest path.
+
+        Writes ``<DocumentId>.discarded-<rev>.FCStd`` and ``.json`` through the same stage,
+        verify and publish path as ordinary checkpoints (``record["discarded"]`` is true and
+        carries the full revision; ``<rev>`` is its first 12 hex digits, because the bundled
+        FreeCAD cannot save to paths beyond about 225 characters and the session folder is
+        validated for a 62-character checkpoint name). The name never rotates and ``read``
+        accepts it; after each capture only the newest ``discard_keep`` discard pairs are kept.
+        """
+        if meta.DocumentId in self.pending:
+            self._finish(meta.DocumentId, wait=True)
+        self.directory.mkdir(parents=True, exist_ok=True)
+        path = self.directory / f"{meta.DocumentId}.discarded-{meta.Revision.replace('-', '')[:12]}.FCStd"
+        stage = path.with_suffix(".saving.FCStd")
+        self.snapshot_count += 1
+        doc.saveCopy(str(stage))
+        record = {"schema": 1, "document_id": meta.DocumentId, "revision": meta.Revision,
+                  "name": doc.Label, "source_file": doc.FileName or None, "saved_at": time.time(),
+                  "snapshot": path.name, "sketch": None, "accepted_sketch": None, "draft_sketch": None,
+                  "discarded": True}
+        manifest = self._publish(stage, path, record)
+        self._prune_discarded()
+        return manifest
+
+    def _prune_discarded(self):
+        manifests = sorted((path for path in self.directory.glob("*.discarded-*.json")
+                            if ".previous" not in path.name and ".saving" not in path.name),
+                           key=lambda path: (path.stat().st_mtime_ns, path.name), reverse=True)
+        for manifest in manifests[self.discard_keep:]:
+            for victim in (manifest, manifest.with_suffix(".FCStd"),
+                           manifest.with_suffix(".previous.json"), manifest.with_suffix(".previous.FCStd")):
+                try:
+                    victim.unlink()
+                except FileNotFoundError:
+                    pass
 
     def _publish_cached(self, stage, path, record, shared):
         manifest = self._publish(stage, path, record)

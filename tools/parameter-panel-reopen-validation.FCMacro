@@ -1,0 +1,138 @@
+"""Contract 3.2 F3b: the remembered left-panel heights survive a real FreeCAD restart (3b §13, check 26).
+
+Run by tools/run_gui_recipe.ps1 -Recipe parameter-panel-reopen -SeedUserConfig <user.cfg of a
+parameter-panel session>: a second hidden FreeCAD process starts from that profile copy and the
+production Panel must restore the stored LeftPanelSections proportionally, with the Parameters
+section between history and parts and usable at once. Never Kurt's window or profile.
+"""
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "tools"))
+from kurtshape_evidence import evidence_dir
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+from kurtshape import parameter_panel as pp
+
+
+class NoSocketTransport:
+    def __init__(self, *args, **kwargs):
+        self.pending = queue.Queue()
+        self.deferred = []
+        self.last_op = None
+        self.request_timeout = 30
+
+    def tick(self):
+        return False
+
+    def poll_deferred(self):
+        return None
+
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+output = evidence_dir("parameter-panel-reopen")
+report = {"passed": False, "checks": [], "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "method": "Second hidden FreeCAD process seeded with the first session's user.cfg; production Panel",
+          "limits": ["Proportions are compared, not pixels: the dock height of the second process may differ."]}
+panel = None
+cleaned = False
+started = time.perf_counter()
+
+
+def save_report():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition, detail=None):
+    if not condition:
+        raise AssertionError(label + ("" if detail is None else ": " + str(detail)))
+    report["checks"].append(label)
+    save_report()
+
+
+def validate():
+    global panel
+    try:
+        stored = App.ParamGet(pp.LAYOUT_GROUP).GetString(pp.LAYOUT_KEY)
+        report["stored"] = stored
+        sizes = [int(part) for part in stored.split(",")] if stored else []
+        check("The seeded profile holds three stored heights", len(sizes) == 3 and all(size > 0 for size in sizes), stored)
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        QtTest.QTest.qWait(400)
+        splitter = panel.history_splitter
+        restored = splitter.sizes()
+        report["restored"] = restored
+        check("Three sections in order history / parameters / parts", splitter.count() == 3 and splitter.widget(1) is panel.parameter_section)
+        total, stored_total = sum(restored), sum(sizes)
+        check("The stored heights are restored proportionally (within 3 px)",
+              all(abs(size - stored_size * total / stored_total) <= 3 for size, stored_size in zip(restored, sizes)), (restored, sizes))
+        result = panel.operation("new", name="Reopened layout")
+        check("A new document opens", result is not None, panel.message.text())
+        QtTest.QTest.qWait(100)
+        section = panel.parameter_section
+        check("The Parameters section is usable at once", section.add_button.isEnabled() and section.empty.text() == pp.EMPTY)
+        result = panel.operation("create_parameter", name="width", type="length", value="20 mm")
+        QtTest.QTest.qWait(100)
+        check("A parameter created after the restart shows up", result is not None and "width" in section.rows, panel.message.text())
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        report["seconds"] = time.perf_counter() - started
+        report["check_count"] = len(report["checks"])
+        save_report()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    finally:
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    if not report.get("seconds"):
+        report["error"] = "parameter-panel-reopen exceeded 90 seconds"
+        save_report()
+        cleanup()
+
+
+QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(1500, validate)

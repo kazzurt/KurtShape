@@ -407,7 +407,9 @@ class ExtrusionEvaluator:
                 # An edit changes an existing feature in place; it has no new ID.
                 operation = dict(normalized)
             else:
-                operation = dict(normalized, id="KurtShapePreviewExtrusion")
+                # Live feedback skips the BRepCheck, tight-bounds and empty-Add
+                # result checks; acceptance runs them through dispatch.
+                operation = dict(normalized, id="KurtShapePreviewExtrusion", _result_checks="live")
                 index = 2
                 while clone.getObject(operation["id"]):
                     operation["id"] = "KurtShapePreviewExtrusion" + str(index)
@@ -418,7 +420,10 @@ class ExtrusionEvaluator:
             clone.openTransaction("Disposable feature preview")
             transaction_id = (App.getActiveTransaction() or (None, None))[1]
             with _preview_phase(phases, "model"):
-                created = self.controller._model_operation(clone, operation)
+                try:
+                    created = self.controller._model_operation(clone, operation)
+                finally:
+                    self.controller._reports.pop("result_report", None)
             if isinstance(created, str):
                 created = clone.getObject(created)
             from . import studio

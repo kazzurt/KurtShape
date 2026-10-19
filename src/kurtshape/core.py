@@ -10,10 +10,13 @@ import time
 import uuid
 import traceback
 import weakref
+from collections import namedtuple
 
 import FreeCAD as App
 import Part
 import Sketcher
+# First kurtshape import: the loaded-build snapshot is taken before other modules load.
+from . import build_identity
 from .document_state import DocumentState
 from .settings import Settings
 from .request_ledger import RequestLedger, RequestStatusLookup
@@ -28,20 +31,79 @@ from . import hole_tools
 from . import extrusion_edit
 from .sketch_tools import restore_sketch_content, reference_errors as sketch_reference_errors
 from . import modeling_geometry
-from .contract import CONTRACT_VERSION, CONTRACT_REVISION
+from . import operation_schemas
+from .contract import CONTRACT_VERSION, CONTRACT_REVISION, REQUEST_SIZE_LIMIT
 from .native_content import native_content_fingerprints
 from . import geometry
 from . import incremental_intent, inspection_cache
+from . import result_checks as result_validation
+from . import parameters
+from . import batch
 from .snapshots import SnapshotKey, SnapshotStore
 
 ROOT = Path(__file__).resolve().parents[2]
 WRITE_ROOT = ROOT.parent.resolve()
 METADATA = "KurtShapeProject"
 SKETCH_CANCEL_BOUNDARY = "KurtShape: cancelled sketch edit"
+# Metadata-only history entries that managed undo/redo step over (F4 §3.3).
+BATCH_DISCARD_BOUNDARY = batch.DISCARD_BOUNDARY
+DISCARD_BOUNDARIES = frozenset({SKETCH_CANCEL_BOUNDARY, BATCH_DISCARD_BOUNDARY})
 SKETCH_CREATE = "KurtShape: create_sketch"
 # Content committed by the first Finish of a newly created sketch. Controller
 # Undo/Redo pairs it with the preceding creation, so the sketch is one step.
 SKETCH_CREATE_CONTENT = "KurtShape: new sketch contents"
+# One typed modeling step inside the caller's transaction (integration C8/C9):
+# the created feature's name (or None) and the per-step report keys it produced.
+ModelStep = namedtuple("ModelStep", "created_feature reports")
+STEP_REPORT_KEYS = ("result_report", "repair_report", "parameter_report", "changed_inputs", "created_parameter")
+# Report keys that stay inside the controller and never reach a response.
+INTERNAL_REPORTS = frozenset({"changed_inputs", "parameter_context"})
+
+
+class ValidationWindow:
+    """Result validation of one request (integration C10, F1 D13).
+
+    Captures the key table at creation (``before``), records per step which result
+    operations' keys changed (batches), and ``finish()`` runs the validator once in the
+    request's mode. ``attribution(feature)`` names the last step that changed a key.
+    """
+    def __init__(self, controller, doc, mode, trigger=None, before=None):
+        self.controller, self.doc, self.mode, self.trigger = controller, doc, mode, trigger
+        self.before = before if before is not None else controller.result_checks.snapshot(doc)
+        self.steps = []
+
+    def step_done(self, index):
+        table = self.controller.result_checks.key_table(self.doc, stamp=False)
+        previous = self.steps[-1][1] if self.steps else {name: entry.key for name, entry in self.before.ops.items()}
+        current = {name: entry.key for name, entry in table.ops.items()}
+        self.steps.append((index, current, {name for name in current if previous.get(name) != current[name]}))
+
+    def finish(self):
+        return self.controller._validate_results(self.doc, self.mode, before=self.before, trigger=self.trigger,
+                                                 retry=self.mode in {"edit", "preview"}, persist=self.mode != "preview")
+
+    def attribution(self, feature):
+        for index, _, changed in reversed(self.steps):
+            if feature in changed:
+                return index
+        return None
+
+
+class _NullValidationWindow:
+    """No-op result-validation window (integration C10); U3 supplies the real one."""
+    mode = None
+
+    def step_done(self, index):
+        return None
+
+    def finish(self):
+        return None
+
+    def attribution(self, feature):
+        return None
+
+
+NULL_WINDOW = _NullValidationWindow()
 
 
 class OperationError(Exception):
@@ -130,6 +192,12 @@ def native_parameters(obj):
                             "expression": expression, "native_property": "Offset"}
     if obj.TypeId == "PartDesign::Plane":
         params.update(modeling_geometry.plane_parameters(obj))
+    if obj.TypeId == "Part::Helix":
+        for native_property in ("Pitch", "Height", "Radius"):
+            expression = next((value for path, value in obj.ExpressionEngine if path.lstrip(".") == native_property), None)
+            params[native_property] = {"value": getattr(obj, native_property).Value, "unit": "mm",
+                                       "editable": expression is None, "expression": expression,
+                                       "native_property": native_property}
     tool = getattr(obj, "KurtShapeTool", None) or obj
     for native_property, public_name, unit in (("LengthFwd", "Length", "mm"), ("Angle", "Angle", "rad"),
                                              ("Radius", "Radius", "mm"), ("Size", "Size", "mm"), ("Value", "Thickness", "mm"),
@@ -230,6 +298,8 @@ def native_feature_summary(obj):
         result["source_feature_name"] = obj.SourceFeatureName
     if obj.TypeId == "PartDesign::Plane":
         result["plane"] = modeling_geometry.plane_summary(obj)
+    if obj.TypeId == "Part::Helix":
+        result["helix"] = modeling_geometry.helix_summary(obj)
     result["reference_health"] = json.loads(getattr(obj, "QueryHealth", "[]"))
     if obj.TypeId == "Sketcher::SketchObject":
         result["reference_health"].extend({"input": error["input"], "status": "missing",
@@ -243,17 +313,38 @@ def measurements(shape):
     return geometry.measurements(shape)
 
 
+def _render_jobs():
+    # Imported on demand: render_jobs imports this module, and only render_view needs it loaded.
+    from . import render_jobs
+    return render_jobs
+
+
 class Controller:
-    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers"}
+    READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
+                "operation_schema", "list_parameters"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
                     "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}
     MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline",
-                 "pad", "pocket", "edit_extrusion", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "repair_orphan_helpers", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS
+                 "pad", "pocket", "edit_extrusion", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "repair_orphan_helpers", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS | parameters.OPS
     EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline", "set_parameter", "set_expression", "set_sketch_support", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
     CREATE_OPS = {"new", "open", "recover", "import_step"}
-    OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export"}
+    # Contract 3.2 operation classes (integration C2). U1 declares them; the
+    # owning units fill them: VIEW_OPS (U4 render_view), LIFECYCLE_OPS (U2b
+    # close_document), DOCUMENTLESS_OPS and QUIET_OPS (U2a operation_schema,
+    # U5 list_parameters). Every op belongs to exactly one class.
+    VIEW_OPS = frozenset({"render_view"})
+    LIFECYCLE_OPS = frozenset({"close_document"})
+    NON_MUTATING_OPS = frozenset(READ_OPS) | VIEW_OPS
+    DOCUMENTLESS_OPS = frozenset({"capabilities", "list_documents", "request_status", "diagnostics", "assembly_candidates",
+                                  "operation_schema"})
+    QUIET_OPS = frozenset({"capabilities", "operation_schema", "diagnostics", "request_status", "list_documents", "inspect",
+                           "resolve_selector", "orphan_helpers", "list_parameters"}) | VIEW_OPS
+    # Envelope fields every request may carry besides its own arguments (C6).
+    TRANSPORT_FIELDS = frozenset({"document_id", "expected_revision", "request_id", "measure"})
+    OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | VIEW_OPS | LIFECYCLE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export", "batch"}
     ARGS = {
-        "new": {"name"}, "open": {"path"}, "import_step": {"path"}, "recover": {"path"}, "adopt": {"path"}, "create_body": {"id", "name"}, "inspect": set(), "list_documents": set(), "check_geometry": {"body"},
+        "new": {"name"}, "open": {"path"}, "import_step": {"path"}, "recover": {"path"}, "adopt": {"path"}, "create_body": {"id", "name"},
+        "inspect": {"detail", "features", "parts"}, "list_documents": {"detail"}, "check_geometry": {"body"},
         "create_sketch": {"id", "plane", "support", "source_feature_id", "source_feature_name"},
         "sketch_rectangle": {"id","width","height","x","y","plane","support","source_feature_id","source_feature_name"},
         "sketch_circle": {"id","x","y","diameter","plane","support","center_on","source_feature_id","source_feature_name"},
@@ -286,6 +377,13 @@ class Controller:
         "delete_assembly_object": {"assembly", "feature", "cascade"}, "solve_assembly": {"assembly"},
         "resolve_selector": {"selector"},
     }
+    # Operations added in contract 3.2 take their argument names from the schema registry (C3).
+    ARGS["operation_schema"] = set(operation_schemas.arg_names("operation_schema"))
+    ARGS["close_document"] = set(operation_schemas.arg_names("close_document"))
+    ARGS["render_view"] = set(operation_schemas.arg_names("render_view"))
+    ARGS["batch"] = set(operation_schemas.arg_names("batch"))
+    for _op in parameters.OPS | parameters.READ_OPS:
+        ARGS[_op] = set(operation_schemas.arg_names(_op))
     for _op, _args in studio.ARGS.items():
         ARGS[_op] = ARGS.get(_op, set()) | set(_args)
     for _op, _args in reference_tools.ARGS.items():
@@ -294,7 +392,9 @@ class Controller:
         ARGS[_op] = ARGS.get(_op, set()) | set(_args)
     ARGS["pad"] |= {"end_type", "up_to_face"}
     ARGS["pocket"] |= {"end_type", "up_to_face"}
-    for _op in MODEL_OPS - {"create_body", "rebuild"} | {"begin_sketch_edit"}:
+    # A helix is a top-level path curve; FreeCAD keeps Part curves out of Bodies.
+    # Parameter ops are document-wide (F3a §6): no body.
+    for _op in MODEL_OPS - {"create_body", "rebuild", "create_helix"} - parameters.OPS | {"begin_sketch_edit"}:
         ARGS[_op] = ARGS[_op] | {"body"}
     for _op in MODEL_OPS:
         if "id" in ARGS[_op]:
@@ -306,6 +406,14 @@ class Controller:
         self.last_failures = {}
         self.sketch_edits = {}
         self.created_sketches = {}
+        # Per-request reports (integration C8): handlers write result_report,
+        # repair_report, ...; _model_step pops the per-step keys, _dispatch the rest.
+        self._reports = {}
+        # F4 D15: the GUI sets a batch time budget below the bridge timeout; headless callers have none.
+        self.request_budget_s = None
+        # GUI hook (contract 3.2 close_document): callable(doc_name) -> what the GUI is editing in that
+        # document (feature_editor, task, placement, step_export, geometry_check) or None.
+        self.editor_activity = None
         self.busy = False
         self.settings = Settings(ROOT)
         self.geometry = geometry.GeometryCache(shape_of=native_assembly.global_shape,
@@ -320,10 +428,21 @@ class Controller:
                                       if type(self) is Controller else None)
         self.unmanaged = {}
         self.timings = Timings()
+        # Contract 3.2 F1: content-keyed verdicts of the studio result post-conditions.
+        self.result_checks = result_validation.ResultChecks(self, native_intent, engine_stamp)
         self.recovery = RecoveryStore(self.settings.path.parent)
         self.snapshots = SnapshotStore(self.settings.path.parent / "snapshots")
         self._geometry_check_workers = weakref.WeakSet()
         self._step_export_workers = weakref.WeakSet()
+        # Contract 3.2 F2: created on the first render_view (no renders/ folder before).
+        self._renders = None
+
+    @property
+    def renders(self):
+        if self._renders is None:
+            from .render_jobs import RenderService
+            self._renders = RenderService(self, self.settings.path.parent)
+        return self._renders
 
     def snapshot_key(self, doc):
         """Accepted geometry only; drafts and native transactions cannot share."""
@@ -357,6 +476,13 @@ class Controller:
         if self.busy or not self._is_open(doc) or not self.is_managed(doc):
             return None
         self.sync(doc)
+        self.busy = True
+        try:
+            # Contract 3.2 F1 D11: pending result operations are validated synchronously first.
+            target = doc.getObject(body) if body else None
+            self._validate_results(doc, "check", body=studio.part_id(target) if target is not None else body)
+        finally:
+            self.busy = False
         key = self.snapshot_key(doc)
         if key is None or App.getActiveTransaction():
             return None
@@ -526,6 +652,8 @@ class Controller:
                 "native_file": doc.FileName or None, "format": format,
                 "included_body_ids": [obj.Name for obj in targets],
                 "included_part_ids": [getattr(obj, "KurtShapePartId", obj.Name) for obj in targets],
+                "kurtshape_build": build_identity.provenance(),
+                "result_checks": self.result_checks.provenance(doc),
                 "settings": {"writer": "FreeCAD Part/OCCT"}}
 
     def prepare_step_export(self, doc, raw, body=None, *, worker_factory=None, is_current=None):
@@ -552,6 +680,12 @@ class Controller:
             require_current_request()
             return None
         self.sync(doc)
+        self.busy = True
+        try:
+            # Contract 3.2 F1 D11: pending result operations are validated before the capture.
+            self._validate_results(doc, "export")
+        finally:
+            self.busy = False
         require_current_request()
         key = self.snapshot_key(doc)
         if key is None or App.getActiveTransaction() or native_assembly.assemblies(doc):
@@ -979,6 +1113,8 @@ class Controller:
         return result
 
     def close(self):
+        if self._renders is not None:
+            self._renders.close()
         for worker in tuple(self._step_export_workers):
             worker.close()
         for worker in tuple(self._geometry_check_workers):
@@ -1051,11 +1187,20 @@ class Controller:
         self.observer.state(doc)["intent_dirty"] = False
         self.observer.state(doc).pop("assembly_source_changed", None)
         doc.UndoMode = 1
+        if managed:
+            # Result checks (3.2 F1 D4): the hidden table property outside any transaction, the persisted
+            # verdicts into the store, then the key table (keys only; no check, no fingerprint).
+            self.result_checks.ensure_property(doc)
+            self.result_checks.load(doc)
+            if studio.enabled(doc):
+                self.result_checks.key_table(doc)
         self._build_status(doc)
         return doc
 
     def _doc(self, request):
         identifier = request.get("document_id")
+        if not isinstance(identifier, str):
+            raise OperationError("unknown_document", "document_id must be the string UUID of an open document")
         doc = self.documents.get(identifier)
         if doc is None or not self._is_open(doc):
             raise OperationError("unknown_document", "Document is not open in this session")
@@ -1084,6 +1229,7 @@ class Controller:
     def sync(self, doc, included=None):
         meta = self._meta(doc)
         state = self.observer.state(doc)
+        parameters.observe_names(self, doc)
         if state["native_recomputed"]:
             if self.is_managed(doc):
                 studio.record_legacy_order(doc)
@@ -1216,7 +1362,7 @@ class Controller:
     def _native_history(self, doc, op):
         """Skip discard-only boundaries while preserving native model history."""
         names = "UndoNames" if op == "undo" else "RedoNames"
-        while getattr(doc, names) and getattr(doc, names)[0] == SKETCH_CANCEL_BOUNDARY:
+        while getattr(doc, names) and getattr(doc, names)[0] in DISCARD_BOUNDARIES:
             getattr(doc, op)()
             self._new_revision(doc)
         if not getattr(doc, names):
@@ -1229,7 +1375,7 @@ class Controller:
         if op == "redo" and step == SKETCH_CREATE and doc.RedoNames and doc.RedoNames[0].startswith(SKETCH_CREATE_CONTENT):
             doc.redo()
         if op == "redo":
-            while doc.RedoNames and doc.RedoNames[0] == SKETCH_CANCEL_BOUNDARY:
+            while doc.RedoNames and doc.RedoNames[0] in DISCARD_BOUNDARIES:
                 doc.redo()
 
     @staticmethod
@@ -1322,7 +1468,7 @@ class Controller:
             flags = set(obj.State)
             if obj.TypeId == "Sketcher::SketchObject":
                 errors.extend(sketch_reference_errors(obj))
-            if "Touched" in flags and obj.TypeId.startswith(("Sketcher::","PartDesign::", "Part::", "Assembly::", "App::Link")):
+            if "Touched" in flags and obj.TypeId.startswith(("Sketcher::","PartDesign::", "Part::", "Assembly::", "App::Link", "App::VarSet")):
                 pending.append(obj.Name)
             if "Invalid" in flags or "Error" in flags:
                 errors.append({"feature": obj.Name, "message": obj.getStatusString()})
@@ -1339,6 +1485,11 @@ class Controller:
         reason = getattr(meta, "RebuildReason", "") or ("missing_shapes" if missing else None)
         self.observer.state(doc)["rebuild_reason"] = reason
         status = "failed" if errors else ("needs_rebuild" if pending or reason else ("valid" if solid else "sketch_only"))
+        # Contract 3.2 F1 D7: the native status is kept; a failed result check folds into the stored
+        # BuildStatus only, so every gate on the returned (native) error list is unchanged.
+        self.observer.state(doc)["native_status"] = status
+        if status == "valid" and self.is_managed(doc) and self.result_checks.has_failures(doc):
+            status = "failed"
         if meta.BuildStatus != status:
             modified = self._modified(doc)
             try:
@@ -1354,24 +1505,20 @@ class Controller:
         included = native_results(doc)
         errors = self.sync(doc, included)
         meta = self._meta(doc)
+        result_summary = self.result_checks.summary(doc) if self.is_managed(doc) else None
+        if result_summary and result_summary.get("failed"):
+            errors = list(errors) + [dict(row) for row in result_summary["failed"]]
         features = []
         for obj in doc.Objects:
-            if obj.Name == METADATA or obj.TypeId.startswith(("App::Origin", "App::Line", "App::Plane")):
+            if obj.Name == METADATA or obj.TypeId.startswith(("App::Origin", "App::Line", "App::Plane")) or parameters.is_set(obj):
                 continue
             features.append(native_feature_summary(obj) if os.environ.get("KURTSHAPE_FULL_INSPECTION") == "1"
                             else inspection_cache.feature_summary(obj, self.observer, native_feature_summary))
-        # Hidden native helpers own real inputs (for example an up-to-face Pad
-        # or a split datum). Surface their health on the user-facing operation.
-        feature_rows = {feature["id"]: feature for feature in features}
-        for obj in doc.Objects:
-            operation = getattr(obj, "KurtShapeOperationOwner", "")
-            row = feature_rows.get(operation)
-            if row is None or obj.Name == operation or "QueryInputs" not in obj.PropertiesList:
-                continue
-            row.setdefault("reference_consumers", []).append(obj.Name)
-            for entry in json.loads(getattr(obj, "QueryHealth", "[]")):
-                row["reference_health"].append(dict(entry, native_feature=obj.Name,
-                                                   input=obj.Name + "." + entry["input"]))
+            if result_summary is not None and result_summary["status"] != "not_applicable":
+                verdict = self.result_checks.feature_status(doc, obj.Name)
+                if verdict is not None:
+                    features[-1]["result_check"] = verdict
+        self._helper_reference_health(doc, {feature["id"]: feature for feature in features})
         studio_state = studio.inspect(doc)
         if studio_state:
             positions = {name: index for index, name in enumerate(studio_state["feature_order"])}
@@ -1380,22 +1527,14 @@ class Controller:
                 feature["rolled_back"] = feature["id"] in positions and positions[feature["id"]] >= studio_state["rollback_index"]
         available_geometry = self._geometry(doc, included, measure)
         measured_geometry = available_geometry if meta.BuildStatus=="valid" else None
-        evaluated_results = []
-        for obj in included:
-            flags = set(obj.State) | {flag for member in getattr(obj, "Group", []) if studio.is_active(member) for flag in member.State}
-            metrics = self._evaluated_shape(doc, obj, measure) if not obj.Shape.isNull() and obj.Shape.Solids else None
-            status = "failed" if flags & {"Invalid", "Error"} or metrics and metrics["valid"] is False else ("needs_rebuild" if "Touched" in flags or getattr(meta, "RebuildReason", "") else ("valid" if metrics else "sketch_only"))
-            if native_assembly.assemblies(doc) and meta.BuildStatus in {"failed", "needs_rebuild"}:
-                status = meta.BuildStatus
-            evaluated_results.append({"id": obj.Name, "name": obj.Label, "type": obj.TypeId, "build_status": status,
-                                      "geometry_check": self._check_status([obj]),
-                                      "measurements": metrics if status == "valid" else None,
-                                      "retained_geometry_measurements": metrics if status in {"failed", "needs_rebuild"} else None})
+        evaluated_results = [self._result_row(doc, obj, meta, measure) for obj in included]
         unsupported = [obj.Name for obj in doc.Objects if obj.Name != METADATA and
                        (any(link.Document != doc for link in obj.OutList) or
                         (obj.TypeId.endswith("Python") or "Proxy" in obj.PropertiesList) and not native_assembly.safe_object(obj))]
+        modified, modified_basis = self.document_modified(doc)
         return {"document_id": meta.DocumentId, "revision": meta.Revision, "name": doc.Label,
-                "native_file": doc.FileName or None, "units": "mm", "build_status": meta.BuildStatus,
+                "native_file": doc.FileName or None, "modified": modified, "modified_basis": modified_basis,
+                "unsaved": modified or not doc.FileName, "units": "mm", "build_status": meta.BuildStatus,
                 "build_errors": errors, "features": features,
                 "rebuild_reason": self.observer.state(doc).get("rebuild_reason"), "geometry_check": self._check_status(included),
                 "measurements": measured_geometry, "retained_geometry_measurements": available_geometry if meta.BuildStatus in {"failed","needs_rebuild"} else None,
@@ -1405,9 +1544,234 @@ class Controller:
                 "import_source": json.loads(getattr(meta, "ImportSource", "{}")) or None,
                 "assembly": native_assembly.inspect(doc),
                 "studio": studio_state,
-                "operations": sorted(self.OPS if self.is_managed(doc) else self.READ_OPS | self.CREATE_OPS | {"adopt"})}
+                "result_checks": result_summary or {"status": "not_applicable", "operations": 0, "pending": [], "failed": [],
+                                                    "checker": result_validation.CHECKER_VERSION},
+                "operations": sorted(self.OPS if self.is_managed(doc) else self.NON_MUTATING_OPS | self.CREATE_OPS | {"adopt", "close_document"}),
+                # Contract 3.2 F3a: the document's parameter set and its compact rows.
+                "parameter_set": parameters.set_block(doc), "parameters": parameters.compact_rows(doc),
+                **({"other_parameter_sets": others} if (others := parameters.other_sets(doc)) else {})}
+
+    def document_modified(self, doc):
+        """``(modified, basis)``: the GUI's Modified flag when a GUI document exists, else the session basis.
+
+        The session basis compares the revision with the one last saved or opened in this
+        session (``saved_revision``); a document never saved here counts as modified.
+        """
+        gui = self._modified(doc)
+        if gui is not None:
+            return bool(gui), "gui"
+        return self.observer.state(doc).get("saved_revision") != self._meta(doc).Revision, "session"
+
+    def _inspect_detail(self, request):
+        """The requested inspection detail, ``full`` or ``compact`` (F5 §5.1), validated."""
+        detail = request.get("detail")
+        selection = request.get("features") is not None or request.get("parts") is not None
+        if detail is None:
+            return "compact" if selection else "full"
+        if detail not in ("full", "compact"):
+            raise OperationError("invalid_argument", 'detail must be "full" or "compact"', fields=["detail"])
+        if detail == "full" and selection:
+            raise OperationError("invalid_argument", "features and parts select compact rows; drop them or use detail compact",
+                                 fields=["detail"])
+        return detail
+
+    @staticmethod
+    def _id_selection(request, name):
+        value = request.get(name)
+        if value is None:
+            return None
+        if not isinstance(value, list) or any(not isinstance(item, str) for item in value) or len(set(value)) != len(value):
+            raise OperationError("invalid_argument", name + " must be a list of distinct ids", fields=[name])
+        return value
+
+    def inspect_compact(self, doc, features=None, parts=None, measure=None, summary=False):
+        """Compact inspection (F5 §5.2): the status header, part rows and only the selected feature rows.
+
+        Without a selection the result is an overview (header, ``history``, all part rows,
+        no feature rows); ``features`` gives those rows (part rows only when ``parts`` is
+        given too); ``parts`` alone gives those part rows plus the rows of the features
+        they own or output. Nothing is measured or checked unless ``measure`` is given;
+        geometry verdicts are the cached ones. ``summary`` gives the list_documents row:
+        the header plus ``feature_count`` and ``part_count``.
+        """
+        included = native_results(doc)
+        errors = self.sync(doc, included)
+        meta = self._meta(doc)
+        history = studio.order(doc)
+        positions = {obj.Name: index for index, obj in enumerate(history)}
+        studio_state = studio.inspect(doc)
+        rollback = studio_state["rollback_index"]
+        bodies = studio.current_parts(doc)
+        part_lookup = {}
+        for body in bodies:
+            part_lookup[studio.part_id(body)] = body
+            part_lookup.setdefault(body.Name, body)
+        if parts is not None:
+            unknown = [part for part in parts if part not in part_lookup]
+            if unknown:
+                raise OperationError("missing_part", "Unknown part ids", parts=unknown)
+        if features is not None:
+            unknown = [name for name in features if name not in positions]
+            if unknown:
+                raise OperationError("missing_reference", "Unknown feature ids", features=unknown)
+        modified, basis = self.document_modified(doc)
+        # Contract 3.2 F1: the compact header carries the same result_checks block and failure rows as the full inspection.
+        result_summary = self.result_checks.summary(doc) if self.is_managed(doc) else result_validation.ResultChecks._not_applicable()
+        if result_summary.get("failed"):
+            errors = list(errors) + [dict(row) for row in result_summary["failed"]]
+        header = {"document_id": meta.DocumentId, "revision": meta.Revision, "name": doc.Label,
+                  "native_file": doc.FileName or None, "modified": modified, "modified_basis": basis,
+                  "unsaved": modified or not doc.FileName, "managed": self.is_managed(doc),
+                  "build_status": meta.BuildStatus, "rebuild_reason": self.observer.state(doc).get("rebuild_reason"),
+                  "build_errors": errors, "geometry_check": self._check_status(included),
+                  "active_sketch_edit": self.sketch_edits.get(meta.DocumentId, {}).get("feature"),
+                  "detail": "compact", "result_checks": result_summary,
+                  "studio": {"enabled": studio_state["enabled"], "rollback_index": rollback, "history_count": len(history)}}
+        if summary:
+            header.update(feature_count=len(history), part_count=len(bodies))
+            return header
+        full_inspection = os.environ.get("KURTSHAPE_FULL_INSPECTION") == "1"
+
+        def full_row(obj):
+            return (native_feature_summary(obj) if full_inspection
+                    else inspection_cache.feature_summary(obj, self.observer, native_feature_summary))
+
+        def part_of(obj):
+            body = studio._body_owner(obj)
+            return studio.part_id(body) if body is not None and body.TypeId == "PartDesign::Body" else None
+
+        def output_parts(obj):
+            names = getattr(obj, "KurtShapeOutputParts", None) or []
+            return [studio.part_id(doc.getObject(name)) for name in names if doc.getObject(name) is not None]
+
+        def user_id(obj):
+            # A history feature maps to itself, a hidden helper to the operation that owns it;
+            # Bodies, origins, metadata, other containers and foreign documents' users are dropped.
+            if obj.Document.Name != doc.Name:
+                return None
+            if obj.Name in positions:
+                return obj.Name
+            owner_name = getattr(obj, "KurtShapeOperationOwner", "")
+            return owner_name if owner_name in positions else None
+
+        def mapped(objects, exclude):
+            names = {user_id(obj) for obj in objects} - {None, exclude}
+            return sorted(names, key=positions.__getitem__)
+
+        helper_issues = {}
+        for obj in doc.Objects:
+            operation = getattr(obj, "KurtShapeOperationOwner", "")
+            if operation and obj.Name != operation and "QueryInputs" in obj.PropertiesList:
+                helper_issues.setdefault(operation, []).extend(
+                    entry for entry in json.loads(getattr(obj, "QueryHealth", "[]")) if entry.get("status") != "healthy")
+
+        def issues(obj):
+            # The feature's own unhealthy inputs plus its hidden helpers' (the feature rows show both).
+            own = [entry for entry in full_row(obj)["reference_health"] if entry.get("status") != "healthy"]
+            return own + helper_issues.get(obj.Name, [])
+
+        selected_bodies = [part_lookup[part] for part in parts] if parts is not None else bodies
+        if features is not None:
+            feature_objects = sorted((doc.getObject(name) for name in features), key=lambda obj: positions[obj.Name])
+        elif parts is not None:
+            wanted = {studio.part_id(body) for body in selected_bodies}
+            feature_objects = [obj for obj in history if part_of(obj) in wanted or wanted & set(output_parts(obj))]
+        else:
+            feature_objects = None
+        rows = {}
+        if feature_objects is not None:
+            for obj in feature_objects:
+                full = full_row(obj)
+                rows[obj.Name] = {"id": obj.Name, "name": obj.Label, "type": obj.TypeId, "state": list(full["state"]),
+                                  "history_index": positions[obj.Name], "rolled_back": positions[obj.Name] >= rollback,
+                                  "part": part_of(obj), "output_parts": output_parts(obj),
+                                  "parameters": full["parameters"], "expressions": full["expressions"],
+                                  "depends_on": mapped(obj.OutList, obj.Name), "used_by": mapped(obj.InList, obj.Name),
+                                  "affects": mapped(obj.InListRecursive, obj.Name),
+                                  "reference_health": list(full["reference_health"]),
+                                  "result_check": self.result_checks.feature_status(doc, obj.Name)}
+            self._helper_reference_health(doc, rows)
+            for name, read in parameters.for_features(doc, list(rows)).items():
+                rows[name]["uses_parameters"] = read
+        part_rows = []
+        for body in selected_bodies:
+            part = studio.part_id(body)
+            owned = [obj.Name for obj in history if part_of(obj) == part or part in output_parts(obj)]
+            flagged = [name for name in owned if issues(doc.getObject(name))]
+            status_row = self._result_row(doc, body, meta, measure)
+            part_rows.append({"id": part, "name": getattr(body, "KurtShapePartName", body.Label), "body": body.Name,
+                              "tip": body.Tip.Name if getattr(body, "Tip", None) else None,
+                              "visible": bool(getattr(body, "KurtShapePartVisible", True)),
+                              "color": list(getattr(body, "KurtShapePartColor", (.78, .8, .84)))[:3],
+                              "build_status": status_row["build_status"], "geometry_check": status_row["geometry_check"],
+                              "result_check": status_row["result_check"], "geometry_state": status_row["geometry_state"],
+                              "features": owned,
+                              "reference_issues": {"count": sum(len(issues(doc.getObject(name))) for name in flagged),
+                                                   "features": flagged},
+                              "measurements": status_row["measurements"] if measure is not None else None})
+        if features is None and parts is None:
+            header["history"] = {"ids": [obj.Name for obj in history], "rolled_back": [obj.Name for obj in history[rollback:]],
+                                 "rollback_index": rollback}
+            header["parts"] = part_rows
+        else:
+            header["features"] = list(rows.values())
+            if parts is not None:
+                header["parts"] = part_rows
+        return header
+
+    def _helper_reference_health(self, doc, rows_by_id):
+        """Surface hidden native helpers' input health on their user-facing operation row.
+
+        Hidden helpers own real inputs (for example an up-to-face Pad or a split
+        datum); ``rows_by_id`` maps feature ids to the rows that are extended.
+        """
+        for obj in doc.Objects:
+            operation = getattr(obj, "KurtShapeOperationOwner", "")
+            row = rows_by_id.get(operation)
+            if row is None or obj.Name == operation or "QueryInputs" not in obj.PropertiesList:
+                continue
+            row.setdefault("reference_consumers", []).append(obj.Name)
+            for entry in json.loads(getattr(obj, "QueryHealth", "[]")):
+                row["reference_health"].append(dict(entry, native_feature=obj.Name,
+                                                   input=obj.Name + "." + entry["input"]))
+
+    def _result_row(self, doc, obj, meta, measure):
+        """The per-result status row of inspect (``bodies``); the only per-result status helper."""
+        flags = set(obj.State) | {flag for member in getattr(obj, "Group", []) if studio.is_active(member) for flag in member.State}
+        parameter_set = parameters.parameter_set(doc)
+        if parameter_set is not None:
+            # Every result follows the parameter set (F3a §6.6): an invalid set fails them, a touched one is pending.
+            flags |= set(parameter_set.State) & {"Touched", "Invalid", "Error"}
+        if obj.Shape.isNull() or not obj.Shape.Solids:
+            metrics = None
+        elif measure is None:
+            # Compact rows: the cached solid count and verdict only; nothing is computed.
+            metrics = geometry.measurement_dict(self.geometry.facts(obj, ()), self.geometry.check(obj))
+        else:
+            metrics = self._evaluated_shape(doc, obj, measure)
+        status = "failed" if flags & {"Invalid", "Error"} or metrics and metrics["valid"] is False else ("needs_rebuild" if "Touched" in flags or getattr(meta, "RebuildReason", "") else ("valid" if metrics else "sketch_only"))
+        if native_assembly.assemblies(doc) and meta.BuildStatus in {"failed", "needs_rebuild"}:
+            status = meta.BuildStatus
+        # Contract 3.2 F1 D7: retained means the native geometry predates the intent; a failed result
+        # check is current geometry that failed its post-conditions.
+        geometry_state = "retained" if flags & {"Touched", "Invalid", "Error"} or getattr(meta, "RebuildReason", "") else "current"
+        result_check = self.result_checks.part_status(doc, studio.part_id(obj)) if self.is_managed(doc) else None
+        if result_check == "failed" and status == "valid":
+            status = "failed"
+        return {"id": obj.Name, "name": obj.Label, "type": obj.TypeId, "build_status": status,
+                "geometry_check": self._check_status([obj]), "result_check": result_check, "geometry_state": geometry_state,
+                "measurements": metrics if status == "valid" else None,
+                "retained_geometry_measurements": metrics if status in {"failed", "needs_rebuild"} else None}
 
     def dispatch(self, request):
+        """Run one request; always returns the response dict (a render is waited for)."""
+        return self._run(request, defer=False)
+
+    def begin(self, request):
+        """Bridge.tick entry for VIEW_OPS: a response dict, or a Deferred the bridge polls (F2 D6)."""
+        return self._run(request, defer=True)
+
+    def _run(self, request, defer):
         tracked = isinstance(request, dict) and request.get("op") not in self.READ_OPS and "request_id" in request
         if tracked:
             try:
@@ -1416,7 +1780,23 @@ class Controller:
                 return {"ok": False, "error": {"code": "invalid_argument", "message": "Request must contain finite JSON values"}}
             if replay is not None:
                 return replay
-        response = self.timings.measure("operation", self._dispatch, request)
+        response = None
+        try:
+            response = self.timings.measure("operation", self._dispatch, request)
+        finally:
+            if tracked and response is None:
+                # Only a BaseException (or a bug past _dispatch's handler) gets here: never leave the
+                # ledger entry "started", or request_status reports pending until the session ends.
+                try:
+                    self.ledger.complete(request["request_id"], {"ok": False, "error": {
+                        "code": "operation_failed", "message": "The operation ended without a response"}})
+                except Exception:
+                    pass
+        if not isinstance(response, dict):
+            # A render_view job (render_jobs.Deferred): the ledger completes when it does.
+            if tracked:
+                response.add_done_callback(lambda result, rid=request["request_id"]: self.ledger.complete(rid, result))
+            return response if defer else response.wait()
         if tracked:
             self.ledger.complete(request["request_id"], response)
         return response
@@ -1431,37 +1811,84 @@ class Controller:
         owns_busy = False
         assembly_transaction_id = None
         model_transaction_id = None
+        step_reports = {}
+        window = NULL_WINDOW
+        split_guard = None
+        batch_report = None
+        # F-05: a rejected request must not leave a clean GUI document marked modified.
+        pre_modified = pre_signature = None
+        committed = ended_edit = history_moved = False
+        # Per-request reports (integration C8): result_report (studio._check_result),
+        # repair_report, ... Cleared here so nothing leaks between requests.
+        self._reports = {}
         try:
             self._prune_closed_sketch_edits()
             if not isinstance(request, dict) or request.get("op") not in self.OPS:
                 raise OperationError("unsupported_operation", "Unknown operation")
             op = request["op"]
-            unknown = set(request) - self.ARGS[op] - {"op", "document_id", "expected_revision", "request_id", "measure"}
+            unknown = set(request) - self.ARGS[op] - {"op"} - self.TRANSPORT_FIELDS
             if unknown:
-                raise OperationError("unknown_argument", "Unsupported request fields", fields=sorted(unknown))
+                hint = {"hint": "model parameters use edit_parameter"} if op == "set_parameter" and "name" in unknown else {}
+                raise OperationError("unknown_argument", "Unsupported request fields", fields=sorted(unknown), **hint)
             if "measure" in request and request["measure"] is None:
                 raise OperationError("invalid_argument", 'measure must be false, true or "full"')
             measure = self._measure_level(request.get("measure"))
+            # Generic missing-field pre-check (F5 §3.3): unconditional required fields that are
+            # absent or null reject before any document lookup; handler-checked fields keep their codes.
+            absent, groups = operation_schemas.missing_arguments(op, request)
+            if absent or groups:
+                fields = list(absent or groups[0])
+                raise OperationError("invalid_argument", "Missing required fields: " + ", ".join(fields),
+                                     fields=fields, one_of=bool(groups and not absent), reason="missing_required")
             if op == "capabilities":
+                schema_document = operation_schemas.build(type(self))
                 return {"ok": True, "result": {"contract": CONTRACT_VERSION, "contract_revision": CONTRACT_REVISION, "session_id": self.ledger.session_id,
                     "measurement": {"levels": [False, True, "full"], "default": self.default_measure,
                                     "fields": {"false": ["solid_count"], "true": ["solid_count", "volume_mm3", "area_mm2", "bbox_mm"],
                                                "full": ["solid_count", "volume_mm3", "area_mm2", "bbox_mm", "center_of_mass_mm"]}},
                     "geometry_check": {"operation": "check_geometry", "export": "required", "interactive": "native feature state only"},
-                    "operations": sorted(self.OPS), "preview_operations": sorted(self.MODEL_OPS - {"rebuild"}),
+                    "operations": sorted(self.OPS), "preview_operations": sorted(self.MODEL_OPS - {"rebuild"} | {"batch"}),
                     "import_formats": [".step", ".stp"],
                     "assembly": {"level": "single", "source_formats": [".fcstd", ".step", ".stp"], "source_policy": "embedded_shape_snapshot",
                                  "joint_types": ["fixed", "revolute", "slider"], "solver": "native FreeCAD Assembly",
                                  "motion_units": {"revolute": "deg", "slider": "mm"}, "nested_assemblies": False},
                     "retry": {"scope": "session", "result_limit": self.ledger.limit, "session_request_limit": self.ledger.session_request_limit,
                               "missing_status": "not_recorded does not prove a request never executed; reconcile after restart or eviction"},
-                    "request_size_limit_bytes": 65536, "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}}}
+                    "request_size_limit_bytes": REQUEST_SIZE_LIMIT, "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+                    "build": build_identity.identity(), "read_operations": sorted(self.READ_OPS),
+                    "non_mutating_operations": sorted(self.NON_MUTATING_OPS),
+                    "schemas": {"operation": "operation_schema", "schema_version": operation_schemas.SCHEMA_VERSION,
+                                "digest": schema_document["digest"], "operation_count": len(schema_document["operations"])},
+                    "result_checks": result_validation.capabilities(), "render": _render_jobs().capabilities(),
+                    "parameters": parameters.capabilities(), "batch": batch.capabilities()}}
+            if op == "operation_schema":
+                names = request.get("operations")
+                document = operation_schemas.build(type(self))
+                if names is not None:
+                    if (not isinstance(names, list) or any(not isinstance(name, str) for name in names)
+                            or len(set(names)) != len(names)):
+                        raise OperationError("invalid_argument", "operations must be a list of distinct operation names",
+                                             fields=["operations"])
+                    unknown = [name for name in names if name not in document["operations"]]
+                    if unknown:
+                        raise OperationError("invalid_argument", "Unknown operations: " + ", ".join(unknown),
+                                             fields=["operations"], unknown=unknown)
+                selected = operation_schemas.select(document, names)
+                selected.update(contract=CONTRACT_VERSION, contract_revision=CONTRACT_REVISION)
+                return {"ok": True, "result": selected}
             if op == "request_status":
                 return {"ok": True, "result": self.ledger.status(request.get("request_id"))}
             if op == "diagnostics":
                 return {"ok": True, "result": {"timings": self.timings.report(), "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
-                    "recovery_directory": str(self.recovery.directory), "checkpoint_interval_seconds": self.recovery.interval_seconds}}
+                    "recovery_directory": str(self.recovery.directory), "checkpoint_interval_seconds": self.recovery.interval_seconds,
+                    "build": build_identity.identity(),
+                    "renders": self._renders.diagnostics() if self._renders is not None else {"active": False}}}
             if op == "list_documents":
+                if self._inspect_detail(request) == "compact":
+                    explicit = measure if "measure" in request else None
+                    return {"ok": True, "result": {"documents": [
+                        self.timings.measure("inspection_compact", self.inspect_compact, d, None, None, explicit, True)
+                        for d in self.documents.values() if self._is_open(d)]}}
                 return {"ok": True, "result": {"documents": [self.inspect(d, measure) for d in self.documents.values() if self._is_open(d)]}}
             if op == "assembly_candidates":
                 if self.busy:
@@ -1519,9 +1946,10 @@ class Controller:
                         try:
                             native_assembly.solve(doc)
                         except native_assembly.AssemblyError as assembly_error:
-                            self.last_failures[self.identifier(doc)] = {"request": request,
-                                "error": {"code": assembly_error.code, "message": str(assembly_error)}, "rejected": False}
-                            self._meta(doc).LastFailure = json.dumps(self.last_failures[self.identifier(doc)])
+                            if self._is_open(doc):
+                                self.last_failures[self.identifier(doc)] = {"request": request,
+                                    "error": {"code": assembly_error.code, "message": str(assembly_error)}, "rejected": False}
+                                self._meta(doc).LastFailure = json.dumps(self.last_failures[self.identifier(doc)])
                         self._recompute(doc)
                     # A file saved without the GUI carries no view state.
                     studio.present(doc)
@@ -1535,24 +1963,38 @@ class Controller:
                         draft = base64.b64decode(recovery_record["draft_sketch"], validate=True) if recovery_record.get("draft_sketch") else bytes(sketch.dumpContent())
                         restore_sketch_content(sketch, initial)
                         self._recompute(doc)
+                        result_before = self.result_checks.snapshot(doc) if studio.enabled(doc) else None
                         undo_before = doc.UndoCount
                         doc.openTransaction("KurtShape: recover unfinished sketch")
                         restore_sketch_content(sketch, draft)
                         self._recompute(doc)
                         self.sketch_edits[self.identifier(doc)] = {"feature": feature, "initial": initial,
                             "undo_before": undo_before, "signature": self._sketch_edit_signature(doc, feature),
-                            "undo": [initial, draft], "redo": []}
+                            "undo": [initial, draft], "redo": [], "result_before": result_before}
                         self._new_revision(doc)
             else:
                 doc = self._doc(request)
+                pre_modified = self._modified(doc)
+                pre_signature = self.signatures.get(self.identifier(doc))
                 check_report = None
+                if op == "inspect" and self._inspect_detail(request) == "compact":
+                    result = self.timings.measure("inspection_compact", self.inspect_compact, doc,
+                                                  self._id_selection(request, "features"), self._id_selection(request, "parts"),
+                                                  measure if "measure" in request else None)
+                    result["operation_ms"] = round((time.perf_counter() - start) * 1000, 2)
+                    return {"ok": True, "result": result}
                 if op == "orphan_helpers":
                     return {"ok": True, "result": {"groups": studio.orphan_groups(doc)}}
+                if op == "list_parameters":
+                    return {"ok": True, "result": parameters.list_result(self, doc, request)}
                 if op == "resolve_selector":
                     return {"ok": True, "result": {"matches": native_selectors.resolve(doc, request.get("selector"), detail=True)}}
+                if op == "render_view":
+                    # Read-only view op (F2): a cache hit or refusal as a dict, else a Deferred job.
+                    return self.renders.request(doc, request)
                 if op == "preview":
                     return {"ok": True, "result": self._preview(doc, request)}
-                if not self.is_managed(doc) and op not in self.READ_OPS | {"adopt"}:
+                if not self.is_managed(doc) and op not in self.NON_MUTATING_OPS | {"adopt", "close_document"}:
                     raise OperationError("unmanaged_document", "Inspect this native file or adopt a copy before editing")
                 if op not in self.READ_OPS:
                     expected = request.get("expected_revision")
@@ -1581,6 +2023,12 @@ class Controller:
                     owns_busy = True
                 if op == "adopt":
                     doc = self._adopt(doc, request["path"])
+                elif op == "close_document":
+                    if getattr(App, "GuiUp", False) and self._native_edit_active():
+                        raise OperationError("sketch_edit_active", "Finish graphical editing before closing the document")
+                    response = self._close_document(doc, request, start)
+                    doc = None  # the proxy is gone; the except and finally paths must not touch it
+                    return response
                 elif op == "check_geometry":
                     began = time.perf_counter()
                     targets = native_results(doc)
@@ -1592,6 +2040,8 @@ class Controller:
                     targets = [obj for obj in targets if not obj.Shape.isNull() and obj.Shape.Solids]
                     if not targets:
                         raise OperationError("no_solid", "No solid result is available to check")
+                    # Contract 3.2 F1: pending result operations are validated first (read-only check mode).
+                    self._validate_results(doc, "check", body=studio.part_id(targets[0]) if "body" in request else None)
                     checks = [(obj, self.geometry.check(obj, compute=True)) for obj in targets]
                     self._build_status(doc)
                     check_report = {"status": "valid" if all(check["valid"] for _, check in checks) else "invalid",
@@ -1610,11 +2060,13 @@ class Controller:
                     created = self.created_sketches.pop(self._meta(doc).DocumentId, None)
                     created = bool(created and created == (sketch.Name, undo_before, self._meta(doc).Revision)
                                    and doc.UndoNames and doc.UndoNames[0] == SKETCH_CREATE and not doc.RedoCount)
+                    # The lease baseline for finish (3.2 F1 §5.7): the key table before any in-lease change.
+                    result_before = self.result_checks.snapshot(doc) if studio.enabled(doc) else None
                     doc.openTransaction(f"KurtShape: edit {sketch.Label}")
                     self.sketch_edits[self._meta(doc).DocumentId] = {
                         "feature": sketch.Name, "signature": self._sketch_edit_signature(doc, sketch.Name),
                         "initial": initial, "undo_before": undo_before,
-                        "undo": [initial], "redo": [], "created": created}
+                        "undo": [initial], "redo": [], "created": created, "result_before": result_before}
                     self._new_revision(doc)
                 elif op == "finish_sketch_edit":
                     editing = self.sketch_edits.get(self._meta(doc).DocumentId)
@@ -1639,10 +2091,21 @@ class Controller:
                         errors = self._build_status(doc)
                         if errors:
                             raise OperationError("build_failed", "Finishing sketch editing could not rebuild native features", features=errors)
+                        # 3.2 F1 §5.8: validate the finished sketch's results against the lease baseline, read-only
+                        # (no retry, nothing persisted); a rejection keeps the lease and the draft.
+                        self._validate_results(doc, "edit", before=editing.get("result_before"),
+                                               trigger={"op": "finish_sketch_edit", "feature": editing["feature"]},
+                                               retry=False, persist=False)
                         self._commit_sketch_edit(doc)
+                        committed = True
                     self.sketch_edits.pop(self._meta(doc).DocumentId, None)
                     transaction = False
                     self._recompute(doc)
+                    # Settle, stamp and persist outside the lease; the response keeps the edit-mode report.
+                    edit_report = self._reports.get("result_check_report")
+                    self._validate_results(doc, "report")
+                    if edit_report is not None:
+                        self._reports["result_check_report"] = edit_report
                     self._new_revision(doc)
                 elif op in self.ASSEMBLY_OPS:
                     if op != "create_assembly":
@@ -1659,7 +2122,30 @@ class Controller:
                     if errors:
                         raise OperationError("build_failed", "Assembly could not solve or rebuild", features=errors)
                     doc.commitTransaction()
+                    committed = True
                     if assembly_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == assembly_transaction_id:
+                        App.closeActiveTransaction()
+                    transaction = False
+                    self._new_revision(doc)
+                elif op == "batch":
+                    # F4 §3.3: every step inside one native transaction; nothing is kept unless all pass.
+                    if doc.HasPendingTransaction:
+                        raise OperationError("unmanaged_transaction", "Finish the native transaction before a batch")
+                    steps = batch.validate(self, request)
+                    name = batch.transaction_name(request)
+                    split_guard = batch.SplitGuard(self, doc)
+                    doc.openTransaction(name)
+                    model_transaction_id = (App.getActiveTransaction() or (None, None))[1]
+                    split_guard.transaction_id = model_transaction_id
+                    transaction = True
+                    window = self._validation_window(doc, "edit", trigger={"op": "batch", "feature": None})
+                    deadline = batch.deadline(self)
+                    rows = batch.run(self, doc, steps, transaction_id=model_transaction_id, window=window, deadline=deadline)
+                    validation = batch.finish_validation(self, doc, window, rows, steps, deadline)
+                    batch_report = batch.report(request, name, rows, validation)
+                    doc.commitTransaction()
+                    committed = True
+                    if model_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == model_transaction_id:
                         App.closeActiveTransaction()
                     transaction = False
                     self._new_revision(doc)
@@ -1680,29 +2166,23 @@ class Controller:
                         doc.openTransaction(f"KurtShape: {op}")
                         model_transaction_id = (App.getActiveTransaction() or (None, None))[1]
                     transaction = True
-                    created_feature = self._model_operation(doc, request)
-                    studio.reconcile(doc)
-                    self._recompute(doc)
-                    if op == "rebuild":
-                        self._mark_rebuilt(doc)
-                    errors = self._build_status(doc)
-                    if errors and not editing:
-                        raise OperationError("build_failed", "Native feature rebuild failed", features=errors)
-                    affected = doc.getObject(request.get("profile") or request.get("feature") or created_feature or "")
-                    affected_body = owner(doc, affected)
-                    if not editing and affected_body and not studio.enabled(doc) and (op in {"pad", "pocket"} or op in {"set_parameter", "set_expression", "duplicate_feature", "edit_extrusion", "edit_dress_up"} and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject"):
-                        if self._meta(doc).BuildStatus != "valid" or len(affected_body.Shape.Solids) != 1:
-                            raise OperationError("build_failed", "Operation must produce one valid solid")
+                    # Edits inside a sketch lease are validated when the lease finishes.
+                    trigger = {"op": op, "feature": request.get("feature") or request.get("profile") or request.get("sketch") or request.get("id")}
+                    window = NULL_WINDOW if editing else self._validation_window(
+                        doc, {"rebuild": "rebuild", "rollback": "navigate"}.get(op, "edit"), trigger=trigger)
+                    step = self._model_step(doc, request, editing=bool(editing))
+                    window.finish()
+                    created_feature, step_reports = step.created_feature, step.reports
                     if not editing:
                         doc.commitTransaction()
+                        committed = True
                         if model_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == model_transaction_id:
                             App.closeActiveTransaction()
                     transaction = False
                     self._new_revision(doc)
-                    created_name = self.__dict__.pop("_new_sketch_name", None)
-                    if op == "create_sketch" and not editing and created_name:
+                    if op == "create_sketch" and not editing and created_feature:
                         self.created_sketches[self._meta(doc).DocumentId] = (
-                            created_name, doc.UndoCount, self._meta(doc).Revision)
+                            created_feature, doc.UndoCount, self._meta(doc).Revision)
                 elif op in {"undo", "redo"}:
                     editing = self.sketch_edits.get(self._meta(doc).DocumentId)
                     if editing:
@@ -1718,11 +2198,15 @@ class Controller:
                             snapshot = editing["redo"].pop()
                             editing["undo"].append(snapshot)
                         restore_sketch_content(sketch, snapshot)
+                        history_moved = True
                         self._recompute(doc)
                         editing["signature"] = self._sketch_edit_signature(doc, sketch.Name)
                     else:
                         self._native_history(doc, op)
+                        history_moved = True
                     self._recompute(doc)
+                    if not editing:
+                        self._validate_results(doc, "report")
                     self._new_revision(doc)
                 elif op == "save":
                     self._save(doc, request["path"])
@@ -1733,15 +2217,23 @@ class Controller:
                 result["geometry_check_report"] = check_report
             if created_feature:
                 result["created_feature"] = created_feature
-            if op == "repair_orphan_helpers":
-                result["repair_report"] = self.__dict__.pop("_repair_report", None)
-            if op in {"save", "open"} and getattr(App, "GuiUp", False):
+            if batch_report is not None:
+                result["batch_report"] = batch_report
+            for key, value in (*step_reports.items(), *self._reports.items()):
+                if key not in INTERNAL_REPORTS:
+                    result[key] = value
+            self._reports = {}  # every per-request report has been delivered
+            if op in {"save", "open", "adopt"} and getattr(App, "GuiUp", False):
                 import FreeCADGui as Gui
                 # saveCopy intentionally preserves the GUI dirty flag; open
                 # touches session metadata/rebuild caches. Only clear the UI
                 # flag after the successful disk operation and final inspect.
                 # This neither rewrites the accepted file nor changes undo.
                 Gui.getDocument(doc.Name).Modified = False
+            if op in {"save", "open", "adopt"}:
+                # The file on disk holds this revision: the session basis of the modified flag.
+                self.observer.state(doc)["saved_revision"] = result["revision"]
+                result.update(modified=False, unsaved=False)
             if op == "import_step" and getattr(App, "GuiUp", False):
                 import FreeCADGui as Gui
                 Gui.getDocument(doc.Name).Modified = True
@@ -1749,6 +2241,8 @@ class Controller:
             return {"ok": True, "result": result}
         except Exception as caught:
             exc = caught
+            for key in STEP_REPORT_KEYS:
+                self._reports.pop(key, None)
             if transaction and doc:
                 ended_edit = self._meta(doc).DocumentId in self.sketch_edits
                 if ended_edit:
@@ -1756,7 +2250,8 @@ class Controller:
                         try:
                             self.recovery.capture(doc, self._meta(doc), self.sketch_edits[self.identifier(doc)], force=True, draft=draft)
                         except Exception as recovery_error:
-                            self.last_failures[self.identifier(doc)] = {"recovery_error": str(recovery_error)}
+                            if self._is_open(doc):
+                                self.last_failures[self.identifier(doc)] = {"recovery_error": str(recovery_error)}
                     try:
                         if draft is not None:
                             self._preserve_sketch_draft(doc, draft)
@@ -1777,24 +2272,43 @@ class Controller:
                         App.closeActiveTransaction(True)
                     if model_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == model_transaction_id:
                         App.closeActiveTransaction(True)
+                    if split_guard is not None:
+                        exc = split_guard.after_abort(doc, exc)
+                        # A recovered split undid commits and wrote a discard boundary: history moved.
+                        history_moved = getattr(exc, "code", None) == "transaction_split"
                     self._recompute(doc)
                     self.signatures[self._meta(doc).DocumentId] = self._signature(doc)
                     self.observer.state(doc).pop("assembly_source_changed", None)
+                    if (window is not NULL_WINDOW and getattr(window, "before", None) is not None
+                            and self.signatures.get(self._meta(doc).DocumentId) == pre_signature):
+                        # The abort restored the content: the baseline key table is current again (F1 §5.3).
+                        self.result_checks.restamp(doc, window.before)
                     self._build_status(doc)
+            if isinstance(exc, KeyError) and isinstance(request, dict):
+                exc = self._missing_field_error(exc, request.get("op"), request) or exc
             known_error = isinstance(exc, (OperationError, native_assembly.AssemblyError))
             code = exc.code if known_error else "operation_failed"
             if not known_error:
-                log_path = Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime"))) / "kurtshape.log"
-                try:
-                    log_path.parent.mkdir(parents=True, exist_ok=True)
-                    with log_path.open("a", encoding="utf-8") as log:
-                        log.write(traceback.format_exc() + "\n")
-                except OSError:
-                    pass
+                self._log_exception()
             error = {"code": code, "message": str(exc), **(getattr(exc, "details", {}) if known_error else {})}
-            if doc and code not in {"stale_revision", "busy", "sketch_edit_active", "managed_sketch_mismatch", "sketch_editor_open"}:
-                self.last_failures[self._meta(doc).DocumentId] = {"request": request, "error": error, "rejected": True}
-                self._meta(doc).LastFailure=json.dumps(self.last_failures[self._meta(doc).DocumentId])
+            context = self._reports.pop("parameter_context", None)
+            if context and doc is not None and self._is_open(doc):
+                # F3a §6.3: the parameter as it stands after the rollback.
+                error["parameter"] = dict(context, accepted=parameters.accepted(doc, context["name"]))
+            # Reads and the lifecycle refusals are not failed modelling attempts (integration C13).
+            if (doc and self._is_open(doc) and request.get("op") not in self.NON_MUTATING_OPS
+                    and code not in {"stale_revision", "busy", "sketch_edit_active", "managed_sketch_mismatch", "sketch_editor_open",
+                                     "unsaved_changes", "document_in_use", "user_editing", "unmanaged_transaction"}):
+                if request.get("op") == "batch":
+                    # F4 D13: the compact record (no steps, no resolved step request, at most 2 KiB).
+                    self.last_failures[self._meta(doc).DocumentId] = batch.failure_record(request, error)
+                    self._meta(doc).LastFailure = json.dumps(self.last_failures[self._meta(doc).DocumentId])
+                else:
+                    self._record_failure(doc, request.get("op"), request, error)
+            if (pre_modified is not None and doc is not None and self._is_open(doc) and not committed and not ended_edit
+                    and not history_moved and self.signatures.get(self.identifier(doc)) == pre_signature):
+                # F-05: nothing was committed and the content signature is back; restore the GUI flag.
+                self._restore_modified(doc, pre_modified)
             return {"ok": False, "error": error}
         finally:
             if owns_busy:
@@ -1809,6 +2323,106 @@ class Controller:
         self._record_sketch_edit(doc)
         self._build_status(doc)
 
+    def _log_exception(self):
+        """Append the current traceback to the session log; never raises."""
+        log_path = Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime"))) / "kurtshape.log"
+        try:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            with log_path.open("a", encoding="utf-8") as log:
+                log.write(traceback.format_exc() + "\n")
+        except OSError:
+            pass
+
+    def _record_failure(self, doc, op, request, error):
+        """Record a rejected request in last_failures and the document's LastFailure."""
+        self.last_failures[self._meta(doc).DocumentId] = {"request": request, "error": error, "rejected": True}
+        self._meta(doc).LastFailure = json.dumps(self.last_failures[self._meta(doc).DocumentId])
+
+    def _missing_field_error(self, exc, op, request):
+        """The invalid_argument for a KeyError on an argument this request form needs but omitted.
+
+        Mode-dependent requirements (a blind legacy pad's length, a plain pierce target's
+        subelement) surface as KeyError in the handler; after rollback they are reported
+        with reason missing_conditional instead of operation_failed (F5 §3.3). Returns
+        None when the KeyError is not such a field.
+        """
+        key = exc.args[0] if isinstance(exc, KeyError) and exc.args else None
+        if (isinstance(key, str) and op in self.ARGS and key in self.ARGS[op] and isinstance(request, dict)
+                and key not in request):
+            return OperationError("invalid_argument", f"Missing field {key} required by this request form",
+                                  fields=[key], reason="missing_conditional")
+        return None
+
+    def _validation_window(self, doc, mode, trigger=None, before=None):
+        """The result-validation window of one request (integration C10).
+
+        ``mode`` is edit, navigate, rebuild or preview. Unmanaged documents get the
+        no-op window; a managed document without result operations pays only the
+        (empty) key table, so the first result operation of a document is covered.
+        """
+        if not self.is_managed(doc):
+            return NULL_WINDOW
+        return ValidationWindow(self, doc, mode, trigger, before)
+
+    def _validate_results(self, doc, mode, before=None, trigger=None, retry=False, persist=True, body=None):
+        """Run the result checks in ``mode`` (F1 D13) and fold the verdicts into BuildStatus.
+
+        Raises the creation code (``empty_add``, ``empty_cut``, ``invalid_geometry``,
+        ``build_failed``) with ``validation:"history"`` when an affected operation fails
+        in edit or preview mode; other modes expose failures without rejecting. The report
+        reaches the response as ``result_check_report``.
+        """
+        if not self.is_managed(doc) or not studio.enabled(doc):
+            return None
+        report = self.result_checks.validate(doc, mode, before=before, trigger=trigger, body=body, retry=retry, persist=persist)
+        if report is None:
+            return None
+        if report["failed"] or self._meta(doc).BuildStatus == "failed":
+            self._build_status(doc)
+        self._reports["result_check_report"] = report
+        return report
+
+    def _model_step(self, doc, req, *, editing=False):
+        """Apply one typed modeling op inside the caller's open native transaction.
+
+        Per-step gates only (integration C9): the handler, studio reconciliation,
+        the recompute, the rebuild stamp, the native build gate and the legacy
+        single-solid gate. It never opens, commits or aborts a transaction,
+        rotates the revision, inspects, syncs or writes DocumentId-keyed
+        controller state, so it is safe on a preview clone that shares the
+        source DocumentId. Returns the created feature and the per-step reports.
+        """
+        op = req["op"]
+        for key in STEP_REPORT_KEYS:
+            self._reports.pop(key, None)
+        self._reports.pop("parameter_context", None)
+        try:
+            created = self._model_operation(doc, req)
+        finally:
+            reports = {key: self._reports.pop(key) for key in STEP_REPORT_KEYS if key in self._reports}
+        studio.reconcile(doc)
+        self._recompute(doc)
+        if op == "rebuild":
+            self._mark_rebuilt(doc)
+        errors = self._build_status(doc)
+        if errors and not editing:
+            raise OperationError("build_failed", "Native feature rebuild failed", features=errors)
+        if not editing:
+            parameters.verify_applied(self, doc, reports.get("changed_inputs"))
+        affected = doc.getObject(req.get("profile") or req.get("feature") or created or "")
+        affected_body = owner(doc, affected)
+        if not editing and affected_body and not studio.enabled(doc) and (op in {"pad", "pocket"} or op in {"set_parameter", "set_expression", "duplicate_feature", "edit_extrusion", "edit_dress_up"} and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject"):
+            if self._meta(doc).BuildStatus != "valid" or len(affected_body.Shape.Solids) != 1:
+                raise OperationError("build_failed", "Operation must produce one valid solid")
+        if not editing and not studio.enabled(doc) and op in parameters.OPS:
+            # The legacy single-solid gate for the Bodies a parameter change reached (F3a §9).
+            for entry in reports.get("changed_inputs") or []:
+                body = owner(doc, doc.getObject(entry.get("native_feature", "")))
+                if body is not None and body.Tip is not None and body.Tip.TypeId != "Sketcher::SketchObject":
+                    if self._meta(doc).BuildStatus != "valid" or len(body.Shape.Solids) != 1:
+                        raise OperationError("build_failed", "Operation must produce one valid solid", feature=body.Name)
+        return ModelStep(created, reports)
+
     def _preview(self, doc, request):
         if self.busy:
             raise OperationError("busy", "Finish the active operation before previewing")
@@ -1816,21 +2430,52 @@ class Controller:
             raise OperationError("unmanaged_document", "Adopt a copy before previewing changes")
         if request.get("expected_revision") != self._meta(doc).Revision:
             raise OperationError("stale_revision", "Inspect before previewing a proposal")
-        if self._meta(doc).DocumentId in self.sketch_edits or doc.HasPendingTransaction:
+        proposal = request.get("proposal")
+        is_batch = isinstance(proposal, dict) and proposal.get("op") == "batch"
+        if self._meta(doc).DocumentId in self.sketch_edits or doc.HasPendingTransaction and not is_batch:
             raise OperationError("sketch_edit_active", "Finish editing before previewing")
+        if is_batch and doc.HasPendingTransaction:
+            raise OperationError("unmanaged_transaction", "Finish the native transaction before a batch")
         if getattr(App, "GuiUp", False):
             import FreeCADGui as Gui
             if Gui.Control.activeDialog() or any(Gui.getDocument(name).getInEdit() for name in App.listDocuments()):
                 raise OperationError("sketch_edit_active", "Finish graphical editing before previewing")
-        proposal = request.get("proposal")
-        if not isinstance(proposal, dict) or proposal.get("op") not in self.MODEL_OPS - {"rebuild"} or set(proposal) - self.ARGS[proposal["op"]] - {"op"}:
+        steps = None
+        if is_batch:
+            # Structural errors before any clone (F4 §3.7), reported as the commit would report them.
+            try:
+                unknown = set(proposal) - {"op", "steps", "label"}
+                if unknown:
+                    raise OperationError("unknown_argument", "Unsupported proposal fields", fields=sorted(unknown))
+                steps = batch.validate(self, proposal)
+            except OperationError as exc:
+                count = len(proposal["steps"]) if isinstance(proposal.get("steps"), list) else 0
+                return {"base_revision": request["expected_revision"],
+                        "proposal": {"op": "batch", "label": proposal.get("label"), "step_count": count},
+                        "accepted": False, "valid": False, "error": {"code": exc.code, "message": str(exc), **exc.details},
+                        "build_status": None, "build_errors": [], "measurements": None, "discarded": True,
+                        "batch_report": {"step_count": count, "completed_steps": 0, "steps": [], "validation": None}}
+        elif not isinstance(proposal, dict) or proposal.get("op") not in self.MODEL_OPS - {"rebuild"} or set(proposal) - self.ARGS[proposal["op"]] - {"op"}:
             raise OperationError("unsupported_preview", "Preview requires a supported typed modeling operation")
+        # A proposal missing a generic-required field needs no clone (F5 §3.3).
+        absent, groups = operation_schemas.missing_arguments(proposal["op"], proposal) if not is_batch else ((), ())
+        if absent or groups:
+            fields = list(absent or groups[0])
+            return {"base_revision": request["expected_revision"], "proposal": proposal, "accepted": False, "valid": False,
+                    "error": {"code": "invalid_argument", "message": "Missing required fields: " + ", ".join(fields),
+                              "fields": fields, "one_of": bool(groups and not absent), "reason": "missing_required"},
+                    "build_status": None, "build_errors": [], "measurements": None, "discarded": True}
         import tempfile
         from .extrusion_preview import _capture_gui, _restore_gui
+        batch_deadline = batch.deadline(self) if is_batch else None  # the clone counts against the budget
         clone = None
         preview_transaction_id = None
         active = App.ActiveDocument
+        # An app-level transaction left open by the proposal must not capture the
+        # source document's next change: cleanup closes any that was not active before.
+        active_transaction_before = App.getActiveTransaction()
         gui_state = _capture_gui(doc)
+        source_before = self.result_checks.snapshot(doc) if studio.enabled(doc) else None
         previous_busy = self.busy
         self.busy = True
         try:
@@ -1839,21 +2484,33 @@ class Controller:
                 doc.saveCopy(str(path))
                 clone = App.openDocument(str(path), True)
                 failure = None
+                step = ModelStep(None, {})
+                rows, validation = [], None
                 try:
                     clone.openTransaction("KurtShape: disposable preview")
                     preview_transaction_id = (App.getActiveTransaction() or (None, None))[1]
-                    self._model_operation(clone, proposal)
-                    studio.reconcile(clone)
-                    self._recompute(clone)
-                    errors = self._build_status(clone)
-                    if errors:
-                        raise OperationError("build_failed", "Preview could not rebuild", features=errors)
-                    affected_body = owner(clone, clone.getObject(proposal.get("feature", "")))
-                    if affected_body and not studio.enabled(clone) and affected_body.Tip and affected_body.Tip.TypeId != "Sketcher::SketchObject":
-                        if self._meta(clone).BuildStatus != "valid" or len(affected_body.Shape.Solids) != 1:
-                            raise OperationError("build_failed", "Preview must produce one valid solid in the affected Body")
+                    # The commit's own per-step gates and validation window (C9, C12); the baseline is
+                    # the source document's key table (F1 §5.7).
+                    window = self._validation_window(clone, "preview", before=source_before, trigger={
+                        "op": proposal["op"], "feature": None if is_batch else (
+                            proposal.get("feature") or proposal.get("profile") or proposal.get("sketch") or proposal.get("id"))})
+                    if is_batch:
+                        deadline = batch_deadline
+                        rows = batch.run(self, clone, steps, transaction_id=preview_transaction_id, window=window,
+                                         deadline=deadline)
+                        validation = batch.finish_validation(self, clone, window, rows, steps, deadline)
+                    else:
+                        step = self._model_step(clone, proposal)
+                        window.finish()
                 except Exception as exc:
-                    failure = {"code": getattr(exc, "code", "preview_failed"), "message": str(exc)}
+                    rows = getattr(exc, "batch_rows", rows)
+                    exc = self._missing_field_error(exc, proposal["op"], proposal) or exc
+                    failure = {"code": getattr(exc, "code", "preview_failed"), "message": str(exc),
+                               **getattr(exc, "details", {})}
+                    context = self._reports.pop("parameter_context", None)
+                    if context:
+                        failure["parameter"] = dict(context, accepted=parameters.accepted(doc, context["name"]))
+                    step = ModelStep(None, {})
                 errors = self._build_status(clone)
                 status = self._meta(clone).BuildStatus
                 evaluated = {"build_status": status, "build_errors": errors,
@@ -1861,10 +2518,28 @@ class Controller:
                 clone.commitTransaction()
                 if preview_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == preview_transaction_id:
                     App.closeActiveTransaction()
-                return {"base_revision": request["expected_revision"], "proposal": proposal,
-                        "valid": failure is None and evaluated["build_status"] in {"valid", "sketch_only"},
-                        "error": failure, "build_status": evaluated["build_status"], "build_errors": evaluated["build_errors"],
-                        "measurements": evaluated["measurements"], "discarded": True}
+                # accepted: the commit would return ok. valid: accepted and the
+                # predicted status is valid or sketch_only (integration C11).
+                accepted = failure is None
+                if is_batch and not accepted:
+                    evaluated["measurements"] = None
+                echo = ({"op": "batch", "label": proposal.get("label"), "step_count": len(steps)} if is_batch
+                        else proposal)
+                preview = {"base_revision": request["expected_revision"], "proposal": echo, "accepted": accepted,
+                           # valid means "the commit would be accepted": pre-existing result failures fold into the
+                           # predicted build_status but never reject (F1 §6), so the native status decides here.
+                           "valid": accepted and self.observer.state(clone).get("native_status", evaluated["build_status"]) in {"valid", "sketch_only"},
+                           "error": failure, "build_status": evaluated["build_status"], "build_errors": evaluated["build_errors"],
+                           "measurements": evaluated["measurements"], "discarded": True}
+                for key, value in step.reports.items():
+                    if key not in INTERNAL_REPORTS:
+                        preview[key] = value
+                if is_batch:
+                    preview["batch_report"] = {"step_count": len(steps), "completed_steps": len(rows), "steps": rows,
+                                               "validation": validation}
+                if "result_check_report" in self._reports:
+                    preview["result_check_report"] = self._reports.pop("result_check_report")
+                return preview
         finally:
             try:
                 if clone:
@@ -1876,12 +2551,64 @@ class Controller:
                     App.closeDocument(name)
                     self.geometry.drop_document(name)
                     self.observer.states.pop(name, None)
+                    self.result_checks.drop_document(name)
+                current_transaction = App.getActiveTransaction()
+                if current_transaction and current_transaction != active_transaction_before:
+                    App.closeActiveTransaction(True)
                 if active and self._is_open(active):
                     App.setActiveDocument(active.Name)
                 if self._is_open(doc):
                     _restore_gui(doc, gui_state)
             finally:
                 self.busy = previous_busy
+
+    def _close_document(self, doc, request, start):
+        """Close an open document (contract 3.2); every refusal happens before the native close.
+
+        Order: argument and transaction checks, the GUI editor hook (user_editing), objects of
+        other open documents linking into this one (document_in_use), then unsaved changes
+        (unsaved_changes unless discard, which first writes a durable discard checkpoint of a
+        managed document). The response carries ``closed`` and the remaining ``open_documents``.
+        """
+        discard = request.get("discard", False)
+        if not isinstance(discard, bool):
+            raise OperationError("invalid_argument", "discard must be boolean", fields=["discard"])
+        if doc.HasPendingTransaction:
+            raise OperationError("unmanaged_transaction", "Finish the native transaction before closing the document")
+        activity = self.editor_activity(doc.Name) if callable(self.editor_activity) else None
+        if activity:
+            raise OperationError("user_editing", "Finish the open editor before closing the document", tool=activity)
+        users = sorted({(user.Document.Name, user.Name) for obj in doc.Objects for user in obj.InList if user.Document != doc})
+        if users:
+            raise OperationError("document_in_use", "Objects of other open documents link into this document",
+                                 users=[{"document": document, "object": name} for document, name in users])
+        meta = self._meta(doc)
+        modified, basis = self.document_modified(doc)
+        never_saved = not doc.FileName
+        reasons = [reason for reason, flag in (("modified", modified), ("never_saved", never_saved)) if flag]
+        manifest = None
+        if reasons:
+            details = {"reasons": reasons, "modified_basis": basis, "native_file": doc.FileName or None, "revision": meta.Revision}
+            if not discard:
+                raise OperationError("unsaved_changes", "The document has unsaved changes; save it, or close with discard:true", **details)
+            if not self.is_managed(doc):
+                raise OperationError("unsaved_changes", "KurtShape does not discard changes of a native file it does not manage; "
+                                     "save or close it in FreeCAD", discard_unsupported=True, **details)
+            try:
+                manifest = self.recovery.capture_discarded(doc, meta)
+            except Exception as exc:
+                raise OperationError("checkpoint_failed", "The discard checkpoint could not be written; the document stays open",
+                                     cause=str(exc)) from exc
+        identifier = meta.DocumentId
+        closed = {"document_id": identifier, "name": doc.Label, "native_file": doc.FileName or None, "revision": meta.Revision,
+                  "modified": modified, "modified_basis": basis, "never_saved": never_saved,
+                  "discarded_unsaved_changes": bool(reasons), "recovery_manifest": str(manifest) if manifest else None}
+        App.closeDocument(doc.Name)
+        for mapping in (self.documents, self.signatures, self.sketch_edits, self.created_sketches, self.last_failures):
+            mapping.pop(identifier, None)
+        open_documents = [self.identifier(other) for other in self.documents.values() if self._is_open(other)]
+        return {"ok": True, "result": {"closed": closed, "open_documents": open_documents,
+                                       "operation_ms": round((time.perf_counter() - start) * 1000, 2)}}
 
     def _adopt(self, source, raw):
         path = write_path(raw, {".fcstd"}, self.settings.roots)
@@ -1997,8 +2724,11 @@ class Controller:
 
     def _id(self, doc, request, fallback):
         name = request.get("id", fallback)
-        if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", name):
+        if not isinstance(name, str) or not re.fullmatch(operation_schemas.FEATURE_ID_PATTERN, name):
             raise OperationError("invalid_argument", "Feature ID must be an ASCII letter followed by letters/digits/underscores")
+        if name.lower() == parameters.SET_NAME.lower():
+            raise OperationError("invalid_argument", "The id Params is reserved for the model parameter set",
+                                 fields=["id"], reason="reserved_id")
         if doc.getObject(name):
             raise OperationError("duplicate_feature", f"Feature {name} already exists")
         return name
@@ -2526,15 +3256,17 @@ class Controller:
         if not chosen:
             raise OperationError("no_orphans", "No repairable leftover helpers were found")
         removed = studio.remove_objects(doc, [name for group in chosen for name in group["objects"]])
-        self._repair_report = {"removed_groups": [group["owner"] for group in chosen], "removed_objects": removed,
-                               "kept_inputs": sorted({name for group in chosen for name in group["inputs"]} - set(removed)),
-                               "skipped_groups": [group for group in groups if group not in chosen]}
+        self._reports["repair_report"] = {"removed_groups": [group["owner"] for group in chosen], "removed_objects": removed,
+                                          "kept_inputs": sorted({name for group in chosen for name in group["inputs"]} - set(removed)),
+                                          "skipped_groups": [group for group in groups if group not in chosen]}
 
     def _delete_feature(self, doc, req):
         self._delete_features(doc, dict(req, features=[req["feature"]]))
 
     def _model_operation(self, doc, req):
         op = req["op"]
+        if op in parameters.OPS:
+            return parameters.handle(self, doc, req)
         if op == "delete_features":
             self._delete_features(doc, req)
             return None
@@ -2562,6 +3294,8 @@ class Controller:
             return created
         if op == "pad" and req.get("end_type") == "through_all":
             raise OperationError("invalid_argument", "Through all extrusion requires an explicit studio result operation or merge scope")
+        if op in {"pad", "pocket"} and "refine" in req:
+            raise OperationError("invalid_argument", "refine applies to studio results; add an operation or merge_scope")
         if reference_tools.is_selector(req.get("support")):
             original = req["support"]
             before = doc.getObject(req.get("sketch", "")) if op == "set_sketch_support" else None
@@ -2590,7 +3324,6 @@ class Controller:
             return None
         if op == "create_sketch":
             sk = self._new_sketch(doc, req, "Sketch")
-            self._new_sketch_name = sk.Name
         elif op == "sketch_rectangle":
             sk = self._new_sketch(doc, req, "Rectangle")
             self._add_rectangle(sk, req)
@@ -2618,6 +3351,10 @@ class Controller:
             if sk.solve() != 0:
                 raise OperationError("constraint_conflict", "New geometry produces a sketch solver conflict")
         elif op in {"pad", "pocket"}:
+            if "face" in req:
+                # Studio routing needs operation or merge_scope; without them face is meaningless.
+                raise OperationError("invalid_argument", "face requires a studio result: add operation or merge_scope",
+                                     fields=["operation", "merge_scope"], one_of=True, reason="missing_conditional")
             profile=self._profile(doc,req["profile"])
             if profile.Shape.isNull() or not profile.Shape.Wires:
                 raise OperationError("open_profile", "Sketch must contain a closed profile")
@@ -2631,7 +3368,7 @@ class Controller:
             if "reversed" in req and not isinstance(req["reversed"], bool):
                 raise OperationError("invalid_argument", "reversed must be boolean")
             up_to_face = req.get("end_type") == "up_to_face" or "up_to_face" in req
-            if req.get("end_type", "blind") not in {"blind", "through_all", "up_to_face"}:
+            if req.get("end_type", "blind") not in extrusion_edit.END_TYPES:
                 raise OperationError("invalid_argument", "end_type must be blind, through_all or up_to_face")
             if up_to_face:
                 reference = native_selectors.native_reference(doc, req.get("up_to_face"), entity_type="face")
@@ -2672,35 +3409,33 @@ class Controller:
                 if not cut_valid():
                     raise OperationError("empty_cut", "Pocket removes no valid material in the requested direction")
         elif op in {"set_parameter", "set_expression"}:
-            feature=doc.getObject(req["feature"])
-            if not feature:
-                raise OperationError("missing_reference", "Feature ID does not exist")
-            parameter=req["parameter"]
-            if parameter not in native_parameters(feature):
-                raise OperationError("unsupported_parameter", "Choose an editable parameter reported by inspect")
-            info=native_parameters(feature)[parameter]
-            if info.get("native_feature"):
-                feature = doc.getObject(info["native_feature"])
-            if feature.TypeId=="Sketcher::SketchObject" and not feature.Constraints[info["constraint_index"]].Driving:
-                raise OperationError("unsupported_parameter", "This parameter is not a supported driving length dimension")
+            parameter = req["parameter"]
+            spec = parameters.target(doc, req["feature"], parameter)
+            feature, info, property_path = spec["native"], spec["info"], spec["path"]
             value = number(req["value"], "value", not info.get("signed") and parameter != "Offset" and info.get("constraint_type") not in {"DistanceX", "DistanceY", "Angle"}, info["unit"]) if op == "set_parameter" else None
-            property_path=(f"Constraints.{info['name']}" if info.get("name") else f"Constraints[{info['constraint_index']}]") if feature.TypeId=="Sketcher::SketchObject" else info.get("native_property", parameter)
-            aliases={property_path}
-            if feature.TypeId=="Sketcher::SketchObject":
-                aliases.add(f"Constraints[{native_parameters(feature)[parameter]['constraint_index']}]")
             if op == "set_expression":
+                # Contract 3.2 F3a §6.6: the shared validator evaluates up front (units, auto-qualified parameter
+                # names, cycles); there is no inner recompute. The dispatch's recompute, native gate and
+                # verify_applied run once, so geometric failures report build_failed.
                 expression = req.get("expression")
-                if expression is not None and (not isinstance(expression, str) or len(expression) > 512 or not re.fullmatch(extrusion_edit.EXPRESSION_PATTERN, expression)):
-                    raise OperationError("invalid_argument", "Use a dimensional formula with named properties and arithmetic")
+                if expression is None:
+                    parameters.set_native_expression(feature, property_path, None)
+                    return
+                text, evaluated = parameters.prepare_expression(doc, feature, expression, info["unit"])
+                entry = {"feature": req["feature"], "native_feature": feature.Name, "parameter": parameter,
+                         "path": property_path, "expression": text, "previous": info["value"], "current": evaluated}
                 if feature.TypeId == "PartDesign::Hole":
-                    return hole_tools.set_expression(self, doc, feature, property_path, expression)
-                feature.setExpression(property_path, expression)
-                self._recompute(doc)
-                if set(feature.State) & {"Invalid", "Error"}:
-                    raise OperationError("invalid_expression", "Formula is invalid, has a missing reference, or has incompatible units", status=feature.getStatusString())
+                    entry["hole_intent"] = hole_tools._intent(feature)
+                parameters.precheck(doc, [entry])
+                parameters.set_native_expression(feature, property_path, text)
+                self._reports.setdefault("changed_inputs", []).append(entry)
                 return
-            if any(path.lstrip(".") in aliases for path,_ in feature.ExpressionEngine):
-                raise OperationError("expression_driven", "Edit the upstream driving parameter instead")
+            current = parameters.driving_expression(spec)
+            if current is not None:
+                vs = parameters.parameter_set(doc)
+                read = sorted(parameters.reads(vs, current)) if vs is not None else []
+                raise OperationError("expression_driven", "Edit the upstream driving parameter instead", expression=current,
+                                     **({"parameters": read, "hint": "edit_parameter"} if read else {}))
             if feature.TypeId=="Sketcher::SketchObject":
                 feature.setDatum(native_parameters(feature)[parameter]["constraint_index"],App.Units.Quantity(f"{value} {info['unit']}"))
                 if feature.solve()!=0:
@@ -2708,6 +3443,10 @@ class Controller:
             elif feature.TypeId == "PartDesign::Hole":
                 hole_tools.set_parameter(self, doc, feature, property_path, math.degrees(value) if info["unit"] == "rad" else value)
             else:
+                if feature.TypeId == "Part::Helix":
+                    size = {"Pitch": feature.Pitch.Value, "Height": feature.Height.Value, property_path: value}
+                    segment = feature.SegmentLength
+                    modeling_geometry.check_helix_size(size["Pitch"], size["Height"], float(getattr(segment, "Value", segment)))
                 setattr(feature, property_path, math.degrees(value) if info["unit"] == "rad" else value)
         elif op == "duplicate_feature":
             source = doc.getObject(req["feature"])
@@ -2774,6 +3513,11 @@ class Controller:
         if op in {"create_sketch", "sketch_rectangle", "sketch_circle", "pad", "pocket"} and req.get("source_feature_id"):
             created = sk if op in {"create_sketch", "sketch_rectangle", "sketch_circle"} else feature
             self._record_source(doc, req, created)
+        if op in {"create_sketch", "sketch_rectangle", "sketch_circle"}:
+            return sk.Name
+        if op in {"pad", "pocket"}:
+            return feature.Name
+        return None
 
     def _record_source(self, doc, req, created):
         if created is None or not req.get("source_feature_id"):
@@ -2812,8 +3556,12 @@ class Controller:
 
     def _export(self, doc, raw, body_id=None):
         path=write_path(raw,{".step",".stp",".stl"}, self.settings.roots)
+        # Contract 3.2 F1: pending result operations are validated before the status gate.
+        self._validate_results(doc, "export")
         if self._meta(doc).BuildStatus!="valid":
-            raise OperationError("build_failed", "Only a current valid solid can be exported")
+            failures = (list(self._build_status(doc)) + self.result_checks.errors(doc)) if self.is_managed(doc) else []
+            raise OperationError("build_failed", "Only a current valid solid can be exported",
+                                 **({"features": failures} if failures else {}))
         stage=path.with_name(path.stem + ".exporting" + path.suffix)
         assembly_state = native_assembly.inspect(doc)
         if assembly_state and body_id is not None:
@@ -2846,6 +3594,8 @@ class Controller:
                     "native_file":doc.FileName or None,"format":path.suffix.lower(),"included_body_ids":[obj.Name for obj in included],"shape":self._geometry(doc, included, "full"),
                     "geometry_check": {"status": "valid", "bodies": [{"id": name, "check_ms": check["ms"]} for name, check in verdicts.items()]},
                     "included_part_ids":[getattr(obj,"KurtShapePartId",obj.Name) for obj in included],
+                    "kurtshape_build":build_identity.provenance(),
+                    "result_checks":self.result_checks.provenance(doc),
                     "settings":{"linear_deflection_mm":0.05,"angular_deflection_rad":0.1} if path.suffix.lower()==".stl" else {"writer":"FreeCAD Part/OCCT"}}
         sidecar=path.with_suffix(path.suffix+".json")
         temp=sidecar.with_suffix(sidecar.suffix+".saving")

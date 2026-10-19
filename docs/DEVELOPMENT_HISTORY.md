@@ -131,3 +131,22 @@ The validation launcher opens an independent invisible Qt window with a separate
 The U2 command launches the isolated Part Studio check; wait for its printed process to exit, then read the printed report path. Its fixture and source-hash assertions remain in the recipe. The [status report](architecture-responsiveness-upgrade/STATUS_REPORT.md) describes current acceptance; detailed historical evidence remains local.
 
 Python networking is denied during offline core checks; native C++ networking and physical disconnection are not instrumented. Exact native rebuilds run synchronously. Automated GUI evidence supplements Kurt's hands-on usability review. Original examples and the Claude reference directory are preserved. Full source conversion remains **0/2**; two edited STEP variants per source design are deferred until Kurt provides them.
+
+
+## 2026-10-19 — construction-plane visibility
+
+Fixed **P** ignoring custom datum planes, missing multi-selection Hide/Show,
+and selection highlights restoring pre-Hide visibility when deselected/saved.
+Changes are confined to the GUI presentation layer and its isolated recipe.
+The BREF fixture check passed 12 assertions: all 21 datum planes hide, four
+solid geometries/placements are preserved, multi-select actions work, hidden
+flags survive save/reopen, and the original FCStd hash is unchanged. The menu
+test triggers the real QActions while substituting the popup execution loop.
+An earlier popup-loop probe stalled in the private GUI; the final recipe avoids
+that nested loop. A first test also called the bridge-only close operation via
+Panel.operation; it now calls Controller.dispatch directly.
+
+The existing user instance was not restarted. Save and relaunch KurtShape, then
+press **P** to apply the corrected visibility controls to an already-open model.
+The original BREF CAD and simulator exports are unchanged. Full regression status
+is recorded with the task-local evidence after completion.

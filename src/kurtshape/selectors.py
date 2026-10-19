@@ -31,6 +31,11 @@ _SCHEMA = {
     "adjacent": {"kind", "query", "entity_type", "adjacency"}, "tangent": {"kind", "query"},
     "parallel": {"kind", "query", "direction", "allow_antiparallel"}, "closest": {"kind", "query", "point"},
 }
+
+
+def schema():
+    """The selector key table for operation_schemas: ``{kind: sorted accepted keys}``."""
+    return {kind: sorted(keys) for kind, keys in _SCHEMA.items()}
 # Geometry-filter parameters: selector key -> geometry carrying it -> native
 # primitive attribute. Cone radius is OCCT's reference radius (at its location).
 _PARAMETERS = {
@@ -227,6 +232,16 @@ def _world_shape(obj):
     return shape
 
 
+def world_shape(obj):
+    """Detached copy of ``obj``'s shape in the selector world frame (render_view captures, F2 D2)."""
+    return _world_shape(obj)
+
+
+def result_source(result):
+    """The object a current result is resolved against: a Body's Tip, else the result itself."""
+    return result.Tip if result.TypeId == "PartDesign::Body" and result.Tip else result
+
+
 def _maker_input_shape(maker, source):
     # Native Part makers consume source.Shape in their own coordinate frame;
     # they do not include a source sketch's containing Body placement.
@@ -338,7 +353,7 @@ class _Context:
                        and (obj.Name in allowed_sketches if allowed_sketches is not None else self.positions[obj.Name] < boundary) and _active(obj))
         prepared = []
         for result in results:
-            obj = result.Tip if result.TypeId == "PartDesign::Body" and result.Tip else result
+            obj = result_source(result)
             if not hasattr(obj, "Shape") or obj.Shape.isNull():
                 continue
             prepared.append((obj, obj.Name if obj.TypeId == "Sketcher::SketchObject" else _part_id(doc, result)))
@@ -853,12 +868,18 @@ def _evaluate(context, selector, depth=0):
         coordinates = _vector(selector.get("point"), "point")
         point = Part.Vertex(coordinates)
         point_box = geometry.bounding_box(point)
-        candidates = sorted(enumerate(rows), key=lambda item:
-                            (geometry.bbox_distance(geometry.bounding_box(item[1]["_shape"]), point_box), item[0]))
+
+        def box(row):
+            # Rows belong to a context that is discarded when the document changes, so the pruning box
+            # of an element is computed once per context instead of twice per closest query.
+            if "_bbox" not in row:
+                row["_bbox"] = geometry.bounding_box(row["_shape"])
+            return row["_bbox"]
+        candidates = sorted(enumerate(rows), key=lambda item: (geometry.bbox_distance(box(item[1]), point_box), item[0]))
         distances, minimum = [], math.inf
         for index, row in candidates:
             entity = row["_shape"]
-            if geometry.bbox_distance(geometry.bounding_box(entity), point_box) > minimum + TOLERANCE:
+            if geometry.bbox_distance(box(row), point_box) > minimum + TOLERANCE:
                 continue
             key = (row["entity_type"], row["subelement"], _shape_frame(entity), tuple(coordinates))
             value = _memo(context.doc, "selector_closest_distance", (row["_object"],), key,
@@ -1036,22 +1057,27 @@ def _summary(row, detail=False):
     return result
 
 
-def _resolved(context, selector, detail=False):
+def _resolved(context, selector, detail=False, shapes=False):
     values = _evaluate(context, selector)
-    return [{**{key: value for key, value in row.items() if not key.startswith("_")}, "summary": _summary(row, detail)}
+    # ``shapes`` (render_view highlights) carries the element instead of its summary, which only
+    # resolve_selector and diagnostics read.
+    return [{**{key: value for key, value in row.items() if not key.startswith("_")},
+             **({"shape": row["_shape"]} if shapes else {"summary": _summary(row, detail)})}
             for row in sorted(values, key=_identity)]
 
 
-def _resolve_full(doc, selector, before=None, detail=False):
+def _resolve_full(doc, selector, before=None, detail=False, shapes=False):
     """Fresh complete preparation, retained as an explicit correctness oracle."""
-    return _resolved(_Context(doc, before, eager=True, cache=False), selector, detail)
+    return _resolved(_Context(doc, before, eager=True, cache=False), selector, detail, shapes)
 
 
-def resolve(doc, selector, before=None, detail=False):
+def resolve(doc, selector, before=None, detail=False, shapes=False):
     """Matched rows with a basic summary; ``detail`` adds resolve_selector geometry.
 
     Detail (points on elements, radii, axes) is computed only for that read
-    output and ambiguity diagnostics, never while consumers rebind.
+    output and ambiguity diagnostics, never while consumers rebind. ``shapes``
+    returns each row's world-frame element as ``shape`` instead of ``summary``
+    (render_view highlights); callers must treat it as read-only.
     """
     global _evaluation_milliseconds
     start = time.perf_counter()
@@ -1069,7 +1095,7 @@ def resolve(doc, selector, before=None, detail=False):
                     provider.drop_document(doc)
             discard_foreign()
             try:
-                return _resolve_full(doc, selector, before, detail)
+                return _resolve_full(doc, selector, before, detail, shapes)
             finally:
                 discard_foreign()
         token = index.token(*sorted(document_index.DOMAINS)) if index is not None else None
@@ -1088,7 +1114,7 @@ def resolve(doc, selector, before=None, detail=False):
                         contexts.popitem(last=False)
                 contexts.move_to_end(boundary)
                 context = contexts[boundary]
-            result = _resolved(context, selector, detail)
+            result = _resolved(context, selector, detail, shapes)
         except Exception:
             if not changed():
                 raise
@@ -1109,7 +1135,7 @@ def resolve(doc, selector, before=None, detail=False):
         current = document_index.get(doc)
         fallback_token = current.token(*sorted(document_index.DOMAINS)) if current is not None else None
         try:
-            result = _resolve_full(doc, selector, before, detail)
+            result = _resolve_full(doc, selector, before, detail, shapes)
             if (document_index.get(doc) is not current or current is not None
                     and fallback_token != current.token(*sorted(document_index.DOMAINS))):
                 raise _error("selector_document_changed", "Native document changed during selector resolution; retry")
@@ -1237,6 +1263,19 @@ def _native_references(feature, info):
     else:
         raise _error("invalid_selector_metadata", "Unknown native reference binding mode")
     return [{"feature": obj.Name, "subelement": name} for obj, names in links if obj is not None for name in names]
+
+
+def stored_input_names(feature):
+    """Names of the stored reference inputs (``QueryInputs``) of ``feature``."""
+    return sorted(_json(feature, "QueryInputs"))
+
+
+def stored_input_refs(feature, name):
+    """Literal ``{feature, subelement}`` references a stored input currently binds natively (render_view highlights)."""
+    info = _json(feature, "QueryInputs").get(name)
+    if not isinstance(info, dict) or "native_property" not in info:
+        raise _error("missing_input", "Feature has no stored reference input of that name", feature=feature.Name, name=name)
+    return _native_references(feature, info)
 
 
 def bind(feature, input_name, selector, native_property="AttachmentSupport", many=False, mode="linksub", index=None, **options):

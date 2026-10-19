@@ -1,0 +1,526 @@
+[
+  {
+    "name": "iso",
+    "request": {
+      "views": [
+        "iso"
+      ]
+    },
+    "files": [
+      "iso.png"
+    ],
+    "elapsed_ms": 1233.5,
+    "timing_ms": {
+      "owner": 62.01,
+      "highlights": 0.01,
+      "worker": 1134.49,
+      "total": 1196.51
+    },
+    "banners": [],
+    "geometry": "current",
+    "tessellation": {
+      "tolerance_mm": 0.03125,
+      "requested_tolerance_mm": 0.03125,
+      "angular_deflection_rad": 0.25,
+      "triangles": 496,
+      "cap_triangles": 0,
+      "highlight_triangles": 0,
+      "coarsened": false,
+      "coarsen_steps": 0,
+      "coarsen_ladder": [
+        496
+      ]
+    },
+    "highlights": [],
+    "image_highlights": [
+      []
+    ]
+  },
+  {
+    "name": "standard",
+    "request": {
+      "views": [
+        "front",
+        "back",
+        "right",
+        "left",
+        "top",
+        "bottom"
+      ]
+    },
+    "files": [
+      "standard-front.png",
+      "standard-back.png",
+      "standard-right.png",
+      "standard-left.png",
+      "standard-top.png",
+      "standard-bottom.png"
+    ],
+    "elapsed_ms": 5496.9,
+    "timing_ms": {
+      "owner": 38.09,
+      "highlights": 0.0,
+      "worker": 5446.05,
+      "total": 5484.16
+    },
+    "banners": [],
+    "geometry": "current",
+    "tessellation": {
+      "tolerance_mm": 0.015625,
+      "requested_tolerance_mm": 0.015625,
+      "angular_deflection_rad": 0.25,
+      "triangles": 592,
+      "cap_triangles": 0,
+      "highlight_triangles": 0,
+      "coarsened": false,
+      "coarsen_steps": 0,
+      "coarsen_ladder": [
+        592
+      ]
+    },
+    "highlights": [],
+    "image_highlights": [
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ]
+  },
+  {
+    "name": "standard-sheet",
+    "request": {
+      "views": [
+        "iso",
+        "front",
+        "back",
+        "right",
+        "left",
+        "top",
+        "bottom"
+      ],
+      "layout": "sheet"
+    },
+    "files": [
+      "standard-sheet.png"
+    ],
+    "elapsed_ms": 1676.3,
+    "timing_ms": {
+      "owner": 37.37,
+      "highlights": 0.0,
+      "worker": 1613.58,
+      "total": 1650.98
+    },
+    "banners": [],
+    "geometry": "current",
+    "tessellation": {
+      "tolerance_mm": 0.03125,
+      "requested_tolerance_mm": 0.03125,
+      "angular_deflection_rad": 0.25,
+      "triangles": 496,
+      "cap_triangles": 0,
+      "highlight_triangles": 0,
+      "coarsened": false,
+      "coarsen_steps": 0,
+      "coarsen_ladder": [
+        496
+      ]
+    },
+    "highlights": [],
+    "image_highlights": [
+      null
+    ]
+  },
+  {
+    "name": "section-xz",
+    "request": {
+      "section": {
+        "plane": "XZ",
+        "offset": -20
+      },
+      "views": [
+        "section",
+        "iso"
+      ]
+    },
+    "files": [
+      "section-xz-section.png",
+      "section-xz-iso.png"
+    ],
+    "elapsed_ms": 1735.2,
+    "timing_ms": {
+      "owner": 39.51,
+      "highlights": 0.0,
+      "worker": 1671.69,
+      "total": 1711.24
+    },
+    "banners": [],
+    "geometry": "current",
+    "tessellation": {
+      "tolerance_mm": 0.03125,
+      "requested_tolerance_mm": 0.03125,
+      "angular_deflection_rad": 0.25,
+      "triangles": 496,
+      "cap_triangles": 10,
+      "highlight_triangles": 0,
+      "coarsened": false,
+      "coarsen_steps": 0,
+      "coarsen_ladder": [
+        496
+      ]
+    },
+    "highlights": [],
+    "image_highlights": [
+      [],
+      []
+    ]
+  },
+  {
+    "name": "highlights",
+    "request": {
+      "views": [
+        "iso"
+      ],
+      "highlights": [
+        {
+          "input": {
+            "feature": "Round",
+            "name": "edges_0"
+          },
+          "label": "A",
+          "note": "fillet input (history)"
+        },
+        {
+          "selector": {
+            "kind": "created_by",
+            "feature": "Round",
+            "entity_type": "face"
+          },
+          "label": "B",
+          "note": "fillet face"
+        },
+        {
+          "selector": {
+            "kind": "closest",
+            "point": [
+              45,
+              26,
+              25
+            ],
+            "query": {
+              "kind": "owned_by",
+              "part": "Body",
+              "entity_type": "face"
+            }
+          },
+          "label": "C",
+          "note": "boss top"
+        },
+        {
+          "selector": {
+            "kind": "closest",
+            "point": [
+              30,
+              40,
+              5
+            ],
+            "query": {
+              "kind": "owned_by",
+              "part": "Body",
+              "entity_type": "face"
+            }
+          },
+          "label": "D",
+          "note": "back face (hidden in iso)"
+        }
+      ]
+    },
+    "files": [
+      "highlights.png"
+    ],
+    "elapsed_ms": 1633.5,
+    "timing_ms": {
+      "owner": 132.17,
+      "highlights": 65.07,
+      "worker": 1474.55,
+      "total": 1606.78
+    },
+    "banners": [],
+    "geometry": "current",
+    "tessellation": {
+      "tolerance_mm": 0.03125,
+      "requested_tolerance_mm": 0.03125,
+      "angular_deflection_rad": 0.25,
+      "triangles": 496,
+      "cap_triangles": 0,
+      "highlight_triangles": 130,
+      "coarsened": false,
+      "coarsen_steps": 0,
+      "coarsen_ladder": [
+        496
+      ]
+    },
+    "highlights": [
+      {
+        "label": "A",
+        "count": 1,
+        "rendered_count": 0,
+        "reasons": [
+          "history"
+        ]
+      },
+      {
+        "label": "B",
+        "count": 1,
+        "rendered_count": 1,
+        "reasons": [
+          "None"
+        ]
+      },
+      {
+        "label": "C",
+        "count": 1,
+        "rendered_count": 1,
+        "reasons": [
+          "None"
+        ]
+      },
+      {
+        "label": "D",
+        "count": 1,
+        "rendered_count": 1,
+        "reasons": [
+          "None"
+        ]
+      }
+    ],
+    "image_highlights": [
+      [
+        {
+          "label": "A",
+          "visible": false,
+          "visible_px": 0.0,
+          "ghost_px": 112,
+          "rendered": false,
+          "anchor_px": [
+            42.5,
+            334.6
+          ],
+          "label_box_px": [
+            75.5,
+            292.6,
+            97.5,
+            309.6
+          ]
+        },
+        {
+          "label": "B",
+          "visible": true,
+          "visible_px": 2093.0,
+          "ghost_px": 0,
+          "rendered": true,
+          "anchor_px": [
+            85.8,
+            356.8
+          ],
+          "label_box_px": [
+            118.8,
+            314.8,
+            140.8,
+            331.8
+          ]
+        },
+        {
+          "label": "C",
+          "visible": true,
+          "visible_px": 13572.0,
+          "ghost_px": 0,
+          "rendered": true,
+          "anchor_px": [
+            632.2,
+            286.8
+          ],
+          "label_box_px": [
+            665.2,
+            244.8,
+            687.2,
+            261.8
+          ]
+        },
+        {
+          "label": "D",
+          "visible": false,
+          "visible_px": 0.0,
+          "ghost_px": 0,
+          "rendered": true,
+          "anchor_px": [
+            677.4,
+            282.3
+          ],
+          "label_box_px": [
+            676.4,
+            307.3,
+            765.4,
+            327.3
+          ]
+        }
+      ]
+    ]
+  },
+  {
+    "name": "retained-build-failed",
+    "request": {
+      "views": [
+        "iso"
+      ]
+    },
+    "files": [
+      "retained-build-failed.png"
+    ],
+    "elapsed_ms": 1264.8,
+    "timing_ms": {
+      "owner": 60.42,
+      "highlights": 0.0,
+      "worker": 1174.83,
+      "total": 1235.26
+    },
+    "banners": [
+      "RETAINED GEOMETRY \u00b7 BUILD FAILED",
+      "VALIDATION PENDING"
+    ],
+    "geometry": "retained",
+    "tessellation": {
+      "tolerance_mm": 0.03125,
+      "requested_tolerance_mm": 0.03125,
+      "angular_deflection_rad": 0.25,
+      "triangles": 496,
+      "cap_triangles": 0,
+      "highlight_triangles": 0,
+      "coarsened": false,
+      "coarsen_steps": 0,
+      "coarsen_ladder": [
+        496
+      ]
+    },
+    "highlights": [],
+    "image_highlights": [
+      []
+    ]
+  },
+  {
+    "name": "validation-valid",
+    "request": {
+      "views": [
+        "iso"
+      ]
+    },
+    "files": [
+      "validation-valid.png"
+    ],
+    "elapsed_ms": 1132.9,
+    "timing_ms": {
+      "owner": 57.33,
+      "highlights": 0.0,
+      "worker": 1057.34,
+      "total": 1114.68
+    },
+    "banners": [],
+    "geometry": "current",
+    "tessellation": {
+      "tolerance_mm": 0.015625,
+      "requested_tolerance_mm": 0.015625,
+      "angular_deflection_rad": 0.25,
+      "triangles": 28,
+      "cap_triangles": 0,
+      "highlight_triangles": 0,
+      "coarsened": false,
+      "coarsen_steps": 0,
+      "coarsen_ladder": [
+        28
+      ]
+    },
+    "highlights": [],
+    "image_highlights": [
+      []
+    ]
+  },
+  {
+    "name": "validation-pending",
+    "request": {
+      "views": [
+        "iso"
+      ]
+    },
+    "files": [
+      "validation-pending.png"
+    ],
+    "elapsed_ms": 1184.3,
+    "timing_ms": {
+      "owner": 63.15,
+      "highlights": 0.01,
+      "worker": 1104.14,
+      "total": 1167.32
+    },
+    "banners": [
+      "VALIDATION PENDING"
+    ],
+    "geometry": "current",
+    "tessellation": {
+      "tolerance_mm": 0.015625,
+      "requested_tolerance_mm": 0.015625,
+      "angular_deflection_rad": 0.25,
+      "triangles": 12,
+      "cap_triangles": 0,
+      "highlight_triangles": 0,
+      "coarsened": false,
+      "coarsen_steps": 0,
+      "coarsen_ladder": [
+        12
+      ]
+    },
+    "highlights": [],
+    "image_highlights": [
+      []
+    ]
+  },
+  {
+    "name": "validation-failed",
+    "request": {
+      "views": [
+        "iso"
+      ]
+    },
+    "files": [
+      "validation-failed.png"
+    ],
+    "elapsed_ms": 1143.6,
+    "timing_ms": {
+      "owner": 43.49,
+      "highlights": 0.01,
+      "worker": 1072.97,
+      "total": 1116.46
+    },
+    "banners": [
+      "VALIDATION FAILED"
+    ],
+    "geometry": "current",
+    "tessellation": {
+      "tolerance_mm": 0.015625,
+      "requested_tolerance_mm": 0.015625,
+      "angular_deflection_rad": 0.25,
+      "triangles": 12,
+      "cap_triangles": 0,
+      "highlight_triangles": 0,
+      "coarsened": false,
+      "coarsen_steps": 0,
+      "coarsen_ladder": [
+        12
+      ]
+    },
+    "highlights": [],
+    "image_highlights": [
+      []
+    ]
+  }
+]

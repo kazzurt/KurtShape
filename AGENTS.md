@@ -15,6 +15,8 @@ instruction to implement all findings.
   A timeout does not prove a mutation failed; see the quickstart.
 - Ask before restarting or closing an existing app. It may have unsaved work.
   Code updates require a new app process; a running process keeps its old code.
+  `python -B tools/assistant_client.py --build-check` tells whether the running app
+  loaded this checkout's current code (`current`) or predates your edits (`stale`).
 - Preserve original CAD files. New installs allow assistant writes under
   `<checkout>/projects`; other destinations are granted by the user via Save.
   Never overwrite an FCStd open in another process.
