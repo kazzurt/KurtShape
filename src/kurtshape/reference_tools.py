@@ -1,6 +1,4 @@
 """Typed native consumers of geometry references and authored selectors."""
-import re
-
 from . import hole_tools, parameters, selectors
 
 OPS = {"fillet", "chamfer", "shell", "project_geometry", "edit_dress_up", "hole"}

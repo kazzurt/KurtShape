@@ -30,7 +30,6 @@ import re
 import shutil
 import threading
 import time
-import uuid
 
 import FreeCAD as App
 import Part
