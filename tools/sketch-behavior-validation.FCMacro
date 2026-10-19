@@ -175,7 +175,7 @@ def hostile_style_gate(widget, label):
     widget.show()
     wait(80)
     rendered = widget.grab().toImage()
-    ink = sum(rendered.pixelColor(x, y).name() == '#243447'
+    ink = sum(rendered.pixelColor(x, y).name() == ui.COLORS['ink']
               for y in range(rendered.height()) for x in range(rendered.width()))
     report['probe'].append({'hostile_widget': label, 'rendered_ink_pixels': ink,
                            'stylesheet_after_show': widget.styleSheet()})
@@ -295,10 +295,12 @@ def run():
         check('Finish accepts native line chain', bool(panel.finish_sketch()))
         check('Finished chain has no pending native transaction', not panel.document().HasPendingTransaction)
         panel.history_move('undo')
-        check('One document Undo removes the entire accepted line edit',
-              panel.document().getObject(sketch_name).GeometryCount == 0)
+        # Finishing a newly created sketch is one step with its creation (docs/HISTORY_LIFECYCLE.md).
+        check('One document Undo removes the new sketch with its entire accepted line edit',
+              panel.document().getObject(sketch_name) is None and not panel.document().HasPendingTransaction)
         panel.history_move('redo')
-        check('One Redo restores all connected lines', panel.document().getObject(sketch_name).GeometryCount == 3)
+        check('One Redo restores the sketch with all connected lines', panel.document().getObject(sketch_name) is not None
+              and panel.document().getObject(sketch_name).GeometryCount == 3)
         panel.select_feature(sketch_name)
         panel.edit_sketch()
         panel.normal()
@@ -332,8 +334,8 @@ def run():
                     w.metaObject().className() == 'Gui::QuantitySpinBox']
         check('Actual floating Line length and angle controls are visible', len(floating) >= 2)
         check('Floating native parameter text is dark on light background', all(
-            w.palette().color(QtGui.QPalette.Text).name() == '#243447'
-            and w.palette().color(QtGui.QPalette.Base).name() == '#ffffff' for w in floating))
+            w.palette().color(QtGui.QPalette.Text).name() == ui.COLORS['ink']
+            and w.palette().color(QtGui.QPalette.Base).name() == ui.COLORS['surface'] for w in floating))
         for index, widget in enumerate(floating):
             hostile_style_gate(widget, 'Floating native parameter ' + str(index))
         widgets('floating-single-line-hardened')
