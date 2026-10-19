@@ -1959,12 +1959,21 @@ class RenderOwnershipTests(RenderFixture, unittest.TestCase):
         reused = owner(os.getpid(), (created or 0) + 1)
         old = owner(None, None, age=25 * 3600, record=False)
         young = owner(None, None, record=False)
-        system = owner(4, 1) if os.name == "nt" else None  # the System process: access denied, kept
+        # An owner whose process cannot be queried is kept. The System process denies an
+        # unelevated user ("unknown"); an elevated runner (hosted CI) can read it, and its real
+        # creation time then differs from the recorded 1, which proves reuse.
+        system = owner(4, 1) if os.name == "nt" else None
+        system_readable = system is not None and render_jobs._process_identity(4)[0] == "alive"
+        unqueryable = owner(424242, 1)
+        identity = render_jobs._process_identity
         other = parent / "not-a-uuid"
         other.mkdir()
-        removed = render_jobs.sweep_owner_folders(parent, keep="none")
-        self.assertEqual(sorted(removed), sorted(folder.name for folder in (dead, reused, old)))
-        for folder in (alive, young, other) + ((system,) if system else ()):
+        with patch.object(render_jobs, "_process_identity",
+                          side_effect=lambda pid: ("unknown", None) if pid == 424242 else identity(pid)):
+            removed = render_jobs.sweep_owner_folders(parent, keep="none")
+        swept = (dead, reused, old) + ((system,) if system_readable else ())
+        self.assertEqual(sorted(removed), sorted(folder.name for folder in swept))
+        for folder in (alive, young, other, unqueryable) + ((system,) if system and not system_readable else ()):
             self.assertTrue(folder.exists(), folder)
 
 
