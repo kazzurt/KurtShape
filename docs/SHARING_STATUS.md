@@ -1928,15 +1928,17 @@ rollback, parameter rollback, `close_document`, render cancellation or the clien
      (≤200), tick max 3.2–4.2 ms (≤50), heartbeat gap max 26–29 ms (≤100), 0 idle dispatches, 10 syncs (≤10),
      checkpoint median 6.3–7.0 ms, one bridge inspect 179–237 ms (≤500) with 1 dispatch; matching U0. (The earlier
      135 ms heartbeat gap right after the A/B did not recur.)
-   - **bench-gui `-Holes 60 -Repeat 5` ×2 against U0** (`run-b2cffa7f…`, `run-34efc713…`): both passed, but the
-     comparison is **inconclusive**: other applications loaded the machine (startup 10.4–10.6 s against U0's 4.3–4.6 s;
-     GUI native recompute of the unchanged tip edit 0.80–1.08 s against 0.63 s), and run 2 is about twice run 1 on the
-     shell metrics. By the plan's rule `panel_refresh_ms` (19.0 / 39.5 ms, limit 16.6) counts as over in both; the other
-     shell metrics are within (`tick_idle` 0.03–0.07 ms, `tick_after_read_request` 21.5–46.0 ms against U0's 49.5).
-     Across all four 3.2 GUI bench runs (last night's two included) `inspect_after_change` is 85–94 ms against U0's
-     37 ms, `inspect_warm` 33–43 ms against 15 ms and `preview_first` about 17 s against 9.5 s, while the pinned
-     headless A/B shows the same metrics unchanged; whether that is a GUI-only 3.2 cost or the machine since U0
-     needs a paired 3.1 GUI run under identical conditions (proposed as a follow-up; f31 has no GUI runner).
+   - **bench-gui `-Holes 60 -Repeat 5` ×2 against U0** (`run-b2cffa7f…`, `run-34efc713…`): both passed. Taken alone
+     they looked slower than U0 (`panel_refresh_ms` 19.0 / 39.5 ms against the 16.6 ms limit, `inspect_after_change`
+     85–94 ms against 37 ms, `preview_first` about 17 s against 9.5 s). The **paired GUI A/B against 3.1**
+     (`runtime/contract-3.2/u10/gui-ab/README.md`; 3.1 and 3.2 roots that differ only in `src/`, interleaved, 12
+     unpinned and 8 pinned runs) settled it: **3.2 adds no GUI-only cost**. Pinned to the P-cores (`FFFF`, as the
+     headless A/B), 3.2/3.1 is 0.82–1.05 on every shell, inspect, preview, checkpoint and edit metric (panel refresh
+     9.9 against 12.1 ms, inspect after change 42.5 against 40.5 ms, preview first 9.6 against 10.1 s), and both match
+     U0. `tick_after_read_request` is about 3× faster in 3.2 (17 against 49 ms; one inspect dispatch instead of two).
+     Unpinned, the hidden GUI process runs in one of two speeds about 3× apart (likely E-cores or power throttling;
+     not proven, and busy % does not show it), which hit 3.1 and 3.2 alike; the U10 overruns were slow-mode runs.
+     Future GUI bench comparisons should pin both sides or compare only same-mode runs.
    - **bench-gui `-Parameters 50`** (informative, `run-0dc2712b…`): panel refresh 30.5 ms, idle tick 0.06 ms, tick
      after a refresh flag 47.3 ms, after a read request 41.2 ms, inspect after change 93.5 ms, parameter section
      refresh with a forced key change 1.5 ms, one parameter commit 325 ms; every section ok.
@@ -1987,8 +1989,7 @@ Kept visible for acceptance (inherited, not fixed in 3.2): the Part Studio Check
 be reconciled after a bridge timeout, only re-run; a single long batch step is not interrupted by the budget.
 
 Not done (scope): U9's formal walkthrough runner and `Contract32ExampleTests` (the five examples run end to end in the
-private smoke instead); `docs/contract-3.2/README.md`; responsiveness-preview ×3 (flaky at U0); the paired 3.1 GUI
-bench above.
+private smoke instead); `docs/contract-3.2/README.md`; responsiveness-preview ×3 (flaky at U0).
 
 Decisions for Kurt:
 
