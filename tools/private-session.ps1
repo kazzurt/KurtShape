@@ -3,6 +3,7 @@
 #   .\tools\private-session.ps1 -Session v32smoke            # start; prints the session file to use
 #   & $PYW -B tools\assistant_client.py --session runtime\private\v32smoke\assistant-session.json --json '{"op":"capabilities"}'
 #   .\tools\private-session.ps1 -Session v32smoke -Stop -Remove
+#   .\tools\private-session.ps1 -Session agent -Ensure -ProjectRoot C:\...\projects   # start, or reuse a running one
 #
 # The session lives in runtime\private\<name> (<= 24 characters) with its own user/system config,
 # TEMP, APPDATA, LOCALAPPDATA, evidence folder, ephemeral bridge port and assistant-session.json.
@@ -11,11 +12,16 @@
 # native platform with a minimized window. The process environment is restored afterwards.
 # -Stop kills only the recorded process, and only when its PID, start time and command line (which
 # must contain this session's user.cfg) all match the record; Kurt's app runs the same freecad.exe.
+# -Ensure reuses the session when its recorded process is still running (instead of refusing), after
+# checking that it already grants every -ProjectRoot. -ProjectRoot adds existing folders the app may
+# save and export to (the session folder itself is always granted).
 param(
     [Parameter(Mandatory=$true)][ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_-]{0,23}$')][string]$Session,
     [switch]$Stop,
     [switch]$Remove,
     [switch]$Visible,
+    [switch]$Ensure,
+    [string[]]$ProjectRoot = @(),
     [ValidateRange(10,900)][int]$TimeoutSeconds = 120
 )
 $ErrorActionPreference = 'Stop'
@@ -87,9 +93,31 @@ if ($Stop) {
 }
 if ($Remove) { throw '-Remove is only valid with -Stop' }
 if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) { throw ('Pinned runtime is missing: ' + $executable) }
+$grants = @()
+foreach ($folder in $ProjectRoot) {
+    if (-not [IO.Path]::IsPathRooted($folder) -or -not (Test-Path -LiteralPath $folder -PathType Container)) {
+        throw ('-ProjectRoot must be an existing absolute folder: ' + $folder)
+    }
+    $grants += [IO.Path]::GetFullPath($folder).TrimEnd('\')
+}
+$settings = Join-Path $sessionPath 'settings.json'
 if (Test-Path -LiteralPath $recordPath) {
     $previous = Get-Content -LiteralPath $recordPath -Raw | ConvertFrom-Json
-    if (Get-OwnedPrivateProcess $previous) { throw ('Private session is already running: PID ' + $previous.pid + '; stop it first') }
+    if (Get-OwnedPrivateProcess $previous) {
+        if (-not $Ensure) { throw ('Private session is already running: PID ' + $previous.pid + '; stop it first') }
+        $published = $null
+        try { $published = Get-Content -LiteralPath $sessionFile -Raw | ConvertFrom-Json } catch { }
+        if (-not $published -or [int]$published.pid -ne [int]$previous.pid) {
+            throw ('Private session PID ' + $previous.pid + ' is running but has not published ' + $sessionFile + '; stop it and start again')
+        }
+        $granted = @((Get-Content -LiteralPath $settings -Raw | ConvertFrom-Json).project_roots | ForEach-Object { ([string]$_).TrimEnd('\') })
+        $missing = @($grants | Where-Object { $granted -notcontains $_ })
+        if ($missing.Count) {
+            throw ('Running private session ' + $Session + ' does not grant ' + ($missing -join ', ') + '; stop it with -Stop and start it again')
+        }
+        Write-Output ('Private KurtShape PID ' + $previous.pid + ' (already running); session file: ' + $sessionFile)
+        return
+    }
     Remove-Item -LiteralPath $recordPath -Force
 }
 $temporary = Join-Path $sessionPath 'temporary'
@@ -111,8 +139,7 @@ try {
     $env:KURTSHAPE_NO_DEMO = '1'
     if ($Visible) { Remove-Item Env:QT_QPA_PLATFORM -ErrorAction SilentlyContinue } else { $env:QT_QPA_PLATFORM = 'offscreen' }
     # Without workspace_layout, Settings infers 'legacy' for an existing file, which grants CADkz/Codex.
-    $settings = Join-Path $sessionPath 'settings.json'
-    [IO.File]::WriteAllText($settings, (@{ workspace_layout = 'portable'; project_roots = @($sessionPath) } | ConvertTo-Json),
+    [IO.File]::WriteAllText($settings, (@{ workspace_layout = 'portable'; project_roots = @(@($sessionPath) + $grants) } | ConvertTo-Json),
         [Text.UTF8Encoding]::new($false))
     Remove-Item -LiteralPath $sessionFile -ErrorAction SilentlyContinue
     $arguments = @('-u', ('"' + $userConfig + '"'), '-s', ('"' + $systemConfig + '"'),

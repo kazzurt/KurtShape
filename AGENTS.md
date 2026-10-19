@@ -10,6 +10,12 @@ instruction to implement all findings.
   Use the bundled Python; do not pip-install FreeCAD or change the engine version.
 - Model through the authenticated local assistant bridge. Do not take over the
   user's CAD window with desktop clicks, keystrokes, or screenshots.
+- Do not open windows on the user's screen unasked. Use the user's running app
+  when they want to watch; otherwise run a hidden agent app with
+  `tools/assistant.ps1 -Hidden` (private profile and port, offscreen, no window)
+  or a headless Controller, save results under `projects/`, and give the user the
+  path. Launch the visible app only when the user asks. Stop the hidden app with
+  `tools/assistant.ps1 -Hidden -Stop` when done.
 - Check `capabilities` and `list_documents` before modeling. Use the current
   document UUID/revision and keep mutation request IDs for reconciliation.
   A timeout does not prove a mutation failed; see the quickstart.

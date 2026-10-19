@@ -28,6 +28,24 @@ operation, write a UTF-8 JSON request file (without BOM), then:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\assistant.ps1 -RequestFile .\projects\my-part\request.json
 ```
 
+### Hidden agent app (no window)
+
+When the user does not want to watch, or KurtShape is not running, do not launch the
+visible app: run a hidden one instead. It is a private KurtShape with its own profile,
+port and folder under `runtime\private\agent`, drawn offscreen with no window:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\assistant.ps1 -Hidden -ProjectRoot C:\path\to\my-projects
+```
+
+It starts the app (or reuses it if it is running), sends `capabilities` and prints its
+session file; pass that file to `-Session` here or to `assistant_client.py --session`.
+`-ProjectRoot` (optional, repeatable) lets it save and export to that folder besides
+`projects/`. It loads this checkout's code when it starts. When finished, save the
+model, `close_document`, and stop it with `.\tools\assistant.ps1 -Hidden -Stop` (its
+folder is kept). Give the user the saved path; never save over a file open in their app.
+Parallel agents use `-HiddenSession <name>` each.
+
 For a separate app session add `-Session <absolute-path-to-assistant-session.json>`.
 By default the client honors `KURTSHAPE_SESSION_DIR`, otherwise it uses this
 checkout's `runtime/assistant-session.json`. It connects only to local loopback
