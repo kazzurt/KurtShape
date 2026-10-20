@@ -315,6 +315,49 @@ class AssemblyWorkflowTests(unittest.TestCase):
         self.assertEqual(provenance["sha256"], hashlib.sha256(exported.read_bytes()).hexdigest())
         self.assertEqual(provenance["revision"], self.state["revision"])
 
+    def test_saved_assembly_reopens_valid_when_source_needs_full_precision(self):
+        # FreeCAD saves Part shapes as fixed-decimal BREP text, which rounds very
+        # small values. A studio part regenerates at full precision when its file
+        # is recomputed for insertion (a turned part on an offset datum plane
+        # carries ~1e-16 axis terms); its snapshot must still match the geometry
+        # fingerprint after every save and reopen.
+        assembly_state = self.state
+        self.state = None
+        self.call("new", name="Precision source")
+        self.call("create_plane", id="ProfilePlane", base_plane="XZ", offset=36.83)
+        self.call("create_sketch", id="Profile", support={"feature": "ProfilePlane"})
+        self.call("add_polyline", sketch="Profile", closed=True,
+                  points=[[0, 19.05], [5.842, 19.05], [5.842, 30.48], [7.747, 30.48], [7.747, 31.75], [0, 31.75]])
+        self.call("revolve", id="Turned", profile="Profile", angle="360 deg", operation="new",
+                  axis={"origin": [0, -36.83, 0], "direction": [0, 0, 1]})
+        part = self.state["studio"]["parts"][0]["id"]
+        self.call("set_part_appearance", part=part, name="Turned plug")
+        path = self.folder / "precision-sensitive-source.FCStd"
+        self.call("save", path=str(path))
+        source_doc = self.state["document_id"]
+        self.state = assembly_state
+        candidates = self.call("assembly_candidates", path=str(path))["candidates"]
+        source_id = next(row["id"] for row in candidates if row["name"] == "Turned plug")
+        self.call("create_assembly", id="PrecisionAssembly", name="Precision assembly")
+        self.insert("Plug", path=path, source_id=source_id)
+        self.insert("PlugCopy", path=path, source_id=source_id)
+        self.call("move_assembly_instance", instance="PlugCopy", position_mm=[20, 0, 0], rotation_xyzw=[0, 0, 0, 1])
+        self.assertEqual(self.state["build_status"], "valid")
+        volume = self.state["measurements"]["volume_mm3"]
+        native = self.folder / "precision-assembly.FCStd"
+        for cycle in range(2):
+            self.call("save", path=str(native))
+            App.closeDocument(self.doc.Name)
+            self.call("open", path=str(native))
+            self.assertEqual(self.state["build_status"], "valid", (cycle, self.state.get("build_errors")))
+            self.assertAlmostEqual(self.state["measurements"]["volume_mm3"], volume, places=6)
+        self.assertEqual(len(self.state["assembly"]["instances"]), 2)
+        self.assertIn(source_doc, self.core.documents)
+        # A headless save has no GUI view data; opening it in the GUI then shows
+        # the occurrences (assembly.present), which FreeCAD would restore hidden.
+        from kurtshape import assembly as native
+        self.assertTrue(native.saved_without_gui(self.doc))
+
     @support.requires_external("Dodec pipe mount.step", "Dodec Hub Conformal.step")
     def test_original_three_solid_steps_insert_explicit_bodies_and_preserve_sources(self):
         source_paths = [support.external(filename)

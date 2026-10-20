@@ -364,6 +364,38 @@ def candidates(path):
         return values
 
 
+def _as_saved(shape):
+    """Return ``shape`` exactly as a saved document restores it.
+
+    FreeCAD stores Part shapes in an FCStd as fixed-decimal BREP text, which
+    rounds very small values (-2.9999999999999994e-16 is restored as -3e-16).
+    A source recomputed for insertion can carry such values, so the snapshot
+    would no longer match its geometry fingerprint after the assembly is saved
+    and reopened. Taking the snapshot through one save/restore cycle makes the
+    stored shape, its fingerprint and every reopen agree; further cycles are
+    exact.
+    """
+    active = App.ActiveDocument.Name if App.ActiveDocument else None
+    with tempfile.TemporaryDirectory(prefix="kurtshape-assembly-snapshot-") as temporary:
+        path = Path(temporary) / "snapshot.FCStd"
+        doc = App.newDocument("KurtShapeAssemblySnapshot", hidden=True)
+        try:
+            doc.addObject("Part::Feature", "Snapshot").Shape = shape
+            doc.saveAs(str(path))
+        finally:
+            App.closeDocument(doc.Name)
+        doc = App.openDocument(str(path), True)
+        try:
+            restored = doc.getObject("Snapshot").Shape.copy()
+        finally:
+            App.closeDocument(doc.Name)
+            if active and active in App.listDocuments():
+                App.setActiveDocument(active)
+    if restored.isNull() or abs(restored.Volume - shape.Volume) > 1e-6 * max(1.0, abs(shape.Volume)):
+        raise _error("assembly_runtime", "The native snapshot did not survive a save and restore")
+    return restored
+
+
 def insert(doc, request):
     asm = get(doc, request.get("assembly"))
     native_id = _id(doc, request.get("id"), "Instance")
@@ -384,6 +416,7 @@ def insert(doc, request):
             shape = selected.Shape.copy()
             source_placement = selected.getGlobalPlacement() * selected.Placement.inverse() * shape.Placement
             shape.Placement = App.Placement()
+            shape = _as_saved(shape)
             embedded = doc.addObject("Part::Feature", "EmbeddedPart")
             embedded.Label = "Embedded source: " + selected.Label
             embedded.Shape = shape
@@ -627,6 +660,60 @@ def remove(doc, identifier, cascade=False):
     else:
         raise _error("unsupported_assembly_delete", "Choose a supported joint or occurrence")
     solve(doc)
+
+
+def saved_without_gui(doc):
+    """True when the document's file has no GUI view data (a headless save)."""
+    path = Path(doc.FileName) if doc.FileName else None
+    if path is None or not path.is_file():
+        return False
+    try:
+        with zipfile.ZipFile(path) as archive:
+            return "GuiDocument.xml" not in archive.namelist()
+    except (OSError, zipfile.BadZipFile):
+        return False
+
+
+def present(doc):
+    """Repair the GUI view of an assembly that was saved without the GUI.
+
+    A file saved by a headless session carries no view state. The GUI then
+    restores each native joint with a placeholder view proxy (an integer),
+    which the joint safety check rejects, and hides every object, so the
+    viewport stays empty. Attach the bundled joint view providers, as creating
+    the joint in the GUI does (only exact native joints with a placeholder or
+    missing view proxy change; anything else is left for ``validation_errors``
+    to judge). When the file has no GUI data at all, also show the assembly,
+    its joints and every occurrence and keep the embedded sources hidden, as
+    insertion in the GUI does; a GUI-saved file keeps its own visibility.
+    Only view providers change.
+    """
+    if not App.GuiUp:
+        return
+    values = assemblies(doc)
+    if len(values) != 1 or getattr(values[0], "KurtShapeAssembly", "") != "1":
+        return
+    native, _ = _native()
+    for joint in list(_group(values[0]).Group):
+        if joint.TypeId != "App::FeaturePython" or not joint.ViewObject:
+            continue
+        proxy = joint.ViewObject.Proxy
+        if proxy is not None and (isinstance(proxy, bool) or not isinstance(proxy, (int, float))):
+            continue
+        if type(joint.Proxy) is native.GroundedJoint:
+            native.ViewProviderGroundedJoint(joint.ViewObject)
+        elif type(joint.Proxy) is native.Joint:
+            native.ViewProviderJoint(joint.ViewObject)
+    if not saved_without_gui(doc):
+        return
+    asm = values[0]
+    for obj in (asm, _group(asm), *_group(asm).Group, *result_objects(doc)):
+        if obj.ViewObject:
+            obj.ViewObject.Visibility = True
+    for obj in result_objects(doc):
+        source = obj.LinkedObject
+        if source is not None and getattr(source, "KurtShapeEmbeddedSource", False) and source.ViewObject:
+            source.ViewObject.Visibility = False
 
 
 def safe_object(obj):

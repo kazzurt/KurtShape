@@ -1942,6 +1942,8 @@ class Controller:
                     elif not self.observer.state(doc).get("hasher_migrated"):
                         self._rebuild_reason_on_open(doc)
                         studio.refresh_validation(doc)
+                    # Joints saved without the GUI get their native view providers first.
+                    native_assembly.present(doc)
                     if native_assembly.inspect(doc):
                         try:
                             native_assembly.solve(doc)
