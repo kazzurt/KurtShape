@@ -40,6 +40,15 @@ class RouterTests(unittest.TestCase):
         self.assertEqual(self.router.resolve("Shift+S", "sketch")["id"], "sketch.point")
         self.assertEqual(self.router.resolve("Shift+S", "assembly")["id"], "assembly.snap")
 
+    def test_shift_x_is_section_view_in_part_studio_assembly_and_sketch(self):
+        for context in ("part_studio", "assembly", "sketch", ["rollback", "part_studio"]):
+            entry = self.router.resolve("Shift+X", context)
+            self.assertEqual((entry["id"], entry["label"]), ("view.section", "Section View"), context)
+        holders = [item["id"] for item in self.router.entries if normalize_key(item["key"]) == "Shift+X"]
+        self.assertEqual(holders, ["view.section"])
+        self.assertNotIn("clip", json.dumps(next(item for item in self.router.entries
+                                                  if item["id"] == "view.section")).lower())
+
     def test_fillet_dispatches_to_correct_native_tool(self):
         self.router.dispatch("Shift+F", "part_studio")
         self.router.dispatch("Shift+F", "sketch")

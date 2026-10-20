@@ -1,4 +1,4 @@
-"""View actions backed by FreeCAD camera, tessellation and clipping APIs."""
+"""View actions backed by FreeCAD camera and tessellation APIs; Section View lives in section_view."""
 from __future__ import annotations
 
 import json
@@ -115,7 +115,7 @@ class ViewportActions:
                     dialog.close()
         if doc.Name not in self._documents:
             self._documents[doc.Name] = {'document': doc, 'views': {}, 'quality': None,
-                                         'construction': {}, 'clipping': None, 'named_raw': None}
+                                         'construction': {}, 'named_raw': None}
         state = self._documents[doc.Name]
         meta = doc.getObject('KurtShapeProject')
         raw = getattr(meta, NAMED_VIEWS_PROPERTY, None) if meta is not None else None
@@ -366,37 +366,19 @@ class ViewportActions:
         dialog.show()
         return dialog
 
-    def section_view(self):
-        """Open the native clipping controls with real X/Y/Z/custom planes."""
-        doc, _, _ = self._context()
-        if doc is None:
-            return False
-        import FreeCADGui as Gui
-        from PySide import QtGui
-        state = self._state(doc)
-        main = Gui.getMainWindow()
-        before = main.findChildren(QtGui.QDockWidget, 'Clipping')
-        Gui.runCommand('Std_ToggleClipPlane')
-        docks = main.findChildren(QtGui.QDockWidget, 'Clipping')
-        # Native clipping creates its own per-document dock and owns its planes.
-        # Existing docks remain alive while hidden, so ensure controls can reopen.
-        created = [dock for dock in docks if dock not in before]
-        dock = state['clipping']
-        if created:
-            dock = created[-1]
-        elif dock not in docks:
-            dock = next((candidate for candidate in docks if candidate.isVisible()), None)
-        state['clipping'] = dock
-        if dock is not None:
-            dock.show()
-            dock.raise_()
-        return dock is not None
-
 
 def callbacks(parent=None):
-    """Return retained callbacks for the four Onshape view shortcut ids."""
+    """Return retained callbacks for the four Onshape view shortcut ids.
+
+    Shift+X (``view.section``) is Section View; the Panel owns one so its
+    selection, history and Escape hooks reach the same instance.
+    """
     actions = ViewportActions(parent)
+    section = getattr(parent, 'section_view', None)
+    if section is None:
+        from .section_view import SectionView
+        section = SectionView(parent)
     return {'view.construction': actions.toggle_construction,
             'view.named': actions.named_views,
             'view.high_quality': actions.toggle_high_quality,
-            'view.section': actions.section_view}
+            'view.section': section.toggle}

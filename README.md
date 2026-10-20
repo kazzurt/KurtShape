@@ -26,6 +26,7 @@ Setup verifies the official runtime download and runs a disposable modeling chec
 - **Parameters:** type a value in the left Parameters section and press Enter; `=` starts a formula; Esc discards. "+" adds one; Copy reference gives the text for a feature's Formula field.
 - **Edit:** double-click a sketch, Extrude, Fillet or Chamfer history row. Fillet/Chamfer let you change edges and value. Ctrl+Z / Ctrl+Y undo and redo.
 - **Navigate:** middle-drag orbits, Ctrl+middle pans, Shift+middle zooms. Alt+C searches all tools; Shift+/ shows shortcuts.
+- **Section View:** select a face or plane and press Shift+X (or Shift+X, then click one). Round faces cut through their centre on Top, Front or Right, whichever faces you; drag the orange arrow to move the cut; Shift+X or Esc leaves. View only, never saved.
 - **Files:** Ctrl+S saves native FCStd. Open accepts FCStd and STEP; export produces STEP/STL. Messages retains error details for troubleshooting.
 
 [Part Studio walkthrough](docs/U2_WALKTHROUGH.md) · [Extrude editing](docs/EXTRUSION_EDIT.md) · [Fillet/Chamfer editing](docs/FILLET_CHAMFER_EDIT.md) · [Assembly workflow](docs/assembly-workflow/WORKFLOW.md)

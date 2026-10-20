@@ -19,6 +19,7 @@ from . import geometry
 from .shortcuts import ShortcutRouter
 from .general_actions import GeneralActions
 from .viewport_actions import callbacks as viewport_callbacks
+from .section_view import SectionView
 from .theme import apply_theme, apply_view_theme, COLORS
 from .feature_tools import available_catalog
 from .quantity_field import QuantityField
@@ -116,6 +117,8 @@ class SelectionObserver:
         p = self.panel
         if p.core.busy:
             return
+        if p.section_view.selection_pick(document, object_name, subelement):
+            return
         if p.sketch_plane_editor.selection_pick(document, object_name, subelement):
             return
         if p.pending_sketch and not p.selecting_support:
@@ -135,6 +138,9 @@ class Panel(QtGui.QDockWidget):
         self.setMinimumWidth(235)
         self.setMaximumWidth(430)
         self.core, self.state = controller, None
+        # Shift+X Section View: a view-only cut, never a document change. Created first:
+        # the event filters installed below already feed it mouse positions.
+        self.section_view = SectionView(self)
         # close_document asks what this panel is editing in a document (contract 3.2, C25).
         controller.editor_activity = self.editor_activity
         self._result_failures_shown = None
@@ -698,6 +704,8 @@ class Panel(QtGui.QDockWidget):
             text = "Extrude · editing feature" if self.task == "pad" else "Remove material · editing feature"
         elif self.pending_sketch:
             text = "New sketch · select a plane or planar face"
+        elif self.section_view.status_text():
+            text = self.section_view.status_text()
         else:
             state = self.state or {}
             text = "Local document · mm · " + state.get("build_status", "ready").replace("_", " ")
@@ -1246,6 +1254,7 @@ class Panel(QtGui.QDockWidget):
         self.sketch_colors.apply()
         self.sketch_regions.apply()
         self.sketch_plane_editor.apply_visibility()
+        self.section_view.sync()
         processed = dequeued = False
         if getattr(self.bridge, "deferred", None):  # test transports have no parked jobs
             # Contract 3.2 F2: finish parked render_view requests (one process poll per tick while a job runs).
@@ -1959,8 +1968,19 @@ class Panel(QtGui.QDockWidget):
         return None
 
     def cancel_key(self):
-        """Escape: revert an edited parameter field first, otherwise cancel the task (3b D10)."""
-        return True if self.parameter_section.cancel_edit() else self.cancel_task()
+        """Escape: revert an edited parameter field first, otherwise cancel the task (3b D10).
+
+        Section View: Escape first ends its face/plane pick, and leaves the section only when
+        there is no task to cancel, so an open feature keeps priority.
+        """
+        if self.parameter_section.cancel_edit():
+            return True
+        if self.section_view.cancel_pick():
+            return True
+        result = self.cancel_task()
+        if result is False and self.section_view.cancel():
+            return True
+        return result
 
     def show_parameter_use(self, feature_id, parameter_key):
         """Parameters section 'Used by': select the consumer and show the dimension it drives (3b §5)."""
@@ -1998,6 +2018,8 @@ class Panel(QtGui.QDockWidget):
         key = item.data(0, QtCore.Qt.UserRole)
         picker = getattr(self, "sketch_plane_editor", None)
         if picker and picker.history_pick(key):
+            return
+        if self.section_view.picking and self.section_view.history_pick(key, self.history_controller.resolve(key)):
             return
         if key.startswith("plane:"):
             if self.pending_sketch:
@@ -4413,6 +4435,8 @@ class Panel(QtGui.QDockWidget):
         return callbacks
 
     def eventFilter(self, watched, event):
+        if self.section_view.event(watched, event):
+            return True  # a Section View arrow drag owns this mouse event
         self.sketch_cursor.event(watched, event)
         self.sketch_snapping.event(watched, event)
         self.sketch_regions.event(watched, event)
@@ -4471,6 +4495,7 @@ class Panel(QtGui.QDockWidget):
         self._cancel_step_export()
         self._geometry_check_closed = True
         self._cancel_geometry_check()
+        self.section_view.shutdown()
         self.sketch_cursor.close()
         self.sketch_snapping.restore()
         self.responsiveness.close()

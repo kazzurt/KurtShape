@@ -13,7 +13,7 @@ callbacks.update(viewport_callbacks(self))
 | Shift+P | `view.construction` | Toggle visual layers of construction geometry in the sketch being edited |
 | Shift+V | `view.named` | Open named camera bookmarks; save, recall, replace and remove |
 | Shift+R | `view.high_quality` | Toggle object tessellation deviation and angular deflection |
-| Shift+X | `view.section` | Open the native Clipping dock with X/Y/Z and custom plane controls |
+| Shift+X | `view.section` | Section View: a view-only cut on a face or plane with a drag arrow (below) |
 
 Construction visibility uses
 `SketcherGui.ViewProviderSketchGeometryExtension.VisualLayerId=2`, the same hidden
@@ -47,17 +47,84 @@ tessellation, not the solid BRep. Native angular deflection can also influence
 native mesh-export tessellation. Objects added after enabling quality retain
 their native defaults.
 
-Section view opens `Std_ToggleClipPlane` and exposes its actual clipping dock.
-Users enable the desired native plane there. It creates no solid feature and
-does not cut or replace the BRep. Hidden clipping controls reopen; the native
-dialog owns the Coin clip planes and document activation behavior.
+## Section View (Shift+X)
+
+`src/kurtshape/section_view.py`; the Panel owns one `SectionView` and feeds it
+selection, history clicks, Escape, its tick and mouse events. It replaced the
+native Clipping dock (X/Y/Z check boxes and number fields, hollow cuts, no way to
+close it with Shift+X) on 2026-10-20. Same behaviour in Part Studio, Assembly and
+while sketching.
+
+- **Start:** select a face or plane and press Shift+X, or press Shift+X with
+  nothing selected and then click a face, a visible datum plane, or Top / Front /
+  Right in the history. Escape cancels that pick. Shift+X with an edge or vertex
+  selected says it needs a face or plane.
+- **Which plane:** a round face (cylinder, cone, torus, sphere, revolved face, or
+  a flat face whose outline is one circle, such as an end cap or washer face) and
+  any other curved face cut through their centre: the middle of the axis within
+  the face, or the face's centre of mass for freeform faces. The plane is the
+  origin plane (Top, Front or Right) the camera looks at most squarely; a tilted
+  axis keeps that origin-aligned plane through the centre. In an assembly these
+  are the assembly's planes. A non-round flat face, a datum plane or an origin
+  plane cuts on itself (nudged 2e-6 of the model size toward the camera so the
+  face itself never flickers).
+- **What shows:** the side between the camera and the plane is hidden, so the cut
+  faces you. Cut faces are filled, unshaded, in exactly the colour of the body
+  being cut (the colour its view draws), with a dark outline. A dashed outline shows the plane (with a faint fill while
+  dragging), and an orange double arrow with a ring sits at the cut's centre (for
+  planes, over the model). The status bar reads
+  `Section View · Right plane · +12.40 mm · drag the arrow · Shift+X or Esc exits`.
+- **Adjust:** drag the arrow (or its ring) to slide the cut along the normal. The
+  offset follows the mouse along the arrow's on-screen direction; when the cut
+  faces you squarely and the arrow points at you, vertical motion moves it (up
+  pulls it toward you). The cut stays within the shown parts. There are no inputs.
+- **Leave or move:** Shift+X with nothing selected or Escape leaves (Escape first
+  cancels an open feature dialog). Shift+X with another face or plane selected
+  moves the cut there. Starting clears the selection.
+- **View only:** nothing is added to the document: no feature, history row,
+  transaction, undo step, revision or modified flag, and nothing is saved.
+
+How it is built:
+
+- The model is clipped by one `SoClipPlane` inserted just before the viewer's
+  `ObjectGroup`, where FreeCAD's own clip plane goes, so sketch editing in
+  `EditingRoot` stays whole. Native ray picks respect it: clicks cannot select
+  hidden geometry. The cut faces, plane outline and arrow sit in a separator
+  before the clip plane and are never clipped; the arrow is an unpickable
+  `SoAnnotation` drawn over the model and kept about 58 px long on screen.
+- Cut faces come from a tessellation of each visible solid (cached per part,
+  shape, placement and tolerance), not from OCCT `slice`, which takes about
+  0.5 s per Shell M solid. A cut walks only the triangles in the slab around the
+  plane, chains crossing edges into closed loops, nests holes by depth and fills
+  them by ear clipping (`polygon_fill.py`, a port of Mapbox earcut). Pure Python:
+  the GUI process keeps numpy out. Measured on 2026-10-20: a cut-face update takes
+  about 5 ms on Shell M and 35 ms on the LED pole battery assembly; meshing on
+  first use takes 0.3 s and 2.0 s and runs a slice at a time after the cut first
+  paints, so faces fill in part by part; afterwards the other visible solids are
+  meshed in idle time, one per turn, so a drag into a part the cut did not cross
+  at first fills live too. Areas match OCCT's exact section within about 0.1 %.
+- During a drag the cut faces are recomputed in the same mouse event that moves
+  the clip plane (never meshing there; a solid not meshed yet stays open until the
+  drag ends). Recomputing them on a timer a frame later made a cut moving toward
+  the camera flicker: for that frame the clip had already opened the solid while
+  its cut face was still behind, so its hollow inside showed (fixed 2026-10-20).
+- The arrow is dragged in the Panel's application event filter, which sees mouse
+  events before the viewer: a left press within 7 px of the drawn arrow or inside
+  its ring takes the press, moves and release, so neither selection nor any
+  navigation style reacts. (A Coin `SoTranslate1Dragger` was tried first; its
+  drag crashed in Coin with an access violation and cannot follow an end-on arrow.)
+- Model edits, visibility and colour changes refresh the cut faces from the Panel
+  tick; closing the document drops the section.
+
+The headless `render_view` sections (`model_render.py`, `render_jobs.py`) are a
+separate, exact renderer for model images and are unchanged.
 
 Primary source references:
 
 - [Native Sketcher visibility layers and checkbox](https://github.com/FreeCAD/FreeCAD/blob/main/src/Mod/Sketcher/Gui/TaskSketcherElements.cpp)
 - [Native geometry cloning and extension APIs](https://github.com/FreeCAD/FreeCAD/blob/main/src/Mod/Part/App/GeometryPyImp.cpp)
-- [Native camera bookmarks and clipping command](https://github.com/FreeCAD/FreeCAD/blob/main/src/Gui/CommandView.cpp)
-- [Native clipping plane implementation](https://github.com/FreeCAD/FreeCAD/blob/main/src/Gui/Clipping.cpp)
+- [Native camera bookmarks](https://github.com/FreeCAD/FreeCAD/blob/main/src/Gui/CommandView.cpp)
+- [Viewer scene roots used by Section View (EditingRoot, ObjectGroup)](https://github.com/FreeCAD/FreeCAD/blob/main/src/Gui/View3DInventorViewer.cpp)
 
 ## Reproduce verification
 
@@ -79,7 +146,8 @@ property changes.
 
 Results are recorded in `validation/viewport-actions-test-result.json`, including
 native metadata restoration, unchanged BReps, camera fields, native dialog button
-behavior, an enabled Coin clipping plane and document-scoped camera caches.
+behavior and document-scoped camera caches. (That 2026-10-02 record still lists the
+retired native clipping checks; the macro now checks Section View's pick mode.)
 The expanded checks also save/close/reopen an FCStd file, restore perspective
 camera bookmarks, preserve exact geometry/constraints/construction flags and
 canonical attachment data, delete/save/reopen a bookmark, reject malformed data,
@@ -90,3 +158,14 @@ comparison.
 The completed isolated run passed all 40 assertions. All helper processes closed
 their own native documents and exited; the user's live FreeCAD process was not
 used.
+
+Section View has its own recipe: `tools/run_gui_recipe.ps1 -Recipe section-view`
+runs `tools/section-view-validation.FCMacro` in a hidden private FreeCAD on copies
+of `projects/led-pole-battery/parts/Shell M.FCStd` and the LED pole battery
+assembly (override with `SECTION_PART_SOURCE` / `SECTION_ASSEMBLY_SOURCE`). It
+presses Shift+X and Escape through the shortcut router, clicks faces and drags the
+arrow with Qt mouse events, and checks plane choice, clip placement, cut faces,
+picking, arrow size on zoom, Escape order, cut-face colour, live update time, that
+every drag event already shows the cut face at the moved cut (no flicker), and that
+the document is untouched. 45 checks passed on 2026-10-20 (cut-face updates 3 ms on
+Shell M, 25 ms on the assembly). Unit tests: `tests/test_section_view.py`.

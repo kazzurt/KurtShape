@@ -570,6 +570,8 @@ Why downgraded rather than confirmed: (1) The omission is a documented, validate
 
 ### B-10 Section view is the raw native Clipping dock: no capped faces, native widget styling, and a toggle that only ever opens
 
+**Status 2026-10-20: addressed.** Shift+X is now Section View (`src/kurtshape/section_view.py`, [view tools](../VIEWPORT_ACTIONS.md#section-view-shiftx)): a toggle on a face or plane, filled cut faces, a drag arrow and no dialog; the native Clipping dock is no longer used.
+
 **opportunity · severity low · confidence medium · user value medium · effort M** · verification: not independently verified · evidence basis: preference · not independently verified
 
 - **Source:** `src/kurtshape/viewport_actions.py` · `ViewportActions.section_view` · lines 369-393

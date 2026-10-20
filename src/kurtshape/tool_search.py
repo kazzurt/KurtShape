@@ -22,6 +22,7 @@ ALIASES = {
     "circular pattern": ["polar pattern", "radial array"],
     "boolean parts": ["union", "subtract", "combine"],
     "split": ["slice", "divide"],
+    "section view": ["cross section", "cut view"],
     "transform": ["move part", "rotate part", "copy part"],
     "dimension": ["constraint", "measure dimension", "size"],
     "line": ["polyline"],

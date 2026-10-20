@@ -12,6 +12,7 @@ This is a complete key registry with partial function equivalence. Unsupported o
 - `Shift+E` opens Extrude; `Shift+W` opens Revolve. `Shift+F` means edge fillet outside a sketch and sketch fillet inside one.
 - `S` opens a compact tool palette at the pointer; `Alt+C` opens current-context tool search; `Shift+/` opens the complete searchable shortcut list.
 - The single backquote key opens native entities under the pointer, including occluded faces, with hover highlighting and exact subelement selection.
+- `Shift+X` is **Section View**: select a face or plane, then Shift+X (or Shift+X, then click one). Round faces cut through their centre on the origin plane facing you; flat faces and planes cut on themselves. Drag the arrow to move the cut; Shift+X or Escape leaves. View only. Details: [view tools](VIEWPORT_ACTIONS.md#section-view-shiftx).
 - `Shift+1` through `Shift+7` select front, back, left, right, top, bottom, and isometric views. `F` fits the current view, `W` opens box zoom, `Z` zooms out, and `Shift+Z` zooms in.
 - `Ctrl+S`, `Ctrl+N`, and `Ctrl+O` are separately labeled local save/new/open extensions. The different official drawing and Feature Studio meanings of `Ctrl+S` remain recorded in their own contexts.
 
@@ -99,7 +100,7 @@ Use `ShortcutRouter(app, callbacks, context_provider, status_callback, registry_
 | Rotate right 15 degrees | Right | view | callback |  |
 | Rotate up 15 degrees | Up | view | callback |  |
 | Rotate down 15 degrees | Down | view | callback |  |
-| Section view | Shift+X | view | callback |  |
+| Section View | Shift+X | view | callback | View-only cut on the selected or clicked face or plane, with a drag arrow; replaces the native Clipping dock. |
 | Select through transparent | Alt+Click | view | pass_through |  |
 | Show hidden parts | Shift+Y | view | callback |  |
 | Top view | Shift+5 | view | native | Std_ViewTop |

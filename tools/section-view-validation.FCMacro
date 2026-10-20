@@ -1,0 +1,644 @@
+"""Section View (Shift+X) in the production Panel: Part Studio and Assembly, keys, clicks and the drag arrow.
+
+Private hidden native GUI on copies of a Part Studio with many round faces and an
+assembly; never the user's window, profile or files. Keys go through the real
+shortcut router and mouse events through the real 3D viewer.
+"""
+import json
+import math
+import os
+from pathlib import Path
+import queue
+import shutil
+import sys
+import time
+import traceback
+
+sys.dont_write_bytecode = True
+root = Path(os.environ['KURTSHAPE_ROOT']).resolve()
+session = Path(os.environ['KURTSHAPE_SESSION_DIR']).resolve()
+assert session.is_relative_to(root / 'runtime')
+assert Path(os.environ['FREECAD_USER_HOME']).resolve().is_relative_to(session)
+sys.path.insert(0, str(root / 'src'))
+sys.path.insert(0, str(root / 'tools'))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+from kurtshape import section_view as sv
+from kurtshape import selectors
+from kurtshape_evidence import evidence_dir
+
+PROJECT = root.parent.parent / 'projects' / 'led-pole-battery'
+PART_SOURCE = Path(os.environ.get('SECTION_PART_SOURCE', str(PROJECT / 'parts' / 'Shell M.FCStd')))
+ASSEMBLY_SOURCE = Path(os.environ.get('SECTION_ASSEMBLY_SOURCE', str(PROJECT / 'LED Pole Battery Assembly.FCStd')))
+
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir('section-view')
+report = {'passed': False, 'checks': [], 'pid': os.getpid(), 'images': [], 'details': {},
+          'method': 'Private hidden native GUI; production ui.start() Panel; Shift+X and Escape through the shortcut '
+                    'router on the 3D viewport; clicks and arrow drags as Qt mouse events on the viewer; '
+                    'document revision, modified flags, undo count and objects compared before and after.'}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / 'gui-result.json').write_text(json.dumps(report, indent=2, default=str), encoding='utf-8')
+
+
+def check(label, condition, detail=None):
+    if detail is not None:
+        report['details'][label] = detail
+    assert condition, label + ' · ' + json.dumps(detail, default=str)[:1500]
+    report['checks'].append(label)
+    report['check_count'] = len(report['checks'])
+    save()
+
+
+def wait(ms=150):
+    QtTest.QTest.qWait(ms)
+
+
+def viewport():
+    area = main.findChild(QtWidgets.QMdiArea)
+    scope = area.activeSubWindow() if area is not None and area.activeSubWindow() else main
+    views = [w for w in scope.findChildren(QtWidgets.QWidget)
+             if w.metaObject().className() == 'QOpenGLWidget'
+             and w.parentWidget().metaObject().className() == 'Gui::View3DInventorViewer' and w.isVisible()]
+    assert len(views) == 1, 'Expected one visible modeling viewport'
+    return views[0]
+
+
+def view():
+    return Gui.ActiveDocument.ActiveView
+
+
+def key(code, modifiers=QtCore.Qt.NoModifier):
+    gl = viewport()
+    gl.setFocus()
+    QtTest.QTest.keyClick(gl, code, modifiers)
+    wait()
+
+
+def wait_caps(timeout=60):
+    """Cut faces fill in after the first paint (meshes are built a slice at a time)."""
+    deadline = time.time() + timeout
+    while panel.section_view.active and not panel.section_view.caps_ready and time.time() < deadline:
+        QtTest.QTest.qWait(40)
+    assert not panel.section_view.active or panel.section_view.caps_ready, 'cut faces never completed'
+
+
+def shift_x():
+    key(QtCore.Qt.Key_X, QtCore.Qt.ShiftModifier)
+    wait_caps()
+
+
+def qt_point(world):
+    gl = viewport()
+    point = view().getPointOnViewport(App.Vector(world))
+    ratio = gl.devicePixelRatioF()
+    return QtCore.QPoint(round(point[0] / ratio), gl.height() - 1 - round(point[1] / ratio))
+
+
+def device_to_qt(x, y):
+    gl = viewport()
+    ratio = gl.devicePixelRatioF()
+    return QtCore.QPoint(round(x / ratio), gl.height() - 1 - round(y / ratio))
+
+
+def move(point, buttons=QtCore.Qt.NoButton):
+    gl = viewport()
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point), QtCore.QPointF(gl.mapToGlobal(point)),
+                              QtCore.Qt.NoButton, buttons, QtCore.Qt.NoModifier)
+    app.sendEvent(gl, event)
+    wait(40)
+
+
+def drag(start, end, steps=8):
+    """Drag with Qt mouse events. After each move, before the event loop can paint, the cut
+    faces must already lie on the moved cut: a cut face left a frame behind is the flicker."""
+    gl = viewport()
+    move(start)
+    QtTest.QTest.mousePress(gl, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, start)
+    wait(60)
+    stats = {'moves': 0, 'filled': 0, 'stale': 0, 'offsets': []}
+    for i in range(1, steps + 1):
+        point = QtCore.QPoint(round(start.x() + (end.x() - start.x()) * i / steps),
+                              round(start.y() + (end.y() - start.y()) * i / steps))
+        event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point), QtCore.QPointF(gl.mapToGlobal(point)),
+                                  QtCore.Qt.NoButton, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier)
+        app.sendEvent(gl, event)
+        state = panel.section_view.state
+        points, triangles = cap_points()
+        here, normal = panel.section_view.point(), state['normal']
+        stats['moves'] += 1
+        stats['offsets'].append(round(state['offset'], 3))
+        if triangles:
+            stats['filled'] += 1
+            if any(abs((p - here).dot(normal)) > 1e-4 for p in points):
+                stats['stale'] += 1
+        wait(40)
+    QtTest.QTest.mouseRelease(gl, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, end)
+    wait(250)
+    wait_caps()
+    report['details'].setdefault('drags', []).append(stats)
+    return stats
+
+
+def click(point):
+    gl = viewport()
+    move(point)
+    QtTest.QTest.mouseClick(gl, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+    wait(300)
+    wait_caps()
+
+
+def grab(name):
+    view().redraw()
+    wait(120)
+    path = output / name
+    viewport().grab().save(str(path))
+    report['images'].append(str(path))
+    save()
+
+
+def inspect():
+    response = panel.core.dispatch({'op': 'inspect', 'document_id': panel.state['document_id'], 'detail': 'compact'})
+    assert response.get('ok'), response
+    return response['result']
+
+
+def document_state(doc):
+    result = inspect()
+    return {'revision': result.get('revision'), 'modified': result.get('modified'), 'unsaved': result.get('unsaved'),
+            'undo': doc.UndoCount, 'objects': sorted(obj.Name for obj in doc.Objects),
+            'gui_modified': bool(Gui.getDocument(doc.Name).Modified), 'touched': [obj.Name for obj in doc.Objects if 'Touched' in obj.State]}
+
+
+def scene_names():
+    root_node = view().getSceneGraph()
+    return [root_node.getChild(i).getName().getString() for i in range(root_node.getNumChildren())]
+
+
+def clip_plane():
+    plane = panel.section_view.state['clip'].plane.getValue()
+    normal = App.Vector(*plane.getNormal().getValue())
+    return normal, plane.getDistanceFromOrigin()
+
+
+def cap_points():
+    from pivy import coin
+    caps = panel.section_view.state['caps']
+    points, triangles = [], 0
+    for i in range(caps.getNumChildren()):
+        group = caps.getChild(i)
+        if not isinstance(group, coin.SoSeparator):
+            continue
+        for j in range(group.getNumChildren()):
+            node = group.getChild(j)
+            if isinstance(node, coin.SoCoordinate3) and isinstance(group.getChild(group.getNumChildren() - 1), coin.SoIndexedFaceSet):
+                points.extend(App.Vector(*node.point[k].getValue()) for k in range(node.point.getNum()))
+            if isinstance(node, coin.SoIndexedFaceSet):
+                triangles += node.coordIndex.getNum() // 4
+    return points, triangles
+
+
+def cap_colors():
+    """Fill colours of the drawn cut faces (one SoMaterial per cut part)."""
+    from pivy import coin
+    caps = panel.section_view.state['caps']
+    colors = []
+    for i in range(caps.getNumChildren()):
+        group = caps.getChild(i)
+        if isinstance(group, coin.SoSeparator) and any(isinstance(group.getChild(j), coin.SoIndexedFaceSet)
+                                                      for j in range(group.getNumChildren())):
+            material = next(group.getChild(j) for j in range(group.getNumChildren())
+                            if isinstance(group.getChild(j), coin.SoMaterial))
+            colors.append(tuple(round(c, 4) for c in material.diffuseColor[0].getValue()))
+    return colors
+
+
+def drawn_color(obj):
+    """The colour the 3D view draws a result in, read from its own view object (or its link source)."""
+    source = obj
+    if obj.TypeId == 'App::Link' and not getattr(obj.ViewObject, 'OverrideMaterial', False):
+        source = obj.LinkedObject
+    return tuple(round(c, 4) for c in source.ViewObject.ShapeAppearance[0].DiffuseColor[:3])
+
+
+def kept_side_hits(step=48):
+    """Native ray picks over the viewport: every model hit must lie on the kept side of the cut."""
+    state = panel.section_view.state
+    point, normal = panel.section_view.point(), state['normal']
+    width, height = (int(v) for v in view().getSize())
+    hits, removed = 0, []
+    for x in range(step // 2, width, step):
+        for y in range(step // 2, height, step):
+            info = view().getObjectInfo((x, y))
+            if not info or 'x' not in info:
+                continue
+            hits += 1
+            where = App.Vector(info['x'], info['y'], info['z'])
+            if (where - point).dot(normal) > 1e-3 * state['box'].DiagonalLength:
+                removed.append([round(c, 3) for c in where])
+    return hits, removed
+
+
+def camera_signature():
+    camera = view().getCameraNode()
+    return tuple(round(v, 6) for v in camera.orientation.getValue().getValue()) + \
+        tuple(round(v, 4) for v in camera.position.getValue().getValue())
+
+
+def set_view(direction):
+    view().setViewDirection(tuple(direction))
+    view().fitAll()
+    wait(200)
+    panel.section_view.sync()
+
+
+def arrow_tip(sign=1.0):
+    state = panel.section_view.state
+    return panel.section_view.point() + state['normal'] * (sign * 0.76 * state['scale'])
+
+
+def plain(info):
+    """A getObjectInfo hit with object values reduced to names, safe to keep after the document closes."""
+    return {key: value if isinstance(value, (str, int, float)) or value is None else str(getattr(value, 'Name', value))
+            for key, value in (info or {}).items()}
+
+
+def picked(doc, info):
+    """(top-level object, full subname) of a getObjectInfo hit, as the selection reports it."""
+    parent = info.get('ParentObject')
+    if parent is not None and info.get('SubName'):
+        parent = doc.getObject(parent) if isinstance(parent, str) else parent
+        return parent, info['SubName']
+    return doc.getObject(info['Object']), info['Component']
+
+
+def assert_unchanged(doc, before, label):
+    after = document_state(doc)
+    check(label, after == before, {'before': before, 'after': after})
+
+
+def largest_face(shape, kind):
+    faces = [(i, face) for i, face in enumerate(shape.Faces) if isinstance(face.Surface, kind)]
+    return max(faces, key=lambda item: item[1].Area)
+
+
+def part_studio():
+    copy = session / 'Shell M.FCStd'
+    shutil.copy2(PART_SOURCE, copy)
+    doc = panel.document() if panel.operation('open', path=str(copy)) else None
+    assert doc is not None, panel.message.text()
+    wait(300)
+    check('Part Studio workspace routes Shift+X to Section View',
+          panel.workspace_mode == 'part_studio' and panel.router.resolve('Shift+X', panel.context())['id'] == 'view.section'
+          and panel.router.resolve('Shift+X', panel.context())['label'] == 'Section View', panel.context())
+    body = ui.native_results(doc)[0]
+    before = document_state(doc)
+    report['details']['part_before'] = before
+    sv_ = panel.section_view
+
+    # 1. Select a round face, then Shift+X, looking roughly from the right.
+    set_view((-0.88, 0.32, -0.36))
+    index, face = largest_face(body.Shape, Part.Cylinder)
+    expected = sv.face_target(face)['center']
+    Gui.Selection.addSelection(doc.Name, body.Name, 'Face%d' % (index + 1))
+    shift_x()
+    check('Face then Shift+X starts Section View on the Right plane through the cylinder centre',
+          sv_.active and sv_.state['label'] == 'Right plane' and (sv_.state['origin'] - expected).Length < 1e-6
+          and abs(sv_.state['normal'].x - 1) < 1e-9,
+          {'label': sv_.state and sv_.state['label'], 'origin': sv_.state and list(sv_.state['origin']), 'expected': list(expected)})
+    names = scene_names()
+    check('The cut clips only the model: overlay, then clip plane, right before ObjectGroup',
+          names.index('KurtShapeSectionView') + 1 == names.index('KurtShapeSectionClip')
+          and names.index('KurtShapeSectionClip') + 1 == names.index('ObjectGroup')
+          and names.index('EditingRoot') < names.index('KurtShapeSectionView'), names)
+    normal, distance = clip_plane()
+    check('The clip keeps the far side (normal faces away from the camera, through the centre)',
+          abs(normal.x + 1) < 1e-6 and abs(distance + expected.x) < 1e-4, {'normal': list(normal), 'distance': distance})
+    points, triangles = cap_points()
+    check('Cut faces are filled and lie on the cut plane',
+          triangles > 20 and all(abs(p.x - expected.x) < 1e-4 for p in points),
+          {'triangles': triangles, 'cap_seconds': sv_.state['cap_seconds'], 'failures': sv_.state.get('cap_failures'),
+           'setup_seconds': sv_.state.get('setup_seconds')})
+    report['details']['part_cap_seconds'] = sv_.state['cap_seconds']
+    check('Cut faces have exactly the colour of the body being cut', cap_colors() == [drawn_color(body)],
+          {'caps': cap_colors(), 'body': drawn_color(body)})
+    check('Selection is cleared and the status bar says Section View',
+          not Gui.Selection.getSelectionEx() and panel.message.text().startswith('Section View · Right plane · +0.00 mm'),
+          panel.message.text())
+    hits, removed = kept_side_hits()
+    check('Clicks cannot pick the hidden half: every native pick lies on the kept side', hits > 10 and not removed,
+          {'hits': hits, 'removed': removed[:10]})
+    grab('part-right-cylinder.png')
+
+    # 2. Drag the arrow toward the camera and back.
+    camera = camera_signature()
+    start = qt_point(arrow_tip(1.0))
+    axis = qt_point(arrow_tip(1.0) + sv_.state['normal'] * sv_.state['scale']) - start
+    length = math.hypot(axis.x(), axis.y())
+    report['details']['arrow_screen_length_px'] = length
+    end = QtCore.QPoint(round(start.x() + axis.x() / length * 40), round(start.y() + axis.y() / length * 40))
+    toward = drag(start, end)
+    moved = sv_.state['offset']
+    expected_move = 40.0 / length * sv_.state['scale']
+    check('Dragging the arrow 40 px toward its tip moves the cut toward the camera by the matching distance',
+          moved > 0 and abs(moved - expected_move) < 0.2 * expected_move and not sv_.state['dragging'],
+          {'offset': moved, 'expected': expected_move, 'scale': sv_.state['scale'], 'arrow_px': length})
+    check('The drag did not orbit or pan the view', camera_signature() == camera)
+    points, triangles = cap_points()
+    check('Cut faces follow the dragged plane', triangles > 0 and all(abs(p.x - (expected.x + moved)) < 1e-4 for p in points),
+          {'offset': moved, 'triangles': triangles})
+    check('Status shows the new offset', ('%+.2f mm' % moved) in panel.message.text(), panel.message.text())
+    grab('part-right-dragged.png')
+    start = qt_point(arrow_tip(1.0))
+    end = QtCore.QPoint(round(start.x() - axis.x() / length * 90), round(start.y() - axis.y() / length * 90))
+    away = drag(start, end)
+    check('Dragging back past the start moves the cut away from the camera', sv_.state['offset'] < 0, sv_.state['offset'])
+    check('No flicker: in every drag event the cut faces already sit on the moved cut, toward and away',
+          toward['stale'] == 0 and away['stale'] == 0 and toward['filled'] + away['filled'] >= 6,
+          {'toward': toward, 'away': away})
+    sv_.set_offset(1e9)
+    box = sv_.state['box']
+    check('The cut stays within the part when pushed far', sv_.state['offset'] < box.DiagonalLength, sv_.state['offset'])
+    sv_.set_offset(0)
+    wait_caps()
+
+    # The arrow keeps its size on screen when the view zooms (camera sensor).
+    camera = view().getCameraNode()
+    scale, height = sv_.state['scale'], camera.height.getValue()
+    camera.height.setValue(height * 0.5)
+    wait(200)
+    zoomed = sv_.state['scale']
+    camera.height.setValue(height)
+    wait(200)
+    check('The arrow keeps its on-screen size when zooming', abs(zoomed - 0.5 * scale) < 0.02 * scale
+          and abs(sv_.state['scale'] - scale) < 0.02 * scale, {'before': scale, 'zoomed': zoomed, 'after': sv_.state['scale']})
+
+
+    # 3. Shift+X with nothing selected leaves Section View.
+    shift_x()
+    check('Shift+X again leaves Section View and removes every node',
+          not sv_.active and 'KurtShapeSectionClip' not in scene_names() and 'KurtShapeSectionView' not in scene_names()
+          and not panel.message.text().startswith('Section View ·'), {'names': scene_names(), 'status': panel.message.text()})
+
+    # 4. Exact Right view: the arrow points at the camera; vertical drag moves the cut.
+    set_view((-1, 0, 0))
+    Gui.Selection.addSelection(doc.Name, body.Name, 'Face%d' % (index + 1))
+    shift_x()
+    center = qt_point(sv_.point())
+    drag(center, center + QtCore.QPoint(0, -30))
+    pixel = sv_._pixel_size(sv_.point())
+    check('Face-on cut: dragging the end-on arrow up pulls the cut toward the camera',
+          sv_.active and sv_.state['offset'] > 0 and abs(sv_.state['offset'] - 30 * pixel * viewport().devicePixelRatioF()) < 0.35 * 30 * pixel * viewport().devicePixelRatioF() + 1e-6,
+          {'offset': sv_.state['offset'], 'pixel': pixel})
+    grab('part-right-face-on.png')
+    key(QtCore.Qt.Key_Escape)
+    check('Escape leaves Section View', not sv_.active and 'KurtShapeSectionClip' not in scene_names())
+
+    # 5. Shift+X first, then click a face in the view.
+    set_view((-0.5, 0.6, -0.62))
+    shift_x()
+    check('Shift+X with nothing selected asks for a face or plane', sv_.picking and panel.message.text() == sv.PICK_TEXT,
+          panel.message.text())
+    width, height = (int(v) for v in view().getSize())
+    info = None
+    for dx, dy in [(0, 0), (40, 0), (-40, 0), (0, 40), (0, -40), (80, 80)]:
+        info = view().getObjectInfo((width // 2 + dx, height // 2 + dy))
+        if info and str(info.get('Component', '')).startswith('Face'):
+            pixel_device = (width // 2 + dx, height // 2 + dy)
+            break
+    check('A face lies under the click point', info is not None, plain(info))
+    click(device_to_qt(*pixel_device))
+    wait(200)
+    expected = sv.selection_target(*picked(doc, info))
+    check('Clicking the face starts Section View on it', sv_.active and not sv_.picking
+          and ((expected['kind'] == sv.CENTER and (sv_.state['origin'] - expected['center']).Length < 1e-6)
+               or (expected['kind'] == sv.PLANE and abs(abs(sv_.state['normal'].dot(expected['normal'])) - 1) < 1e-9)),
+          {'expected': {k: (list(v) if isinstance(v, App.Vector) else v) for k, v in expected.items()},
+           'label': sv_.state and sv_.state['label']})
+    grab('part-click-face.png')
+    key(QtCore.Qt.Key_Escape)
+
+    # 6. A flat face that is not round cuts on its own plane.
+    flat = [(i, f) for i, f in enumerate(body.Shape.Faces)
+            if isinstance(f.Surface, Part.Plane) and sv.circular_outline(f) is None]
+    index_flat, flat_face = max(flat, key=lambda item: item[1].Area)
+    Gui.Selection.addSelection(doc.Name, body.Name, 'Face%d' % (index_flat + 1))
+    shift_x()
+    target = sv.face_target(flat_face)
+    check('A non-round flat face cuts on its own plane', sv_.active and sv_.state['label'] == 'face plane'
+          and abs(abs(sv_.state['normal'].dot(target['normal'])) - 1) < 1e-9
+          and abs((sv_.state['origin'] - target['origin']).dot(target['normal'])) < 1e-5 * sv_.state['box'].DiagonalLength,
+          {'normal': list(sv_.state['normal']), 'face_normal': list(target['normal'])})
+    grab('part-flat-face.png')
+
+    # 7. Shift+X with a different selection moves the cut there (Top plane from the history).
+    shift_x()  # nothing selected: off
+    shift_x()  # pick mode
+    panel.history_click(panel.items['plane:XY'])
+    wait(200)
+    wait_caps()
+    check('Shift+X then Top in the history cuts on the Top plane, arrow over the model',
+          sv_.active and sv_.state['label'] == 'Top plane' and abs(abs(sv_.state['normal'].z) - 1) < 1e-9
+          and abs(sv_.state['origin'].z) < 1e-5 * sv_.state['box'].DiagonalLength
+          and abs(sv_.state['origin'].x - sv_.state['box'].Center.x) < 1e-6, {'origin': list(sv_.state['origin'])})
+    grab('part-top-plane.png')
+    datums = [obj for obj in doc.Objects if obj.TypeId == 'PartDesign::Plane']
+    report['details']['datum_planes'] = [obj.Label for obj in datums]
+    if datums:
+        datum = datums[0]
+        Gui.Selection.addSelection(doc.Name, datum.Name)
+        shift_x()
+        placement = datum.getGlobalPlacement()
+        normal = placement.Rotation.multVec(App.Vector(0, 0, 1))
+        check('A selected datum plane plus Shift+X moves the cut onto that plane',
+              sv_.active and sv_.state['label'] == datum.Label and abs(abs(sv_.state['normal'].dot(normal)) - 1) < 1e-9
+              and abs((sv_.state['origin'] - placement.Base).dot(normal)) < 1e-5 * sv_.state['box'].DiagonalLength,
+              datum.Label)
+        grab('part-datum-plane.png')
+    key(QtCore.Qt.Key_Escape)
+    check('Escape with no task leaves Section View', not sv_.active)
+    assert_unchanged(doc, before, 'Section View left the Part Studio document untouched (revision, flags, undo, objects)')
+
+    # Escape order: an open tool is canceled first, Section View stays; the next Escape leaves it.
+    # (Sketch placement shows the origin planes, which marks the document modified: checked after.)
+    Gui.Selection.addSelection(doc.Name, body.Name, 'Face%d' % (index + 1))
+    shift_x()
+    key(QtCore.Qt.Key_S, QtCore.Qt.ShiftModifier)
+    check('Shift+S still starts sketch placement while Section View is on', panel.pending_sketch and sv_.active)
+    key(QtCore.Qt.Key_Escape)
+    check('Escape cancels the sketch placement first and keeps Section View', not panel.pending_sketch and sv_.active,
+          panel.message.text())
+    key(QtCore.Qt.Key_Escape)
+    check('The next Escape leaves Section View', not sv_.active)
+    response = panel.core.dispatch({'op': 'close_document', 'document_id': panel.state['document_id'],
+                                    'expected_revision': panel.state['revision'], 'discard': True})
+    check('The Part Studio copy closes', response.get('ok'), response)
+    panel.state = None
+
+
+def assembly():
+    copy = session / 'LED Pole Battery Assembly.FCStd'
+    shutil.copy2(ASSEMBLY_SOURCE, copy)
+    doc = panel.document() if panel.operation('open', path=str(copy)) else None
+    assert doc is not None, panel.message.text()
+    wait(500)
+    check('Assembly workspace routes Shift+X to Section View',
+          panel.workspace_mode == 'assembly' and panel.context() == 'assembly'
+          and panel.router.resolve('Shift+X', panel.context())['id'] == 'view.section', panel.context())
+    before = document_state(doc)
+    report['details']['assembly_before'] = before
+    sv_ = panel.section_view
+    links = ui.native_results(doc)
+    asm = next(obj for obj in doc.Objects if obj.TypeId == 'Assembly::AssemblyObject')
+    offsets = []
+    for link in links:
+        # Loose OCCT boxes differ with and without display triangles; centres of mass do not.
+        world = selectors.world_shape(link).Solids[0].CenterOfMass
+        drawn = Part.getShape(asm, link.Name + '.').Solids[0].CenterOfMass
+        offsets.append((world - drawn).Length)
+    check('Cut faces use the same occurrence placement the view draws', max(offsets) < 1e-6, offsets)
+
+    # Shift+X first, then click the pole, looking roughly from the front.
+    set_view((0.25, 0.9, -0.35))
+    shift_x()
+    width, height = (int(v) for v in view().getSize())
+    info, pixel_device = None, None
+    for dy in range(0, height // 2, 24):
+        for sign in (1, -1):
+            probe = view().getObjectInfo((width // 2, height // 2 + sign * dy))
+            if probe and str(probe.get('Component', '')).startswith('Face'):
+                face = Part.getShape(*picked(doc, probe), needSubElement=True)
+                if isinstance(face.Surface, Part.Cylinder):
+                    info, pixel_device = probe, (width // 2, height // 2 + sign * dy)
+                    break
+        if info:
+            break
+    check('A round occurrence face lies under the click point', info is not None)
+    report['details']['assembly_clicked'] = plain(info)
+    click(device_to_qt(*pixel_device))
+    wait(300)
+    expected = sv.selection_target(*picked(doc, info))
+    check('Clicking a round occurrence face cuts the assembly on the Front plane through its centre',
+          sv_.active and sv_.state['label'] == 'Front plane' and (sv_.state['origin'] - expected['center']).Length < 1e-6,
+          {'label': sv_.state and sv_.state['label'], 'origin': sv_.state and list(sv_.state['origin']),
+           'expected': list(expected['center'])})
+    points, triangles = cap_points()
+    groups = sv_.state['caps'].getNumChildren()
+    check('Each cut occurrence gets filled cut faces on the plane',
+          triangles > 50 and groups > 4 and all(abs((p - sv_.point()).dot(sv_.state['normal'])) < 1e-4 for p in points),
+          {'triangles': triangles, 'groups': groups, 'cap_seconds': sv_.state['cap_seconds'],
+           'failures': sv_.state.get('cap_failures'), 'setup_seconds': sv_.state.get('setup_seconds')})
+    drawn = {drawn_color(part['obj']) for part in sv_.state['parts']}
+    colors = cap_colors()
+    check('Assembly: each cut part is filled in that part\'s own colour',
+          len(colors) == sv_.state['cap_parts'] and len(set(colors)) >= 2 and set(colors) <= drawn,
+          {'caps': colors, 'parts': sorted(drawn)})
+    check('Assembly cut faces follow a drag live (update within the live budget)',
+          sv_.state['cap_seconds'] <= sv.LIVE_CAP_BUDGET_S, sv_.state['cap_seconds'])
+    report['details']['assembly_cap_seconds'] = sv_.state['cap_seconds']
+    hits, removed = kept_side_hits()
+    check('Assembly: every native pick lies on the kept side', hits > 10 and not removed, {'hits': hits, 'removed': removed[:10]})
+    grab('assembly-front-pole.png')
+    start = qt_point(arrow_tip(1.0))
+    axis = qt_point(arrow_tip(1.0) + sv_.state['normal'] * sv_.state['scale']) - start
+    length = math.hypot(axis.x(), axis.y())
+    end = QtCore.QPoint(round(start.x() - axis.x() / length * 50), round(start.y() - axis.y() / length * 50))
+    away = drag(start, end)
+    check('Assembly: dragging the arrow away from its tip moves the cut back', sv_.state['offset'] < 0, sv_.state['offset'])
+    start = qt_point(arrow_tip(1.0))
+    end = QtCore.QPoint(round(start.x() + axis.x() / length * 50), round(start.y() + axis.y() / length * 50))
+    toward = drag(start, end)
+    check('Assembly: dragging toward the camera moves the cut forward again', abs(sv_.state['offset']) < 0.2 * abs(away['offsets'][-1]) + 1,
+          sv_.state['offset'])
+    check('Assembly, no flicker: in every drag event the cut faces already sit on the moved cut',
+          toward['stale'] == 0 and away['stale'] == 0 and toward['filled'] >= 6 and away['filled'] >= 6,
+          {'toward': toward, 'away': away})
+    grab('assembly-front-dragged.png')
+
+    # Select first, then Shift+X (moves the cut to the new selection).
+    parent, subname = picked(doc, info)
+    Gui.Selection.addSelection(doc.Name, parent.Name, subname)
+    set_view((-0.9, 0.3, -0.3))
+    shift_x()
+    check('Assembly: a new selection plus Shift+X moves the cut (Right plane from this view)',
+          sv_.active and sv_.state['label'] == 'Right plane' and abs(sv_.state['offset']) < 1e-12
+          and (sv_.state['origin'] - expected['center']).Length < 1e-6, sv_.state and sv_.state['label'])
+    grab('assembly-right-pole.png')
+    key(QtCore.Qt.Key_Escape)
+    check('Assembly: Escape leaves Section View', not sv_.active and 'KurtShapeSectionClip' not in scene_names())
+    assert_unchanged(doc, before, 'Section View left the assembly document untouched (revision, flags, undo, objects)')
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    if panel:
+        panel.shutdown()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.timer.stop()
+        panel.recovery_timer.stop()
+        panel.core.settings.roots = {session}
+        report['sources'] = [str(PART_SOURCE), str(ASSEMBLY_SOURCE)]
+        part_studio()
+        assembly()
+        report['passed'] = True
+        save()
+    except Exception:
+        report['error'] = traceback.format_exc()
+        try:
+            main.grab().save(str(output / 'failure.png'))
+        except Exception:
+            pass
+        save()
+    finally:
+        cleanup()
+
+
+QtCore.QTimer.singleShot(0, run)

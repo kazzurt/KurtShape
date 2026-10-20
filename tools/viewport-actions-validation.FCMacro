@@ -110,21 +110,23 @@ def validate():
         QtTest.QTest.mouseClick(save_button, QtCore.Qt.LeftButton)
         check('named_dialog_saves_camera', 'From dialog' in actions._state(doc)['views'])
         Gui.activeDocument().resetEdit()
-        check('native_clipping_dock_opened', actions_map['view.section']() is True)
-        clipping = actions._state(doc)['clipping']
-        group = clipping.findChild(QtWidgets.QGroupBox, 'groupBoxZ')
-        check('native_section_plane_control', group is not None and group.isCheckable())
-        group.setChecked(True)
+        # Shift+X is Section View (2026-10-20); it replaced the native Clipping dock.
+        section = actions_map['view.section'].__self__
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, part.Name, 'Face1')
+        check('section_view_starts_on_selected_face', actions_map['view.section']() is True and section.active)
         view.redraw()
         search = coin.SoSearchAction()
         search.setType(coin.SoClipPlane.getClassTypeId())
         search.setInterest(coin.SoSearchAction.ALL)
         search.apply(view.getSceneGraph())
         clip_nodes = [search.getPaths()[i].getTail() for i in range(search.getPaths().getLength())]
-        check('actual_native_section_plane_enabled', any(node.on.getValue() for node in clip_nodes))
+        check('section_view_clip_plane_enabled', any(node.getName().getString() == 'KurtShapeSectionClip'
+                                                     and node.on.getValue() for node in clip_nodes))
         check('section_preserves_solid_brep', shape == part.Shape.exportBrepToString())
-        clipping.hide()
-        check('native_clipping_controls_reopen', actions_map['view.section']() is True and clipping.isVisible())
+        check('section_view_toggles_off', actions_map['view.section']() is True and not section.active)
+        check('section_view_pick_mode_without_selection', actions_map['view.section']() is True and section.picking
+              and section.cancel() and not section.picking)
         second = App.newDocument('ViewportSecondDocument')
         Gui.activeDocument().activeView().viewTop()
         actions.save_view('Other')

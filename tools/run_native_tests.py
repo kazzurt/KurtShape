@@ -71,6 +71,8 @@ SUITES = {
         "test_document_lifecycle.DocumentLifecycleTests", "test_compact_inspection.CompactInspectionTests",
         "test_parameter_panel.ParameterPanelTests", "test_parameter_panel.SectionLayoutTests", "test_parameter_panel.ParameterAdapterTranslationTests",
         "test_operation_schemas.OperationSchemaTests",
+        "test_section_view.SectionViewGeometryTests", "test_section_view.SectionViewSelectionTests",
+        "test_section_view.PolygonFillTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),

@@ -76,7 +76,7 @@
     {"id":"view.rotate_right_15","key":"Right","contexts":["view"],"label":"Rotate right 15 degrees","status":"callback"},
     {"id":"view.rotate_up_15","key":"Up","contexts":["view"],"label":"Rotate up 15 degrees","status":"callback"},
     {"id":"view.rotate_down_15","key":"Down","contexts":["view"],"label":"Rotate down 15 degrees","status":"callback"},
-    {"id":"view.section","key":"Shift+X","contexts":["view"],"label":"Section view","status":"callback"},
+    {"id":"view.section","key":"Shift+X","contexts":["view"],"label":"Section View","status":"callback","note":"Select a face or plane, then Shift+X (or Shift+X, then click one). Round faces cut through their centre on the origin plane facing you; flat faces and planes cut on themselves. Drag the arrow to move the cut; Shift+X or Escape leaves. View only: no feature, undo step or revision change."},
     {"id":"view.select_through","key":"Alt+Click","contexts":["view"],"label":"Select through transparent","status":"pass_through","note":"Exact Onshape transparent select-through gesture is not implemented."},
     {"id":"view.show_hidden","key":"Shift+Y","contexts":["view"],"label":"Show hidden parts","status":"callback"},
     {"id":"view.top","key":"Shift+5","contexts":["view"],"label":"Top view","status":"native","native_command":"Std_ViewTop"},

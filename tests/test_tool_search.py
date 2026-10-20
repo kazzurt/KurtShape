@@ -26,7 +26,7 @@ ACTIONS = [
 ]
 SHORTCUTS = [
     {"id": "feature.extrude", "label": "Extrude", "key": "Ctrl+Alt+E", "contexts": ["part_studio"], "resolved_status": "available"},
-    {"id": "view.section", "label": "Section view", "key": "Shift+X", "contexts": ["general"], "resolved_status": "available"},
+    {"id": "view.section", "label": "Section View", "key": "Shift+X", "contexts": ["general"], "resolved_status": "available"},
 ]
 
 
@@ -40,7 +40,7 @@ class ToolSearchTests(unittest.TestCase):
     def test_every_tool_once_including_shortcutless_and_shortcut_only(self):
         labels = [entry["label"] for entry in self.entries]
         self.assertEqual(labels.count("Extrude"), 1)
-        for name in ("Fillet", "Spline", "Extrude · Cut", "Undo", "Joints", "Section view"):
+        for name in ("Fillet", "Spline", "Extrude · Cut", "Undo", "Joints", "Section View"):
             self.assertIn(name, labels)
         extrude = next(entry for entry in self.entries if entry["label"] == "Extrude")
         self.assertEqual(set(extrude["groups"]), {"Part Studio", "Build", "Sketch"})
@@ -58,6 +58,8 @@ class ToolSearchTests(unittest.TestCase):
         self.assertEqual(self.labels("pocket")[0], "Extrude · Cut")
         self.assertEqual(self.labels("cut")[0], "Extrude · Cut")
         self.assertEqual(self.labels("round")[0], "Fillet")
+        self.assertEqual(self.labels("cross section")[0], "Section View")
+        self.assertEqual(self.labels("section")[0], "Section View")
         self.assertEqual(self.labels("pad")[0], "Extrude")
         self.assertEqual(self.labels("shift+e")[0], "Extrude")
         self.assertEqual(self.labels("nonexistent tool"), [])
