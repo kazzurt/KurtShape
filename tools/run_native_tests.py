@@ -46,6 +46,7 @@ SUITES = {
         "test_geometry_check_jobs.GeometryCheckWorkerLifetimeTests",
         "test_render_jobs.RenderWorkerLifetimeTests", "test_model_render.ModelRenderTests",
         "test_render_jobs.RenderJobTests", "test_render_jobs.RenderOwnershipTests",
+        "test_gui_view.GuiViewTests",
         "test_parameters.ParameterTests", "test_parameters.ParameterPruningTests", "test_batch.BatchTests",
         "test_snapshot_transport.SnapshotTransportTests",
         "test_reference_tools.ReferenceToolTests", "test_datum_planes.DatumPlaneFrameTests",

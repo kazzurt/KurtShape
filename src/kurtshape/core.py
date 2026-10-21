@@ -332,7 +332,7 @@ class Controller:
     # owning units fill them: VIEW_OPS (U4 render_view), LIFECYCLE_OPS (U2b
     # close_document), DOCUMENTLESS_OPS and QUIET_OPS (U2a operation_schema,
     # U5 list_parameters). Every op belongs to exactly one class.
-    VIEW_OPS = frozenset({"render_view"})
+    VIEW_OPS = frozenset({"render_view", "set_view"})
     LIFECYCLE_OPS = frozenset({"close_document"})
     NON_MUTATING_OPS = frozenset(READ_OPS) | VIEW_OPS
     DOCUMENTLESS_OPS = frozenset({"capabilities", "list_documents", "request_status", "diagnostics", "assembly_candidates",
@@ -381,6 +381,7 @@ class Controller:
     ARGS["operation_schema"] = set(operation_schemas.arg_names("operation_schema"))
     ARGS["close_document"] = set(operation_schemas.arg_names("close_document"))
     ARGS["render_view"] = set(operation_schemas.arg_names("render_view"))
+    ARGS["set_view"] = set(operation_schemas.arg_names("set_view"))
     ARGS["batch"] = set(operation_schemas.arg_names("batch"))
     for _op in parameters.OPS | parameters.READ_OPS:
         ARGS[_op] = set(operation_schemas.arg_names(_op))
@@ -1994,6 +1995,10 @@ class Controller:
                 if op == "render_view":
                     # Read-only view op (F2): a cache hit or refusal as a dict, else a Deferred job.
                     return self.renders.request(doc, request)
+                if op == "set_view":
+                    # GUI view op (2026-10-20): aims the app's 3D view; headless reports applied:false.
+                    from . import gui_view
+                    return {"ok": True, "result": gui_view.set_view(self, doc, request)}
                 if op == "preview":
                     return {"ok": True, "result": self._preview(doc, request)}
                 if not self.is_managed(doc) and op not in self.NON_MUTATING_OPS | {"adopt", "close_document"}:

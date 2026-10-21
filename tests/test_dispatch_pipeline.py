@@ -38,7 +38,8 @@ TOP_LEVEL_ADDITIVE_32 = frozenset({"parameter_set", "parameters", "other_paramet
 NEW_OPERATIONS_32 = frozenset({"operation_schema", "close_document", "render_view",  # render_view: U4
                                "list_parameters", "create_parameter", "edit_parameter", "rename_parameter",
                                "delete_parameter",  # U5
-                               "batch"})  # U6
+                               "batch",  # U6
+                               "set_view"})  # GUI view op, 2026-10-20 (OPERATION_CONTRACT "Viewport camera")
 
 GOLDEN_CHILD = r'''
 import json, sys

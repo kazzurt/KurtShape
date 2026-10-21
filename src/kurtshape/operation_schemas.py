@@ -144,6 +144,7 @@ DOC_32_BRIDGE = _DOC + "325-identity-schemas-lifecycle-compact-inspect-transport
 DOC_32_RENDER = _DOC + "322-model-images"
 DOC_32_PARAMETERS = _DOC + "323-parameters"
 DOC_32_BATCH = _DOC + "324-atomic-batches-and-preview-accepted"
+DOC_SET_VIEW = _DOC + "viewport-camera-set_view-gui-2026-10-20"
 _BATCH_STEPS = [{"op": "create_parameter", "name": "plate_width", "type": "length", "value": 62},
                    {"op": "set_expression", "feature": "PlateProfile", "parameter": "Width", "expression": "plate_width"},
                    {"op": "sketch_circle", "id": "BatchSpot", "as": "spot", "x": 10, "y": 10, "diameter": 4},
@@ -469,6 +470,36 @@ OPERATIONS = {
                       "quality": "draft",
                       "highlights": [{"selector": _PLATE_TOP, "label": "A", "note": "pad top face"}]}],
         "x-example-fixture": "plate", "doc": DOC_32_RENDER},
+    "set_view": {
+        "summary": "Aim the running app's 3D view of the document (orthographic camera); the camera is saved in "
+                   "the FCStd and restored on open. Never changes the document; headless reports applied:false",
+        "fields": {
+            "view": {"anyOf": [{"enum": Ref("gui_view", "VIEW_NAMES")},
+                               {"type": "object", "required": ["direction"], "additionalProperties": False,
+                                "properties": {"direction": {"$ref": "#/$defs/direction3"},
+                                               "up": {"$ref": "#/$defs/direction3"}}}],
+                     "default": "iso",
+                     "description": "A view name (render_view's directions) or {direction, up?}; the camera looks "
+                                    "along direction with up toward the top of the window"},
+            "frame": {"anyOf": [{"enum": Ref("gui_view", "FRAMES")},
+                                {"type": "object", "required": ["center_mm", "width_mm"], "additionalProperties": False,
+                                 "properties": {"center_mm": {"$ref": "#/$defs/vector3"},
+                                                "width_mm": {"$ref": "#/$defs/positive_length"}}}],
+                      "default": "model",
+                      "description": "model: the shown solids and faces with a 5 % margin; or an explicit window "
+                                     "whose width_mm spans the window's shorter side"}},
+        "required": [],
+        "constraints": ["Changes only the GUI camera: the revision, undo history and Modified flag stay; allowed "
+                        "on unmanaged documents; expected_revision is optional and checked when given "
+                        "(stale_revision)",
+                        "Ledger-tracked: through the bridge request_id is required",
+                        "Headless (no GUI) the camera is computed and returned with applied:false, reason no_gui",
+                        "Refused while a sketch or native feature edit is active (sketch_edit_active)",
+                        "Not previewable and not batchable"],
+        "examples": [{"op": "set_view", "view": "top"},
+                     {"op": "set_view", "view": {"direction": [0, 1, -1], "up": [0, 0, 1]},
+                      "frame": {"center_mm": [30, 0, 3], "width_mm": 20}}],
+        "x-example-fixture": "plate", "doc": DOC_SET_VIEW},
     "list_parameters": {
         "summary": "The document's model parameters with values, formulas, consumers and the features and parts they affect",
         "fields": {"names": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1,

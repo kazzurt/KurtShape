@@ -71,6 +71,10 @@ def outcome(response):
             "parts": [row["part"] for row in result["parts"]], "sketches": result["sketches"],
             "highlights": [[row["label"], row["count"], row["rendered_count"]] for row in result["highlights"]],
             "banners": [row["kind"] for row in result["geometry_status"]["banners"]]}}
+    if "camera" in result and "applied" in result:
+        # set_view (2026-10-20): the effective view, frame and camera.
+        return {"ok": True, "view": [result["view"], result["frame"], result["applied"], result["reason"],
+                                     rounded(result["camera"], 6)]}
     if "document_id" not in result:
         facts = {"ok": True, "keys": sorted(result)}
         if isinstance(result.get("documents"), list):
@@ -201,6 +205,7 @@ WRONG_VALUES = {
     ("render_view", "views"): ["front"], ("render_view", "layout"): "sheet", ("render_view", "size"): [256, 192],
     ("render_view", "parts"): ["Body"], ("render_view", "frame"): "model", ("render_view", "sketches"): "include",
     ("render_view", "quality"): "draft",
+    ("set_view", "view"): "front", ("set_view", "frame"): {"center_mm": [10, 10, 3], "width_mm": 12},
 }
 
 

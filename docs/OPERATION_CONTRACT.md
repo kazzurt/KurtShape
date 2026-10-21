@@ -276,6 +276,8 @@ The worker (N3): each render runs in a private one-shot child process (below nor
 
 `render_view` is not previewable, not batchable and never part of `preview`.
 
+The second view operation, `set_view` (2026-10-20), aims the app's own 3D view with the same view directions; see [Viewport camera](#viewport-camera-set_view-gui-2026-10-20).
+
 ### 3.2.3 Parameters
 
 U5 (backend; the parameters panel is U7). A document's model parameters live in one native `App::VarSet` at the top level, Name and Label `Params` (`Params001` if the name is taken), marked by a hidden `KurtShapeParameterSet`. FreeCAD expressions are the only evaluator and the FCStd holds the only copy of values and formulas; documents without parameters are unchanged. Scope is the whole document (all parts); parameters sit outside history, so rollback, splits, booleans and part deletions never move them.
@@ -640,3 +642,26 @@ This optional local recipe requires the author's BREF native fixture under
 `CADkz/projects/bref-im-df-interface`; it copies it into a private session and
 checks actual view providers, menu actions, save/reopen, solid signatures and
 unchanged source hash. It never uses the live user's profile or window.
+
+### Viewport camera: `set_view` (GUI, 2026-10-20)
+
+`set_view` points the running app's 3D view of a document at part of the model. It is the second **view operation** (`VIEW_OPS`, beside `render_view`): it changes only the GUI camera, never the document, its revision, undo history, Modified flag or `LastFailure`; it is allowed on unmanaged documents; through the bridge it is ledger-tracked (`request_id` required); `expected_revision` is optional and checked when given (`stale_revision`). It is refused while a sketch or native feature edit is active (`sketch_edit_active`), and it is not previewable or batchable.
+
+```json
+{"op": "set_view", "document_id": "<id>", "request_id": "agent-0012",
+ "view": {"direction": [0.8303, -0.329, 0.4498], "up": [0.2692, -0.4698, -0.8407]},
+ "frame": {"center_mm": [-369.286, -233.18, -5.349], "width_mm": 14}}
+```
+
+| Field | Values | Default | Rules |
+|---|---|---|---|
+| `view` | `iso`, `front`, `back`, `right`, `left`, `top`, `bottom` (the `render_view` directions), or `{direction:[x,y,z], up?:[x,y,z]}` | `iso` | the camera looks along `direction`; `up` points to the top of the window (default +Z, or +Y when the direction is within 2.6° of ±Z); nonzero and not parallel (`|cos| < 0.999`) |
+| `frame` | `model`, or `{center_mm, width_mm}` | `model` | `model` centres the box of the shown top-level solids and faces and spans its projection with a 5 % margin; an explicit `width_mm` spans the window's **shorter** side, so the whole square is visible in any window shape |
+
+The camera is orthographic. It stands in front of everything shown (so nothing between it and the frame is clipped), its focal point is the frame centre (the rotation centre for navigation styles that use it), and its `height` is the frame width.
+
+**Response.** `{document_id, revision, view, frame, applied, reason, camera, note}`. `camera` is `{projection, direction, up, right, center_mm, height_mm, distance_mm}`; in the app it is read back from the view after the change. `applied:false` with `reason:"no_gui"` comes from the headless Controller, which has no 3D view and only computes the camera; `reason:"no_view"` means the document has no 3D view open.
+
+**Persistence.** FreeCAD writes a document's camera into the FCStd (`GuiDocument.xml`) on every save made with the GUI up and restores it when the file is opened, including through the bridge's `open` (which adds no fit afterwards; the GUI's own Open and recent-file actions still switch to isometric and fit). So a camera set in a hidden app (`tools/assistant.ps1 -Hidden`) before `save` is the view the user sees when the saved file opens in their app. A file saved headless has no `GuiDocument.xml` and opens with FreeCAD's default camera.
+
+Tests: `tests/test_gui_view.py` (`GuiViewTests`: headless camera, rejections, revision and undo unchanged, Inventor camera text round trip). The GUI application path was checked by hand on 2026-10-20 (`projects/dodec-hub`, the example above): in a hidden app `set_view` reported `applied:true` with the camera read back from the view, `save` wrote it to `GuiDocument.xml`, and an offscreen FreeCAD that opened the file with `App.openDocument` restored the same camera. There is no automated GUI recipe for it yet.
