@@ -1,0 +1,8 @@
+{
+  "history_features": 27,
+  "solid_operations": 13,
+  "result_faces": 30,
+  "cold_ms": 316.8277000077069,
+  "cached_mean_ms": 0.08405000116908923,
+  "fixture": "test_face_provenance.FaceProvenanceTests.test_bounded_long_history_cold_and_cached_click_measurement"
+}

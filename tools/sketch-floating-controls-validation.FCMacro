@@ -1,0 +1,246 @@
+"""Inspect sketch viewport controls in a private offscreen production shell."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+from sketch_pointer_routing import pending_line_probe
+
+
+class NoTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+    def tick(self):
+        return False
+    def close(self):
+        pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("sketch-floating-controls")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "states": [], "pid": os.getpid(), "engine": App.Version(),
+          "source_sha256": {name: hashlib.sha256((root / "src/kurtshape" / name).read_bytes()).hexdigest()
+                            for name in ("ui.py", "workspace_preferences.py")}}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+
+def snapshot(name):
+    QtTest.QTest.qWait(250)
+    widgets = []
+    for widget in app.allWidgets():
+        if not widget.isVisible():
+            continue
+        parents = []
+        parent = widget.parentWidget()
+        while parent:
+            parents.append(parent.metaObject().className() + ":" + parent.objectName())
+            parent = parent.parentWidget()
+        position = widget.mapTo(main, QtCore.QPoint(0, 0))
+        widgets.append({"class": widget.metaObject().className(), "name": widget.objectName(),
+                        "title": widget.windowTitle(), "geometry": widget.geometry().getRect(),
+                        "main_rect": [position.x(), position.y(), widget.width(), widget.height()],
+                        "mouse_transparent": widget.testAttribute(QtCore.Qt.WA_TransparentForMouseEvents),
+                        "parents": parents, "actions": [action.text() for action in widget.actions()]})
+    gl = viewport()
+    position = gl.mapTo(main, QtCore.QPoint(0, 0))
+    view_rect = QtCore.QRect(position, gl.size())
+    hits = []
+    for row in widgets:
+        if row["class"].startswith("Gui::Overlay") or row["name"] == "hintLabel":
+            rectangle = QtCore.QRect(*row["main_rect"])
+            overlap = rectangle.intersected(view_rect)
+            if overlap.isEmpty():
+                continue
+            point = overlap.center()
+            hit = main.childAt(point)
+            hits.append({"candidate": {key: row[key] for key in ("class", "name", "main_rect", "mouse_transparent")},
+                         "overlap": overlap.getRect(), "point": [point.x(), point.y()],
+                         "hit_class": hit.metaObject().className() if hit else None,
+                         "hit_name": hit.objectName() if hit else None})
+    report["states"].append({"name": name, "widgets": widgets, "viewport": view_rect.getRect(), "viewport_hits": hits})
+    main.grab().save(str(output / (name + ".png")))
+    save()
+
+
+def unobstructed(name):
+    snapshot(name)
+    check("No native overlay covers the sketch canvas: " + name, not report["states"][-1]["viewport_hits"])
+
+
+def tasks_usable(name):
+    dock = main.findChild(QtWidgets.QDockWidget, "Tasks")
+    content = dock.widget() if dock else None
+    controls = [widget for widget in dock.findChildren(QtWidgets.QWidget)
+                if widget.isVisible() and widget.isEnabled()] if dock else []
+    report.setdefault("tasks", []).append({"name": name, "visible": bool(dock and dock.isVisible()),
+        "content_visible": bool(content and content.isVisible()), "visible_enabled_widgets": len(controls),
+        "right_docked": bool(dock and main.dockWidgetArea(dock) == QtCore.Qt.RightDockWidgetArea)})
+    check("Native Tasks content stays visible and usable: " + name,
+          dock and dock.isVisible() and content and content.isVisible() and controls
+          and main.dockWidgetArea(dock) == QtCore.Qt.RightDockWidgetArea)
+
+
+def motion_tracks(name, pixels, commit=False):
+    motion = pending_line_probe(panel, target_pixels=pixels, commit=commit)
+    report[name] = motion
+    save()
+    check("The native Line tool starts through its managed toolbar: " + name,
+          motion["entry_command"] == "Sketcher_CreatePolyline")
+    check("All requested pixels remain in the viewport: " + name,
+          motion["target_pixels"] == motion["requested_target_pixels"] and len(motion["target_pixels"]) == len(pixels))
+    outside = next(row for row in motion["moves"] if row["stage"] == "outside_pending")
+    check("The test has an active native line preview: " + name, len(outside["preview"]) >= 2)
+    routed = [row for row in motion["moves"] if row["stage"] == "routed_overlay"]
+    direct = [row for row in motion["moves"] if row["stage"] == "direct_gl_same_target"]
+    check("Every routed canvas move reaches the native viewport: " + name,
+          len(routed) == len(pixels) and all(row["receiver"]["class"] == "QOpenGLWidget" for row in routed))
+    check("Routed previews follow the same positions as direct native input: " + name,
+          all(len(a["preview"]) >= 2 and a["preview"] == b["preview"] for a, b in zip(routed, direct)))
+    check("The native command and cursor release cleanly: " + name,
+          motion["cleanup_command"] is None and not motion["cleanup_cursor"]["owned"] and not motion["cleanup_midpoint_guard"])
+    return motion
+
+
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(widget for widget in active.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible() and widget.width() > 100)
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        panel.core.settings.roots = {Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()}
+        report["overlay_commands"] = [name for name in Gui.listCommands() if "DockOverlay" in name]
+        assert panel.operation("new", name="Floating sketch controls")
+        assert panel.operation("sketch_circle", id="BaseProfile", x=0, y=0, diameter=50), panel.message.text()
+        assert panel.operation("pad", id="BaseSolid", profile="BaseProfile", length=6), panel.message.text()
+        assert panel.operation("create_sketch", id="Profile", plane="YZ")
+        panel.select_feature("Profile")
+        assert panel.edit_sketch()
+        Gui.activeDocument().activeView().viewRight()
+        Gui.activeDocument().activeView().fitAll()
+        unobstructed("empty-sketch")
+        tasks_usable("empty-sketch")
+        # The original saved-profile reproduction blocked these eight pixels
+        # in an 826x710 canvas, with 71-306px preview error. Keep every target
+        # when replaying so a resized viewport cannot silently weaken the test.
+        blocked_pixels = [[578, 177], [701, 177], [784, 177], [578, 284],
+                          [701, 284], [784, 284], [578, 390], [701, 390]]
+        fixed = motion_tracks("formerly_blocked_motion", blocked_pixels, commit=True)
+        check("A routed endpoint click commits the intended native segment",
+              fixed["commit"]["count_delta"] == 1 and fixed["commit"]["geometry_type"] == "Part::GeomLineSegment"
+              and fixed["commit"]["solve_result"] == 0 and fixed["commit"]["error_px"] < 1)
+        check("Continuous placement follows the next routed move",
+              len(next(row for row in fixed["moves"] if row["stage"] == "continuous_pending")["preview"]) >= 2
+              and fixed["count_after_continuous_move"] == fixed["commit"]["geometry_count"])
+        unobstructed("after-line-placement")
+        gl = viewport()
+        grid = [[round(gl.width() * x), round(gl.height() * y)]
+                for y in (.18, .37, .63, .82) for x in (.12, .31, .53, .73, .92)]
+        motion_tracks("canvas_grid_motion", grid)
+        unobstructed("after-canvas-grid")
+        tasks_usable("after-canvas-grid")
+        check("No native toolbar is visible during line placement", not any(
+            bar.isVisible() for bar in main.findChildren(QtWidgets.QToolBar) if panel.workspace_preferences._native_toolbar(bar)))
+        panel.sketch_references.end_tool(stop_native=True)
+        unobstructed("tool-stopped")
+        check("Sketch finishes after toolbar suppression", panel.finish_sketch())
+        unobstructed("sketch-finished")
+        check("Native Tasks hides after sketch completion", not main.findChild(QtWidgets.QDockWidget, "Tasks").isVisible())
+        panel.select_feature("Profile")
+        check("Sketch editing reopens normally", panel.edit_sketch())
+        QtTest.QTest.qWait(200)
+        check("Native toolbar stays absent on reentry", not any(
+            bar.isVisible() for bar in main.findChildren(QtWidgets.QToolBar) if panel.workspace_preferences._native_toolbar(bar)))
+        check("Finish remains available on reentry", panel.confirm.isEnabled())
+        tasks_usable("reentered-sketch")
+        unobstructed("reentered-sketch")
+        check("Cancel remains available on reentry", panel.finish_sketch(cancel=True))
+        unobstructed("sketch-cancelled")
+        check("KurtShape history and sketch controls remain available", panel.isVisible() and panel.sketch_bar.isEnabled())
+        check("Tested toolbar sources are unchanged", all(
+            hashlib.sha256((root / "src/kurtshape" / name).read_bytes()).hexdigest() == digest
+            for name, digest in report["source_sha256"].items()))
+        report["check_count"] = len(report["checks"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    report["cleanup"] = "closing-documents"
+    save()
+    for name in list(App.listDocuments()):
+        doc = App.getDocument(name)
+        gui = Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    if panel:
+        report["cleanup"] = "panel-shutdown"
+        save()
+        panel.shutdown()
+    app.removeEventFilter(hidden)
+    report["cleanup"] = "quit-scheduled"
+    save()
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+QtCore.QTimer.singleShot(300000, lambda: (report.update(error="Floating controls timeout"), save(), cleanup()))
+QtCore.QTimer.singleShot(1200, run)

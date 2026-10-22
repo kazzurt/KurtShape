@@ -1,0 +1,228 @@
+"""Pending-line midpoint capture, using native input and live Coin preview."""
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import time
+import traceback
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+from pivy import coin
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+
+
+class HiddenWindows(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in (QtCore.QEvent.Show, QtCore.QEvent.Polish) and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenWindows(app)
+app.installEventFilter(hidden)
+main.show()
+output = evidence_dir("sketch-midpoint-motion")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "cases": [], "pid": os.getpid(), "engine": App.Version(),
+          "method": "Private hidden native Panel; pending endpoint read from EditCurvesCoordinate after native Qt input. No physical pointer latency claim."}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+
+def wait(ms=100):
+    QtTest.QTest.qWait(ms)
+
+
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(w for w in active.findChildren(QtWidgets.QWidget)
+                if w.metaObject().className() == "QOpenGLWidget" and w.isVisible() and w.width() > 300)
+
+
+def position(sketch, x, y):
+    widget = viewport()
+    pixel = Gui.activeDocument().activeView().getPointOnViewport(sketch.Placement.multVec(App.Vector(x, y, 0)))
+    ratio = widget.devicePixelRatioF()
+    return QtCore.QPoint(round(pixel[0] / ratio), widget.height() - 1 - round(pixel[1] / ratio))
+
+
+def move(sketch, x, y, buttons=QtCore.Qt.NoButton):
+    widget, point = viewport(), position(sketch, x, y)
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point), QtCore.QPointF(widget.mapToGlobal(point)),
+                            QtCore.Qt.NoButton, buttons, QtCore.Qt.NoModifier)
+    began = time.perf_counter()
+    app.sendEvent(widget, event)
+    elapsed = (time.perf_counter() - began) * 1000
+    wait(35)
+    return elapsed
+
+
+def click(sketch, x, y):
+    move(sketch, x, y)
+    QtTest.QTest.mouseClick(viewport(), QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, position(sketch, x, y))
+    wait(120)
+
+
+def preview():
+    search = coin.SoSearchAction()
+    search.setName("EditCurvesCoordinate")
+    search.apply(Gui.activeDocument().activeView().getSceneGraph())
+    path = search.getPath()
+    return [list(p.getValue()) for p in path.getTail().point.getValues()] if path else []
+
+
+def stored_snap(prefs):
+    return next((v for kind, name, v in prefs.GetContents() or () if name == "SnapToObjects"), None)
+
+
+def exercise(kind, plane="XY", oblique=False):
+    prefix = kind + " " + plane + (" oblique" if oblique else " normal")
+    check(prefix + ": new document", bool(panel.operation("new", name=prefix)))
+    if kind == "projected":
+        check(prefix + ": source sketch", bool(panel.operation("create_sketch", id="Source", plane=plane)))
+        source = panel.document().Source
+        source.addGeometry(Part.LineSegment(App.Vector(-50, 10, 0), App.Vector(50, 10, 0)), False)
+        panel.document().recompute()
+    check(prefix + ": target sketch", bool(panel.operation("create_sketch", id="Motion", plane=plane)))
+    doc, sketch = panel.document(), panel.document().Motion
+    if kind == "projected":
+        check(prefix + ": associated projected line", bool(panel.operation("project_geometry", sketch=sketch.Name,
+              references=[{"feature": "Source", "subelement": "Edge1"}], defining=False)))
+        source.ViewObject.Visibility = False
+    else:
+        sketch.addGeometry(Part.LineSegment(App.Vector(-50, 10, 0), App.Vector(50, 10, 0)), False)
+        doc.recompute()
+    prefs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher/Snap")
+    original = stored_snap(prefs)
+    panel.select_feature(sketch.Name)
+    check(prefix + ": edit", bool(panel.edit_sketch()))
+    panel.normal()
+    view = Gui.activeDocument().activeView()
+    view.getCameraNode().height.setValue(130)
+    if oblique:
+        view.setCameraOrientation((App.Rotation(App.Vector(1, 0, 0), 35) * view.getCameraOrientation()).Q)
+    wait(350)
+    Gui.Selection.clearSelection()
+    Gui.Selection.clearPreselection()
+    check(prefix + ": toolbar line command", bool(panel.native_command("Sketcher_CreatePolyline")))
+    wait(120)
+    click(sketch, -30, -20)
+    count = sketch.GeometryCount
+    case = {"kind": kind, "plane": plane, "oblique": oblique, "motions": []}
+    report["cases"].append(case)
+    for x in (-4, -3, 0, 3, 4):
+        elapsed = move(sketch, x, 10)
+        points = preview()
+        case["motions"].append({"target": [x, 10], "preview": points, "dispatch_ms": elapsed,
+                                "guarded": bool(panel.sketch_snapping._midpoint_guard)})
+        check(prefix + f": pending preview at x={x}", len(points) == 2)
+        if x:
+            check(prefix + f": endpoint follows mouse beyond midpoint aperture x={x}", abs(points[-1][0] - x) < .45)
+        else:
+            check(prefix + ": exact midpoint still snaps", abs(points[-1][0]) < 1e-7 and abs(points[-1][1] - 10) < 1e-7)
+            check(prefix + ": midpoint restores native snap and inference", prefs.GetBool("SnapToObjects") and sketch.ViewObject.Autoconstraints)
+    check(prefix + ": moving endpoint adds no geometry", sketch.GeometryCount == count)
+    check(prefix + ": bounded input processing", max(m["dispatch_ms"] for m in case["motions"]) < 500)
+    move(sketch, 15, 17)
+    check(prefix + ": leaving midpoint releases guard", not panel.sketch_snapping._midpoint_guard
+          and prefs.GetBool("SnapToObjects") and sketch.ViewObject.Autoconstraints)
+    move(sketch, 4, 10)
+    move(sketch, 4, 10, QtCore.Qt.MiddleButton)
+    check(prefix + ": navigation restores snap preferences", not panel.sketch_snapping._midpoint_guard
+          and prefs.GetBool("SnapToObjects") and sketch.ViewObject.Autoconstraints)
+    click(sketch, 4, 10)
+    check(prefix + ": click commits one line", sketch.GeometryCount == count + 1)
+    endpoint = sketch.Geometry[-1].EndPoint
+    check(prefix + ": committed endpoint matches preview instead of distant midpoint", abs(endpoint.x - 4) < .45 and abs(endpoint.y - 10) < .45)
+    check(prefix + ": no unwanted midpoint constraint", not any(c.Type == "Symmetric" for c in sketch.Constraints))
+    move(sketch, 15, 17)
+    check(prefix + ": continuous line still follows mouse", len(preview()) == 2 and abs(preview()[-1][0] - 15) < .45)
+    check(prefix + ": finish", bool(panel.finish_sketch()))
+    check(prefix + ": finish restores stored snap preference", stored_snap(prefs) == original)
+    panel.select_feature(sketch.Name)
+    check(prefix + ": reopen", bool(panel.edit_sketch()))
+    panel.normal()
+    view.getCameraNode().height.setValue(130)
+    check(prefix + ": restart line", bool(panel.native_command("Sketcher_CreatePolyline")))
+    wait(120)
+    click(sketch, -20, -25)
+    move(sketch, -4, 10)
+    check(prefix + ": cancel", bool(panel.finish_sketch(cancel=True)))
+    check(prefix + ": cancel restores stored snap preference", stored_snap(prefs) == original
+          and panel.sketch_snapping._midpoint_guard is None)
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        for kind, plane, oblique in (("internal", "XY", False), ("internal", "XY", True),
+                                     ("internal", "YZ", False), ("projected", "XY", False)):
+            exercise(kind, plane, oblique)
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    if panel:
+        if panel.active_sketch():
+            panel.finish_sketch(cancel=True)
+        panel.shutdown()
+    for name in list(App.listDocuments()):
+        doc, gui = App.getDocument(name), Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+QtCore.QTimer.singleShot(180000, cleanup)
+QtCore.QTimer.singleShot(1200, run)

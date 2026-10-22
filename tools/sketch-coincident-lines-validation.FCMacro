@@ -1,0 +1,212 @@
+"""Whole-line and endpoint Coincident actions in a disposable hidden app."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import traceback
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+import Sketcher
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path[:0] = [str(root / "src"), str(root / "tools")]
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+
+class NoTransport:
+    def __init__(self, *args): self.pending = queue.Queue()
+    def tick(self): return False
+    def close(self): pass
+
+
+ui.Bridge = NoTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopups(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopups(app)
+app.installEventFilter(hidden)
+output = evidence_dir("sketch-coincident-lines")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "engine": App.Version(),
+          "source_sha256": {name: hashlib.sha256((root / "src/kurtshape" / name).read_bytes()).hexdigest()
+                            for name in ("ui.py", "sketch_references.py", "sketch_constraints.py", "feature_tools.py")},
+          "method": "Private hidden production Panel, real toolbar action/keyboard I and native selections; no user profile or documents."}
+panel = None
+cleaned = False
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, value):
+    assert value, label
+    report["checks"].append(label)
+    save()
+
+
+def wait(ms=150): QtTest.QTest.qWait(ms)
+
+
+def viewport():
+    window = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(widget for widget in window.findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible() and widget.width() > 300)
+
+
+def geometry(sketch):
+    return [[tuple(g.StartPoint), tuple(g.EndPoint)] for g in sketch.Geometry]
+
+
+def fixture(label):
+    if panel.active_sketch():
+        check(label + ": previous sketch finishes", panel.finish_sketch())
+    check(label + ": begin editable sketch", panel.begin_sketch(plane="XY") is not False)
+    sketch = panel.active_sketch()
+    sketch.addGeometry(Part.LineSegment(App.Vector(0, 0, 0), App.Vector(10, 0, 0)), False)
+    sketch.addGeometry(Part.LineSegment(App.Vector(2, 3, 0), App.Vector(8, 6, 0)), False)
+    sketch.solve()
+    panel.core.record_edit_boundary(sketch.Document)
+    panel.core.sync(sketch.Document)
+    panel.normal()
+    wait(250)
+    return sketch
+
+
+def select(sketch, *names):
+    Gui.Selection.clearSelection()
+    for name in names:
+        Gui.Selection.addSelection(sketch, name)
+    wait(50)
+
+
+def collinear(sketch):
+    first, second = sketch.Geometry
+    direction = first.EndPoint - first.StartPoint
+    return all(direction.cross(point - first.StartPoint).Length / direction.Length < 1e-7
+               for point in (second.StartPoint, second.EndPoint))
+
+
+def run():
+    global panel
+    try:
+        panel = ui.start()
+        sketch = fixture("Toolbar")
+        select(sketch, "Edge1", "Edge2")
+        action = next(action for action in panel.tool_menus["Constraints"].actions() if action.text() == "Coincident")
+        check("Coincident toolbar action available", action.isEnabled())
+        action.trigger()
+        wait()
+        check("Toolbar Coincident makes selected lines collinear", collinear(sketch) and sketch.DoF == 6)
+        check("Toolbar result retains free separate endpoints", sketch.getPoint(0, 2).distanceToPoint(sketch.getPoint(1, 1)) > 1)
+        panel.core.sync(sketch.Document)
+        panel.history_move("undo")
+        wait()
+        check("Managed in-sketch Undo removes line coincidence", sketch.ConstraintCount == 0 and not collinear(sketch))
+        panel.history_move("redo")
+        wait()
+        check("Managed in-sketch Redo restores line coincidence", sketch.ConstraintCount == 1 and collinear(sketch))
+
+        sketch = fixture("Keyboard")
+        select(sketch, "Edge2", "Edge1")
+        widget = viewport()
+        widget.setFocus()
+        QtTest.QTest.keyClick(widget, QtCore.Qt.Key_I)
+        wait()
+        check("Keyboard I makes reversed selected lines collinear", collinear(sketch) and sketch.DoF == 6)
+
+        sketch = fixture("Endpoints")
+        select(sketch, "Vertex2", "Vertex3")
+        check("Endpoint Coincident native action accepted", panel.native_command("Sketcher_ConstrainCoincidentUnified"))
+        wait()
+        check("Selecting endpoints still joins the selected endpoints", sketch.getPoint(0, 2).distanceToPoint(sketch.getPoint(1, 1)) < 1e-7)
+        check("Endpoint command authors a Coincident constraint", any(c.Type == "Coincident" for c in sketch.Constraints))
+
+        sketch = fixture("Projected line")
+        sketch.addConstraint(Sketcher.Constraint("Horizontal", 0))
+        check("Projected-line fixture retains the internal horizontal constraint", sketch.solve() == 0 and sketch.Constraints[0].Type == "Horizontal")
+        source = sketch.Document.addObject("Part::Feature", "ProjectedLineSource")
+        source.Shape = Part.makeLine(App.Vector(0, 12, 0), App.Vector(20, 12, 0))
+        check("Project line through associated native reference", panel.sketch_references.project([(source, "Edge1")], defining=False))
+        references = sketch.ExternalGeometry
+        source_shape = source.Shape.exportBrepToString()
+        select(sketch, "ExternalEdge1", "Edge1")
+        check("Projected-line Coincident native action accepted", panel.native_command("Sketcher_ConstrainCoincidentUnified"))
+        check("Whole internal line becomes collinear with projected line", all(abs(point.y - 12) < 1e-7
+              for point in (sketch.Geometry[0].StartPoint, sketch.Geometry[0].EndPoint)))
+        check("Projected Coincident preserves linked source reference", sketch.ExternalGeometry == references
+              and source.Shape.exportBrepToString() == source_shape and sketch.Constraints[-1].Second == -3)
+        check("Projected Coincident adds only the missing position relation", sketch.ConstraintCount == 2
+              and sketch.Constraints[-1].Type == "PointOnObject" and not sketch.RedundantConstraints
+              and not sketch.PartiallyRedundantConstraints)
+
+        sketch = fixture("Search")
+        select(sketch, "Edge1", "Edge2")
+        panel.show_tool_search()
+        dialog = panel.tool_search_dialog
+        field = dialog.findChild(QtWidgets.QLineEdit, "KurtShapeToolSearchQuery")
+        field.setText("Coincident")
+        QtTest.QTest.keyClick(field, QtCore.Qt.Key_Return)
+        wait()
+        check("Search Coincident uses the same collinear behavior", collinear(sketch) and sketch.DoF == 6)
+
+        sketch = fixture("Conflict")
+        sketch.addConstraint([Sketcher.Constraint("Block", 0), Sketcher.Constraint("Block", 1)])
+        sketch.solve()
+        before = geometry(sketch)
+        select(sketch, "Edge1", "Edge2")
+        check("Conflicting fixed-line Coincident is rejected", not panel.native_command("Sketcher_ConstrainCoincidentUnified"))
+        check("Rejected constraint preserves geometry and fixed constraints", geometry(sketch) == before and sketch.ConstraintCount == 2 and sketch.solve() == 0)
+        check("Rejected constraint leaves the sketch editor usable", panel.active_sketch() == sketch)
+        check("Conflict sketch can be canceled", panel.finish_sketch(cancel=True))
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        save()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    if panel:
+        panel.sketch_regions.close()
+    for name in list(App.listDocuments()):
+        doc, gui = App.getDocument(name), Gui.getDocument(name)
+        if gui and gui.getInEdit():
+            Gui.runCommand("Sketcher_StopOperation")
+            gui.resetEdit()
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        doc.setClosable(True)
+        App.closeDocument(name)
+    if panel:
+        panel.shutdown()
+    app.removeEventFilter(hidden)
+    QtCore.QTimer.singleShot(0, app.quit)
+
+
+QtCore.QTimer.singleShot(300000, cleanup)
+QtCore.QTimer.singleShot(1200, run)

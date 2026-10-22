@@ -8,7 +8,7 @@ try {
     $checksSession = Join-Path $PSScriptRoot ('runtime\test-tmp\checks-' + [DateTime]::Now.ToString('yyyyMMdd-HHmmss') + '-' + $PID)
     Initialize-KurtShapeValidationEnvironment -Root $PSScriptRoot -Session $checksSession -WriteEvidence:$WriteEvidence
     $env:KURTSHAPE_TEST_TMP = Join-Path $PSScriptRoot 'runtime\test-tmp'
-    $pythonPath = Join-Path $PSScriptRoot 'runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\python.exe'
+    $pythonPath = Join-Path $PSScriptRoot 'runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe'
     if (-not (Test-Path -LiteralPath $pythonPath)) { throw 'Run install-runtime.ps1 first.' }
     $examples = if ($env:KURTSHAPE_ONSHAPE_EXAMPLES) { $env:KURTSHAPE_ONSHAPE_EXAMPLES }
                 else { Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'Onshape examples' }

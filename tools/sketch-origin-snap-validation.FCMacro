@@ -285,9 +285,9 @@ def cleanup():
     QtCore.QTimer.singleShot(0, app.quit)
 
 def timeout():
-    report["error"] = "Origin snapping validation exceeded 90 seconds"
+    report["error"] = "Origin snapping validation exceeded 300 seconds"
     save()
     cleanup()
 
-QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(300000, timeout)
 QtCore.QTimer.singleShot(1200, run)

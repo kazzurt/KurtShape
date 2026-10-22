@@ -1,0 +1,325 @@
+{
+  "verified": true,
+  "collected_utc": "2026-10-22T00:32:57.8716439Z",
+  "project": "KurtShape, main checkout, FreeCAD 1.1.4 / OCCT 7.8.1",
+  "kurtshape_build_sha256": "bc04f8aac61ef01a9116e267e47435086e995da61f0dabb1636b96d0a30595f4",
+  "source_sha256": {
+    "src/kurtshape/ui.py": "a9e034da701ac30ec61e73594bfa03571c93a73560542bb92ed4664c0e6aa389",
+    "src/kurtshape/workspace_preferences.py": "a311edc9cda10c21de791a39f04e19ad68ec6f457fae5be7c332c4c41d849dc9",
+    "tools/sketch_pointer_routing.py": "e57d6a697fc12bed627520ddf01924d0b410caf9786965b186a83699924bce41",
+    "tools/sketch-floating-controls-validation.FCMacro": "ef25e4f460902620dcea1b0a56666307e4dd7f7b6420b33b21530398a36e26e9"
+  },
+  "finding": "An orphan native Tasks overlay remained over the canvas after direct dock reparenting. Its splitter intercepted pointer movement, freezing the pending endpoint until the pointer left that region. Empty overlay tabs/proxies produced the ghost controls.",
+  "repair": "Release native overlay ownership before laying out Tasks; hide only owned empty native overlay tab/proxy shells at startup and Show/Polish. Preserve actual task content. No additional sketch snapping/cursor or modeling changes in this follow-up.",
+  "baseline": {
+    "diagnostic_only": true,
+    "receipt": "runtime/ci-gui/sketch-floating-controls/run-083b2b6b6fc344f99b63642a0caf4cc0/recipe-result.json",
+    "report": "runtime/ci-gui/sketch-floating-controls/run-083b2b6b6fc344f99b63642a0caf4cc0/evidence/sketch-floating-controls/gui-result.json",
+    "entry_command": "Sketcher_CreatePolyline",
+    "requested_pixels": [
+      [
+        578,
+        177
+      ],
+      [
+        701,
+        177
+      ],
+      [
+        784,
+        177
+      ],
+      [
+        578,
+        284
+      ],
+      [
+        701,
+        284
+      ],
+      [
+        784,
+        284
+      ],
+      [
+        578,
+        390
+      ],
+      [
+        701,
+        390
+      ]
+    ],
+    "strict_causal_pairs": [
+      {
+        "target": [
+          578,
+          177
+        ],
+        "routed_error_px": 135.8299590582938,
+        "direct_error_px": 0.0,
+        "released_error_px": 0.33333333333337123,
+        "routed_receiver": {
+          "class": "Gui::OverlaySplitter",
+          "name": "",
+          "visible": true,
+          "enabled": true,
+          "transparent_for_mouse": false
+        }
+      },
+      {
+        "target": [
+          701,
+          177
+        ],
+        "routed_error_px": 71.0125184582111,
+        "direct_error_px": 0.33333333333337123,
+        "released_error_px": 0.33333333333337123,
+        "routed_receiver": {
+          "class": "Gui::OverlaySplitter",
+          "name": "",
+          "visible": true,
+          "enabled": true,
+          "transparent_for_mouse": false
+        }
+      },
+      {
+        "target": [
+          784,
+          177
+        ],
+        "routed_error_px": 114.42804629013716,
+        "direct_error_px": 0.0,
+        "released_error_px": 0.33333333333337123,
+        "routed_receiver": {
+          "class": "Gui::OverlaySplitter",
+          "name": "",
+          "visible": true,
+          "enabled": true,
+          "transparent_for_mouse": false
+        }
+      },
+      {
+        "target": [
+          578,
+          284
+        ],
+        "routed_error_px": 212.1825733759595,
+        "direct_error_px": 0.3333333333333144,
+        "released_error_px": 0.33333333333337123,
+        "routed_receiver": {
+          "class": "Gui::OverlaySplitter",
+          "name": "",
+          "visible": true,
+          "enabled": true,
+          "transparent_for_mouse": false
+        }
+      },
+      {
+        "target": [
+          701,
+          284
+        ],
+        "routed_error_px": 177.8045118787609,
+        "direct_error_px": 0.47140452079104506,
+        "released_error_px": 0.33333333333337123,
+        "routed_receiver": {
+          "class": "Gui::OverlaySplitter",
+          "name": "",
+          "visible": true,
+          "enabled": true,
+          "transparent_for_mouse": false
+        }
+      },
+      {
+        "target": [
+          784,
+          284
+        ],
+        "routed_error_px": 199.16185489306037,
+        "direct_error_px": 0.3333333333333144,
+        "released_error_px": 0.33333333333337123,
+        "routed_receiver": {
+          "class": "Gui::OverlaySplitter",
+          "name": "",
+          "visible": true,
+          "enabled": true,
+          "transparent_for_mouse": false
+        }
+      }
+    ],
+    "acceptance_run": false
+  },
+  "accepted_gui_runs": [
+    {
+      "recipe": "sketch-floating-controls",
+      "profile": "saved profile",
+      "receipt": "runtime/ci-gui/sketch-floating-controls/run-84d559be209a4080962da47db43627ad/recipe-result.json",
+      "report": "runtime/ci-gui/sketch-floating-controls/run-84d559be209a4080962da47db43627ad/evidence/sketch-floating-controls/gui-result.json",
+      "checks": 33,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_hashes_published": true,
+      "started_utc": "2026-10-22T00:22:20.4661573Z",
+      "exited_utc": "2026-10-22T00:23:26.6376769Z"
+    },
+    {
+      "recipe": "sketch-floating-controls",
+      "profile": "clean profile",
+      "receipt": "runtime/ci-gui/sketch-floating-controls/run-c95769589598498b97b347d6ccd59b92/recipe-result.json",
+      "report": "runtime/ci-gui/sketch-floating-controls/run-c95769589598498b97b347d6ccd59b92/evidence/sketch-floating-controls/gui-result.json",
+      "checks": 33,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_hashes_published": true,
+      "started_utc": "2026-10-22T00:23:48.3607267Z",
+      "exited_utc": "2026-10-22T00:25:07.8781109Z"
+    },
+    {
+      "recipe": "startup-blank",
+      "profile": "clean profile",
+      "receipt": "runtime/ci-gui/startup-blank/run-54a99641f9f74d03a1feb2d99242a8fb/recipe-result.json",
+      "report": "runtime/ci-gui/startup-blank/run-54a99641f9f74d03a1feb2d99242a8fb/evidence/startup-blank/gui-result.json",
+      "checks": 17,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_hashes_published": false,
+      "started_utc": "2026-10-22T00:24:11.801355Z",
+      "exited_utc": "2026-10-22T00:26:23.6722565Z"
+    },
+    {
+      "recipe": "history-selection",
+      "profile": "saved profile",
+      "receipt": "runtime/ci-gui/history-selection/run-d61de33782ab4283b2d79e84f2c272e7/recipe-result.json",
+      "report": "runtime/ci-gui/history-selection/run-d61de33782ab4283b2d79e84f2c272e7/evidence/history-selection/gui-result.json",
+      "checks": 49,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_hashes_published": true,
+      "started_utc": "2026-10-22T00:24:11.9195913Z",
+      "exited_utc": "2026-10-22T00:26:58.1450076Z"
+    },
+    {
+      "recipe": "sketch-references",
+      "profile": "saved profile",
+      "receipt": "runtime/ci-gui/sketch-references/run-4c47fbd0e1e24d50898832f8a48e1340/recipe-result.json",
+      "report": "runtime/ci-gui/sketch-references/run-4c47fbd0e1e24d50898832f8a48e1340/evidence/sketch-references/gui-result.json",
+      "checks": 74,
+      "exit_code": 0,
+      "timed_out": false,
+      "source_hashes_published": false,
+      "started_utc": "2026-10-22T00:24:11.8157857Z",
+      "exited_utc": "2026-10-22T00:25:45.3070189Z"
+    }
+  ],
+  "registered_gui_checks": 206,
+  "focused_native": {
+    "report": "runtime/sketch-sticking-toolbar-followup-working/focused-native-validation/native-result.json",
+    "counts": {
+      "tests": 69,
+      "passed": 69,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "expected_failures": 0
+    },
+    "selection": [
+      "test_shortcuts",
+      "test_tool_session",
+      "test_tool_search",
+      "test_sketch_snapping.SketchSnappingTests",
+      "test_sketch_cursor.SketchCursorTests",
+      "test_navigation.SketchProjectionTests"
+    ],
+    "source_unchanged": true,
+    "all_recorded_hashes_match_current": true,
+    "full_modeling_suite_rerun": false
+  },
+  "recovered_model": {
+    "receipt": "runtime/sketch-sticking-toolbar-followup-working/recovered-pointer-routing-4833b20440334adfa541c8c62f4e65fe/recipe-result.json",
+    "report": "runtime/sketch-sticking-toolbar-followup-working/recovered-pointer-routing-4833b20440334adfa541c8c62f4e65fe/evidence/recovered-pointer-routing/gui-result.json",
+    "audit": "runtime/sketch-sticking-toolbar-followup-working/recovered-pointer-routing-4833b20440334adfa541c8c62f4e65fe/acceptance-audit.json",
+    "native_checks": 269,
+    "post_exit_audit_checks": 592,
+    "exit_code": 0,
+    "timed_out": false,
+    "planes": [
+      "YZ",
+      "XZ"
+    ],
+    "strict_formerly_blocked_pixels_per_plane": 6,
+    "grid_pixels_per_plane": 25,
+    "ordinary_axis_inference": [
+      {
+        "plane": "XZ",
+        "phase": "grid_motion",
+        "target": [
+          264,
+          369
+        ],
+        "delta_px": 3.3333333333333144,
+        "routed_error_px": 3.3333333333333144,
+        "direct_error_px": 0.0,
+        "routed_point": [
+          -11.577742576599121,
+          0.0,
+          0.0020000000949949026
+        ],
+        "direct_point": [
+          -11.577742576599121,
+          0.45185795426368713,
+          0.0020000000949949026
+        ],
+        "constrained_axes": [
+          1
+        ],
+        "unconstrained_coordinate_difference_mm": 0.0
+      }
+    ],
+    "note": "All six strict old obstruction targets track within 0.8 pixels on each plane. The one grid exception snaps exactly to Y=0 within the ordinary 9-logical-pixel aperture, with identical unconstrained X. All receivers are GL and no scene mouse grabber exists."
+  },
+  "originals_unchanged": true,
+  "original_inputs": [
+    {
+      "path": "runtime/user-data/user.cfg",
+      "sha256": "3b50fa5c20c7bec83f1a0a387741b84ef769c8c6712375914588ea816fc01a72",
+      "bytes": 21457,
+      "last_write_utc": "2026-10-22T00:05:37.328792Z"
+    },
+    {
+      "path": "runtime/project-recovery/15d39131-3bdd-4577-9e87-e3bd78117105.FCStd",
+      "sha256": "ec3c4b73eb826941ee978644a8b8d28ec1683b7ebceec3ee16c8fe6d7c559282",
+      "bytes": 22966,
+      "last_write_utc": "2026-10-22T00:04:33.0339534Z"
+    },
+    {
+      "path": "runtime/project-recovery/15d39131-3bdd-4577-9e87-e3bd78117105.previous.FCStd",
+      "sha256": "9c44d01edc90e85773d83583231028bb5fcc499bc6abcd0872b1492c89da5319",
+      "bytes": 10536,
+      "last_write_utc": "2026-10-22T00:04:02.0287469Z"
+    }
+  ],
+  "source_coverage": "Saved/clean floating-controls, history and recovered-model reports publish matching hashes. Startup/references ran in the final frozen-source interval but do not publish a hash map. The subsequent focused native run records all source/test hashes and verifies them unchanged; this collector rechecks them.",
+  "limits": [
+    "Private native Windows Qt windows were hidden/offscreen. Events were synthetic and routed through actual main.childAt receivers; no physical mouse or visible user app was controlled.",
+    "Verifies the reproduced overlay obstruction and native preview/placement, not physical mouse hardware or display latency.",
+    "Normal local sketch inference remains enabled; no universal claim about every possible endpoint-sticking cause."
+  ],
+  "reproduction": [
+    ".\\tools\\run_gui_recipe.ps1 -Recipe sketch-floating-controls -SeedUserConfig .\\runtime\\user-data\\user.cfg -TimeoutSeconds 360",
+    ".\\tools\\run_gui_recipe.ps1 -Recipe sketch-floating-controls -TimeoutSeconds 360",
+    ".\\tools\\run_gui_recipe.ps1 -Recipe startup-blank -TimeoutSeconds 360",
+    ".\\tools\\run_gui_recipe.ps1 -Recipe history-selection -SeedUserConfig .\\runtime\\user-data\\user.cfg -TimeoutSeconds 360",
+    ".\\tools\\run_gui_recipe.ps1 -Recipe sketch-references -SeedUserConfig .\\runtime\\user-data\\user.cfg -TimeoutSeconds 360",
+    "runtime/sketch-sticking-toolbar-followup-working/run-recovered-pointer-routing.ps1",
+    "Bundled pythonw.exe: tools/run_native_tests.py --only test_shortcuts --only test_tool_session --only test_tool_search --only test_sketch_snapping.SketchSnappingTests --only test_sketch_cursor.SketchCursorTests --only test_navigation.SketchProjectionTests (isolated environment from tools/validation-session.ps1; KURTSHAPE_TEST_TMP=runtime/test-tmp)"
+  ],
+  "excluded_sessions": [
+    "Early camera/setup/inventory-only diagnostics do not establish acceptance.",
+    "run-48047e40032c46439d382f30d7dccc84: late native disable after orphaning stalled cleanup; only its verified private process was terminated.",
+    "run-36c567cee1824040966099f28af973cd: first candidate left an 8-pixel overlay proxy after Finish; corrected before all accepted final runs.",
+    "startup-blank/run-941d5a6eb5264e21872c799214980598, history-selection/run-5a5b61839d1041ea8b551b12f019f625, sketch-references/run-d28db3c3135942c2846b69525d3c42d8: superseded before final proxy correction; stopped only their verified private processes.",
+    "recovered-pointer-routing-77e15dcdaf2a422b83b3169cc2fbec76: initial logical assertion rejected exact-axis inference; superseded by final run and strict coordinate audit.",
+    "Original midpoint/floating-QToolBar tests passed but bypassed this actual input obstruction; retained as historical evidence only."
+  ]
+}

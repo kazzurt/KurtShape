@@ -24,8 +24,7 @@ from .theme import apply_theme, apply_view_theme, COLORS
 from .feature_tools import available_catalog
 from .quantity_field import QuantityField
 from .extrusion_preview import DebouncedExtrusionPreview
-from .workspace_preferences import WorkspacePreferences
-from .sketch_tools import run_command as run_sketch_command
+from .workspace_preferences import WorkspacePreferences, release_native_overlays
 from .sketch_tools import show_unconsumed_sketch
 from .sketch_references import SketchReferences
 from .sketch_edit_panel import SketchPlaneEditor
@@ -97,6 +96,7 @@ def native_plane(doc, plane, body=None):
 
 def hide_native_panels():
     main = Gui.getMainWindow()
+    release_native_overlays(main)
     for dock in main.findChildren(QtGui.QDockWidget):
         if dock.objectName() in {"Combo View", "Tree view", "Property view", "Report view", "Python console"} or dock.windowTitle() in {"Model", "Combo View", "Property view", "Report view", "Python console"}:
             dock.hide()
@@ -118,8 +118,10 @@ class SelectionObserver:
         if p.core.busy:
             return
         if p.section_view.selection_pick(document, object_name, subelement):
+            p.history_controller.face_links.clear()
             return
         if p.sketch_plane_editor.selection_pick(document, object_name, subelement):
+            p.history_controller.face_links.clear()
             return
         if p.pending_sketch and not p.selecting_support:
             obj = App.getDocument(document).getObject(object_name)
@@ -127,6 +129,13 @@ class SelectionObserver:
                 p.selecting_support = True
                 QtCore.QTimer.singleShot(0, lambda: p.choose_support(document, object_name, subelement))
         QtCore.QTimer.singleShot(0, p.capture_feature_selection)
+        p.history_controller.face_links.schedule(reveal=True)
+
+    def removeSelection(self, *args):
+        self.panel.history_controller.face_links.schedule()
+
+    def clearSelection(self, *args):
+        self.panel.history_controller.face_links.schedule()
 
 class Panel(QtGui.QDockWidget):
     MEASURE = False
@@ -269,6 +278,7 @@ class Panel(QtGui.QDockWidget):
         self.features.setHeaderHidden(True)
         self.features.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         self.history_controller = HistorySelection(self)
+        history_layout.addWidget(self.history_controller.face_links.bar)
         self.features.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.features.customContextMenuRequested.connect(self.history_menu)
         self.features.itemSelectionChanged.connect(self.history_selection)
@@ -1219,6 +1229,7 @@ class Panel(QtGui.QDockWidget):
         # document is active. Refresh only after it restores the live view.
         if self.core.busy or self._geometry_check_preparing or self._step_export_preparing:
             return
+        self.history_controller.face_links.poll()
         geometry_document = self.document()
         if geometry_document is not self._step_export_document:
             self._step_export_document = geometry_document
@@ -1940,6 +1951,8 @@ class Panel(QtGui.QDockWidget):
                 item.setHidden(bool(text and all(item.child(j).isHidden() for j in range(item.childCount()))))
             else:
                 item.setHidden(bool(text and item.data(0, QtCore.Qt.UserRole) != "origin" and text not in item.text(0).lower()))
+        if hasattr(self, "history_controller"):
+            self.history_controller.face_links.update_filter()
 
     def selected(self):
         keys = self.history_controller.selected_ids()
@@ -3548,6 +3561,7 @@ class Panel(QtGui.QDockWidget):
         return not (failure and failure["sketch"] == state.get("active_sketch_edit"))
 
     def sync_edit_ui(self):
+        self.history_controller.face_links.schedule()
         self.parameter_section.sync_editable()
         sketch = self.active_sketch() or (self.sketch_plane_editor.sketch() if self.sketch_plane_editor.picking else None)
         if sketch is None and not self.entering_sketch and not self.finishing_sketch:
@@ -4268,7 +4282,7 @@ class Panel(QtGui.QDockWidget):
                 # Recovered/native-opened managed sketches can enter the
                 # editor without passing through edit_sketch().
                 self.sketch_snapping.begin(self.active_sketch(), self.main.devicePixelRatioF())
-            run_sketch_command(command)
+            self.sketch_references.run_native(command)
             self.sketch_snapping.before_native(command)
             self.sketch_cursor.sync(self.sketch_references.native_command_for_context())
             if command == "Sketcher_Dimension":
@@ -4531,6 +4545,7 @@ def start():
     preferences.SetInt("AutoSaveTimeout", 1)
     App.saveParameter()
     Gui.activateWorkbench("PartDesignWorkbench")
+    release_native_overlays(main)
     apply_theme(main)
     from .startup import maximize_on_primary_screen
     maximize_on_primary_screen(main)

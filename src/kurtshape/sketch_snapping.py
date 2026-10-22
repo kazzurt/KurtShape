@@ -31,6 +31,9 @@ class SketchSnapping:
         self._pick_widget = None
         self._pick_radius = None
         self._applied_radius = None
+        self._curve_coordinates = {}
+        self._midpoint_guard = None
+        self._block_midpoint = False
 
     def begin(self, sketch, pixel_ratio=1.0):
         """Enable native point/axis snaps until this managed edit ends."""
@@ -139,6 +142,16 @@ class SketchSnapping:
         if path is not None:
             self._pick_path = path.copy()
             self._pick_path.ref()
+            # These native arrays are updated in place when a continuous line
+            # commits. Keep their nodes, not a snapshot of their coordinates.
+            search = coin.SoSearchAction()
+            search.setType(coin.SoCoordinate3.getClassTypeId(), True)
+            search.setInterest(coin.SoSearchAction.ALL)
+            search.apply(self._pick_path)
+            paths = search.getPaths()
+            self._curve_coordinates = {str(paths[i].getTail().getName())[16:]: paths[i].getTail()
+                                       for i in range(paths.getLength())
+                                       if str(paths[i].getTail().getName()).startswith("CurvesCoordinate")}
 
     @staticmethod
     def _capture_radius(distances, full_radius, keys=None):
@@ -175,10 +188,14 @@ class SketchSnapping:
         volume = self._renderer.getCamera().getViewVolume(viewport.getViewportAspectRatio())
         distances = []
         keys = []
+        self._block_midpoint = False
+        curve = None
         for index in range(hits.getLength()):
             hit = hits[index]
             name = str(hit.getPath().getTail().getName())
             if name != "OriginPointSet" and not (name.startswith("PointSet") and name[8:].isdigit()):
+                if curve is None and name.startswith("CurvesLineSet") and name[13:].isdigit():
+                    curve = hit
                 continue
             screen = volume.projectToScreen(hit.getPoint())
             distances.append(math.hypot(screen[0] * size[0] + origin[0] - point[0],
@@ -189,7 +206,59 @@ class SketchSnapping:
             # Keep every marker of the same sketch point inside the aperture.
             local = hit.getObjectPoint()
             keys.append((float(local[0]), float(local[1])))
+        # The engine's line-midpoint capture is 5% of the *model length*.
+        # A long line can therefore pin the endpoint dozens of screen pixels
+        # away from the mouse. The same threshold also creates a Symmetric
+        # auto-constraint on click. Veto both outside the ordinary aperture,
+        # while allowing nearby native point markers to retain priority.
+        if not any(distance <= self._pick_radius + .001 for distance in distances) and curve is not None:
+            self._block_midpoint = self._oversized_midpoint(curve, point, volume, size, origin)
         return self._capture_radius(distances, self._pick_radius, keys)
+
+    def _oversized_midpoint(self, hit, point, volume, size, origin):
+        from pivy import coin
+        node = hit.getPath().getTail()
+        coordinates = self._curve_coordinates.get(str(node.getName())[13:])
+        detail = hit.getDetail()
+        if (coordinates is None or not node.isOfType(coin.SoLineSet.getClassTypeId())
+                or detail is None or detail.getTypeId() != coin.SoLineDetail.getClassTypeId()):
+            return False
+        detail = coin.cast(detail, "SoLineDetail")
+        part = detail.getPartIndex()
+        if part < 0 or part >= node.numVertices.getNum() or node.numVertices[part] != 2:
+            return False  # Curved polylines retain their own native behavior.
+        first, second = detail.getPoint0().getCoordinateIndex(), detail.getPoint1().getCoordinateIndex()
+        if min(first, second) < 0 or max(first, second) >= coordinates.point.getNum():
+            return False
+        start, end = coordinates.point[first], coordinates.point[second]
+        midpoint = (start + end) * .5
+        delta = hit.getObjectPoint() - midpoint
+        if math.hypot(delta[0], delta[1]) >= (end - start).length() * .05:
+            return False
+        world = hit.getObjectToWorld().multVecMatrix(midpoint)
+        screen = volume.projectToScreen(world)
+        return math.hypot(screen[0] * size[0] + origin[0] - point[0],
+                          screen[1] * size[1] + origin[1] - point[1]) > self._pick_radius
+
+    def _guard_midpoint(self, block):
+        if not block:
+            if self._midpoint_guard is not None:
+                prefs, snap, view, auto = self._midpoint_guard
+                self._midpoint_guard = None
+                if not prefs.GetBool("SnapToObjects", True):
+                    prefs.SetBool("SnapToObjects", snap)
+                try:
+                    if not view.Autoconstraints:
+                        view.Autoconstraints = auto
+                except (AttributeError, ReferenceError, RuntimeError):
+                    pass  # Native resetEdit/deletion may precede our cleanup.
+            return
+        if self._midpoint_guard is None and self._sketch is not None:
+            prefs = self._param_get(_PREFERENCES + "Mod/Sketcher/Snap")
+            view = self._sketch.ViewObject
+            self._midpoint_guard = (prefs, prefs.GetBool("SnapToObjects", True), view, view.Autoconstraints)
+            prefs.SetBool("SnapToObjects", False)
+            view.Autoconstraints = False
 
     def _set_radius(self, radius):
         if self._viewer is not None and radius != self._applied_radius:
@@ -213,6 +282,7 @@ class SketchSnapping:
         if kind in (QtCore.QEvent.Leave, QtCore.QEvent.WindowDeactivate,
                     QtCore.QEvent.Hide, QtCore.QEvent.Close, QtCore.QEvent.Wheel):
             self._reset_radius()
+            self._guard_midpoint(False)
             return False
         if kind not in (QtCore.QEvent.MouseMove, QtCore.QEvent.MouseButtonPress,
                         QtCore.QEvent.MouseButtonRelease):
@@ -224,6 +294,7 @@ class SketchSnapping:
             return False
         if event.buttons() & (QtCore.Qt.MiddleButton | QtCore.Qt.RightButton):
             self._reset_radius()
+            self._guard_midpoint(False)
             return False
         # Match Quarter/Mouse.cpp: round to Qt's logical integer event position,
         # flip Y there, THEN scale/truncate into Coin's framebuffer coordinates.
@@ -236,8 +307,10 @@ class SketchSnapping:
                 # A native preference change belongs to its owner, not us.
                 self._pick_radius = self._applied_radius = current
             self._set_radius(self._nearest_radius(point))
+            self._guard_midpoint(self._block_midpoint)
         except (ReferenceError, RuntimeError):
             self._reset_radius()
+            self._guard_midpoint(False)
         return False
 
     def sync_tool(self, command):
@@ -246,11 +319,14 @@ class SketchSnapping:
             self._restore_markers()
 
     def _restore_markers(self):
+        self._guard_midpoint(False)
         self._reset_radius()
         if self._pick_path is not None:
             self._pick_path.unref()
         self._pick_path = self._viewer = self._renderer = self._pick_widget = None
         self._pick_radius = self._applied_radius = None
+        self._curve_coordinates = {}
+        self._block_midpoint = False
         nodes = self._points + ([self._origin] if self._origin is not None else [])
         self._points = []
         self._origin = None

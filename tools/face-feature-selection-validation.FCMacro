@@ -1,0 +1,458 @@
+"""Exercise face-to-feature selection in a private hidden native GUI.
+
+No desktop control, user document, screen capture or network request is used.
+The runner supplies a fresh profile and records the owned process lifetime.
+"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import queue
+import socket
+import sys
+import time
+import traceback
+from unittest.mock import patch
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "tools"))
+sys.path.insert(0, str(root / "src"))
+from kurtshape_evidence import evidence_dir
+
+source_files = ["ui.py", "history_selection.py", "history_model.py", "face_history_links.py", "face_provenance.py", "core.py", "studio.py"]
+
+
+def source_hashes():
+    return {name: hashlib.sha256((root / "src" / "kurtshape" / name).read_bytes()).hexdigest()
+            for name in source_files}
+
+
+startup_hashes = source_hashes()
+
+
+def deny_network(*args, **kwargs):
+    raise RuntimeError("Python networking denied for face-feature GUI validation")
+
+
+socket.socket.connect = deny_network
+socket.socket.connect_ex = deny_network
+socket.socket.sendto = deny_network
+socket.create_connection = deny_network
+socket.getaddrinfo = deny_network
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+from kurtshape import ui
+from kurtshape.core import native_intent
+from kurtshape.history_selection import FACE_MODIFIER_ROLE
+
+
+class NoSocketTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+
+    def tick(self):
+        return False
+
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopupFilter(app)
+app.installEventFilter(hidden)
+output = evidence_dir("face-feature-selection")
+report = {"passed": False, "checks": [], "source_sha256": startup_hashes,
+          "recipe_sha256": hashlib.sha256((root / "tools" / "face-feature-selection-validation.FCMacro").read_bytes()).hexdigest(),
+          "method": "Production Panel, native Body face selection observer, synchronized Qt tree selection and explicit Qt Reveal click in a fresh hidden native process/profile; no screen captures.",
+          "limits": "Synthetic small offline fixture. Geometry picks enter through native Gui.Selection rather than a rendered-pixel mouse hit. Python networking denied; C++ networking is not intercepted.",
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "runtime_profile": str(session.relative_to(root))}
+panel = None
+cleaned = False
+started = time.perf_counter()
+
+
+def save_report():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=80):
+    QtTest.QTest.qWait(ms)
+    if report.get("aborted"):
+        raise RuntimeError("Face-feature GUI validation exceeded its time bound")
+
+
+def check(label, condition):
+    if not condition:
+        raise AssertionError(label + ": " + (panel.message.text() if panel else "startup"))
+    report["checks"].append(label)
+    save_report()
+
+
+def call(op, **args):
+    result = panel.operation(op, **args)
+    if not result:
+        raise AssertionError(op + ": " + panel.message.text())
+    wait()
+    return result
+
+
+def native_selection():
+    return [(entry.Object.Document.Name, entry.Object.Name, tuple(entry.SubElementNames),
+             tuple(tuple(point) for point in entry.PickedPoints)) for entry in Gui.Selection.getSelectionEx()]
+
+
+def tree_selection():
+    current = panel.features.currentItem()
+    return (tuple(panel.history_controller.selected_ids()),
+            current.data(0, QtCore.Qt.UserRole) if current else None)
+
+
+def marked():
+    return {name for name, item in panel.items.items() if item.data(0, FACE_MODIFIER_ROLE)}
+
+
+def presentation(doc):
+    properties = ("Visibility", "ShapeColor", "LineColor", "PointColor", "Transparency")
+    return {obj.Name: {name: getattr(obj.ViewObject, name) for name in properties
+                       if name in obj.ViewObject.PropertiesList}
+            for obj in doc.Objects if hasattr(obj, "ViewObject") and obj.ViewObject}
+
+
+def snapshot():
+    doc = panel.document()
+    panel.core.sync(doc)
+    return {"intent": native_intent(doc), "revision": panel.core._meta(doc).Revision,
+            "undo": doc.UndoCount, "redo": doc.RedoCount,
+            "modified": Gui.getDocument(doc.Name).Modified,
+            "presentation": presentation(doc), "camera": Gui.getDocument(doc.Name).activeView().getCamera(),
+            "objects": tuple(obj.Name for obj in doc.Objects)}
+
+
+def passive_sync(label, reveal=False):
+    before = snapshot()
+    selected = native_selection()
+    tree = tree_selection()
+    focused = app.focusWidget()
+    panel.history_controller.face_links.sync(reveal=reveal)
+    wait()
+    check(label + " preserves native face selection", native_selection() == selected)
+    check(label + " retains the resolved tree selection and current row", tree_selection() == tree)
+    check(label + " preserves keyboard focus", app.focusWidget() is focused)
+    after = snapshot()
+    if after != before:
+        report["state_mismatch"] = {"label": label,
+            "fields": {key: {"before": before[key], "after": after[key]}
+                       for key in before if before[key] != after[key]}}
+    check(label + " preserves model, revision, Undo, dirty flag, camera and appearances", after == before)
+
+
+def face_name(obj, predicate):
+    return "Face" + str(next(index + 1 for index, face in enumerate(obj.Shape.Faces) if predicate(face)))
+
+
+def add_face(obj, name):
+    Gui.Selection.addSelection(obj, name)
+    wait(130)
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        # Restrict this private Controller's writes to the runner-owned session.
+        # This does not modify the user's preferences or grant external roots.
+        panel.core.settings.roots = {session}
+        call("new", name="Face feature selection validation")
+        call("sketch_rectangle", id="Outline", width=20, height=12, body="Body")
+        call("pad", id="Extrude", profile="Outline", length=8, body="Body")
+        doc = panel.document()
+        top = face_name(doc.Extrude, lambda face: abs(face.CenterOfMass.z - 8) < 1e-7)
+        call("sketch_circle", id="HoleSketch", x=10, y=6, diameter=4,
+             support={"feature": "Extrude", "subelement": top}, body="Body")
+        call("pocket", id="HoleCut", profile="HoleSketch", length=3, through_all=False, body="Body")
+        panel.editor.hide()
+        panel.isometric()
+        panel.fit()
+        bottom = face_name(doc.HoleCut, lambda face: abs(face.CenterOfMass.z) < 1e-7)
+        top = face_name(doc.HoleCut, lambda face: abs(face.CenterOfMass.z - 8) < 1e-7)
+        wall = face_name(doc.HoleCut, lambda face: isinstance(face.Surface, Part.Cylinder))
+        check("Fixture exposes an unchanged bottom, trimmed top and new cylindrical wall", len({bottom, top, wall}) == 3)
+        report["fixture_faces"] = {"unchanged_bottom": bottom, "trimmed_top": top, "new_wall": wall}
+        call("save", path=str(output / "face-feature-selection.FCStd"))
+
+        Gui.Selection.clearSelection()
+        wait()
+        # A previous tree pick must be replaced by the feature of a face pick.
+        panel.features.blockSignals(True)
+        panel.features.clearSelection()
+        panel.items["Outline"].setSelected(True)
+        panel.features.setCurrentItem(panel.items["Outline"], 0, QtCore.QItemSelectionModel.NoUpdate)
+        panel.features.blockSignals(False)
+        original_accessible = {name: panel.items[name].data(0, QtCore.Qt.AccessibleTextRole)
+                               for name in ("Extrude", "HoleCut")}
+        before = snapshot()
+        add_face(doc.Body, bottom)
+        links = panel.history_controller.face_links
+        report["first_link_diagnostics"] = {
+            "feature_ids": links.feature_ids, "results": links.results,
+            "context": links.context, "allowed": links.allowed(),
+            "native_selection": native_selection(),
+            "resolver_body_bottom": links.resolver.resolve(doc, "Body", bottom),
+            "body_tip": doc.Body.Tip.Name if doc.Body.Tip else None,
+            "body_faces": len(doc.Body.Shape.Faces),
+            "current_faces": links._faces(),
+            "flags": {"workspace_mode": panel.workspace_mode,
+                      "managed": panel.state.get("managed", True), "busy": panel.core.busy,
+                      "pending_sketch": panel.pending_sketch, "selecting_support": panel.selecting_support,
+                      "task": panel.task, "studio_dialog": bool(panel.studio_dialog),
+                      "studio_selection_callback": bool(panel.studio_selection_callback),
+                      "active_sketch": bool(panel.active_sketch()),
+                      "native_feature_task_active": panel.native_feature_task_active(),
+                      "sketch_plane_picking": panel.sketch_plane_editor.picking,
+                      "section_view_picking": panel.section_view.picking}}
+        save_report()
+        check("Native observer links an unchanged current-body face to its original extrusion", links.feature_ids == ("Extrude",))
+        tree_before = (("Extrude",), "Extrude")
+        check("The face feature replaces the previously selected tree row", marked() == {"Extrude"} and tree_selection() == tree_before)
+        check("Native observer retains the selected Body face", [(entry[1], entry[2]) for entry in native_selection()] == [("Body", (bottom,))])
+        check("Native observer itself leaves geometry, dirty flag, history, camera and presentation unchanged", snapshot() == before)
+        check("Resolved feature is highlighted without an extra label or badge", not links.bar.isVisible() and not hasattr(links, "label"))
+        check("The linked row exposes its meaning to accessibility clients", "feature of selected face" in str(panel.items["Extrude"].data(0, QtCore.Qt.AccessibleTextRole)).lower())
+        passive_sync("An unchanged-face link", reveal=True)
+
+        # Isolate the UI contract at the resolver boundary. Native geometry
+        # attribution has its own native tests; these failures must be stated
+        # honestly instead of retaining a previous or guessed tree marker.
+        for status, reason in [("unavailable", "History adapter unavailable for this operation"),
+                               ("ambiguous", "Coincident predecessor contributors disagree")]:
+            answer = {"status": status, "feature": None, "reason": reason}
+            if status == "ambiguous":
+                answer["candidates"] = ["Extrude", "HoleCut"]
+            with patch.object(links.resolver, "resolve", return_value=answer):
+                links.sync()
+                wait()
+                check("An " + status + " result clears every guessed or stale modifier row", not links.feature_ids and not marked() and tree_selection() == ((), None))
+                check("An " + status + " result retains its diagnostic without an extra feedback label", not links.bar.isVisible() and links.results[0]["reason"] == reason)
+                check("An " + status + " result restores the row's original accessibility text", panel.items["Extrude"].data(0, QtCore.Qt.AccessibleTextRole) == original_accessible["Extrude"])
+                passive_sync("An " + status + " resolver result")
+            links.sync()
+            check("Restoring the native resolver after " + status + " restores the original face attribution", links.feature_ids == ("Extrude",) and marked() == {"Extrude"})
+
+        # Force the modifier above the visible portion of a compact real tree.
+        # The native add observer must reveal and select it.
+        Gui.Selection.clearSelection()
+        wait(130)
+        minimum_height, maximum_height = panel.features.minimumHeight(), panel.features.maximumHeight()
+        panel.features.setFixedHeight(36)
+        wait()
+        scrollbar = panel.features.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+        wait()
+        rect = panel.features.visualItemRect(panel.items["Extrude"])
+        check("Scroll fixture places the known modifier outside the visible history area", scrollbar.maximum() > 0 and rect.bottom() < 0)
+        before = snapshot()
+        add_face(doc.Body, bottom)
+        rect = panel.features.visualItemRect(panel.items["Extrude"])
+        check("A deliberate native face addition reveals its offscreen modifier row", rect.top() >= 0 and rect.bottom() < panel.features.viewport().height())
+        check("Automatic reveal selects and makes the resolved feature current", tree_selection() == tree_before)
+        check("Automatic reveal changes no model state, camera or appearances", snapshot() == before)
+        panel.features.setMinimumHeight(minimum_height)
+        panel.features.setMaximumHeight(maximum_height)
+        wait()
+
+        Gui.Selection.clearSelection()
+        add_face(doc.Body, top)
+        check("A boundary trim points to the pocket rather than the original planar extrusion", links.feature_ids == ("HoleCut",) and marked() == {"HoleCut"})
+        check("Selecting another face clears the previous feature highlight", tree_selection() == (("HoleCut",), "HoleCut"))
+        add_face(doc.Body, wall)
+        check("Multiple faces with the same modifier produce one linked row", links.feature_ids == ("HoleCut",) and marked() == {"HoleCut"})
+        add_face(doc.Body, bottom)
+        check("Native multi-selection highlights each unique modifier", set(links.feature_ids) == {"Extrude", "HoleCut"} and marked() == {"Extrude", "HoleCut"})
+        check("Multi-face selection selects only the corresponding history rows", set(tree_selection()[0]) == {"Extrude", "HoleCut"} and tree_selection()[1] == "Extrude")
+        passive_sync("A multiple-face link")
+        Gui.Selection.removeSelection(doc.Body, bottom)
+        wait(130)
+        check("Removing one face removes only its unused modifier", links.feature_ids == ("HoleCut",) and marked() == {"HoleCut"})
+        Gui.Selection.clearSelection()
+        wait(130)
+        check("Clearing native selection removes every tree highlight and current row", not links.feature_ids and not marked() and not links.bar.isVisible() and tree_selection() == ((), None))
+        check("Deselecting restores each row's original accessibility text", all(panel.items[name].data(0, QtCore.Qt.AccessibleTextRole) == value for name, value in original_accessible.items()))
+        Gui.Selection.addSelection(doc.Body, "Edge1")
+        wait(130)
+        check("An edge-only selection does not invent a face modifier", not links.feature_ids and not marked())
+        Gui.Selection.clearSelection()
+        wait(130)
+        panel.select_feature("Outline")
+        panel.history_controller.sync_native_selection()
+        wait(130)
+        check("A deliberate tree selection survives its native whole-feature selection", tree_selection() == (("Outline",), "Outline") and [(entry[1], entry[2]) for entry in native_selection()] == [("Outline", ())])
+        Gui.Selection.clearSelection()
+        wait(130)
+        check("Clearing a tree-originated native selection clears its tree highlight", tree_selection() == ((), None))
+
+        panel.filter.setText("no-feature-matches-this-filter")
+        wait()
+        before = snapshot()
+        add_face(doc.Body, bottom)
+        check("A face pick preserves the user's active feature filter", panel.filter.text() == "no-feature-matches-this-filter" and panel.items["Extrude"].isHidden())
+        check("A filtered feature keeps its selection identity and offers explicit Reveal", links.feature_ids == ("Extrude",) and links.reveal_button.isVisible())
+        passive_sync("A filtered-face link", reveal=True)
+        QtTest.QTest.mouseClick(links.reveal_button, QtCore.Qt.LeftButton)
+        wait(130)
+        check("The explicit Reveal button clears the filter and exposes the linked row", not panel.filter.text() and not panel.items["Extrude"].isHidden())
+        check("Reveal preserves actual tree selection and native face selection", tree_selection() == tree_before and [(entry[1], entry[2]) for entry in native_selection()] == [("Body", (bottom,))])
+        check("Filter and Reveal leave model state, camera and appearances unchanged", snapshot() == before)
+
+        # Active workflows own geometry picks. Test controller suppression
+        # directly so these sentinels cannot start a modeling operation.
+        for target, attribute, blocked_value, description in [
+                (panel, "pending_sketch", True, "pending sketch"),
+                (panel, "task", "pocket", "active extrusion tool"),
+                (panel, "studio_selection_callback", lambda *args: None, "armed reference receiver"),
+                (panel.sketch_plane_editor, "picking", True, "sketch support picker"),
+                (panel.section_view, "picking", True, "section-plane picker")]:
+            old = getattr(target, attribute)
+            try:
+                setattr(target, attribute, blocked_value)
+                links.sync()
+                check("The " + description + " has priority over linked highlighting", not links.feature_ids and not marked() and not links.bar.isVisible())
+            finally:
+                setattr(target, attribute, old)
+            links.sync()
+            check("Ending the " + description + " restores the current face link", links.feature_ids == ("Extrude",))
+
+        # Exercise the actual tool/observer route as well as the suppression
+        # sentinels above. choose_new ignores the seeded tree selection, so
+        # this real extrusion tool begins with its face receiver empty.
+        Gui.Selection.clearSelection()
+        wait(130)
+        before = snapshot()
+        panel.extrude(cut=True, choose_new=True)
+        wait(130)
+        check("The real Cut tool starts with an empty geometry receiver", panel.task == "pocket" and panel.task_profile is None)
+        add_face(doc.Body, top)
+        check("A native face pick reaches the active Cut tool's profile receiver", isinstance(panel.task_profile, dict) and panel.extrusion_proposal().get("face") == panel.task_profile)
+        check("The active Cut receiver prevents passive modifier highlighting", not links.feature_ids and not marked() and not links.bar.isVisible())
+        panel.cancel_task()
+        wait(180)
+        check("Canceling the real Cut preview leaves the original native model and presentation intact", panel.task is None and snapshot() == before)
+        links.sync()
+        check("Ending the real Cut tool restores attribution for its still-selected face", links.feature_ids == ("HoleCut",))
+
+        # Section View consumes the next face pick and clears native selection
+        # while building only temporary scene nodes, never a model feature.
+        Gui.Selection.clearSelection()
+        wait(130)
+        before = snapshot()
+        panel.section_view.toggle()
+        wait()
+        check("The actual Section View command arms its face picker", panel.section_view.picking and panel.section_view.state is None)
+        add_face(doc.Body, top)
+        wait(130)
+        check("The native face pick starts the actual Section View", not panel.section_view.picking and panel.section_view.state is not None)
+        check("Section View owns that pick without leaving passive row decoration", not links.feature_ids and not marked() and not native_selection())
+        panel.section_view.exit(quiet=True)
+        wait(130)
+        check("Leaving the actual section preserves native model, history and appearances", snapshot() == before)
+
+        add_face(doc.Body, bottom)
+        check("An idle face pick resumes linked highlighting after real tool workflows", links.feature_ids == ("Extrude",))
+
+        # A normal refresh must reconstruct the selected history feature while
+        # keeping the native chosen subelements.
+        selection_before = native_selection()
+        panel.refresh()
+        wait(130)
+        check("A full history refresh restores linked roles from feature identities", links.feature_ids == ("Extrude",) and marked() == {"Extrude"})
+        check("History refresh retains native faces and synchronized tree selection", native_selection() == selection_before and tree_selection() == tree_before)
+
+        doc.openTransaction("Face-link recompute validation")
+        doc.Extrude.Length = 9
+        doc.recompute()
+        doc.commitTransaction()
+        panel.state = panel.core.inspect(doc)
+        panel.refresh()
+        wait(130)
+        bottom = face_name(doc.HoleCut, lambda face: abs(face.CenterOfMass.z) < 1e-7)
+        Gui.Selection.clearSelection()
+        add_face(doc.Body, bottom)
+        check("Native recompute invalidates provenance without reassigning an unchanged face to the latest feature", links.feature_ids == ("Extrude",))
+        passive_sync("A recomputed-face link")
+        call("undo")
+        check("One native Undo restores the edited extrusion dimension", abs(doc.Extrude.Length.Value - 8) < 1e-7)
+        bottom = face_name(doc.HoleCut, lambda face: abs(face.CenterOfMass.z) < 1e-7)
+        Gui.Selection.clearSelection()
+        add_face(doc.Body, bottom)
+        check("Undo resolves the restored current-body face correctly", links.feature_ids == ("Extrude",))
+        passive_sync("An undone-face link")
+        call("new", name="Face link document switch")
+        wait(130)
+        check("Changing documents clears the previous document's linked feature state", not links.feature_ids and not marked() and not links.bar.isVisible())
+        report["source_unchanged"] = source_hashes() == startup_hashes
+        check("Production sources remained unchanged throughout this acceptance run", report["source_unchanged"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        report["seconds"] = time.perf_counter() - started
+        report["check_count"] = len(report["checks"])
+        save_report()
+        cleanup()
+
+
+def cleanup():
+    global cleaned
+    if cleaned:
+        return
+    cleaned = True
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            doc.setClosable(True)
+            App.closeDocument(name)
+    finally:
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    if not report.get("seconds"):
+        report["aborted"] = True
+        report["error"] = "Face-feature GUI validation exceeded 300 seconds"
+        save_report()
+        cleanup()
+
+
+QtCore.QTimer.singleShot(300000, timeout)
+QtCore.QTimer.singleShot(1500, validate)

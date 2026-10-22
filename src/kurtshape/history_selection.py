@@ -7,13 +7,14 @@ import FreeCADGui as Gui
 from PySide import QtCore, QtGui
 
 from .bodies import owner
+from .face_history_links import FACE_MODIFIER_ROLE as FACE_MODIFIER_ROLE, FaceHistoryLinks
 from .theme import COLORS
 
 ROLLED_BACK_ROLE = QtCore.Qt.UserRole + 2
 
 
 class HistoryDelegate(QtGui.QStyledItemDelegate):
-    """Keep inactive text gray even when the application stylesheet owns colors."""
+    """Render rolled-back rows while retaining Qt's ordinary selection fill."""
     def paint(self, painter, option, index):
         if not index.data(ROLLED_BACK_ROLE):
             super().paint(painter, option, index)
@@ -28,7 +29,13 @@ class HistoryDelegate(QtGui.QStyledItemDelegate):
         rect = style.subElementRect(QtGui.QStyle.SE_ItemViewItemText, styled, widget)
         painter.save()
         painter.setFont(styled.font)
-        painter.setPen(QtGui.QColor(COLORS["disabled_ink"]))
+        selected = bool(styled.state & QtGui.QStyle.State_Selected)
+        foreground = index.data(QtCore.Qt.ForegroundRole)
+        normal_color = (foreground.color() if isinstance(foreground, QtGui.QBrush)
+                        and foreground.style() != QtCore.Qt.NoBrush else COLORS["ink"])
+        color = (COLORS["disabled_ink"] if index.data(ROLLED_BACK_ROLE) else
+                 COLORS["selection_ink"] if selected else normal_color)
+        painter.setPen(QtGui.QColor(color))
         text = QtGui.QFontMetrics(styled.font).elidedText(text, styled.textElideMode, rect.width())
         painter.drawText(rect, styled.displayAlignment, text)
         painter.restore()
@@ -140,6 +147,7 @@ class HistorySelection:
         self.document_name = None
         self.snapshot = ([], None)
         self.planes = PlaneHighlight(panel)
+        self.face_links = FaceHistoryLinks(panel)
         self.closed = False
         App.addDocumentObserver(self)
         panel.destroyed.connect(self.close)
@@ -152,6 +160,7 @@ class HistorySelection:
         return [key for key in self.selected_ids() if key in valid]
 
     def before_refresh(self, doc):
+        self.face_links.clear()
         if not doc or doc.Name != self.document_name:
             self.planes.restore()
             self.document_name = doc.Name if doc else None
@@ -173,6 +182,7 @@ class HistorySelection:
         if item:
             tree.setCurrentItem(item, 0, QtCore.QItemSelectionModel.NoUpdate)
         self.highlight_planes()
+        self.face_links.schedule()
 
     def resolve(self, key):
         doc = self.panel.document()
@@ -243,8 +253,11 @@ class HistorySelection:
     def slotActivateDocument(self, doc):
         if doc.Name != self.document_name:
             self.planes.restore()
+            self.face_links.clear()
 
     def slotDeletedDocument(self, doc):
+        self.face_links.clear()
+        self.face_links.resolver.clear()
         self.planes.forget_document(doc.Name)
         if doc.Name == self.document_name:
             self.document_name = None
@@ -252,6 +265,7 @@ class HistorySelection:
 
     def close(self, *_):
         if not self.closed:
+            self.face_links.close()
             self.planes.restore()
             App.removeDocumentObserver(self)
             self.closed = True

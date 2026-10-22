@@ -74,6 +74,32 @@ class SketchSnappingTests(unittest.TestCase):
         self.snapping.restore()
         self.assertNotIn("PickRadius", self.groups["View"].values)
 
+    def test_oversized_midpoint_guard_restores_snaps_and_autoconstraints(self):
+        self.snapping.begin(self.sketch)
+        self.snapping._guard_midpoint(True)
+        self.snapping._guard_midpoint(True)
+        self.assertFalse(self.groups["Mod/Sketcher/Snap"].GetBool("SnapToObjects", True))
+        self.assertFalse(self.sketch.ViewObject.Autoconstraints)
+        self.snapping._guard_midpoint(False)
+        self.assertTrue(self.groups["Mod/Sketcher/Snap"].GetBool("SnapToObjects"))
+        self.assertTrue(self.sketch.ViewObject.Autoconstraints)
+        self.snapping._guard_midpoint(True)
+        self.snapping.restore()
+        self.assertTrue(all(not p.values for p in self.groups.values()))
+        self.assertFalse(self.sketch.ViewObject.Autoconstraints)
+
+    def test_guard_retains_explicit_disabled_snapping_and_deleted_view_cleanup(self):
+        self.snapping.begin(self.sketch)
+        self.groups["Mod/Sketcher/Snap"].SetBool("SnapToObjects", False)
+        self.sketch.ViewObject.Autoconstraints = False
+        self.snapping._guard_midpoint(True)
+        self.snapping._guard_midpoint(False)
+        self.assertFalse(self.groups["Mod/Sketcher/Snap"].GetBool("SnapToObjects", True))
+        self.assertFalse(self.sketch.ViewObject.Autoconstraints)
+        self.snapping._guard_midpoint(True)
+        del self.sketch.ViewObject.Autoconstraints
+        self.snapping.restore()
+
     def test_aperture_keeps_nearest_point_and_releases_outside_capture(self):
         radius = self.snapping._capture_radius([2.8, .2], 9)
         self.assertGreater(radius, .2)
@@ -166,6 +192,38 @@ class SketchSnappingTests(unittest.TestCase):
                 self.assertEqual(self.snapping._nearest_radius((180, 80)), 9)
                 self.snapping._restore_markers()
                 self.assertEqual(viewer.radius, 9)
+
+    def test_native_midpoint_capture_uses_screen_aperture_and_point_priority(self):
+        coin, root, viewport, viewer, markers, _ = self._coin_picker()
+        self.snapping._renderer.getCamera().height = 100
+        viewport.setWindowSize(400, 400)
+        group = coin.SoSeparator()
+        coordinates = coin.SoCoordinate3()
+        coordinates.setName("CurvesCoordinate0")
+        coordinates.point.setValues(0, 2, [(-50, 10, 0), (50, 10, 0)])
+        group.addChild(coordinates)
+        line = coin.SoLineSet()
+        line.setName("CurvesLineSet0")
+        line.numVertices = 2
+        group.addChild(line)
+        self.snapping._pick_path.getTail().addChild(group)
+        renderer = self.snapping._renderer
+        self.snapping._restore_markers()
+        viewer.getSoRenderManager = lambda: renderer
+        self.snapping._prepare_picker(SimpleNamespace(getViewer=lambda: viewer, graphicsView=lambda: None))
+        self.snapping._nearest_radius((216, 240))  # x=4 mm, 16 px from midpoint.
+        self.assertTrue(self.snapping._block_midpoint)
+        for point in ((200, 240), (204, 240), (240, 240), (180, 180)):
+            self.snapping._nearest_radius(point)
+            self.assertFalse(self.snapping._block_midpoint, point)
+        # A point at this position always retains its native coincidence snap.
+        search = coin.SoSearchAction()
+        search.setType(coin.SoCoordinate3.getClassTypeId())
+        search.setInterest(coin.SoSearchAction.ALL)
+        search.apply(root)
+        search.getPaths()[0].getTail().point.set1Value(0, coin.SbVec3f(4, 10, 0))
+        self.snapping._nearest_radius((216, 240))
+        self.assertFalse(self.snapping._block_midpoint)
 
     def test_local_aperture_cleanup_preserves_an_external_viewer_change(self):
         _, _, _, viewer, _, point = self._coin_picker()

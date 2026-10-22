@@ -1,0 +1,211 @@
+{
+  "passed": true,
+  "checks": [
+    "Fixture exposes an unchanged bottom, trimmed top and new cylindrical wall",
+    "Native observer links an unchanged current-body face to its original extrusion",
+    "Linked feature gets its passive tree role only",
+    "Native observer retains the selected Body face",
+    "Native observer itself leaves geometry, dirty flag, history, camera and presentation unchanged",
+    "Resolved link supplies readable last-modifier feedback",
+    "The linked row exposes its meaning to accessibility clients",
+    "An unchanged-face link preserves native face selection",
+    "An unchanged-face link preserves actual tree selection and current row",
+    "An unchanged-face link preserves keyboard focus",
+    "An unchanged-face link preserves model, revision, Undo, dirty flag, camera and appearances",
+    "An unavailable result clears every guessed or stale modifier row",
+    "An unavailable result displays honest unavailable feedback and its reason",
+    "An unavailable result restores the row's original accessibility text",
+    "An unavailable resolver result preserves native face selection",
+    "An unavailable resolver result preserves actual tree selection and current row",
+    "An unavailable resolver result preserves keyboard focus",
+    "An unavailable resolver result preserves model, revision, Undo, dirty flag, camera and appearances",
+    "Restoring the native resolver after unavailable restores the original face attribution",
+    "An ambiguous result clears every guessed or stale modifier row",
+    "An ambiguous result displays honest unavailable feedback and its reason",
+    "An ambiguous result restores the row's original accessibility text",
+    "An ambiguous resolver result preserves native face selection",
+    "An ambiguous resolver result preserves actual tree selection and current row",
+    "An ambiguous resolver result preserves keyboard focus",
+    "An ambiguous resolver result preserves model, revision, Undo, dirty flag, camera and appearances",
+    "Restoring the native resolver after ambiguous restores the original face attribution",
+    "Scroll fixture places the known modifier outside the visible history area",
+    "A deliberate native face addition reveals its offscreen modifier row",
+    "Automatic reveal preserves actual tree selection and current row",
+    "Automatic reveal changes no model state, camera or appearances",
+    "A boundary trim points to the pocket rather than the original planar extrusion",
+    "Multiple faces with the same modifier produce one linked row",
+    "Native multi-selection highlights each unique modifier",
+    "A multiple-face link preserves native face selection",
+    "A multiple-face link preserves actual tree selection and current row",
+    "A multiple-face link preserves keyboard focus",
+    "A multiple-face link preserves model, revision, Undo, dirty flag, camera and appearances",
+    "Removing one face removes only its unused modifier",
+    "Clearing native selection removes every passive marker and feedback bar",
+    "Deselecting restores each row's original accessibility text",
+    "An edge-only selection does not invent a face modifier",
+    "A face pick preserves the user's active feature filter",
+    "A filtered modifier keeps its passive identity and offers explicit Reveal",
+    "A filtered-face link preserves native face selection",
+    "A filtered-face link preserves actual tree selection and current row",
+    "A filtered-face link preserves keyboard focus",
+    "A filtered-face link preserves model, revision, Undo, dirty flag, camera and appearances",
+    "The explicit Reveal button clears the filter and exposes the linked row",
+    "Reveal preserves actual tree selection and native face selection",
+    "Filter and Reveal leave model state, camera and appearances unchanged",
+    "The pending sketch has priority over linked highlighting",
+    "Ending the pending sketch restores the current face link",
+    "The active extrusion tool has priority over linked highlighting",
+    "Ending the active extrusion tool restores the current face link",
+    "The armed reference receiver has priority over linked highlighting",
+    "Ending the armed reference receiver restores the current face link",
+    "The sketch support picker has priority over linked highlighting",
+    "Ending the sketch support picker restores the current face link",
+    "The section-plane picker has priority over linked highlighting",
+    "Ending the section-plane picker restores the current face link",
+    "The real Cut tool starts with an empty geometry receiver",
+    "A native face pick reaches the active Cut tool's profile receiver",
+    "The active Cut receiver prevents passive modifier highlighting",
+    "Canceling the real Cut preview leaves the original native model and presentation intact",
+    "Ending the real Cut tool restores attribution for its still-selected face",
+    "The actual Section View command arms its face picker",
+    "The native face pick starts the actual Section View",
+    "Section View owns that pick without leaving passive row decoration",
+    "Leaving the actual section preserves native model, history and appearances",
+    "An idle face pick resumes linked highlighting after real tool workflows",
+    "A full history refresh restores passive roles from feature identities",
+    "History refresh retains native faces and independent tree selection",
+    "Native recompute invalidates provenance without reassigning an unchanged face to the latest feature",
+    "A recomputed-face link preserves native face selection",
+    "A recomputed-face link preserves actual tree selection and current row",
+    "A recomputed-face link preserves keyboard focus",
+    "A recomputed-face link preserves model, revision, Undo, dirty flag, camera and appearances",
+    "One native Undo restores the edited extrusion dimension",
+    "Undo resolves the restored current-body face correctly",
+    "An undone-face link preserves native face selection",
+    "An undone-face link preserves actual tree selection and current row",
+    "An undone-face link preserves keyboard focus",
+    "An undone-face link preserves model, revision, Undo, dirty flag, camera and appearances",
+    "Changing documents clears the previous document's linked feature state",
+    "Production sources remained unchanged throughout this acceptance run"
+  ],
+  "source_sha256": {
+    "ui.py": "ba5063d491e7ca5c376c667297cd8d33b41b92fac21924ddb9f99ee1b5a40333",
+    "history_selection.py": "ecf2c9d0b6051a1830d3b908659339e780aff93d56058c2f891484207006c4bf",
+    "history_model.py": "55557c49650ce9737c667e6285c2b83d15732aa19aa988b82a51edd0a42a0731",
+    "face_history_links.py": "4c77e22bb78eb53d6beb0797419af27cd5cebde59e1d670b06a9ced5a644581b",
+    "face_provenance.py": "778286b34b7bfa0ed9add448d88ebb8a6477c004eb426011c955b66ad660e773",
+    "core.py": "7793bba322e31dfb4c3ca3a8bf996ee48ba56139bd14927f5e7ffdfa7612ecd0",
+    "studio.py": "2cadd3353ea5b96b908818541765fd2f9e3bab1c476960e91a5e9b28e8772714"
+  },
+  "recipe_sha256": "838af3594d67577642f161be59b29ca883cf1039888e4368bdb97143a771045b",
+  "method": "Production Panel, native Body face selection observer, passive tree roles and explicit Qt Reveal click in a fresh hidden native process/profile; no screen captures.",
+  "limits": "Synthetic small offline fixture. Geometry picks enter through native Gui.Selection rather than a rendered-pixel mouse hit. Python networking denied; C++ networking is not intercepted.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "runtime_profile": "runtime\\ci-gui\\face-feature-selection\\run-924671f2572c4f0d870f451fe21dca3a",
+  "fixture_faces": {
+    "unchanged_bottom": "Face4",
+    "trimmed_top": "Face5",
+    "new_wall": "Face7"
+  },
+  "first_link_diagnostics": {
+    "feature_ids": [
+      "Extrude"
+    ],
+    "results": [
+      {
+        "status": "resolved",
+        "feature": "Extrude",
+        "reason": "Unchanged through later operations; Operation changed or created this bounded face",
+        "earlier_history_unavailable": false,
+        "passed_through": [
+          "HoleCut"
+        ],
+        "object": "Body",
+        "subelement": "Face4",
+        "tolerance_mm": 1e-07
+      }
+    ],
+    "context": [
+      "KurtShape1",
+      1912412249272,
+      "04d51f36-aab3-43e3-8bd2-9e68d14a52f1",
+      [
+        20,
+        196,
+        269,
+        213,
+        213
+      ],
+      87,
+      77,
+      4,
+      0
+    ],
+    "allowed": true,
+    "native_selection": [
+      [
+        "KurtShape1",
+        "Body",
+        [
+          "Face4"
+        ],
+        [
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ]
+      ]
+    ],
+    "resolver_body_bottom": {
+      "status": "resolved",
+      "feature": "Extrude",
+      "reason": "Unchanged through later operations; Operation changed or created this bounded face",
+      "earlier_history_unavailable": false,
+      "passed_through": [
+        "HoleCut"
+      ],
+      "object": "Body",
+      "subelement": "Face4",
+      "tolerance_mm": 1e-07
+    },
+    "body_tip": "HoleCut",
+    "body_faces": 8,
+    "current_faces": [
+      [
+        "Body",
+        "Face4"
+      ]
+    ],
+    "flags": {
+      "workspace_mode": "part_studio",
+      "managed": true,
+      "busy": false,
+      "pending_sketch": false,
+      "selecting_support": false,
+      "task": null,
+      "studio_dialog": false,
+      "studio_selection_callback": false,
+      "active_sketch": false,
+      "native_feature_task_active": false,
+      "sketch_plane_picking": false,
+      "section_view_picking": false
+    }
+  },
+  "source_unchanged": true,
+  "seconds": 15.324282999994466,
+  "check_count": 86
+}

@@ -750,6 +750,7 @@ def _show_bodies(doc, visible_state):
     """Show the Bodies of the parts at the bar and of visible unused sketches."""
     if not App.GuiUp:
         return
+    sketches = _rollback_sketch_visibility(doc)
     from .sketch_tools import unconsumed_sketches
     sketch_bodies = {_body_owner(sketch) for sketch in unconsumed_sketches(doc)
                      if sketch.ViewObject and sketch.ViewObject.Visibility}
@@ -757,6 +758,43 @@ def _show_bodies(doc, visible_state):
         active = body in sketch_bodies or any(entry[0] == body for entry in visible_state.values())
         desired = getattr(body, "KurtShapePartVisible", True)
         body.ViewObject.Visibility = bool(active and desired and not getattr(body, "KurtShapeInternal", False))
+    # A Body can propagate visibility to a sketch Tip. Apply the individual
+    # history state after the containers, including explicitly hidden sketches.
+    for sketch, visible in sketches:
+        if sketch.ViewObject.Visibility != visible:
+            sketch.ViewObject.Visibility = visible
+
+
+def _rollback_sketch_visibility(doc):
+    """Hide future sketches while retaining their saved presentation choice.
+
+    Keep the pre-rollback value on the native view provider so saving a model
+    at an earlier history position does not lose it. This is presentation,
+    rather than a modeling parameter, and never changes a sketch's geometry.
+    """
+    property_name = "KurtShapeRollbackVisible"
+    sequence = order(doc)
+    cutoff = _cutoff(doc)
+    result = []
+    for index, sketch in enumerate(sequence):
+        if (sketch.TypeId != "Sketcher::SketchObject" or getattr(sketch, "KurtShapeInternal", False)
+                or not sketch.ViewObject):
+            continue
+        view = sketch.ViewObject
+        visible = bool(view.Visibility)
+        if index >= cutoff:
+            if property_name not in view.PropertiesList:
+                view.addProperty("App::PropertyBool", property_name, "KurtShape presentation")
+                setattr(view, property_name, visible)
+                view.setEditorMode(property_name, 2)
+            visible = False
+        elif property_name in view.PropertiesList:
+            visible = bool(getattr(view, property_name))
+            view.removeProperty(property_name)
+        if view.Visibility != visible:
+            view.Visibility = visible
+        result.append((sketch, visible))
+    return result
 
 
 def present(doc):

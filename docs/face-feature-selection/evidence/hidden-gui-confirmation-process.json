@@ -1,0 +1,17 @@
+﻿{
+    "recipe":  "face-feature-selection",
+    "passed":  true,
+    "session":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\face-feature-selection\\run-924671f2572c4f0d870f451fe21dca3a",
+    "macro":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\tools\\face-feature-selection-validation.FCMacro",
+    "report":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\face-feature-selection\\run-924671f2572c4f0d870f451fe21dca3a\\evidence\\face-feature-selection\\gui-result.json",
+    "log":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\face-feature-selection\\run-924671f2572c4f0d870f451fe21dca3a\\freecad.log",
+    "stdout":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\face-feature-selection\\run-924671f2572c4f0d870f451fe21dca3a\\freecad-stdout.txt",
+    "stderr":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\ci-gui\\face-feature-selection\\run-924671f2572c4f0d870f451fe21dca3a\\freecad-stderr.txt",
+    "started_utc":  "2026-10-21T04:54:50.6317728Z",
+    "exited_utc":  "2026-10-21T04:55:11.4226684Z",
+    "pid":  63164,
+    "exit_code":  0,
+    "timed_out":  false,
+    "method":  "Independent hidden native FreeCAD process; recipe report checked after owned process exit.",
+    "finished_utc":  "2026-10-21T04:55:11.4426919Z"
+}

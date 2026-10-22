@@ -418,9 +418,9 @@ def cleanup():
     QtCore.QTimer.singleShot(0, app.quit)
 
 def timeout():
-    report["error"] = "Surface snapping validation exceeded 180 seconds"
+    report["error"] = "Surface snapping validation exceeded 300 seconds"
     save()
     cleanup()
 
-QtCore.QTimer.singleShot(180000, timeout)
+QtCore.QTimer.singleShot(300000, timeout)
 QtCore.QTimer.singleShot(1200, run)

@@ -3,6 +3,36 @@ from PySide import QtCore, QtGui
 from . import navigation
 
 
+def _empty_native_overlay(widget, main):
+    if not isinstance(widget, QtGui.QWidget) or widget.parentWidget() is not main:
+        return False
+    kind = widget.metaObject().className()
+    if kind == "Gui::OverlayTabWidget":
+        overlay = widget
+    elif kind == "Gui::OverlayProxyWidget" and widget.objectName().endswith("Proxy"):
+        # FreeCAD parents the reveal strip beside its tab widget, under main.
+        overlay = main.findChild(QtGui.QTabWidget, widget.objectName()[:-5])
+        if overlay is None or overlay.metaObject().className() != "Gui::OverlayTabWidget":
+            return False
+    else:
+        return False
+    return not overlay.findChildren(QtGui.QDockWidget)
+
+
+def release_native_overlays(main):
+    """Let FreeCAD release its restored dock ownership before we arrange Tasks."""
+    overlays = [widget for widget in main.findChildren(QtGui.QTabWidget)
+                if widget.metaObject().className() == "Gui::OverlayTabWidget"]
+    # This native command toggles all overlays. Only invoke its disable branch:
+    # a second invocation with no tabs would enable overlays on a clean profile.
+    if any(widget.count() for widget in overlays):
+        import FreeCADGui as Gui
+        Gui.runCommand("Std_DockOverlayAll")
+    for widget in main.findChildren(QtGui.QWidget):
+        if _empty_native_overlay(widget, main):
+            widget.hide()
+
+
 class WorkspacePreferences(QtCore.QObject):
     def __init__(self, panel):
         super().__init__(panel)
@@ -11,6 +41,36 @@ class WorkspacePreferences(QtCore.QObject):
         self.application = QtGui.QApplication.instance()
         self.application.installEventFilter(self)
         self.hide_navigation_indicator()
+        self.hide_native_toolbars()
+        self.hide_empty_native_overlays()
+
+    def _empty_native_overlay(self, widget):
+        # Old layouts can leave a native tab/splitter shell after Tasks was
+        # moved into a regular dock. Its mostly blank rectangle still takes
+        # pointer events. Never hide an overlay that owns actual task content.
+        return _empty_native_overlay(widget, self.panel.main)
+
+    def hide_empty_native_overlays(self):
+        for widget in self.panel.main.findChildren(QtGui.QWidget):
+            if self._empty_native_overlay(widget):
+                widget.hide()
+
+    def _native_toolbar(self, widget):
+        if not isinstance(widget, QtGui.QToolBar) or widget.objectName().startswith("KurtShape"):
+            return False
+        # Floating native bars are windows of their own but remain owned by
+        # the main window. Do not affect another window's toolbars.
+        parent = widget.parent()
+        while parent is not None:
+            if parent is self.panel.main:
+                return True
+            parent = parent.parent()
+        return False
+
+    def hide_native_toolbars(self):
+        for bar in self.panel.main.findChildren(QtGui.QToolBar):
+            if self._native_toolbar(bar):
+                bar.hide()
 
     def hide_navigation_indicator(self):
         indicator = self.panel.main.findChild(QtGui.QWidget, "NavigationIndicator")
@@ -18,8 +78,12 @@ class WorkspacePreferences(QtCore.QObject):
             indicator.hide()
 
     def eventFilter(self, watched, event):
-        if event.type() in {QtCore.QEvent.Show, QtCore.QEvent.Polish} and isinstance(watched, QtGui.QWidget) and watched.objectName() == "NavigationIndicator":
-            watched.hide()
+        if event.type() in {QtCore.QEvent.Show, QtCore.QEvent.Polish}:
+            if (isinstance(watched, QtGui.QWidget) and watched.objectName() == "NavigationIndicator"
+                    or self._native_toolbar(watched) or self._empty_native_overlay(watched)):
+                # Native workbench/task activation restores this chrome after
+                # the synchronous hide pass, including blank overlay shells.
+                watched.hide()
         return False
 
     def show(self):

@@ -22,9 +22,11 @@ Setup verifies the official runtime download and runs a disposable modeling chec
 ## Try it
 
 - **Sketch:** Shift+S, choose a plane or planar face, then G for rectangle, C for circle or L for connected lines. Finish accepts the sketch; Cancel discards the edit.
+- **Coincident:** select two endpoints to join them, or two whole lines to make them collinear. An internal line can align to a linked projected line.
 - **Extrude:** Shift+E opens New / Add / Cut / Intersect with an exact preview.
 - **Parameters:** type a value in the left Parameters section and press Enter; `=` starts a formula; Esc discards. "+" adds one; Copy reference gives the text for a feature's Formula field.
 - **Edit:** double-click a sketch, Extrude, Fillet or Chamfer history row. Fillet/Chamfer let you change edges and value. Ctrl+Z / Ctrl+Y undo and redo.
+- **Find a face's feature:** select a face to highlight its feature in the history tree while keeping the face selected. The highlight follows selection and clears with it. Trimmed faces point to the operation that trimmed them.
 - **Navigate:** middle-drag orbits, Ctrl+middle pans, Shift+middle zooms. Alt+C searches all tools; Shift+/ shows shortcuts.
 - **Section View:** select a face or plane and press Shift+X (or Shift+X, then click one). Round faces cut through their centre on Top, Front or Right, whichever faces you; drag the orange arrow to move the cut; Shift+X or Esc leaves. View only, never saved.
 - **Files:** Ctrl+S saves native FCStd. Open accepts FCStd and STEP; export produces STEP/STL. Messages retains error details for troubleshooting.

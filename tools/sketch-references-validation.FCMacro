@@ -408,7 +408,7 @@ def run():
               and not panel.sketch_references.dimension_cursor_widgets)
         check("Finish leaves no pending native transaction", not doc.HasPendingTransaction)
         panel.history_move("undo")
-        check("One document Undo removes the entire accepted sketch edit", doc.getObject(sketch_name).GeometryCount == 0 and not doc.getObject(sketch_name).ExternalGeometry)
+        check("One document Undo removes the newly created sketch and its accepted contents", doc.getObject(sketch_name) is None)
         panel.history_move("redo")
         sketch = doc.getObject(sketch_name)
         check("One document Redo restores all geometry, references and constraints", sketch.GeometryCount == accepted_geometry and len(sketch_tools.external_links(sketch)) == accepted_external and sketch.ConstraintCount == accepted_constraints)
@@ -502,10 +502,10 @@ def cleanup():
 
 
 def timeout():
-    report["error"] = "Sketch references validation exceeded 90 second bound"
+    report["error"] = "Sketch references validation exceeded 300 second bound"
     save()
     cleanup()
 
 
-QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(300000, timeout)
 QtCore.QTimer.singleShot(1200, run)

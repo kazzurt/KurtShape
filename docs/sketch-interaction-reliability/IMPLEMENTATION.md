@@ -1,5 +1,228 @@
 # October 6 startup and sketch interaction repairs
 
+## October 21 user retest: native overlay input obstruction
+
+Kurt subsequently confirmed that both the endpoint and ghost-control repairs
+work in his app and requested commit/push. Publication includes the five sketch
+and history fixes and the face-provenance dependency already used by the history
+highlighting. Separate launcher/open-file/startup-blank work remains local.
+The evidence below records the tested working checkout, including that separate
+startup work; its full-checkout source hashes are not a claim that every byte
+belongs to this scoped commit.
+
+The staged Python/macros pass Ruff 0.16.10 and Git whitespace checks. Full-tree
+lint still reports 16 pre-existing findings in untouched files, retained outside
+this change. Two unused QtGui imports were removed from validation macros after
+the native runs; production behavior was unchanged. The final staged dependency
+audit found no missing modules or launcher dependencies, and no raw runtime,
+profile, model, token or log files are included.
+
+Kurt confirmed whole-line Coincident, rollback sketch visibility and history
+highlighting work, but endpoint sticking and the ghost controls remain unchanged.
+Moving the mouse around eventually releases the endpoint. The earlier midpoint
+and floating-QToolBar proofs therefore do not establish a fix for his report.
+Investigation now uses a private copy of the latest 17:04 recovery and the
+17:05 saved profile. The actual app had exited normally; its log identifies this
+main checkout. No live app is launched, controlled or restarted.
+
+Original hashes are retained in
+`runtime/sketch-sticking-toolbar-followup-working/original-inputs.json`.
+SnapToGrid is explicitly off. The profile still associates Tasks with the native
+right-side overlay at size zero. Checking actual overlay widgets and input
+routing identified the artifact that the earlier QToolBar fixture missed.
+The copied-profile native inventory reproduces a visible `Gui::OverlayTabWidget`
+named `OverlayRight` at main-window rectangle `[730,228,352,568]`. It is not
+mouse-transparent, and `main.childAt()` at its viewport overlap returns a
+`Gui::OverlaySplitter`, not the drawing widget. This establishes an input
+obstruction. In copied-profile native run
+`sketch-floating-controls/run-083b2b6b6fc344f99b63642a0caf4cc0`, six hit-routed
+pending-line positions retain the preceding free endpoint, missing the pointer
+by 71–212 pixels. Direct delivery to the drawing widget at the identical pixels
+tracks within 0–0.47 pixels; returning to clear canvas releases it within 0.33
+pixels. No geometry is changed, and the scene has no mouse-grabber item. Two
+other targets naturally invoke sketch inference and are not used for the
+near-zero-error causal comparison. The earlier direct-to-GL input tests bypassed
+this obstruction entirely. The repair releases native overlays before Tasks
+is reparented and covers delayed empty-shell restoration. Verification routes
+preview, placement and the following continuous segment through the actual
+widget under each requested pixel.
+
+The native integration failure is ownership order: after Tasks has been moved
+out of the overlay's splitter, native
+[`removeWidget`](https://github.com/FreeCAD/FreeCAD/blob/1.1.4/src/Gui/OverlayWidgets.cpp#L1799)
+returns without removing its tab. Native
+[`toggleOverlay`](https://github.com/FreeCAD/FreeCAD/blob/1.1.4/src/Gui/OverlayManager.cpp#L468)
+has already erased the ownership map entry, so a later Disable All does not
+repair the shell. KurtShape now releases native ownership before arranging
+Tasks, both at startup and later native-panel layout boundaries. The public
+[`ToggleAll`](https://github.com/FreeCAD/FreeCAD/blob/1.1.4/src/Gui/OverlayManager.cpp#L760)
+command is called only when tabs exist, matching its native disable branch.
+Owned empty `Gui::OverlayTabWidget` shells and their sibling
+`Gui::OverlayProxyWidget` reveal strips are hidden initially and on Show/Polish;
+content-bearing overlays and other windows are excluded. InputHint is a
+status-bar widget and its setting is unchanged. No sketch snapping/cursor code
+or modeling operation changed in this follow-up.
+
+Final saved-profile and clean-profile native runs each passed **33 checks**
+and exited normally. Both retain all eight formerly obstructed pixels, test
+20 further canvas positions through actual Qt hit receivers, commit a native
+segment, continue drawing and cover Finish/Cancel/reentry. Native Tasks has
+visible enabled contents and remains docked on the right. The native source
+hashes match both runs. A focused input regression passed **69 tests** with
+no skips and source unchanged. Startup (17), history selection (49) and
+reference picking (74) GUI checks also passed against these final sources.
+Recovered-model verification passed **269 native checks** in YZ and XZ using
+the saved oblique camera. All six strict formerly blocked targets on each plane
+track within 0.8 pixels, and routed clicks create solved native lines and continue
+drawing. A separate **592-check post-exit audit** validates the original files,
+source hashes, all requested targets and actual GL receivers. One ordinary grid
+position snaps exactly to Y=0 within the normal nine-pixel inference aperture;
+its unconstrained X is unchanged. This local inference is retained, with raw
+coordinates recorded. The ghost shells remain absent through tool entry,
+Finish, Cancel and reentry, while native Tasks and KurtShape controls work.
+
+The first repair candidate left an eight-pixel native reveal proxy after
+Finish; the final predicate covers that paired empty proxy as well. Superseded
+and failed diagnostics are retained but excluded from acceptance. The
+[verification manifest](evidence/2026-10-21-native-overlay-routing.json) links
+every accepted receipt, the before/after routing evidence, original input
+hashes and reproduction commands. It distinguishes the 69 focused regression
+tests from the earlier full suite, which was not rerun for this UI-only change.
+All test processes exited, and the original profile and both recovery files
+retain their recorded hashes. Tests used private hidden native Qt windows and
+synthetic events delivered to actual hit receivers; they do not measure physical
+mouse hardware or display latency. No visible user app was controlled or
+restarted.
+
+## October 21 sketch and history follow-up
+
+Kurt approved five scoped fixes, explicitly choosing collinearity when two
+whole sketch lines are selected for Coincident. Applies to this main checkout,
+FreeCAD 1.1.4 / OCCT 7.8.1. Existing uncommitted launcher and face-provenance
+work is retained. No live app/profile/document is changed or restarted.
+
+- `sketch_constraints.py` handles whole-line Coincident through editable native
+  solver relations; point selections retain native coincidence. Toolbar/search
+  and I share the contextual path. Redundant/conflicting relations restore the
+  sketch, including fixed geometry the engine can otherwise silently move.
+  An internal line can align to an associated projected line without altering
+  its source or binding. Two immutable projected lines reject unchanged.
+- A new native reproduction found a pending endpoint fixed to a long line's
+  midpoint across a 5%-of-line-length capture region
+  ([native snapping](https://github.com/FreeCAD/FreeCAD/blob/1.1.4/src/Mod/Sketcher/Gui/SnapManager.cpp#L330),
+  [automatic constraints](https://github.com/FreeCAD/FreeCAD/blob/1.1.4/src/Mod/Sketcher/Gui/DrawSketchHandler.cpp#L465)). The repair limits that
+  capture using the existing framebuffer pick aperture. Outside the aperture,
+  native object snapping and automatic constraints are temporarily suppressed
+  only within the oversized midpoint region, then restored on leaving it,
+  navigation, tool exit or sketch exit. This also prevents a click from moving
+  the endpoint back through an unintended midpoint Symmetric constraint.
+  Exact midpoint, nearby point-marker and ordinary outside-region snapping
+  retain the native path. The suppressed region also omits other automatic
+  inferences; it does not rewrite geometry after placement.
+  Native 1.1.4 names these curve nodes `CurvesLineSetN` and
+  `CurvesCoordinateN`. An early synthetic `CurveSetN` fixture passed while
+  missing the real preview; the final native fixture uses the actual names.
+- `workspace_preferences.py` hides a complete native toolbar on Show/Polish.
+  The former synchronous hide could be bypassed by a queued native restore,
+  leaving a floating grip and blank action remnants during sketching. The
+  private fixture reproduces that race with the lifecycle filter detached and
+  verifies suppression when restored. KurtShape bars and other windows' bars
+  remain available.
+- `studio.py` hides each future sketch after updating Body containers. The
+  view-provider property `KurtShapeRollbackVisible` retains the prior flag for
+  roll-forward and save/reopen. It is stored in GUI presentation, not model
+  intent. Native dynamic-property observation ignores presentation providers.
+- `face_history_links.py` selects/current-marks the resolved feature with tree
+  signals blocked, preserving the native selected face. Selection changes and
+  clearing replace stale rows. The modifier label/badge is removed; a filtered
+  result retains Reveal. The exact provenance resolver is unchanged.
+  Whole-object echoes of tree selections preserve the actual Qt current row
+  and Shift anchor, including a Ctrl-toggled-off current row.
+
+Reproduction uses private sessions with the bundled runtime:
+
+```powershell
+.\run-checks.ps1
+.\tools\run_gui_recipe.ps1 -Recipe sketch-coincident-lines -TimeoutSeconds 360
+.\tools\run_gui_recipe.ps1 -Recipe sketch-midpoint-motion -TimeoutSeconds 360
+.\tools\run_gui_recipe.ps1 -Recipe sketch-floating-controls -TimeoutSeconds 360
+.\tools\run_gui_recipe.ps1 -Recipe unused-sketch-visibility -TimeoutSeconds 720
+.\tools\run_gui_recipe.ps1 -Recipe history-selection -TimeoutSeconds 360
+.\tools\run_gui_recipe.ps1 -Recipe face-feature-selection -TimeoutSeconds 360
+.\tools\run_gui_recipe.ps1 -Recipe sketch-origin-snap -TimeoutSeconds 360
+.\tools\run_gui_recipe.ps1 -Recipe sketch-references -TimeoutSeconds 360
+$env:SURFACE_SNAP_VARIANTS = 'top,isometric,side,projected,circle,circle_isometric'
+.\tools\run_gui_recipe.ps1 -Recipe surface-snap -TimeoutSeconds 360
+Remove-Item Env:SURFACE_SNAP_VARIANTS
+$env:SURFACE_SNAP_CONTINUOUS = '1'
+.\tools\run_gui_recipe.ps1 -Recipe surface-snap -TimeoutSeconds 360
+Remove-Item Env:SURFACE_SNAP_CONTINUOUS
+```
+
+GUI acceptance: **640 checks across ten normal-exit private runs**. These cover
+Coincident (31), midpoint motion/commit (118), floating controls (12), rollback
+and unused sketches (52), history/planes/anchors (49), face highlighting (90),
+origin snaps (46), references (74), and all twelve surface/continuous cases
+(96 + 72). Focused native classes also pass: constraints 14, snapping 14 and
+incremental state 12. [Aggregate receipts and source hashes](evidence/2026-10-21-interaction-fixes.json)
+retain the exact reports. The complete frozen-source regression passed all
+four suites: **1,068 passed out of 1,073 cases, with five opt-in performance
+tests skipped and no failures or errors** (native 955 passed / 5 skipped,
+bridge 73, shortcuts 34, workflows 6). The native suite took 2,663 seconds;
+its schema-default matrix was substantially slower than the retained prior
+252-second baseline but continued producing native artifacts throughout.
+
+A late native probe found that a horizontal/vertical internal line paired
+with a matching immutable projected line must reuse the already fixed
+direction. Adding a full Tangent instead introduces a redundant direction
+equation. The final correction adds only PointOnObject in that case;
+the new regression fails against the preceding source and passes against
+the isolated candidate in all four axis/selection-order subcases. After the
+frozen broad run, the final production source passed the complete 14-test
+constraint class and strengthened 31-check GUI recipe, both with normal exits.
+Only `sketch_constraints.py` and its test file differ in the two native-run
+source manifests; the GUI recipe records matching hashes of all four command
+path modules. The aggregate records that source boundary rather than treating
+the earlier full sweep as a test of the final correction. Across the full
+sweep and final focused rerun there are **1,074 distinct test methods:
+1,069 passed and five optional performance tests skipped**.
+The Coincident GUI fixture emits a native lost-link warning when Finish
+rewinds its edit lease: that artificial source object was created during
+the edit, rather than selected from a pre-existing model. Coincident's link
+and source preservation assertions pass before teardown. The separate
+74-check reference workflow covers normal existing-edge references,
+save/reopen and upstream updates.
+
+Verification environment: freeze production sources after the focused GUI
+proofs before starting the expensive full sweep. The restricted run reached
+its 1800-second suite limit during the operation-schema matrix; its logs are
+retained and excluded from acceptance. The complete replacement uses
+`tools/run_native_tests.py --require-native --timeout 3600` in a private
+unrestricted profile, with `KURTSHAPE_TEST_TMP` set to this checkout's
+`runtime/test-tmp`. Native fixture containment requires that standard short
+test root; nesting it under a long custom session caused containment and Git
+path-length setup errors in an excluded bridge attempt. Independent bridge
+confirmation passed all 73 tests with source unchanged. The complete rerun
+writes `runtime/sketch-history-native-validation/regression-result.json`;
+that run completed normally with source unchanged. Final correction coverage
+is recorded separately in
+`runtime/sketch-collinearity-working/projected-axis-final/native-result.json`.
+The reproducible receipt collector is
+`runtime/sketch-history-interaction-verification/collect-verification.ps1`.
+
+An isolated old-source replay fails the new midpoint motion test
+at target `(-4,10)`, returning the wrong native preview endpoint `(0,10)`;
+that baseline process exited normally. Earlier timeout sessions are retained
+and excluded from acceptance. Recipe watchdogs were extended without changing
+behavioral/latency assertions. The reference recipe's old empty-sketch Undo
+expectation was corrected to the existing documented new-sketch removal contract.
+Hidden input establishes native preview
+and commit behavior, not physical mouse-to-display latency. The supplied
+screenshot is retained in its original location; it is not edited.
+
+The earlier dated evidence below describes previous sources and does not
+establish acceptance for these October 21 changes.
+
 Applies to the main `Codex/kurtshape` source and its `KurtShape-workflow-update.cmd` launcher, using portable FreeCAD 1.1.4. The separate green checkout is unchanged. Save and close an older app window before restarting to load these changes.
 
 ## Second-point freeze investigation

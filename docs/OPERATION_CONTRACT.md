@@ -6,6 +6,31 @@ The authoritative document is native FreeCAD FCStd. A feature object's `Name` is
 
 Create/open requests are `{op:"new",name:"Plate"}`, `{op:"open",path:"absolute.FCStd"}` and `{op:"import_step",path:"absolute.step"}` (also `.stp`, case insensitive). These create/select documents without an existing document/revision. Existing-document operations require `document_id`; every mutation, including undo/redo, sketch lifecycle, rebuild, save and export, also requires current `expected_revision`. Inspect requires no revision. Tokens are UUIDs rather than counters. Native modeling edits, undo/redo and reopen invalidate older tokens; stale requests reject before mutation.
 
+## Face selection and feature history (GUI, 2026-10-20)
+
+In an idle Part Studio, selecting a bounded face highlights its last modifier
+as the feature tree's selected/current row. Tree signals are blocked so the
+native face remains selected; there is no “Last modifier” label or badge. This
+does not open an editor, change the active part, create an Undo step or modify
+the document. Ctrl multi-selection highlights each distinct modifier;
+clearing/removing picks updates the rows. Hover does not navigate history.
+A feature filter is preserved; **Reveal** explicitly clears it when needed.
+Active tools, sketch/reference/section picking and native Tasks keep priority.
+
+Last modifier means the latest operation in model order that changed the
+complete bounded face, including trimming holes/boundaries, splitting and
+merging. Unchanged faces pass through later operations to their earlier
+modifier. This differs deliberately from the `created_by` selector, whose
+creator semantics are unchanged. The read-only resolver uses recorded native
+predecessor solids and verifies complete bounded-face and boundary-curve
+equivalence, with a 1e-7 mm linear tolerance. Unsupported, stale or ambiguous
+history leaves the feature unhighlighted instead of guessing.
+Imported bases identify their import with earlier history unavailable;
+assembly snapshots do not imply access to source feature history. No new
+bridge operation or contract revision is introduced.
+
+See [the design and implementation record](face-feature-selection/DESIGN_BRIEF.md).
+
 ## Contract 3.0 — Q03 lightweight status and explicit checks
 
 Q03 published `contract:3` and `contract_revision:0`; the [3.1 additions](#contract-31--fail-fast-studio-results-typed-helices-and-tight-boxes) publish `contract_revision:1`. Local validation passed 187 native, seven bridge and 22 shortcut cases plus 415 workflow checks; the full GUI sweep retained seventeen passes and its recorded carrier-history exception, and the status recipe passed seventeen checks. Paired five-repeat benchmarks and independent plate confirmation are recorded in the [Q03 record](architecture-responsiveness-upgrade/STATUS_REPORT.md#validation-and-source-versions), including open absolute targets. Revision, replay, ownership, write-root and native transaction guards retain their earlier semantics. The historical contract-2 records below describe their own increments.
@@ -642,6 +667,35 @@ This optional local recipe requires the author's BREF native fixture under
 `CADkz/projects/bref-im-df-interface`; it copies it into a private session and
 checks actual view providers, menu actions, save/reopen, solid signatures and
 unchanged source hash. It never uses the live user's profile or window.
+
+### Sketch and history interaction (GUI, 2026-10-21)
+
+- Coincident from the toolbar, tool search or I handles two selected entire
+  sketch lines as collinearity, including an internal line and an associated
+  projected line. Two immutable projected lines reject unchanged. Native line/line Tangent represents
+  that relation; an existing common point or parallel direction uses only the
+  missing Parallel or PointOnObject relation. Endpoints remain free along the
+  common line. Point selections retain native coincidence. Solver conflicts,
+  redundant additions and changes to Blocked geometry are rejected and restored.
+- Rollback hides sketches beyond the history cutoff, including those in a
+  still-visible Body. A hidden view-provider property retains each sketch's
+  prior visibility for roll-forward and save/reopen; geometry is unchanged.
+- A selected face highlights its resolved feature as the tree's selected/current
+  row without replacing the native face selection. The old row clears when a
+  different face is selected or selection clears. There is no modifier label or
+  badge; a filtered-out result offers Reveal. The provenance resolver and
+  `created_by` selector semantics are unchanged.
+- Native toolbars restored after tool/workbench activation are suppressed at
+  Show/Polish, including floating shells and grips. KurtShape's own toolbars
+  and toolbars belonging to other windows remain available.
+- Native dock-overlay ownership is released before arranging Tasks in a regular
+  dock. Empty native overlay tab shells and their matching reveal strips are
+  suppressed at startup and Show/Polish, preventing blank viewport controls from
+  intercepting mouse input. Overlays containing actual dock content and widgets
+  belonging to other windows are preserved; Sketch Edit/Constraints remain usable.
+
+These are desktop interaction changes, with no new wire operations or contract
+version. See [implementation and verification](sketch-interaction-reliability/IMPLEMENTATION.md).
 
 ### Viewport camera: `set_view` (GUI, 2026-10-20)
 

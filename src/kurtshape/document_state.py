@@ -157,6 +157,11 @@ class DocumentState:
         self.controller.geometry.drop_object(obj.Document, obj.Name)
 
     def slotAppendDynamicProperty(self, obj, prop):
+        # FreeCAD also sends these callbacks for Gui.ViewProvider objects.
+        # Their presentation properties are saved separately from model intent
+        # and expose .Object rather than a native document object's .Name.
+        if not hasattr(obj, "Name"):
+            return
         state = self._record_change(obj.Document, obj.Name, prop, intent=obj.Name != "KurtShapeProject")
         state["index"].invalidate()
         if obj.Name != "KurtShapeProject":

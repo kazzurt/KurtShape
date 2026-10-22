@@ -1,0 +1,185 @@
+{
+  "status": "passed_with_environmental_bridge_rerun",
+  "date": "2026-10-20",
+  "kurtshape_build_sha256": "e05740e5850b2206fccd872f997b52180b087b871923067a844877f4160896ff",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "counts": {
+    "tests": 1056,
+    "passed": 1051,
+    "skipped": 5,
+    "failures": 0,
+    "errors": 0
+  },
+  "suites": [
+    {
+      "name": "native",
+      "counts": {
+        "tests": 943,
+        "passed": 938,
+        "skipped": 5,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "seconds": 1607.8081065999868
+    },
+    {
+      "name": "bridge",
+      "counts": {
+        "tests": 73,
+        "passed": 73,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "seconds": 78.76045140001224
+    },
+    {
+      "name": "shortcuts",
+      "counts": {
+        "tests": 34,
+        "passed": 34,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "seconds": 0.7827477999962866
+    },
+    {
+      "name": "workflows",
+      "counts": {
+        "tests": 6,
+        "passed": 6,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_unchanged": true,
+      "seconds": 3.2271803000185173
+    }
+  ],
+  "new_face_history_cases": [
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_boolean_merge_and_split_use_each_operations_actual_input_parts",
+      "status": "passed",
+      "seconds": 3.782625599997118
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_bounded_long_history_cold_and_cached_click_measurement",
+      "status": "passed",
+      "seconds": 23.1601282999909
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_coincident_actual_predecessors_return_ambiguous_without_guessing",
+      "status": "passed",
+      "seconds": 2.4717294000147376
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_complete_boundary_equivalence_rejects_equal_area_different_holes",
+      "status": "passed",
+      "seconds": 0.2162671000114642
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_failed_full_equivalence_proof_is_unavailable",
+      "status": "passed",
+      "seconds": 1.9272521999955643
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_import_anchor_and_invalid_pick_are_honest",
+      "status": "passed",
+      "seconds": 0.3300853999971878
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_include_source_pattern_keeps_each_unchanged_source_face",
+      "status": "passed",
+      "seconds": 2.9063659999810625
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_legacy_native_pocket_and_public_fillet",
+      "status": "passed",
+      "seconds": 0.8528271999966819
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_native_hole_adapter_ignores_unparseable_nested_names",
+      "status": "passed",
+      "seconds": 1.196369199984474
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_pattern_add_keeps_original_untouched_face_owner",
+      "status": "passed",
+      "seconds": 1.9708737000182737
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_periodic_seam_reparameterization_does_not_change_physical_face",
+      "status": "passed",
+      "seconds": 0.19308769999770448
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_public_pocket_distinguishes_trim_new_face_untouched_and_remote_cut",
+      "status": "passed",
+      "seconds": 3.1944323000207078
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_read_only_cache_parameter_edit_undo_and_reopen",
+      "status": "passed",
+      "seconds": 5.060196700011147
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_studio_fillet_preserves_untouched_faces_and_earlier_cylinder",
+      "status": "passed",
+      "seconds": 2.669892499980051
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_transform_copy_pattern_mirror_and_original",
+      "status": "passed",
+      "seconds": 3.740735500003211
+    },
+    {
+      "id": "test_face_provenance.FaceProvenanceTests.test_unevaluated_edit_and_corrupt_metadata_fail_unavailable_read_only",
+      "status": "passed",
+      "seconds": 0.8978212999936659
+    }
+  ],
+  "initial_full_run": {
+    "path": "runtime/test-tmp/checks-20261020-211109-22024/evidence/checks/native.json",
+    "passed": false,
+    "counts": {
+      "tests": 1056,
+      "passed": 998,
+      "skipped": 5,
+      "failures": 33,
+      "errors": 20,
+      "expected_failures": 0
+    },
+    "note": "53 bridge nonpasses under sandbox: loopback access denied and process-tree cleanup denied; retained unchanged. Every other suite passed."
+  },
+  "bridge_confirmation": {
+    "path": "runtime/face-feature-selection-working/bridge-confirmation/bridge-result.json",
+    "passed": true,
+    "note": "Entire bridge suite rerun with private loopback/process access outside sandbox; 73/73 passed, identical application source."
+  },
+  "workflow_checks": 415,
+  "limits": [
+    "Five performance-only tests skipped unless KURTSHAPE_PERF=1.",
+    "No visible CAD application or user document was used.",
+    "GUI acceptance is recorded separately."
+  ]
+}

@@ -123,6 +123,61 @@ def capture(name):
     save()
 
 
+def rollback_visibility():
+    """A future sketch must not leak through a still-visible native Body."""
+    doc = call("new", name="Sketch rollback visibility")
+    call("sketch_rectangle", id="BaseProfile", width=12, height=8)
+    call("pad", id="BaseSolid", profile="BaseProfile", length=4)
+    # The direct Controller operation does not perform the feature editor's
+    # accepted-profile cleanup; reproduce that ordinary GUI presentation.
+    doc.BaseProfile.ViewObject.Visibility = False
+    call("sketch_circle", id="SharedFuture", x=25, y=0, diameter=6)
+    call("sketch_circle", id="HiddenFuture", x=35, y=0, diameter=6)
+    call("create_body", id="LaterBody")
+    call("sketch_circle", id="SeparateFuture", body="LaterBody", x=45, y=0, diameter=6)
+    doc.SharedFuture.ViewObject.Visibility = True
+    doc.HiddenFuture.ViewObject.Visibility = False
+    doc.SeparateFuture.ViewObject.Visibility = True
+    call("rebuild")
+    order = panel.state["studio"]["feature_order"]
+    boundary = order.index("SharedFuture")
+    end = len(order)
+    call("rollback", index=boundary)
+    check("Rolling before creation hides later sketches even inside a visible solid Body",
+          doc.Body.ViewObject.Visibility and doc.BaseSolid.ViewObject.Visibility
+          and not doc.SharedFuture.ViewObject.Visibility and not doc.SeparateFuture.ViewObject.Visibility)
+    check("Rollback leaves a consumed earlier sketch and explicitly hidden future sketch hidden",
+          not doc.BaseProfile.ViewObject.Visibility and not doc.HiddenFuture.ViewObject.Visibility)
+    call("rebuild")
+    check("Rebuilding at the rollback boundary does not resurrect future sketches",
+          not doc.SharedFuture.ViewObject.Visibility and not doc.SeparateFuture.ViewObject.Visibility)
+    call("rollback", index=end)
+    check("Rolling forward restores visible unused sketches and preserves explicit hiding",
+          doc.SharedFuture.ViewObject.Visibility and doc.SeparateFuture.ViewObject.Visibility
+          and not doc.HiddenFuture.ViewObject.Visibility and not doc.BaseProfile.ViewObject.Visibility)
+    call("undo")
+    check("Undoing roll-forward hides the later sketches again",
+          not doc.SharedFuture.ViewObject.Visibility and not doc.SeparateFuture.ViewObject.Visibility)
+    call("redo")
+    check("Redoing roll-forward restores the original sketch visibility",
+          doc.SharedFuture.ViewObject.Visibility and doc.SeparateFuture.ViewObject.Visibility
+          and not doc.HiddenFuture.ViewObject.Visibility)
+    call("rollback", index=boundary)
+    project = output / "rolled-back-sketches.FCStd"
+    panel.core.settings.grant_destination(str(project))
+    call("save", path=str(project))
+    App.closeDocument(doc.Name)
+    call("open", path=str(project))
+    doc = panel.document()
+    check("A file saved while rolled back reopens without later sketch graphics",
+          not doc.SharedFuture.ViewObject.Visibility and not doc.SeparateFuture.ViewObject.Visibility
+          and not doc.HiddenFuture.ViewObject.Visibility)
+    call("rollback", index=end)
+    check("Rolling forward after reopening restores each saved visibility choice",
+          doc.SharedFuture.ViewObject.Visibility and doc.SeparateFuture.ViewObject.Visibility
+          and not doc.HiddenFuture.ViewObject.Visibility and not doc.BaseProfile.ViewObject.Visibility)
+
+
 def run():
     global panel
     try:
@@ -198,6 +253,7 @@ def run():
         select_curve(beside, (27.828427, 2.828427, 0), "Actual viewport click selects an unused sketch after save and reopen")
         check("Missing sketch helper is a harmless no-op", not sketch_tools.show_unconsumed_sketch(None))
         capture("accepted-unused-sketches")
+        rollback_visibility()
         report["project"] = str(project)
         report["check_count"] = len(report["checks"])
         report["passed"] = True
@@ -231,10 +287,10 @@ def cleanup():
 
 
 def timeout():
-    report["error"] = "Unused sketch visibility validation exceeded 90 seconds"
+    report["error"] = "Unused sketch visibility validation exceeded 600 seconds"
     save()
     cleanup()
 
 
-QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(600000, timeout)
 QtCore.QTimer.singleShot(1200, run)

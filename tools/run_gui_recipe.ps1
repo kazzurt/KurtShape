@@ -1,7 +1,7 @@
 param(
     [ValidateSet('plane-visibility','step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
         'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline','responsiveness-preview',
-        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view')]
+        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','face-feature-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view','sketch-floating-controls','sketch-coincident-lines','sketch-midpoint-motion')]
     [string]$Recipe = 'interface',
     [ValidateRange(1,7200)][int]$TimeoutSeconds = 900,
     [switch]$WriteEvidence,
@@ -57,6 +57,7 @@ $recipes = @{
     'sketch-edit-state' = @('sketch-edit-state-validation.FCMacro', 'sketch-edit-state\gui-result.json', 0)
     'sketch-plane-editor' = @('sketch-plane-editor-validation.FCMacro', 'sketch-plane-editor\gui-result.json', 0)
     'history-selection' = @('history-selection-validation.FCMacro', 'history-selection\gui-result.json', 0)
+    'face-feature-selection' = @('face-feature-selection-validation.FCMacro', 'face-feature-selection\gui-result.json', 0)
     'rollback-history' = @('rollback-history-validation.FCMacro', 'rollback-history\gui-result.json', 0)
     'review-interaction' = @('gui-review-validation.FCMacro', 'review-followup\gui-review.json', 0)
     'review-lifecycle' = @('sketch-lifecycle-validation.FCMacro', 'sketch-lifecycle-result.json', 0)
@@ -79,6 +80,9 @@ $recipes = @{
     'parameter-panel' = @('parameter-panel-validation.FCMacro', 'parameter-panel\gui-result.json', 0)
     'parameter-panel-reopen' = @('parameter-panel-reopen-validation.FCMacro', 'parameter-panel-reopen\gui-result.json', 0)
     'section-view' = @('section-view-validation.FCMacro', 'section-view\gui-result.json', 0)
+    'sketch-floating-controls' = @('sketch-floating-controls-validation.FCMacro', 'sketch-floating-controls\gui-result.json', 0)
+    'sketch-coincident-lines' = @('sketch-coincident-lines-validation.FCMacro', 'sketch-coincident-lines\gui-result.json', 0)
+    'sketch-midpoint-motion' = @('sketch-midpoint-motion-validation.FCMacro', 'sketch-midpoint-motion\gui-result.json', 0)
 }
 $recipeDefinition = $recipes[$Recipe]
 $macroPath = Join-Path $PSScriptRoot $recipeDefinition[0]

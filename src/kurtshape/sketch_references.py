@@ -545,6 +545,16 @@ class SketchReferences:
                             and command != "Sketcher_StopOperation" and not immediate else None)
         return True
 
+    def run_native(self, command):
+        """Run the same native tool after resolving contextual constraints."""
+        from . import sketch_constraints
+        sketch = self.panel.active_sketch()
+        if (sketch is not None and sketch_constraints.coincident_lines(
+                sketch, command, Gui.Selection.getSelectionEx())):
+            Gui.Selection.clearSelection()
+            return
+        sketch_tools.run_command(command)
+
     def hit(self, watched, event=None, point=None):
         view = Gui.activeDocument().activeView()
         if point is None:

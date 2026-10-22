@@ -2,6 +2,7 @@
 from copy import deepcopy
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 import unittest
 import support
 
@@ -137,6 +138,20 @@ class IncrementalDocumentStateTests(unittest.TestCase):
         self.assertIntentParity()
         self.assertIn(name, self.cache.last_read_names)
         self.assertSummaryParity(replacement)
+
+    def test_view_provider_dynamic_properties_do_not_invalidate_native_intent(self):
+        original = self.assertIntentParity()
+        observer = self.core.observer
+        serial = observer.state(self.doc)["change_serial"]
+        reads = self.cache.object_reads
+        # Native GUI callbacks supply the view provider (which exposes .Object)
+        # rather than the document object used by authored-property callbacks.
+        provider = SimpleNamespace(Object=self.doc.Profile, Document=self.doc)
+        observer.slotAppendDynamicProperty(provider, "KurtShapeRollbackVisible")
+        observer.slotRemoveDynamicProperty(provider, "KurtShapeRollbackVisible")
+        self.assertEqual(observer.state(self.doc)["change_serial"], serial)
+        self.assertEqual(self.assertIntentParity(), original)
+        self.assertEqual(self.cache.object_reads, reads)
 
     def test_undo_redo_abort_and_restore_force_safe_oracle_parity(self):
         original = self.assertIntentParity()

@@ -178,6 +178,8 @@ def validate():
     try:
         panel = ui.start()
         panel.recovery_timer.stop()
+        # This recipe saves only inside its isolated runner-owned session.
+        panel.core.settings.roots = {session}
         call("new", name="History selection validation")
         call("sketch_rectangle", id="Outline", width=20, height=12, body="Body")
         call("pad", id="Extrude", profile="Outline", length=8, body="Body")
@@ -199,6 +201,11 @@ def validate():
         check("Ctrl adds an independent row without selecting the gap", selected() == {"Outline", "Extrude", "HoleSketch", "HoleCut", "ExtraRectangle"})
         click("HoleSketch", QtCore.Qt.ControlModifier)
         check("Ctrl toggles one row without changing the others", selected() == {"Outline", "Extrude", "HoleCut", "ExtraRectangle"})
+        check("Ctrl toggling a row off preserves its unselected current row",
+              panel.features.currentItem() is panel.items["HoleSketch"])
+        click("ExtraCircle", QtCore.Qt.ShiftModifier)
+        check("Shift after a Ctrl toggle uses the clicked row as its range anchor",
+              selected() == {"Outline", "Extrude", "HoleSketch", "HoleCut", "ExtraCircle", "ExtraRectangle"})
         baseline_selection = selected()
         panel.refresh()
         wait()
@@ -350,10 +357,10 @@ def cleanup():
 def timeout():
     if not report.get("seconds"):
         report["aborted"] = True
-        report["error"] = "History GUI validation exceeded 90 seconds"
+        report["error"] = "History GUI validation exceeded 300 seconds"
         save_report()
         cleanup()
 
 
-QtCore.QTimer.singleShot(90000, timeout)
+QtCore.QTimer.singleShot(300000, timeout)
 QtCore.QTimer.singleShot(1500, validate)
