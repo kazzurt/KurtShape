@@ -674,7 +674,16 @@ OPERATIONS = {
         "doc": DOC_HISTORICAL},
     "save": {
         "summary": "Staged native save with a recovery copy of the previous file",
-        "fields": {"path": {"description": "Absolute .FCStd path in a granted project folder", "x-suffixes": [".FCStd"]}},
+        "fields": {"path": {"description": "Absolute .FCStd path in a granted project folder. A destination another program "
+                                           "holds open (or a read-only one) rejects with save_destination_locked, naming the "
+                                           "file and the OS reason; the previous file is kept and the save can be retried",
+                            "x-suffixes": [".FCStd"]},
+                   # Slice A/B U8 (A8): another project's file is never replaced silently.
+                   "overwrite": {"type": "boolean", "default": False,
+                                 "description": "Replace an existing FCStd that holds another project (another document_id, or "
+                                                "no KurtShape project); without it such a destination rejects with "
+                                                "save_destination_other_project. The document's own file and a new path "
+                                                "need no flag"}},
         "required": ["path"], "examples": [{"op": "save", "path": "<project>/plate.FCStd"}],
         "x-example-fixture": "plate", "doc": DOC_30},
     "export": {

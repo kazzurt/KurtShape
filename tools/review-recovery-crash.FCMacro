@@ -20,7 +20,7 @@ panel = start()
 session = Path(os.environ["KURTSHAPE_SESSION_DIR"])
 output = evidence_dir("review-followup")
 output.mkdir(parents=True, exist_ok=True)
-report = {"passed": False, "pid": os.getpid(), "method": "Disposable hidden GUI, real 30-second native checkpoint timer, native autosave enabled at one minute, os._exit without clean shutdown"}
+report = {"passed": False, "pid": os.getpid(), "method": "Disposable hidden GUI, real 30-second native checkpoint timer, FreeCAD's own autosaver off while KurtShape recovery is on (decision 3; the native autosave proof stays optional), os._exit without clean shutdown"}
 
 def require(value):
     assert value, panel.message.text()
@@ -30,6 +30,9 @@ def prepare():
     try:
         require(panel.operation("sketch_rectangle", id="Plate", width=20, height=10))
         require(panel.operation("pad", profile="Plate", length=6))
+        # The user's Save dialog grants the folder it writes to; a fresh private profile grants only
+        # <root>/projects (slice A/B U8, as the interface recipe's save).
+        panel.core.settings.grant_destination(str(session / "saved-before-crash.FCStd"))
         require(panel.operation("save", path=str(session / "saved-before-crash.FCStd")))
         require(panel.operation("set_parameter", feature="Pad", parameter="Length", value=9))
         require(panel.operation("create_sketch", id="Unfinished"))

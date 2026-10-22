@@ -1,0 +1,224 @@
+"""Hidden GUI gate: "Saving…" / "Checkpoint…" painted before each synchronous native write, and a save
+into a locked file named in the status bar and Messages with the previous file intact (slice A/B U8, A4/A8).
+
+A separate hidden FreeCAD runs the real panel. The Save dialog is answered by a stub (the only stand-in);
+everything else is the app's own path: Panel.save (Save and Save As), Panel.checkpoint_projects (the idle
+timer's checkpoint) and a forced checkpoint. A paint recorder on the status line and the footer proves the
+notice was painted before the native write started (the stage file absent, the target unchanged).
+"""
+from contextlib import contextmanager
+import ctypes
+from ctypes import wintypes
+import hashlib
+import json
+import os
+from pathlib import Path
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+from kurtshape.ui import start
+panel = start()
+output = evidence_dir("save-feedback")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "notices": [],
+          "method": "Separate hidden native GUI; real Panel.save / Save As / checkpoint_projects / forced checkpoint; "
+                    "paint events recorded on the status line and footer; a share-deny Windows handle for the lock; "
+                    "the Save dialog stubbed"}
+
+
+def wait(ms=120):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, condition):
+    assert condition, label + ": " + panel.message.text()
+    report["checks"].append(label)
+
+
+def digest(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest() if Path(path).exists() else None
+
+
+@contextmanager
+def share_deny_lock(path):
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateFileW.restype = wintypes.HANDLE
+    kernel32.CreateFileW.argtypes = (wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID,
+                                     wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE)
+    kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+    handle = kernel32.CreateFileW(str(path), 0x80000000, 0, None, 3, 0, None)
+    if handle == wintypes.HANDLE(-1).value:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        yield
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+class PaintRecorder(QtCore.QObject):
+    """Texts a label had when it actually received a paint event."""
+
+    def __init__(self, labels):
+        super().__init__()
+        self.painted = {id(label): [] for label in labels}
+        for label in labels:
+            label.installEventFilter(self)
+
+    def eventFilter(self, watched, event):
+        if event.type() == QtCore.QEvent.Paint and id(watched) in self.painted:
+            self.painted[id(watched)].append(watched.text())
+        return False
+
+
+recorder = PaintRecorder((panel.status, panel.message))
+original_notice = panel.core.recovery.stall_status
+watch = {"stage": None, "target": None}
+
+
+def recording_notice(text):
+    counts = {key: len(values) for key, values in recorder.painted.items()}
+    original_notice(text)
+    if text:
+        new = {key: values[counts[key]:] for key, values in recorder.painted.items()}
+        report["notices"].append({
+            "text": text, "status_painted": text in new[id(panel.status)], "footer_painted": text in new[id(panel.message)],
+            "stage_exists": bool(watch["stage"] and Path(watch["stage"]).exists()),
+            "target_digest": digest(watch["target"]) if watch["target"] else None})
+    else:
+        report["notices"].append({"text": None, "status_after": panel.status.text(), "footer_after": panel.message.text()})
+
+
+panel.core.recovery.stall_status = recording_notice
+chosen = {"path": None}
+
+
+def save_dialog(*args, **kwargs):
+    return (chosen["path"], "FreeCAD project (*.FCStd)")
+
+
+QtGui.QFileDialog.getSaveFileName = save_dialog
+
+
+def notices_since(index):
+    return report["notices"][index:]
+
+
+def validate():
+    try:
+        wait(300)
+        panel.operation("sketch_rectangle", id="Base", width=60, height=40)
+        panel.operation("pad", id="Plate", profile="Base", length=6)
+        check("A plate to save", panel.state and panel.state["build_status"] == "valid")
+        project = output / "save-feedback-plate.FCStd"
+        stage = project.with_name(project.stem + ".saving.FCStd")
+        watch.update(stage=stage, target=project)
+
+        # 1. Save (the dialog path) paints "Saving…" before the native write.
+        chosen["path"] = str(project)
+        first = len(report["notices"])
+        check("Save through the panel succeeds", bool(panel.save()) and project.is_file())
+        notices = notices_since(first)
+        check("Save announced once and cleared", [n["text"] for n in notices] == ["Saving…", None])
+        check("'Saving…' painted on the status line and the footer before the stage existed",
+              notices[0]["status_painted"] and notices[0]["footer_painted"] and not notices[0]["stage_exists"]
+              and notices[0]["target_digest"] is None)
+        wait(50)
+        check("The notice is gone after the save", "Saving…" not in (panel.status.text(), panel.message.text()))
+        check("The footer reports the save", panel.message.text() == "Save complete")
+
+        # 2. Ctrl+S to the document's own file: painted before the write, the old file still in place then.
+        panel.operation("rename_feature", feature="Plate", name="Plate renamed")
+        before = digest(project)
+        first = len(report["notices"])
+        check("Save to the own file succeeds", bool(panel.save()))
+        notices = notices_since(first)
+        check("Own-file save painted before the write (stage absent, previous file unchanged)",
+              notices[0]["text"] == "Saving…" and notices[0]["status_painted"] and notices[0]["footer_painted"]
+              and not notices[0]["stage_exists"] and notices[0]["target_digest"] == before)
+        check("The own file was replaced", digest(project) != before)
+
+        # 3. The idle timer's checkpoint and a forced checkpoint paint "Checkpoint…" first.
+        recovery = panel.core.recovery
+        identifier = panel.core.identifier(panel.document())
+        watch.update(stage=recovery.directory / (identifier + ".saving.FCStd"), target=None)
+        panel.operation("rename_feature", feature="Plate", name="Plate checkpoint")
+        recovery.close()
+        recovery.last.clear()
+        panel.responsiveness.last_activity = time.perf_counter() - 3
+        first = len(report["notices"])
+        panel.checkpoint_projects()
+        notices = notices_since(first)
+        check("Idle checkpoint announced and cleared", [n["text"] for n in notices] == ["Checkpoint…", None])
+        check("'Checkpoint…' painted before the idle checkpoint's native write",
+              notices[0]["status_painted"] and notices[0]["footer_painted"] and not notices[0]["stage_exists"])
+        recovery.close()
+        first = len(report["notices"])
+        manifest = panel.core.checkpoint(panel.document(), force=True)
+        notices = notices_since(first)
+        check("Forced checkpoint painted 'Checkpoint…' before its native write",
+              manifest is not None and [n["text"] for n in notices] == ["Checkpoint…", None]
+              and notices[0]["status_painted"] and notices[0]["footer_painted"] and not notices[0]["stage_exists"])
+        check("Checkpoint notice cleared", "Checkpoint…" not in (panel.status.text(), panel.message.text()))
+
+        # 4. A locked destination: named in the status bar and Messages, previous file and stage intact/clean.
+        watch.update(stage=stage, target=None)
+        panel.operation("rename_feature", feature="Plate", name="Plate locked")
+        before = digest(project)
+        messages_before = panel.messages.toPlainText()
+        with share_deny_lock(project):
+            result = panel.save()
+            wait(50)
+            footer = panel.message.text()
+            messages = panel.messages.toPlainText()[len(messages_before):]
+        report["locked_footer"] = footer
+        check("A locked save fails", result is None)
+        check("The footer names the file and the code", project.name in footer and "save_destination_locked" in footer)
+        report["locked_messages"] = messages
+        check("Messages keeps the locked-file error with the file name and the OS reason",
+              "save_destination_locked" in messages and project.name in messages and '"reason"' in messages)
+        check("The previous file is unchanged and no stage is left", digest(project) == before and not stage.exists())
+        check("The notice is cleared after the failure", "Saving…" not in (panel.status.text(), footer))
+        check("Saving again after the lock clears succeeds", bool(panel.save()) and digest(project) != before)
+
+        # 5. Save As onto another (non-KurtShape) FCStd: the dialog already asked, so the GUI replaces it.
+        other = output / "save-feedback-other.FCStd"
+        native = App.newDocument("SaveFeedbackOther")
+        native.saveAs(str(other))
+        App.closeDocument(native.Name)
+        wait(100)
+        panel.tick()
+        refused = panel.core.dispatch({"op": "save", "document_id": panel.state["document_id"],
+                                       "expected_revision": panel.state["revision"], "path": str(other)})
+        check("A bridge-style save onto the other file is refused",
+              not refused["ok"] and refused["error"]["code"] == "save_destination_other_project")
+        chosen["path"] = str(other)
+        check("Save As onto the other file replaces it (the dialog's own confirmation)",
+              bool(panel.save(save_as=True)) and panel.core._saved_project(other)[0] == panel.state["document_id"])
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        main.grab().save(str(output / "failure.png"))
+    finally:
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

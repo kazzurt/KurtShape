@@ -9,6 +9,7 @@ then prints a JSON summary. Run it inside an isolated validation session.
 """
 from __future__ import annotations
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -25,7 +26,13 @@ def build(folder):
     if getattr(App, "GuiUp", False):
         raise RuntimeError("The headless fixture must be built without the FreeCAD GUI")
     folder = Path(folder).resolve()
+    if not os.environ.get("KURTSHAPE_SESSION_DIR"):
+        # The grant below persists in the session's settings.json; never widen the live runtime profile.
+        raise RuntimeError("The headless fixture needs a private session (set KURTSHAPE_SESSION_DIR)")
     core = Controller()
+    # The fixture folder is granted the way a user's Save dialog grants it; a fresh private profile grants
+    # only <root>/projects (slice A/B U8, as the interface recipe's save).
+    core.settings.grant_destination(str(folder / "studio.FCStd"))
     summary = {}
     try:
         state = core.dispatch({"op": "new", "name": "Headless studio"})["result"]

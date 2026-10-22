@@ -379,7 +379,7 @@ class Controller:
         "set_expression": {"feature", "parameter", "expression"},
         "duplicate_feature": {"feature", "fingerprint"},
         "pierce": {"sketch", "geometry", "point", "target", "subelement"},
-        "save": {"path"}, "export": {"path", "body"},
+        "save": {"path", "overwrite"}, "export": {"path", "body"},
         "capabilities": set(), "request_status": {"request_id"}, "preview": {"proposal"}, "diagnostics": set(),
         "assembly_candidates": {"path"}, "create_assembly": {"id", "name"},
         "insert_assembly_part": {"assembly", "path", "source_id", "id", "name"},
@@ -2288,7 +2288,7 @@ class Controller:
                         self._validate_results(doc, "report")
                     self._new_revision(doc)
                 elif op == "save":
-                    self._save(doc, request["path"])
+                    self._save(doc, request["path"], request.get("overwrite"))
                 elif op == "export":
                     self._export(doc, request["path"], request.get("body"))
             if detail == "compact":
@@ -3651,10 +3651,17 @@ class Controller:
         mapping[str(req["source_feature_id"])] = created.Name
         meta.SourceMapping = json.dumps(mapping, sort_keys=True)
 
-    def _save(self, doc, raw):
+    def _save(self, doc, raw, overwrite=None):
         path=write_path(raw,{".fcstd"}, self.settings.roots)
+        if overwrite is not None and not isinstance(overwrite, bool):
+            raise OperationError("invalid_argument", "overwrite must be true or false", fields=["overwrite"])
+        if path.exists() and not overwrite:
+            # A8 (slice A/B U8): never silently replace another project's file.
+            self._refuse_other_project(doc, path)
         stage=path.with_name(path.stem + ".saving.FCStd")
         old_name=doc.FileName
+        # A4: the GUI paints "Saving…" before the synchronous native write and clears it afterwards.
+        self.recovery.stall("Saving…")
         try:
             doc.saveCopy(str(stage))
             # Ensure stage is a readable native ZIP before replacing the previous file.
@@ -3662,14 +3669,101 @@ class Controller:
             with zipfile.ZipFile(stage) as archive:
                 if "Document.xml" not in archive.namelist() or archive.testzip():
                     raise OperationError("save_failed", "Native staged file is corrupt")
-            if path.exists():
-                import shutil
-                shutil.copy2(path,path.with_suffix(".recovery.FCStd"))
-            os.replace(stage,path)
+            try:
+                if path.exists():
+                    import shutil
+                    # Contents and times, not the mode: a read-only destination must not leave a read-only
+                    # recovery copy that blocks every later save (copy2 copied the attribute).
+                    backup=path.with_suffix(".recovery.FCStd")
+                    shutil.copyfile(path,backup)
+                    previous=path.stat()
+                    os.utime(backup,ns=(previous.st_atime_ns,previous.st_mtime_ns))
+                os.replace(stage,path)
+            except OSError as exc:
+                # A locked (open in another program) or read-only destination: the previous file is intact.
+                raise self._destination_locked(path, exc, stage) from exc
             doc.FileName=str(path)
-        except Exception:
+        except Exception as exc:
             doc.FileName=old_name
+            failure=exc
             raise
+        else:
+            failure=None
+        finally:
+            try:
+                stage.unlink(missing_ok=True)
+            except OSError as cleanup:
+                # Never silent: the leftover stage is named on the error, or reported with the saved result.
+                note={"stage": str(stage), "stage_cleanup_error": cleanup.strerror or str(cleanup)}
+                App.Console.PrintWarning(f"KurtShape save left its stage {stage}: {note['stage_cleanup_error']}\n")
+                if isinstance(failure, OperationError):
+                    failure.details.update(note)
+                elif failure is None:
+                    self._reports["save_stage"]=note
+            self.recovery.stall(None)
+
+    @staticmethod
+    def _destination_locked(path, exc, stage=None):
+        reason = exc.strerror or str(exc)
+        details = {"path": str(path), "reason": reason}
+        # The OS may name the stage (os.replace's source), which is removed below; name the file that blocks.
+        named = [Path(name).resolve() for name in (exc.filename, exc.filename2) if name]
+        blocking = [name for name in named if name != path and (stage is None or name != stage.resolve())]
+        if blocking:
+            details["file"] = str(blocking[0])
+        return OperationError("save_destination_locked",
+                              f"Cannot write {path.name}: {reason}. Close it in the other program (or make it writable), then save again",
+                              **details)
+
+    @staticmethod
+    def _saved_project(path):
+        """``(DocumentId, document label)`` of the FCStd at ``path``, streamed from its Document.xml.
+
+        The DocumentId is None when the file has no KurtShape project metadata. Raises OSError when the
+        file cannot be read (locked) and ValueError when it is not a readable FCStd; nothing is opened.
+        """
+        import zipfile
+        import xml.etree.ElementTree as ET
+        label, stack = None, []
+        try:
+            with zipfile.ZipFile(path) as archive, archive.open("Document.xml") as stream:
+                for event, element in ET.iterparse(stream, events=("start", "end")):
+                    if event == "end":
+                        stack.pop()
+                        element.clear()
+                        continue
+                    stack.append((element.tag, element.get("name")))
+                    if element.tag != "String":
+                        continue
+                    # Document/Properties/Property[Label]/String, then
+                    # Document/ObjectData/Object[KurtShapeProject]/Properties/Property[DocumentId]/String.
+                    if len(stack) == 4 and stack[1][0] == "Properties" and stack[2] == ("Property", "Label"):
+                        label = element.get("value")
+                    elif (len(stack) == 6 and stack[1][0] == "ObjectData" and stack[2] == ("Object", METADATA)
+                          and stack[4] == ("Property", "DocumentId")):
+                        return element.get("value"), label
+        except OSError:
+            raise
+        except Exception as exc:
+            # KeyError, BadZipFile, ParseError, zlib.error (a corrupt deflate stream), EOFError,
+            # NotImplementedError (an unsupported compression), ...: not a readable FCStd.
+            raise ValueError("Not a readable FCStd") from exc
+        return None, label
+
+    def _refuse_other_project(self, doc, path):
+        """Reject ``path`` when it holds an FCStd of another project (another DocumentId, or none)."""
+        try:
+            existing, label = self._saved_project(path)
+        except OSError as exc:
+            raise self._destination_locked(path, exc) from exc
+        except ValueError:
+            existing, label = None, None
+        if existing is not None and existing == self._meta(doc).DocumentId:
+            return
+        project = f" (project {label!r})" if label else ""
+        raise OperationError("save_destination_other_project",
+                             f"{path.name} holds another project's file{project}; save elsewhere, or pass overwrite:true to replace it",
+                             path=str(path), existing_document_id=existing, existing_project=label)
 
     def _export(self, doc, raw, body_id=None):
         path=write_path(raw,{".step",".stp",".stl"}, self.settings.roots)

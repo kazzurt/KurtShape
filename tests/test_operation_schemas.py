@@ -31,6 +31,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 import unittest
 from unittest.mock import patch
@@ -313,6 +314,10 @@ DEFAULT_PROBES = {
                    "diameter": 6}],
         "request": {"op": "hole", "sketch": "TopCentre", "diameter": 3, "depth": 4},
         "fields": ["reversed", "end_type", "point_angle"]},
+    "save_other_project": {
+        # Slice A/B U8: the destination holds another project's FCStd, so without overwrite the save is refused.
+        "fixture": "plate", "setup": [], "request": {"op": "save", "path": "<other_project_file>"},
+        "fields": ["overwrite"]},
 }
 
 # Application-level transactions an example leaves open after its document is
@@ -441,6 +446,13 @@ class SchemaRunner:
                 project = self.folder / ("project-" + uuid.uuid4().hex[:8])
                 project.mkdir()
                 return str(project) + value[len("<project>"):]
+            if value == "<other_project_file>":
+                # Slice A/B U8: a fresh copy of the studio fixture (another project) for save's overwrite probe.
+                project = self.folder / ("project-" + uuid.uuid4().hex[:8])
+                project.mkdir()
+                target = project / "other-project.FCStd"
+                shutil.copy2(self.files["fixture:studio"], target)
+                return str(target)
             if value in self.files:
                 return str(self.files[value])
             raise KeyError("Undocumented example placeholder " + value)

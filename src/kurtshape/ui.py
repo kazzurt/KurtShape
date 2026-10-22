@@ -256,6 +256,9 @@ class Panel(QtGui.QDockWidget):
         self.recovery_timer = QtCore.QTimer(self)
         self.recovery_timer.timeout.connect(self.checkpoint_projects)
         self.recovery_timer.start(1000)
+        # A4 (slice A/B U8): every synchronous native save and checkpoint paints its notice first.
+        self._stall_texts = None
+        controller.recovery.stall_status = self.paint_stall
         self.feedback_started = None
         self.feedback_kind = "ordinary"
         self.main.installEventFilter(self)
@@ -3168,6 +3171,11 @@ class Panel(QtGui.QDockWidget):
                                     and self.operation("recover", path=p))
         if not records:
             menu.addAction("No recoverable projects").setEnabled(False)
+        # A4 (slice A/B U8): where checkpoints live and how often they run (docs/EVERYDAY_UI.md, Recovery).
+        menu.addSeparator()
+        policy = menu.addAction(f"Checkpoints: changed projects, after 2 s idle, at most every "
+                                f"{self.core.recovery.interval_seconds} s · in {self.core.recovery.directory}")
+        policy.setEnabled(False)
 
     def checkpoint_projects(self):
         try:
@@ -3193,6 +3201,35 @@ class Panel(QtGui.QDockWidget):
                         # Publication may finish while capture starts. Count
                         # native attempts, including failed ones, not futures.
                         break
+
+    def paint_stall(self, text):
+        """``"Saving…"`` / ``"Checkpoint…"`` in the status line and the footer, painted now (A4, slice A/B U8).
+
+        The controller calls this right before a synchronous native save on the GUI thread (``save``,
+        Save As, ``adopt``, a recovery checkpoint) and with ``None`` when the write is done, which puts the
+        previous texts back. ``repaint`` paints the two labels immediately without running the event loop,
+        so no input or timer is processed by it. A label whose text changed meanwhile keeps the new text.
+        """
+        labels = (self.status, self.message)
+        if text:
+            if self._stall_texts is None:
+                self._stall_texts = {"status": self.status.text(), "message": self.message.text(),
+                                     "style": self.message.styleSheet()}
+            self._stall_texts["shown"] = text
+            self.message.setStyleSheet("")
+            for label in labels:
+                label.setText(text)
+            for label in labels:
+                label.repaint()
+            return
+        previous, self._stall_texts = self._stall_texts, None
+        if previous is None:
+            return
+        if self.status.text() == previous["shown"]:
+            self.status.setText(previous["status"])
+        if self.message.text() == previous["shown"]:
+            self.message.setText(previous["message"])
+            self.message.setStyleSheet(previous["style"])
 
     def feedback_complete(self):
         if hasattr(self, "responsiveness"):
@@ -3310,14 +3347,17 @@ class Panel(QtGui.QDockWidget):
             self.notify("Finish or cancel the current edit before saving the project.")
             return
         path = self.state.get("native_file") if not save_as else None
-        if not path:
+        chosen = not path
+        if chosen:
             self.core.settings.project_directory.mkdir(parents=True, exist_ok=True)
             imported = self.state.get("import_source")
             filename = Path(imported["path"]).stem + ".FCStd" if imported else ("my-assembly.FCStd" if self.assembly_state() else "my-part.FCStd")
             path = QtGui.QFileDialog.getSaveFileName(self, "Save project", self.state.get("native_file") or str(Path(self.core.settings.last_directory) / filename), "FreeCAD project (*.FCStd)")[0]
         if path:
             self.core.settings.grant_destination(path)
-            return self.operation("save", path=path)
+            # A8 (slice A/B U8): the Save dialog has already asked before replacing an existing file, so a
+            # chosen path may replace another project's FCStd; the document's own file needs no flag.
+            return self.operation("save", path=path, overwrite=chosen)
 
     def adopt(self):
         if not self.state:
@@ -4794,8 +4834,11 @@ def start():
     main = Gui.getMainWindow()
     preferences = App.ParamGet("User parameter:BaseApp/Preferences/Document")
     preferences.SetBool("RecoveryEnabled", True)
-    preferences.SetBool("AutoSaveEnabled", True)
-    preferences.SetInt("AutoSaveTimeout", 1)
+    # Decision 3 (slice A/B U8, A4): KurtShape's recovery checkpoints are the one recovery writer, so
+    # FreeCAD's one-minute autosaver is off unless settings.json keeps it ("keep_freecad_autosave": true).
+    # FreeCAD reads these values when it starts: a change applies from the next start.
+    from .settings import apply_freecad_autosave, load_preference, session_directory
+    apply_freecad_autosave(preferences, load_preference(session_directory(ROOT), "keep_freecad_autosave"))
     # Decision 2 (A7, C-08): Escape ends the active sketch tool, never the sketch. FreeCAD's
     # Sketcher reads this for its view provider and its task dialog's Escape button.
     App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher").SetBool("LeaveSketchWithEscape", False)

@@ -140,6 +140,9 @@ def validate():
         actions.paste()
         check("Source change rejects stale feature clipboard without mutation", len(doc.Objects) == count and "changed" in panel.message.text())
         saved_clone_name = clone_name
+        # The user's Save dialog grants the folder it writes to; a fresh private profile grants only
+        # <root>/projects (slice A/B U8, as the interface recipe's save).
+        panel.core.settings.grant_destination(str(evidence_dir("") / "general-actions-native-copy.FCStd"))
         call("save", path=str(evidence_dir("") / "general-actions-native-copy.FCStd"))
         App.closeDocument(doc.Name)
         call("open", path=str(evidence_dir("") / "general-actions-native-copy.FCStd"))

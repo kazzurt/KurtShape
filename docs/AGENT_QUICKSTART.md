@@ -79,6 +79,9 @@ STEP/STL are exports.
 4. `save` / `export` need an absolute destination under an allowed folder whose
    directory already exists. New profiles allow `<checkout>/projects` by default.
    A user-chosen Save destination adds that folder. Do not widen grants silently.
+   `save` onto an FCStd that holds another project rejects with
+   `save_destination_other_project` unless you pass `"overwrite": true`; pass it only
+   when Kurt asked for that file to be replaced.
 5. Preserve originals, use descriptive model folders and retain the build recipe.
    Do not overwrite an FCStd open in another app process.
 6. Result checks (contract 3.2, OPERATION_CONTRACT §3.2.1): an edit that would leave a

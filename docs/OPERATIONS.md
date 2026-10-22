@@ -4,7 +4,7 @@
 > `runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe -B tools\generate_operations_doc.py > runtime\test-tmp\operations-doc.log 2>&1`.
 > `tests/test_operations_doc.py` fails when this file and the schema disagree.
 
-One entry per operation of this build (84 operations, schema version 1, schema digest `98e00360487290e8`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
+One entry per operation of this build (84 operations, schema version 1, schema digest `e9e05b0b05a6c023`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
 
 ## Reading an entry
 
@@ -1270,9 +1270,12 @@ Schema-named errors: `ambiguous_body`.
 Staged native save with a recovery copy of the previous file. [Contract][contract-30].
 
 - `detail`: full / compact
+- `overwrite`: boolean; default `false`
 - `path`: absolute_path; **required**
 
 Example (fixture `plate`): `{"op": "save", "document_id": "<document_id>", "expected_revision": "<revision>", "path": "<project>/plate.FCStd"}`
+
+Schema-named errors: `save_destination_locked`, `save_destination_other_project`.
 
 ## History and sketch editing
 
