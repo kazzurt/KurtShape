@@ -81,6 +81,7 @@ SUITES = {
         "test_operations_doc.OperationsDocTests",
         "test_session.SessionTests",
         "test_confirm_gating.ConfirmGatingTests",
+        "test_launcher_pinning.LauncherPinningTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),

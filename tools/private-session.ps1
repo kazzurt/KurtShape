@@ -15,6 +15,9 @@
 # -Ensure reuses the session when its recorded process is still running (instead of refusing), after
 # checking that it already grants every -ProjectRoot. -ProjectRoot adds existing folders the app may
 # save and export to (the session folder itself is always granted).
+# -PinPerformanceCores / -NoPinPerformanceCores set the started freecad.exe's affinity to the performance
+# cores or leave it alone (default: tools\performance-cores.ps1); the record keeps the applied mask. A reused
+# (-Ensure) app keeps the affinity it was started with.
 param(
     [Parameter(Mandatory=$true)][ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_-]{0,23}$')][string]$Session,
     [switch]$Stop,
@@ -22,11 +25,15 @@ param(
     [switch]$Visible,
     [switch]$Ensure,
     [string[]]$ProjectRoot = @(),
-    [ValidateRange(10,900)][int]$TimeoutSeconds = 120
+    [ValidateRange(10,900)][int]$TimeoutSeconds = 120,
+    [switch]$PinPerformanceCores,
+    [switch]$NoPinPerformanceCores
 )
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 . (Join-Path $PSScriptRoot 'validation-session.ps1')
+. (Join-Path $PSScriptRoot 'performance-cores.ps1')
+if ($PinPerformanceCores -and $NoPinPerformanceCores) { throw '-PinPerformanceCores and -NoPinPerformanceCores are exclusive.' }
 $sessionBase = Join-Path $repositoryRoot 'runtime\private'
 $sessionPath = Join-Path $sessionBase $Session
 $recordPath = Join-Path $sessionPath 'private-app.json'
@@ -115,7 +122,15 @@ if (Test-Path -LiteralPath $recordPath) {
         if ($missing.Count) {
             throw ('Running private session ' + $Session + ' does not grant ' + ($missing -join ', ') + '; stop it with -Stop and start it again')
         }
-        Write-Output ('Private KurtShape PID ' + $previous.pid + ' (already running); session file: ' + $sessionFile)
+        $recordedMask = if ($previous.affinity_mask) { [string]$previous.affinity_mask } else { 'none' }
+        if ($PinPerformanceCores -or $NoPinPerformanceCores) {
+            $requested = Get-KurtShapePinningPlan -PinPerformanceCores:$PinPerformanceCores -NoPinPerformanceCores:$NoPinPerformanceCores
+            $requestedMask = if ($requested.mask) { [string]$requested.mask } else { 'none' }
+            if ($requestedMask -ne $recordedMask) {
+                Write-Warning ('Reused PID ' + $previous.pid + ' keeps affinity ' + $recordedMask + ' (requested ' + $requestedMask + '); stop it with -Stop to change')
+            }
+        }
+        Write-Output ('Private KurtShape PID ' + $previous.pid + ' (already running; affinity ' + $recordedMask + '); session file: ' + $sessionFile)
         return
     }
     Remove-Item -LiteralPath $recordPath -Force
@@ -145,14 +160,17 @@ try {
     $arguments = @('-u', ('"' + $userConfig + '"'), '-s', ('"' + $systemConfig + '"'),
         '--log-file', ('"' + (Join-Path $sessionPath 'freecad.log') + '"'), ('"' + (Join-Path $repositoryRoot 'KurtShape.FCMacro') + '"'))
     $style = if ($Visible) { 'Minimized' } else { 'Hidden' }
+    $pinning = Get-KurtShapePinningPlan -PinPerformanceCores:$PinPerformanceCores -NoPinPerformanceCores:$NoPinPerformanceCores
     $process = Start-Process -FilePath $executable -ArgumentList $arguments -WorkingDirectory $repositoryRoot -WindowStyle $style -PassThru `
         -RedirectStandardOutput (Join-Path $sessionPath 'freecad-stdout.txt') -RedirectStandardError (Join-Path $sessionPath 'freecad-stderr.txt')
     $null = $process.Handle
+    $affinity = Set-KurtShapeProcessAffinity -Process $process -Plan $pinning
     Register-KurtShapeValidationProcess -Process $process -Executable $executable -Arguments $arguments
     $record = [ordered]@{
         pid = $process.Id; start_time_utc = $process.StartTime.ToUniversalTime().ToString('o'); user_config = $userConfig
         session = $sessionPath; session_file = $sessionFile; executable = $executable; visible = [bool]$Visible
         qpa = $(if ($Visible) { 'windows' } else { 'offscreen' }); started_utc = [DateTime]::UtcNow.ToString('o')
+        pin_requested = $pinning.requested; affinity_mask = $affinity
     }
     [IO.File]::WriteAllText($recordPath, ($record | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)

@@ -4,9 +4,17 @@ param(
     [switch]$WriteEvidence,
     [ValidateNotNullOrEmpty()][string]$RuntimeRoot = (Join-Path $PSScriptRoot 'runtime'),
     [ValidateNotNullOrEmpty()][string]$SessionRoot = (Join-Path $PSScriptRoot 'runtime'),
-    [switch]$PrintOnly
+    [switch]$PrintOnly,
+    [switch]$PinPerformanceCores,
+    [switch]$NoPinPerformanceCores
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'tools\performance-cores.ps1')
+# Reading the CPU sets compiles a small type (~0.2 s); the default-off launch and the file handoff skip it.
+$pinning = $null
+if ($PinPerformanceCores -or $NoPinPerformanceCores -or $PrintOnly -or (Get-KurtShapePinPerformanceCoresDefault)) {
+    $pinning = Get-KurtShapePinningPlan -PinPerformanceCores:$PinPerformanceCores -NoPinPerformanceCores:$NoPinPerformanceCores
+}
 $openFile = $null
 if ($FilePath) {
     if ($Validation) { throw '-FilePath cannot be combined with -Validation.' }
@@ -78,6 +86,7 @@ if ($PrintOnly) {
         environment = $launchEnvironment
         arguments = $launchArguments
         window_style = $launchWindowStyle
+        performance_cores = $pinning
     } | ConvertTo-Json -Depth 5
     return
 }
@@ -110,6 +119,7 @@ if ($Validation) {
 }
 if (-not (Test-Path -LiteralPath $exePath)) { throw 'Run install-runtime.ps1 first.' }
 $launchProcess = Start-Process -FilePath $exePath -ArgumentList $launchArguments -WorkingDirectory $kurtshapeRoot -WindowStyle $launchWindowStyle -PassThru
+if ($pinning) { $null = Set-KurtShapeProcessAffinity -Process $launchProcess -Plan $pinning }
 if ($Validation) {
     Register-KurtShapeValidationProcess -Process $launchProcess -Executable $exePath -Arguments $launchArguments
     Write-Output ('Report: ' + (Join-Path (Get-KurtShapeEvidenceDirectory 'interface-pass') 'gui-test-result.json'))

@@ -99,6 +99,22 @@ already running with the same profile, the launcher hands the file to it
 (`tools/open-in-running-app.ps1`): it opens in that window, or switches to its
 tab if it is already open, instead of starting a second KurtShape.
 
+**Performance cores (hybrid Intel CPUs).** `launch-kurtshape.ps1`,
+`tools/private-session.ps1` and `tools/assistant.ps1 -Hidden` accept
+`-PinPerformanceCores` (or `-NoPinPerformanceCores`). The switch restricts the
+`freecad.exe` they start, and the preview/render workers it later spawns, to the
+performance cores (the highest efficiency class in `tools/performance-cores.ps1`;
+`0xffff` on a 16-thread P-core CPU). On a CPU without efficiency cores it applies
+nothing. `-PrintOnly` shows the resolved mask under `performance_cores`. The
+default is **off**. In a bench-gui A/B on 2026-10-21 (4 clean runs per side),
+no gain of 10 % or more was detected. The kernel-bound metrics were 4.5-7.5 %
+lower pinned, which is within the spread of four runs per side, and panel
+refresh was 25 % slower pinned. The hidden-GUI A/B of 2026-10-19 saw unpinned
+hidden apps fall into a mode where everything ran 1.5-3x slower; pinned runs
+there stayed fast. The 2026-10-21 A/B did not reproduce that mode: no clean run
+was in it. The switch is for unattended or hidden benchmark runs, or for a busy
+machine where the app turns sluggish.
+
 Report problems with the Git commit (`git rev-parse HEAD`), Windows version,
 steps, expected/actual behavior and relevant Messages text. Review reports for
 private paths before sharing; never include session tokens or private CAD files.
