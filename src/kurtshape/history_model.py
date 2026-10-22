@@ -1,6 +1,8 @@
 """Reconcile native Qt tree rows by identity, retaining selection and scroll."""
 from PySide import QtCore, QtGui
 
+from .presentation_icons import icon_signature
+
 
 class HistoryModel:
     def __init__(self, tree):
@@ -8,11 +10,17 @@ class HistoryModel:
         self.document = None
         self.items = {}
         self.created = 0
+        # Every item.setIcon this model performs. FreeCAD hands back a new
+        # QIcon per ViewObject.Icon read, so an unchanged icon is recognised by
+        # its pixel signature and is not set again.
+        self.icon_sets = 0
+        self.icon_signatures = {}
 
     def reconcile(self, document, rows):
         if self.document != document:
             self.tree.clear()
             self.items.clear()
+            self.icon_signatures.clear()
             self.document = document
         wanted = set()
         scroll = self.tree.verticalScrollBar().value()
@@ -47,8 +55,17 @@ class HistoryModel:
                 if item.toolTip(0) != tooltip:
                     item.setToolTip(0, tooltip)
                 icon = row.get("icon")
-                if icon is not None and item.icon(0).cacheKey() != icon.cacheKey():
-                    item.setIcon(0, icon)
+                if icon is not None:
+                    shown = item.icon(0).cacheKey()
+                    if shown != icon.cacheKey():
+                        # Recorded as (cacheKey set, signature): an icon replaced
+                        # outside this model no longer matches and is set again.
+                        recorded = self.icon_signatures.get(key)
+                        signature = icon_signature(icon)
+                        if recorded is None or recorded[0] != shown or recorded[1] != signature:
+                            item.setIcon(0, icon)
+                            self.icon_sets += 1
+                            self.icon_signatures[key] = (icon.cacheKey(), signature)
                 brush = QtGui.QBrush(QtGui.QColor(row["color"])) if row.get("color") else QtGui.QBrush()
                 if item.foreground(0) != brush:
                     item.setForeground(0, brush)
@@ -80,6 +97,7 @@ class HistoryModel:
         # parent cannot invalidate a child wrapper still awaiting removal.
         for key in sorted(set(self.items) - wanted, key=depth, reverse=True):
             item = self.items.pop(key)
+            self.icon_signatures.pop(key, None)
             parent = item.parent()
             position = parent.indexOfChild(item) if parent else self.tree.indexOfTopLevelItem(item)
             if position >= 0:

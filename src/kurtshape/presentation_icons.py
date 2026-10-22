@@ -5,9 +5,16 @@ labels take precedence because Move face and Extrude share PartDesign_Pad.
 Unmapped native command icons keep their silhouette, alpha and shading, with
 color removed. SVG originals scale natively; raster fallbacks are cached at
 20–96px for ordinary and high-DPI toolbar requests.
+
+FreeCAD returns a new QIcon (new cacheKey) on every ViewObject.Icon read, so
+grayscale copies are keyed by icon_signature (one small raster's pixel hash)
+in a bounded LRU: an unchanged native icon maps to one entry however often it
+is read, and the copy handed back keeps one cacheKey between refreshes.
 """
 from __future__ import annotations
 
+from collections import OrderedDict
+import hashlib
 from pathlib import Path
 import re
 
@@ -15,6 +22,19 @@ from PySide import QtCore, QtGui
 
 ICON_ROOT = Path(__file__).resolve().parents[2] / "resources" / "icons"
 RASTER_SIZES = (20, 24, 32, 40, 48, 60, 64, 80, 96)
+ICON_MODES = (QtGui.QIcon.Normal, QtGui.QIcon.Disabled, QtGui.QIcon.Active, QtGui.QIcon.Selected)
+SIGNATURE_SIZE = 32
+# About 63 unmapped native command icons (sketch/constraint/Part menus;
+# measured headless from feature_tools, not confirmed in the GUI shell) are
+# grayed when the shell is built; history rows add a few Body/Part/Link
+# variants. 128 holds them all with headroom, so a shell rebuild or refresh
+# never re-rasterizes, while the worst case stays near 60 MB (9 sizes x 4
+# modes, up to 96px ARGB, ~0.47 MB an entry) and most entries are shared with
+# live QActions. The per-entry worst case scales with devicePixelRatio: Qt
+# rasterizes scalable icons at size x DPR, so an SVG-backed entry is 2-4x
+# larger on a high-DPI screen. Before this bound the dict grew by one entry
+# per body per refresh.
+NATIVE_CACHE_LIMIT = 128
 
 # Prefer labels over command IDs: several native IDs have contextual meanings.
 LABEL_ICONS = {
@@ -70,7 +90,7 @@ COMMAND_ICONS = {
 }
 
 _original_cache = {}
-_native_cache = {}
+_native_cache = OrderedDict()
 
 
 def original_icon_name(label, command=None):
@@ -100,22 +120,51 @@ def _gray_image(source):
     return result
 
 
+def icon_signature(icon):
+    """Stable identity of an icon's pixels, independent of its QIcon object.
+
+    One Normal/Off raster at SIGNATURE_SIZE is hashed with its geometry and
+    the pixmap sizes each mode carries; equal images read twice give equal
+    signatures. Icons that differ only at other sizes are not told apart. An
+    icon with no Normal raster falls back to its per-object cacheKey. Only the
+    Normal/Off raster at SIGNATURE_SIZE is hashed, so two icons that differ
+    only in a Disabled/Selected/Active pixmap of the same sizes, or only at
+    other sizes, share one entry; acceptable because FreeCAD ViewProvider
+    icons are single pixmaps.
+    """
+    if icon is None or icon.isNull():
+        return None
+    image=icon.pixmap(QtCore.QSize(SIGNATURE_SIZE,SIGNATURE_SIZE),QtGui.QIcon.Normal,QtGui.QIcon.Off).toImage()
+    modes=tuple(tuple((size.width(),size.height()) for size in icon.availableSizes(mode,QtGui.QIcon.Off))
+                for mode in ICON_MODES)
+    if image.isNull():
+        return ("object",int(icon.cacheKey()),modes)
+    digest=hashlib.blake2b(image.constBits(),digest_size=16).digest()
+    return (image.width(),image.height(),image.bytesPerLine(),image.format(),
+            float(image.devicePixelRatio()),digest,modes)
+
+
 def grayscale_icon(native):
     """Preserve an existing QIcon's geometry/alpha at useful DPI resolutions."""
     if native is None or native.isNull():
         return QtGui.QIcon()
-    key=int(native.cacheKey())
-    if key not in _native_cache:
-        result=QtGui.QIcon()
-        for mode in (QtGui.QIcon.Normal, QtGui.QIcon.Disabled, QtGui.QIcon.Active, QtGui.QIcon.Selected):
-            for size in RASTER_SIZES:
-                source=native.pixmap(QtCore.QSize(size,size),mode,QtGui.QIcon.Off)
-                if source.isNull():
-                    continue
-                gray=QtGui.QPixmap.fromImage(_gray_image(source.toImage()))
-                result.addPixmap(gray,mode,QtGui.QIcon.Off)
-        _native_cache[key]=result
-    return QtGui.QIcon(_native_cache[key])
+    key=icon_signature(native)
+    cached=_native_cache.get(key)
+    if cached is not None:
+        _native_cache.move_to_end(key)
+        return QtGui.QIcon(cached)
+    result=QtGui.QIcon()
+    for mode in ICON_MODES:
+        for size in RASTER_SIZES:
+            source=native.pixmap(QtCore.QSize(size,size),mode,QtGui.QIcon.Off)
+            if source.isNull():
+                continue
+            gray=QtGui.QPixmap.fromImage(_gray_image(source.toImage()))
+            result.addPixmap(gray,mode,QtGui.QIcon.Off)
+    _native_cache[key]=result
+    while len(_native_cache)>NATIVE_CACHE_LIMIT:
+        _native_cache.popitem(last=False)
+    return QtGui.QIcon(result)
 
 
 def _command_native(command):

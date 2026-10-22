@@ -76,6 +76,8 @@ SUITES = {
         "test_operation_schemas.OperationSchemaTests",
         "test_section_view.SectionViewGeometryTests", "test_section_view.SectionViewSelectionTests",
         "test_section_view.PolygonFillTests",
+        # Slice A/B wave 1 (docs/slice-ab/RECORD.md): registered ahead of the units so no two of them edit this file.
+        "test_icon_cache.IconCacheTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),
