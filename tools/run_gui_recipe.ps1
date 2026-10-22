@@ -1,7 +1,7 @@
 param(
     [ValidateSet('plane-visibility','step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
         'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline','responsiveness-preview',
-        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','face-feature-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view','startup-blank','open-handoff','sketch-floating-controls','sketch-coincident-lines','sketch-midpoint-motion')]
+        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','face-feature-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view','startup-blank','open-handoff','sketch-floating-controls','sketch-coincident-lines','sketch-midpoint-motion','confirm-gating')]
     [string]$Recipe = 'interface',
     [ValidateRange(1,7200)][int]$TimeoutSeconds = 900,
     [switch]$WriteEvidence,
@@ -85,6 +85,7 @@ $recipes = @{
     'sketch-floating-controls' = @('sketch-floating-controls-validation.FCMacro', 'sketch-floating-controls\gui-result.json', 0)
     'sketch-coincident-lines' = @('sketch-coincident-lines-validation.FCMacro', 'sketch-coincident-lines\gui-result.json', 0)
     'sketch-midpoint-motion' = @('sketch-midpoint-motion-validation.FCMacro', 'sketch-midpoint-motion\gui-result.json', 0)
+    'confirm-gating' = @('confirm-gating-validation.FCMacro', 'confirm-gating\gui-result.json', 0)
 }
 $recipeDefinition = $recipes[$Recipe]
 $macroPath = Join-Path $PSScriptRoot $recipeDefinition[0]
@@ -168,6 +169,10 @@ if ($Recipe -eq 'interaction-idle') {
         $env:PREVIEW_BENCH_SOURCE = [IO.Path]::GetFullPath($PreviewSource)
         if (-not (Test-Path -LiteralPath $env:PREVIEW_BENCH_SOURCE -PathType Leaf)) { throw ('Preview source is missing: ' + $env:PREVIEW_BENCH_SOURCE) }
     }
+}
+if ($Recipe -eq 'confirm-gating') {
+    # The macro builds plate60 unless -Holes is given explicitly (slice A/B U1 gate).
+    if ($PSBoundParameters.ContainsKey('Holes')) { $env:BENCH_HOLES = [string]$Holes }
 }
 $logPath = Join-Path $session 'freecad.log'
 $stdoutPath = Join-Path $session 'freecad-stdout.txt'

@@ -24,6 +24,7 @@ from .theme import apply_theme, apply_view_theme, COLORS
 from .feature_tools import available_catalog
 from .quantity_field import QuantityField
 from .extrusion_preview import DebouncedExtrusionPreview
+from . import confirm_gate
 from .workspace_preferences import WorkspacePreferences, release_native_overlays
 from .sketch_tools import show_unconsumed_sketch
 from .sketch_references import SketchReferences
@@ -207,6 +208,8 @@ class Panel(QtGui.QDockWidget):
         self.toolbar_labels = ToolbarLabels(self.main)
         # The last rejected operation's error object (contract 3.2 F3b: the parameter adapter reads it).
         self.last_operation_error = None
+        # A Confirm delivered while the preview snapshot pumps Qt: (mode, evaluator) until it commits.
+        self.pending_accept = None
         self.make_history()
         self.make_editor()
         self.model_actions = []
@@ -3872,6 +3875,7 @@ class Panel(QtGui.QDockWidget):
             self.complete_editor(info["feature"])
         elif self.task_edit is not None:
             self.begin_preview()
+            self.extrusion_preview.reject(preview.proposal, self.last_operation_error)
         return result
 
     def reset_edit_controls(self):
@@ -3935,7 +3939,7 @@ class Panel(QtGui.QDockWidget):
         if self.task not in {"pad", "pocket"}:
             self.preview_hint.clear()
             return
-        self.editor.set_accept_enabled(bool(result and result.valid))
+        self.editor.set_accept_enabled(confirm_gate.accept_enabled(result, provisional=self.provisional_commit_allowed()))
         if result is None and self.task_edit is not None and self.extrusion_preview.evaluator is not None and self.edit_unchanged():
             self.editor.set_accept_enabled(True)
             self.editor.set_status("No changes · Confirm or Cancel closes without changing the model")
@@ -3949,7 +3953,8 @@ class Panel(QtGui.QDockWidget):
             operation = result.proposal.get("operation", "remove" if self.task == "pocket" else "add")
             self.editor.set_status("Preview · removed material" if operation in {"remove", "intersect"} else "Preview · added material", "success")
         elif result.provisional:
-            self.editor.set_status("Provisional preview · checking exact result…")
+            self.editor.set_status("Provisional preview · Confirm commits now; exact check running…"
+                                   if self.provisional_commit_allowed() else "Provisional preview · checking exact result…")
         else:
             text = ("Select an end face for Up to face." if self.end_type.currentIndex() == 2 and not self.up_to_face_reference
                     else result.error["message"])
@@ -3959,7 +3964,40 @@ class Panel(QtGui.QDockWidget):
             self.responsiveness.trace.mark(entry, "preview_provisional" if result.provisional else "preview_ready")
         self.responsiveness.ui_updated(entry)
 
-    def accept_task(self):
+    def provisional_commit_allowed(self):
+        """Confirm commits from a provisional preview only where the operation validates geometry.
+
+        Part Studio Add / Remove / Intersect run result checks (also when the
+        proposal carries operation or merge_scope on a document that is not a
+        Part Studio yet) and a legacy Remove requires removed material; a
+        legacy Extrude has no empty-add check at commit, and an edit has no
+        provisional result, so those keep the exact-only gate
+        (confirm_gate.provisional_allowed).
+        """
+        if self.task not in {"pad", "pocket"} or self.task_edit is not None:
+            return False
+        studio = bool(((self.state or {}).get("studio") or {}).get("enabled"))
+        return confirm_gate.provisional_allowed(self.task, studio, False, self.extrusion_proposal())
+
+    def resume_accept(self):
+        """Commit a Confirm that arrived while the preview snapshot was pumping Qt."""
+        pending, preview = self.pending_accept, self.extrusion_preview
+        if pending is None:
+            return
+        mode, evaluator = pending
+        if self.task not in {"pad", "pocket"} or preview.evaluator is None or preview.evaluator is not evaluator:
+            self.pending_accept = None  # the task ended or restarted; the click does not carry over
+            return
+        if preview.snapshotting is not None:
+            QtCore.QTimer.singleShot(20, self.resume_accept)
+            return
+        self.pending_accept = None
+        if mode == "repeat":
+            self.accept_repeat()
+        else:
+            self.accept_task()
+
+    def accept_task(self, repeat=False):
         if self.studio_dialog:
             self.studio_dialog.accept()
             return True
@@ -3979,11 +4017,27 @@ class Panel(QtGui.QDockWidget):
             if not profile:
                 self.notify("Select a closed sketch profile from the history.")
                 return False
+            if self.extrusion_preview.snapshotting is not None and (self.provisional_commit_allowed() or self.confirm.isEnabled()):
+                # The first exact snapshot (saveCopy) pumps Qt. A Confirm
+                # delivered inside it is not dropped: it commits once the
+                # snapshot releases the document, without clearing the preview.
+                # A task that cannot commit yet falls through to today's path.
+                if self.pending_accept is None:
+                    QtCore.QTimer.singleShot(20, self.resume_accept)
+                self.pending_accept = ("repeat" if repeat else "accept", self.extrusion_preview.evaluator)
+                self.editor.set_status("Confirm queued · committing after the preview snapshot…")
+                return False
             # Re-evaluate the current fields before acceptance, including the
-            # revision guard. The visible preview and committed solid agree.
+            # revision guard. Where the operation validates geometry itself
+            # (provisional_commit_allowed) a valid provisional result commits
+            # immediately and the exact preview is advisory; an exact or commit
+            # rejection remembered for these fields still blocks. The committed
+            # solid uses the same normalized proposal the exact preview
+            # evaluates, so both agree. operation() clears the preview before
+            # dispatch, which discards any in-flight exact evaluation.
             self.extrusion_preview.schedule(self.extrusion_proposal())
-            preview = self.extrusion_preview.flush()
-            if not preview or not preview.valid:
+            preview = self.extrusion_preview.flush(provisional=self.provisional_commit_allowed())
+            if not preview:
                 return False
             args = dict(preview.proposal)
             operation = args.pop("op")
@@ -3999,14 +4053,18 @@ class Panel(QtGui.QDockWidget):
                 self.task = self.task_profile = self.task_document = None
                 self.complete_editor(obj.Name if obj else result.get("created_feature", args["id"]))
             else:
+                # The rejection stays on these fields (error in the status,
+                # Confirm disabled) until they change; begin_preview alone
+                # would offer the same failing commit again.
                 self.begin_preview()
+                self.extrusion_preview.reject(preview.proposal, self.last_operation_error)
             return result
         return False
 
     def accept_repeat(self):
         kind = self.task
         editing = self.task_edit is not None
-        result = self.accept_task() if kind else False
+        result = self.accept_task(repeat=True) if kind else False
         if result and kind in {"pad", "pocket"} and not editing:
             self.extrude(kind == "pocket", choose_new=True)
         return result
