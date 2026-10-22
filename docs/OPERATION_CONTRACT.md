@@ -1,5 +1,7 @@
 # Shared operation contract
 
+Per-operation arguments, defaults and runnable examples, generated from `src/kurtshape/operation_schemas.py`: [OPERATIONS.md](OPERATIONS.md).
+
 The authoritative document is native FreeCAD FCStd. A feature object's `Name` is its stable ID; native Sketcher constraints are parameters and native expressions are dependencies. `KurtShapeProject` stores project UUID, opaque revision, build status and source mapping, without duplicating editable geometry or dimensions. Studio operations additionally persist an ordered native feature list and logical part identities. Body resolution uses explicit `body`, the target/support's owning Body, or the sole current part. Several eligible parts without a target or explicit ID reject with `ambiguous_body`; assistants never inherit GUI focus. Historical and auxiliary Bodies are native dependencies and are excluded from current results.
 
 `Controller.dispatch(request)` returns `{ok:true,result}` or `{ok:false,error:{code,message,...}}`. Successful document operations return inspection including `document_id`, `revision`, native features, `build_status`, measurements and `active_sketch_edit`. Mutations run serially on the GUI thread; the interface does not transport arbitrary executable code.

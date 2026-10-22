@@ -6,15 +6,22 @@ Paste this into your agent on the Windows machine:
 > folder I own. Read the repository's AGENTS.md and docs/WINDOWS_SETUP.md. Check
 > Git and 7-Zip, run setup.ps1 with Windows PowerShell, and require its installation
 > check to pass. Use the pinned bundled runtime, not a global FreeCAD or Python.
-> Launch KurtShape if it is not already running; ask before restarting an existing
-> instance. Read capabilities and list_documents through tools/assistant.ps1.
-> Tell me the installed commit, check result, and where my CAD files will go.
-> Model through the assistant bridge, not by taking over my screen. Wait for my
-> modeling request before changing a document.
+> Do not launch the KurtShape window yourself: choose the app by the AGENTS.md
+> section "Launching: which app an agent uses" (headless by default, a hidden app
+> when you need the bridge, my running app only when I ask to watch), and ask
+> before restarting an existing instance. Read capabilities and list_documents from
+> the one you use. Tell me the installed commit, check result, and where my CAD
+> files will go. Model through KurtShape's operations, not by taking over my
+> screen. Wait for my modeling request before changing a document.
+
+Which app an agent uses (headless Controller, hidden app, or the user's running app)
+is decided once, in [AGENTS.md](../AGENTS.md#launching-which-app-an-agent-uses).
+Per-operation arguments and examples are in [OPERATIONS.md](OPERATIONS.md); worked
+recipes in [COOKBOOK.md](COOKBOOK.md).
 
 ## Connect
 
-From the checkout root, after launching `KurtShape.cmd`:
+From the checkout root, with the user's KurtShape running (they start it):
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\assistant.ps1
@@ -30,9 +37,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\assistant.ps1 -R
 
 ### Hidden agent app (no window)
 
-When the user does not want to watch, or KurtShape is not running, do not launch the
-visible app: run a hidden one instead. It is a private KurtShape with its own profile,
-port and folder under `runtime\private\agent`, drawn offscreen with no window:
+When the [launch rule](../AGENTS.md#launching-which-app-an-agent-uses) calls for the
+bridge without the user's app, run a hidden one. It is a private KurtShape with its own
+profile, port and folder under `runtime\private\agent`, drawn offscreen with no window:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\assistant.ps1 -Hidden -ProjectRoot C:\path\to\my-projects

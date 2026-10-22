@@ -2,7 +2,7 @@
 
 A local Windows CAD app built on **FreeCAD 1.1.4 / OCCT 7.8.1**, with native editable sketches and features, a shared Part Studio history, and an assistant bridge for agents. Your `.FCStd` file is the authoritative model; export STEP or STL when needed.
 
-**Preview for friends testing on Windows x64.** Modeling is functional, but this is an actively developed app with known rough edges. See [current status and limits](docs/SHARING_STATUS.md).
+**Preview for friends testing on Windows x64.** Modeling is functional, but this is an actively developed app with known rough edges. The limits recorded for the 2026-10-17 preview are in the [archived sharing handoff](docs/history/SHARING_STATUS.md).
 
 ## Install and launch
 
@@ -36,6 +36,8 @@ Setup verifies the official runtime download and runs a disposable modeling chec
 ## Agents and developers
 
 Start with [AGENTS.md](AGENTS.md) and the [operation contract](docs/OPERATION_CONTRACT.md). Agents use the token-authenticated loopback bridge, with native transactions and revision checks. Never publish `runtime/assistant-session.json`.
+
+Every operation's arguments, defaults and a runnable example: [operation reference](docs/OPERATIONS.md) (generated from the schema). Modeling recipes, headless first: [cookbook](docs/COOKBOOK.md).
 
 ```powershell
 # App must be running for this read-only connection check:

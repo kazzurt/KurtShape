@@ -1,5 +1,10 @@
 # Windows friends preview — 2026-10-17
 
+> **Archived 2026-10-21 by the slice A/B work:** a dated handoff; the current entry points are
+> [README.md](../../README.md), [AGENTS.md](../../AGENTS.md), [docs/OPERATIONS.md](../OPERATIONS.md) and
+> [docs/COOKBOOK.md](../COOKBOOK.md). Moved from `docs/SHARING_STATUS.md`; below this banner only its three
+> relative links changed (they now start with `../`).
+
 This handoff prepares the current `main` application for other Windows users.
 Its modeling baseline is `f57d59267857ad32c302d2ae6e6c1368ce3c6a68`; it does not
 merge unreviewed feature branches or implement the Fable backlog wholesale.
@@ -41,7 +46,7 @@ merge unreviewed feature branches or implement the Fable backlog wholesale.
   after the check; no user document was opened or mutated.
 - Ruff 0.16.10: clean. Documentation links and Git whitespace checks: clean.
 
-[Compact evidence and source hashes](sharing-release/validation-2026-10-17.json).
+[Compact evidence and source hashes](../sharing-release/validation-2026-10-17.json).
 The [Windows workflow](https://github.com/kazzurt/KurtShape/actions/workflows/windows-ci.yml)
 records hosted results after push and now also exercises newcomer setup under
 Windows PowerShell. The earlier Fable report describes the baseline separately.
@@ -54,14 +59,14 @@ rejecting files placed there or any other unexpected repository changes.
 ## Known limitations to tell testers
 
 - This is a preview, with ongoing sketch/status/viewport polish documented in
-  the [review](fable-deep-review/FABLE_REVIEW.md). Performance on large models
+  the [review](../fable-deep-review/FABLE_REVIEW.md). Performance on large models
   can stall during snapshot capture, save and committed recompute.
 - Pattern-reference and cross-body Mirror work on separate branches is not
   included by this sharing change. A Mirror link-scope warning can still occur.
 - Assembly parts are embedded snapshots; editing a source part does not update
   the assembly automatically. Advanced mates and nested assemblies are deferred.
 - Slow bridge operations need explicit request-status reconciliation; the
-  [agent guide](AGENT_QUICKSTART.md) describes safe retries. The current app does
+  [agent guide](../AGENT_QUICKSTART.md) describes safe retries. The current app does
   not report the loaded source commit in its title/capabilities. A setup report
   identifies checked source only; save and relaunch after updating.
 - Cylindrical Move face, retained-error deletion and further Sweep improvements
