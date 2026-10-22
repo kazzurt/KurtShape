@@ -333,6 +333,7 @@ def validate():
                                      "tip_visible": panel.document().getObject(entry["body"]).Tip.ViewObject.Visibility}
                                     for entry in current_parts()]
         check("Every visible current part retains a visible native Tip provider", all(entry["body_visible"] and entry["tip_visible"] for entry in report["rendered_parts"]))
+        panel.core.settings.grant_destination(str(session / "u2-studio-gui.FCStd"))  # as the human Save dialog does
         call("save", path=str(session / "u2-studio-gui.FCStd"))
         report["fixture"] = str((session / "u2-studio-gui.FCStd").relative_to(root))
         capture("u2-parts-final")

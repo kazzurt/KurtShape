@@ -186,6 +186,7 @@ def validate():
         panel.refresh()
         check('History refresh preserves selected surface',before_selection==[(s.Object.Name,list(s.SubElementNames)) for s in Gui.Selection.getSelectionEx()])
         path=output/'interface-plate.FCStd'
+        panel.core.settings.grant_destination(str(path))  # as the human Save dialog does
         require(panel.operation('save',path=str(path)))
         require(panel.operation('export',path=str(output/'interface-plate.step')))
         require(panel.operation('export',path=str(output/'interface-plate.stl')))
