@@ -377,7 +377,7 @@ class DispatchPipelineTests(unittest.TestCase):
 
     def test_inspect_equals_the_frozen_3_1_tree_at_every_measure_level(self):
         if not (F31 / "src" / "kurtshape" / "core.py").is_file():
-            self.skipTest("frozen 3.1 tree is not present at runtime/bench/f31")
+            self.skipTest("external fixture: frozen 3.1 tree is not present at runtime/bench/f31")
         self.release_controller()
         script = self.folder / "golden_child.py"
         script.write_text(GOLDEN_CHILD, encoding="utf-8")

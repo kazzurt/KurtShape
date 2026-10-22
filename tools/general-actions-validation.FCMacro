@@ -140,7 +140,9 @@ def validate():
         actions.paste()
         check("Source change rejects stale feature clipboard without mutation", len(doc.Objects) == count and "changed" in panel.message.text())
         saved_clone_name = clone_name
-        call("save", path=str(evidence_dir("") / "general-actions-native-copy.FCStd"))
+        copy_path = evidence_dir("") / "general-actions-native-copy.FCStd"
+        panel.core.settings.grant_destination(str(copy_path))  # as the human Save dialog does
+        call("save", path=str(copy_path))
         App.closeDocument(doc.Name)
         call("open", path=str(evidence_dir("") / "general-actions-native-copy.FCStd"))
         doc = App.activeDocument()

@@ -111,7 +111,13 @@ class SketchArcTests(unittest.TestCase):
         self.assertEqual(sorted(parameters), ["Radius", "Sweep"])
         self.assertEqual(parameters["Radius"]["unit"], "mm")
         self.call("add_line", sketch="D", x1=0, y1=8, x2=0, y2=-8)
+        # Joined ends sit exactly on the arc's (8*cos(-pi/2) is not 0), so a native
+        # re-solve rewrites nothing and the revision stays current.
+        self.assertEqual(sk.getPoint(1, 1).distanceToPoint(sk.getPoint(0, 2)), 0)
+        self.assertEqual(sk.getPoint(1, 2).distanceToPoint(sk.getPoint(0, 1)), 0)
+        content = [g.Content for g in sk.Geometry]
         self.assert_fully_constrained(sk)
+        self.assertEqual([g.Content for g in sk.Geometry], content)
         self.assertEqual(self.joined(sk), [(0, 1), (0, 1)])
         self.assertEqual(sorted(self.parameters("D")), ["Radius", "Sweep"])
         self.call("pad", id="DPad", profile="D", length=4)

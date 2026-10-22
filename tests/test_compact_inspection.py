@@ -14,7 +14,6 @@ import support
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
-from kurtshape import geometry, studio
 from kurtshape.core import Controller, native_feature_summary
 
 HEADER_KEYS = {"document_id", "revision", "name", "native_file", "modified", "modified_basis", "unsaved", "managed",

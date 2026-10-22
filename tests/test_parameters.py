@@ -17,7 +17,6 @@ import support
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
-import Sketcher
 from kurtshape import parameters
 from kurtshape.core import Controller, intent_signature, native_intent
 

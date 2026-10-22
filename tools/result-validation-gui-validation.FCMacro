@@ -37,7 +37,7 @@ assert session.is_relative_to(root / "runtime"), session
 assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
 sys.dont_write_bytecode = True
 sys.path[:0] = [str(root / "src"), str(root / "tools"), str(root / "tools" / "perf")]
-from kurtshape import geometry, result_checks, studio, ui
+from kurtshape import geometry, studio, ui
 from kurtshape_evidence import evidence_dir
 from preview_validation import wait_for_exact
 
@@ -160,7 +160,6 @@ def run():
         from bench_core import prepare_environment
         scratch = prepare_environment(session / "result-validation-files")
         panel = ui.start()
-        core = panel.core
         check("Production panel started with the real loopback Bridge",
               type(panel.bridge).__name__ == "Bridge" and panel.bridge.server.server_port > 0)
         original_operation, original_shape = studio.check_operation, geometry.check_shape
@@ -244,7 +243,6 @@ def run():
         doc.recompute()
         doc.commitTransaction()
         QtTest.QTest.qWait(200)
-        messages_before = panel.messages.toPlainText()
         finished = panel.finish_sketch()
         QtTest.QTest.qWait(400)
         check("Finishing a lease that empties TopCut is refused", not finished, finished)

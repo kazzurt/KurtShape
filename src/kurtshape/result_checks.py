@@ -20,9 +20,7 @@ import math
 import os
 import time
 
-import FreeCAD as App
-
-from . import document_state, geometry, parameters, studio
+from . import document_state, parameters, studio
 from .bodies import owner as body_owner
 
 CHECKER_VERSION = 1
