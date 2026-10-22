@@ -44,6 +44,8 @@ class FeaturePanel(QtGui.QDockWidget):
         self._reject_emitted = False
         self._accepting = False
         self._accept_enabled = False
+        # The owner's accept-and-repeat (Shift+Enter); None where the tool has no repeat.
+        self.repeat = None
 
         self.header = QtGui.QWidget(self)
         self.header.setObjectName("KurtShapeFeatureHeader")
@@ -164,6 +166,77 @@ class FeaturePanel(QtGui.QDockWidget):
             self.accepted.emit()
         finally:
             self._accepting = False
+
+    def accept_repeat(self):
+        """Shift+Enter: the owner's accept-and-repeat where it has one (``repeat``), else Confirm."""
+        if self.repeat is None:
+            self.accept()
+            return
+        if self.finished or self._reject_emitted or self._accepting or not self._accept_enabled:
+            return
+        self._accepting = True
+        try:
+            self.repeat()
+        finally:
+            self._accepting = False
+
+    def _enter_target(self, widget=None):
+        if widget is not None:
+            return widget
+        app = QtGui.QApplication.instance()
+        focus = app.focusWidget() if app is not None else None
+        if focus is None or not self.isAncestorOf(focus):
+            focus = self.focusWidget()  # the field that last took focus in this editor
+        return focus
+
+    def popup_owns_enter(self, widget=None):
+        """An open popup, combo box list or completer takes Return itself (to pick its entry)."""
+        app = QtGui.QApplication.instance()
+        if app is None or app.activePopupWidget() is not None:
+            return True
+        focus = self._enter_target(widget)
+        ancestor = focus
+        while ancestor is not None and ancestor is not self:
+            if isinstance(ancestor, QtGui.QComboBox) and ancestor.view().isVisible():
+                return True
+            ancestor = ancestor.parentWidget()
+        completer = focus.completer() if isinstance(focus, QtGui.QLineEdit) else None
+        return bool(completer is not None and completer.popup() is not None and completer.popup().isVisible())
+
+    def enter_confirms(self, widget=None):
+        """Enter in ``widget`` (else the focused field) belongs to the editor unless a popup, a
+        completer or a reference picker owns it."""
+        if self.popup_owns_enter(widget):
+            return False
+        ancestor = self._enter_target(widget)
+        while ancestor is not None and ancestor is not self:
+            if isinstance(ancestor, ReferencePicker):
+                return False
+            ancestor = ancestor.parentWidget()
+        return True
+
+    def enter_pressed(self, widget=None, shift=False):
+        """The one Return rule for this editor (the owner's application filter and keyPressEvent both
+        call it): False leaves the key to an open popup, combo box list or completer; otherwise the key
+        is the editor's (True): it confirms as the header button does (Shift+Enter confirms and
+        repeats where the owner has a repeat) unless a reference picker has the focus."""
+        if self.popup_owns_enter(widget):
+            return False
+        if self.enter_confirms(widget):
+            if shift:
+                self.accept_repeat()
+            else:
+                self.accept()
+        return True
+
+    def keyPressEvent(self, event):
+        # Fields ignore Return (line edits, spin boxes, combo boxes, lists, check boxes), so a Return
+        # the owner did not take first reaches the editor here.
+        if event.key() in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter):
+            if self.enter_pressed(None, bool(event.modifiers() & QtCore.Qt.ShiftModifier)):
+                event.accept()
+                return
+        super().keyPressEvent(event)
 
     def reject(self):
         if not self.finished and not self._reject_emitted:

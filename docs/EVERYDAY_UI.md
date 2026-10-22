@@ -44,6 +44,35 @@ How results behave:
 - A small polygon offset with a `LEQUAL` depth test keeps the fill on a coplanar face without z-fighting, while solids still occlude it.
 - The fill writes no depth and stays unpickable. Native outlines are unchanged. Only rendering changed; sketch geometry is untouched.
 
+### Status, errors, Messages, Enter and Escape (slice A/B U7, 2026-10-22)
+
+**Document status line** (bottom of the history panel; `feedback.status_text`). The first matching state wins. The footer (the window's status bar) shows the same text once command feedback times out, so the two never disagree.
+
+| State | Exact text |
+|---|---|
+| Build failed, result check | `Result check failed · <feature> · <code> — see Messages` (plus ` (+N more)`) |
+| Build failed, invalid solid | `Invalid geometry · <feature> — see Messages` |
+| Build failed, native error | `Build failed · <feature>: <message>` (plus ` (+N more)`); `Build failed — see Messages` when no feature is named |
+| Editing a sketch (managed lease open) | `Editing sketch · mm` (never "Rebuild required": a sketch under edit is always touched) |
+| Needs rebuild | `Rebuild required · <reason>` (pending model changes, geometry engine changed, saved by another application build, geometry engine not recorded, stored geometry is missing) |
+| No history rows | `Empty part · mm` |
+| Sketches only | `Sketches only · mm` |
+| Valid solids | `N solid(s)`, then ` · V mm³` when measured, ` · checked` after a valid check |
+
+` · checks pending` follows the last two while result checks are pending. Imported STEP and reference files keep their prefixes (`Imported STEP · …`, `Reference file · inspect or adopt a copy · …`). The footer reads `Ready · create or open a part studio` with no document.
+
+**Errors.** A rejected operation (a GUI action, or any assistant mutation the bridge processes, assembly included) puts `<message> · <feature> · <code>` in red in the status bar (`<document> · ` in front for bridge failures). The feature is the error's own `feature`, else the first of `features`, else `trigger.feature`, else the rejected request's `feature`, `id` (the new feature), `profile` or `sketch`; it is omitted when none names one. Messages keeps that line, one line per failing feature that carries its own message, `while <op> on <feature>`, the hint, and `details: <every other field of the error as JSON>` (the message is logged once). For the user's own actions, the first of those features that has a history row (a rolled-back new feature has none, so a rejected Remove selects the profile it was made from) is selected in the history and, while no editor, task, native feature dialog, sketch or picker is open, in the viewport, so an open Extrude or studio dialog keeps its inputs. A rejected assistant (bridge) change is reported in the status line and Messages only: it never changes the selection.
+
+**Messages dot.** Every line that arrives while Messages is hidden counts as unread (hover help: `Show messages · N unread · K warnings or errors`); only warnings and errors light the dot (`Messages •`). Native report lines take their severity from the report view's warning / error colors. Lines from startup (until the shell finishes starting) count as neither.
+
+**Text fields own their editing keys.** Copy, Select all, Paste, Cut, Undo and Redo in a focused text field (read-only ones such as Messages and the status line included) act on the text: with a model object selected, Ctrl+C in Messages copies the text and never opens FreeCAD's Object Selection dialog.
+
+**Hover labels** show every shortcut, single keys included, read from the live shortcut registry when the label appears, so a rebinding (shortcut help → Rebind selected) shows the user's key: `Line  (L)`, `Fit  (F)`, `Sketch  (Shift+S)`, `Confirm  (Enter)`, `Cancel  (Escape)`. A tool whose key is unavailable or shadowed in its toolbar's context shows none (Spline, Rebuild; the sketch's Finish and Cancel, which Enter / Escape in the viewport do not trigger).
+
+**Enter / Shift+Enter** in any field of an owned editor (the Feature settings editor and every studio dialog: Revolve, Sweep, Loft, Boolean, Split, Transform, patterns, Mirror, Fillet, Chamfer, Shell, Plane, Move face) confirm as the header check mark does, through the same gate: a disabled Confirm (no valid preview yet) ignores Enter. Shift+Enter confirms and reopens Extrude / Remove for the next profile; in a studio dialog (no repeat) it confirms. Enter does nothing while a reference picker field has the focus, and an open combo box list or completer keeps it. In a sketch's floating box Enter finishes the sketch, as its check mark does; Enter in the viewport does not (Kurt's decision, 2026-10-22).
+
+**Escape ends the tool, never the sketch** (decision 2). In a sketch, Escape ends the active drawing or constraint tool (or reference picking); with no tool active the sketch stays open and the footer says `Sketch stays open · Finish or Cancel the sketch to leave it`. Finish and Cancel on the floating box (or the sketch toolbar) are the ways out. The app sets FreeCAD's Sketcher preference `LeaveSketchWithEscape` to false in its profile (`ui.start`, beside `AutoSaveEnabled`) and, when it has nothing of its own to cancel, passes Escape on to native Sketcher: Sketcher ends a handler started outside KurtShape's tracking, cancels a drag in progress, and otherwise keeps the sketch open. Outside a sketch, Escape cancels the feature dialog, Extrude, sketch placement, a running geometry check or STEP export, as before.
+
 ## Evidence
 
 Fresh cloud runs: Linux, FreeCAD 1.1.4 / OCCT 7.8.1. **Windows not run.**

@@ -84,6 +84,7 @@ SUITES = {
         "test_launcher_pinning.LauncherPinningTests",
         # Slice A/B wave 2: registered ahead of each serial unit by the integrator.
         "test_finish_recompute.FinishRecomputeTests", "test_compact_responses.CompactResponseTests",
+        "test_feedback_ui.FeedbackUiTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),

@@ -1,0 +1,304 @@
+"""Hidden GUI gate: Enter / Shift+Enter confirm every owned dialog (slice A/B U7, plan A7, C-04).
+
+In a separate hidden FreeCAD, each owned editor is opened through the shell (the Extrude / Remove
+editor and the studio dialogs: Fillet, Chamfer, Shell, Plane, Linear and Circular part pattern,
+Transform, Move face, Mirror, Boolean, Revolve, Sweep, Loft) and confirmed by a real Return key in
+one of its fields: a quantity field, a spin box, a combo box, a list or a check box. Also checked:
+Enter does nothing while Confirm is gated off, while a reference picker has the focus or while a
+combo box popup is open; Shift+Enter repeats Extrude and confirms a studio dialog (no repeat there);
+every commit is one Undo step; Enter in a sketch's floating box finishes the sketch while Enter in
+the viewport does not (Kurt's decision, 2026-10-22).
+"""
+import json
+import os
+from pathlib import Path
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+from kurtshape.ui import start
+from kurtshape.quantity_field import QuantityField
+panel = start()
+output = evidence_dir("dialog-enter")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "dialogs": {},
+          "method": "Separate hidden native GUI; real Return / Shift+Return key events on the editors' own fields"}
+
+
+def wait(ms=80):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, condition):
+    verdict = panel.studio_dialog.verdict.text() if panel.studio_dialog else panel.editor.verdict.text()
+    assert condition, label + ": " + panel.message.text() + " | " + verdict
+    report["checks"].append(label)
+
+
+def call(op, **args):
+    state = panel.operation(op, **args)
+    assert state, op + ": " + panel.message.text()
+    return state
+
+
+def doc():
+    return App.activeDocument()
+
+
+def wait_until(predicate, timeout_ms=20000):
+    deadline = time.monotonic() + timeout_ms / 1000
+    while time.monotonic() < deadline:
+        if predicate():
+            return True
+        wait(30)
+    return bool(predicate())
+
+
+def press(widget, shift=False):
+    widget.setFocus(QtCore.Qt.OtherFocusReason)
+    wait(30)
+    QtTest.QTest.keyClick(widget, QtCore.Qt.Key_Return, QtCore.Qt.ShiftModifier if shift else QtCore.Qt.NoModifier)
+    wait(120)
+
+
+def text_field(widget):
+    return widget.lineEdit() if isinstance(widget, (QuantityField, QtWidgets.QAbstractSpinBox)) else widget
+
+
+def face(feature, test):
+    shape = doc().getObject(feature).Shape
+    return "Face%d" % next(i + 1 for i, f in enumerate(shape.Faces) if test(f))
+
+
+def edge(feature, test):
+    shape = doc().getObject(feature).Shape
+    return "Edge%d" % next(i + 1 for i, e in enumerate(shape.Edges) if test(e.BoundBox))
+
+
+def history():
+    return [row["id"] for row in panel.state["features"]]
+
+
+def studio(operation, prepare, field, shift=False, label=None):
+    """Open one studio dialog, wait for its valid preview, then Return in ``field(dialog)``."""
+    label = label or operation
+    Gui.Selection.clearSelection()
+    before, undo = set(history()), doc().UndoCount
+    rows = len(before)
+    dialog = panel.studio_tool(operation)
+    wait(250)
+    prepare(dialog)
+    ready = wait_until(lambda: dialog.confirm.isEnabled())
+    widget = field(dialog)
+    report["dialogs"][label] = {"ready": ready, "verdict": dialog.verdict.text(), "field": type(widget).__name__}
+    check(label + " reaches a valid preview", ready)
+    press(text_field(widget), shift=shift)
+    committed = wait_until(lambda: panel.studio_dialog is None, 20000)
+    report["dialogs"][label].update(committed=committed, rows=len(history()) - rows, undo=doc().UndoCount - undo)
+    check(("Shift+Enter" if shift else "Enter") + " in the " + label + " " + type(widget).__name__
+          + " confirms it in one Undo step",
+          committed and len(history()) > rows and doc().UndoCount == undo + 1)
+    return [identifier for identifier in history() if identifier not in before]
+
+
+def validate():
+    try:
+        call("new")
+        call("sketch_rectangle", id="Base", width=20, height=12)
+        call("pad", id="Block", profile="Base", length=6, operation="new")
+        panel.refresh()
+        wait(100)
+        check("The document is a Part Studio", panel.state["studio"]["enabled"])
+        top = lambda f: abs(f.CenterOfMass.z - 6) < 1e-6 and f.normalAt(0, 0).z > 0.99
+        part_body = lambda: doc().getObject(panel.state["studio"]["parts"][0]["body"])
+
+        # --- Fillet: the gate, a focused reference picker, then Enter in the radius field. ---
+        Gui.Selection.clearSelection()
+        rows, undo = len(history()), doc().UndoCount
+        dialog = panel.studio_tool("fillet")
+        wait(250)
+        radius = dialog.fields["radius"]
+        press(radius.lineEdit())
+        check("Enter while Confirm is gated off (no edges yet) commits nothing",
+              panel.studio_dialog is dialog and len(history()) == rows and doc().UndoCount == undo)
+        Gui.Selection.addSelection(part_body(), edge(part_body().Name, lambda b: b.XLength > 19 and b.ZMin > 6 - 1e-6))
+        check("Fillet reaches a valid preview", wait_until(lambda: dialog.confirm.isEnabled()))
+        picker = dialog.fields["edges"]
+        press(picker.items)
+        press(picker.pick)
+        check("Enter while a reference picker has the focus commits nothing",
+              panel.studio_dialog is dialog and len(history()) == rows)
+        press(radius.lineEdit())
+        check("Enter in the Fillet radius field confirms it once, one Undo step",
+              wait_until(lambda: panel.studio_dialog is None) and len(history()) == rows + 1 and doc().UndoCount == undo + 1)
+
+        # --- The other studio dialogs, one field kind each. ---
+        studio("chamfer", lambda d: Gui.Selection.addSelection(part_body(),
+               edge(part_body().Name, lambda b: b.YLength > 10 and b.ZMin > 6 - 1e-6)),
+               lambda d: d.fields["size"], shift=True, label="Chamfer")
+        studio("shell", lambda d: Gui.Selection.addSelection(part_body(), face(part_body().Name, top)),
+               lambda d: d.fields["thickness"], label="Shell")
+        plane_rows = studio("create_plane", lambda d: d.fields["offset"].setValue(15), lambda d: d.fields["offset"], label="Plane")
+        plane_id = next(identifier for identifier in plane_rows if doc().getObject(identifier).TypeId == "PartDesign::Plane")
+        def pattern(d):
+            parts = d.fields["parts"]
+            parts.item(0).setCheckState(QtCore.Qt.Checked)
+            d.fields["spacing"].setValue(40) if "spacing" in d.fields else None
+        studio("linear_pattern_parts", pattern, lambda d: d.fields["count"], label="Linear part pattern")
+        def transform(d):
+            d.findChild(QtWidgets.QWidget, "KurtShapeStudio_translationY").setValue(80)
+            d.fields["copy"].setChecked(True)
+        studio("transform_part", transform, lambda d: d.fields["copy"], label="Transform")
+        def circular(d):
+            d.fields["parts"].item(0).setCheckState(QtCore.Qt.Checked)
+            d.findChild(QtWidgets.QWidget, "KurtShapeStudio_originX").setValue(-200)
+            d.fields["angle"].setValue(90)
+            d.fields["count"].setValue(2)
+        studio("circular_pattern_parts", circular, lambda d: d.fields["operation"], label="Circular part pattern")
+        bottom = lambda f: abs(f.CenterOfMass.z) < 1e-6 and f.normalAt(0, 0).z < -0.99
+        studio("move_face", lambda d: Gui.Selection.addSelection(part_body(), face(part_body().Name, bottom)),
+               lambda d: d.fields["distance"], label="Move face")
+        def mirror(d):
+            d.fields["parts"].item(0).setCheckState(QtCore.Qt.Checked)
+            Gui.Selection.addSelection(doc().getObject(plane_id))
+        studio("mirror_parts", mirror, lambda d: d.fields["parts"], label="Mirror")
+        # Boolean: subtract an overlapping new cylinder part from the first part.
+        parts_before = {entry["id"] for entry in panel.state["studio"]["parts"]}
+        call("sketch_circle", id="ToolProfile", x=10, y=6, diameter=4, plane="XY")
+        call("pad", id="ToolPin", profile="ToolProfile", length=10, operation="new")
+        tool_part = next(entry["id"] for entry in panel.state["studio"]["parts"] if entry["id"] not in parts_before)
+        target_part = panel.state["studio"]["parts"][0]["id"]
+        def boolean(d):
+            for key, identifier in (("targets", target_part), ("tools", tool_part)):
+                widget = d.fields[key]
+                for index in range(widget.count()):
+                    item = widget.item(index)
+                    item.setCheckState(QtCore.Qt.Checked if item.data(QtCore.Qt.UserRole) == identifier else QtCore.Qt.Unchecked)
+            d.fields["kind"].setCurrentIndex(d.fields["kind"].findData("subtract"))
+        studio("boolean_parts", boolean, lambda d: d.fields["keep_tools"], label="Boolean")
+        # Creation tools, each a new part away from the others.
+        call("sketch_circle", id="RevProfile", x=300, y=0, diameter=4, plane="XY")
+        def revolve(d):
+            d.fields["profile"].setCurrentIndex(d.fields["profile"].findData("RevProfile"))
+            d.fields["operation"].setCurrentIndex(d.fields["operation"].findData("new"))
+            d.fields["axis_by"].setCurrentIndex(d.fields["axis_by"].findData("custom"))
+        studio("revolve", revolve, lambda d: d.fields["angle"], label="Revolve")
+        call("sketch_circle", id="SweepProfile", x=500, y=0, diameter=4, plane="XY")
+        call("create_sketch", id="SweepPath", plane="XZ")
+        call("add_line", sketch="SweepPath", x1=500, y1=0, x2=500, y2=30)
+        def sweep(d):
+            d.fields["profile"].setCurrentIndex(d.fields["profile"].findData("SweepProfile"))
+            d.fields["operation"].setCurrentIndex(d.fields["operation"].findData("new"))
+            d.fields["path_by"].setCurrentIndex(d.fields["path_by"].findData("feature"))
+            d.fields["path"].setCurrentIndex(d.fields["path"].findData("SweepPath"))
+        studio("sweep", sweep, lambda d: d.fields["operation"], label="Sweep")
+        call("sketch_circle", id="LoftLow", x=700, y=0, diameter=6, plane="XY")
+        call("sketch_circle", id="LoftHigh", x=700, y=0, diameter=3, support={"feature": plane_id})
+        def loft(d):
+            sections = d.fields["sections"]
+            for index in range(sections.count()):
+                item = sections.item(index)
+                item.setCheckState(QtCore.Qt.Checked if item.data(QtCore.Qt.UserRole) in {"LoftLow", "LoftHigh"} else QtCore.Qt.Unchecked)
+            d.fields["operation"].setCurrentIndex(d.fields["operation"].findData("new"))
+        studio("loft", loft, lambda d: d.fields["sections"], label="Loft")
+
+        # --- Combo box popup: Enter picks the entry, the dialog stays open. ---
+        Gui.Selection.clearSelection()
+        dialog = panel.studio_tool("create_plane")
+        wait(250)
+        wait_until(lambda: dialog.confirm.isEnabled())
+        combo = dialog.fields["base_plane"]
+        combo.setFocus(QtCore.Qt.OtherFocusReason)
+        combo.showPopup()
+        wait(150)
+        popup_open = combo.view().isVisible()
+        if popup_open:
+            events = []
+            class Spy(QtCore.QObject):
+                def eventFilter(self, watched, event):
+                    if event.type() in (QtCore.QEvent.KeyPress, QtCore.QEvent.ShortcutOverride) and event.key() == QtCore.Qt.Key_Return:
+                        events.append((int(event.type()), watched.metaObject().className(), watched.objectName(),
+                                       panel.studio_dialog is not None, combo.view().isVisible()))
+                    return False
+            spy = Spy()
+            QtGui.QApplication.instance().installEventFilter(spy)
+            try:
+                QtTest.QTest.keyClick(combo.view(), QtCore.Qt.Key_Return)
+                wait(150)
+            finally:
+                QtGui.QApplication.instance().removeEventFilter(spy)
+            report["combo_events"] = events
+        report["combo_popup_open"] = popup_open
+        check("Enter in an open combo box popup picks its entry and leaves the dialog open",
+              not popup_open or (panel.studio_dialog is dialog and not combo.view().isVisible()))
+        dialog.reject()
+        wait(100)
+
+        # --- The Extrude editor: Enter in a combo box and a check box; Shift+Enter repeats. ---
+        call("sketch_circle", id="Boss", x=10, y=6, diameter=4, plane="XY")
+        for label, widget_name, shift in (("operation combo box", "result_operation", False),
+                                          ("Reverse check box", "reverse", True)):
+            Gui.Selection.clearSelection()
+            panel.select_feature("Boss")
+            panel.extrude(False)
+            wait(100)
+            panel.result_operation.setCurrentIndex(panel.result_operation.findData("new"))
+            panel.depth.setValue(3)
+            rows, undo = len(history()), doc().UndoCount
+            ready = wait_until(lambda: panel.confirm.isEnabled())
+            check("Extrude reaches a committable preview (" + label + ")", ready)
+            press(getattr(panel, widget_name), shift=shift)
+            committed = wait_until(lambda: len(history()) > rows and doc().UndoCount > undo)
+            report["dialogs"]["extrude " + label] = {"committed": committed, "task": panel.task, "undo": doc().UndoCount - undo}
+            if shift:
+                check("Shift+Enter in the Extrude " + label + " commits once and reopens Extrude for the next profile",
+                      committed and doc().UndoCount == undo + 1 and panel.task == "pad" and panel.task_profile is None)
+                panel.cancel_task()
+                wait(100)
+            else:
+                check("Enter in the Extrude " + label + " commits once and closes the editor",
+                      committed and doc().UndoCount == undo + 1 and panel.task is None)
+        # --- Decision Q3: Enter in the sketch's floating box finishes it; Enter in the viewport does not. ---
+        check("A sketch opens for the Enter decision", bool(panel.begin_sketch(plane="XY")))
+        sketch = panel.active_sketch()
+        gl = next(widget for area in main.findChildren(QtWidgets.QMdiArea) if area.activeSubWindow()
+                  for widget in area.activeSubWindow().findChildren(QtWidgets.QWidget)
+                  if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible())
+        press(gl)
+        wait(200)
+        check("Enter in the viewport leaves the sketch open", panel.active_sketch() is sketch)
+        press(panel.sketch_plane_editor.field)
+        check("Enter in the sketch's floating box finishes the sketch",
+              wait_until(lambda: panel.active_sketch() is None and not panel.state.get("active_sketch_edit"), 10000))
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        main.grab().save(str(output / "failure.png"))
+    finally:
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

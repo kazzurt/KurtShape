@@ -21,7 +21,7 @@ Setup verifies the official runtime download and runs a disposable modeling chec
 
 ## Try it
 
-- **Sketch:** Shift+S, choose a plane or planar face, then G for rectangle, C for circle or L for connected lines. Finish accepts the sketch; Cancel discards the edit.
+- **Sketch:** Shift+S, choose a plane or planar face, then G for rectangle, C for circle or L for connected lines. Finish accepts the sketch; Cancel discards the edit. Escape ends the current tool but never leaves the sketch; in any feature dialog Enter confirms and Shift+Enter confirms and repeats.
 - **Coincident:** select two endpoints to join them, or two whole lines to make them collinear. An internal line can align to a linked projected line.
 - **Extrude:** Shift+E opens New / Add / Cut / Intersect with an exact preview.
 - **Parameters:** type a value in the left Parameters section and press Enter; `=` starts a formula; Esc discards. "+" adds one; Copy reference gives the text for a feature's Formula field.

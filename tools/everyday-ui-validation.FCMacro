@@ -77,8 +77,52 @@ def pixel(point3d):
     return tuple(sorted(colors)[len(colors) // 2])
 
 
+def button(bar, text):
+    action = next(action for action in bar.actions() if action.text() == text)
+    return bar.widgetForAction(action)
+
+
+def footer_agrees():
+    panel.restore_status()
+    return panel.message.text() == panel.status.text()
+
+
 def validate():
     try:
+        # Slice A/B U7 (A-10): an empty part says so, and the footer repeats the status line.
+        report["samples"]["startup_status"] = panel.status.text()
+        check("A new empty part reads 'Empty part · mm', not 'Sketches only'", panel.status.text() == "Empty part · mm")
+        check("The footer agrees with the document status", footer_agrees())
+        # Slice A/B U7 (A-05): hover labels show every key, single keys included, from the registry.
+        labels = {name: panel.toolbar_labels.text_for(button(bar, name)) for bar, name in
+                  ((panel.model_bar, "Sketch"), (panel.model_bar, "Extrude"), (panel.model_bar, "Fit"),
+                   (panel.model_bar, "Normal"), (panel.model_bar, "Show planes"), (panel.sketch_bar, "Line"),
+                   (panel.sketch_bar, "Rectangle"), (panel.sketch_bar, "Dimension"), (panel.sketch_bar, "Spline"),
+                   (panel.document_bar, "Save"), (panel.assembly_bar, "Joints"))}
+        report["samples"]["hover_labels"] = labels
+        check("Hover labels show single-key shortcuts", labels["Fit"] == "Fit  (F)" and labels["Normal"] == "Normal  (N)"
+              and labels["Show planes"] == "Show planes  (P)" and labels["Line"] == "Line  (L)"
+              and labels["Rectangle"] == "Rectangle  (G)" and labels["Dimension"] == "Dimension  (D)"
+              and labels["Joints"] == "Joints  (J)")
+        check("Hover labels keep modifier shortcuts and omit absent ones",
+              labels["Sketch"] == "Sketch  (Shift+S)" and labels["Extrude"] == "Extrude  (Shift+E)"
+              and labels["Save"] == "Save  (Ctrl+S)" and labels["Spline"] == "Spline")
+        check("The editor's Confirm and Cancel labels show Enter and Escape",
+              panel.toolbar_labels.text_for(panel.confirm) in {"Confirm  (Enter)", "Finish sketch"}
+              and panel.toolbar_labels.text_for(panel.cancel) == "Cancel  (Escape)")
+        from kurtshape.shortcuts import load_registry
+        rebinding = output / "shortcuts.user.json"
+        rebinding.write_text(json.dumps({"schema_version": 1, "bindings": {"sketch.line": "Shift+Alt+L", "view.fit": "Ctrl+Alt+F"}}),
+                             encoding="utf-8")
+        original = panel.router.registry, panel.router.entries
+        try:
+            panel.router.registry = load_registry(None, rebinding)
+            panel.router.entries = panel.router.registry["shortcuts"]
+            check("A rebinding shows the user's key on the next hover",
+                  panel.toolbar_labels.text_for(button(panel.sketch_bar, "Line")) == "Line  (Alt+Shift+L)"
+                  and panel.toolbar_labels.text_for(button(panel.model_bar, "Fit")) == "Fit  (Ctrl+Alt+F)")
+        finally:
+            panel.router.registry, panel.router.entries = original
         # Toolbar: no Undo/Redo arrows; menu, shortcut and search keep them.
         bars = (panel.model_bar, panel.sketch_bar, panel.assembly_bar)
         bar_labels = {action.text() for bar in bars for action in bar.actions()}
@@ -124,11 +168,22 @@ def validate():
 
         # Search launches the same tool and mode as the toolbar.
         call("sketch_rectangle", id="Base", width=20, height=10)
+        check("A part with only a sketch reads 'Sketches only · mm'", panel.status.text() == "Sketches only · mm" and footer_agrees())
         call("pad", id="Pad", profile="Base", length=6)
+        check("A valid solid reads its solid count and volume", panel.status.text().startswith("1 solid(s)")
+              and footer_agrees())
         top = "Face" + str(next(i + 1 for i, f in enumerate(doc().Pad.Shape.Faces)
                                 if abs(f.CenterOfMass.z - 6) < 1e-7 and f.normalAt(0, 0).z > 0.9))
         call("create_sketch", id="Hole", support={"feature": "Pad", "subelement": top})
         call("add_rectangle", sketch="Hole", width=4, height=4, x=8, y=3)
+        panel.select_feature("Hole")
+        check("The Hole sketch opens for editing", bool(panel.edit_sketch()))
+        call("add_line", sketch="Hole", x1=1, y1=1, x2=2, y2=2, construction=True)
+        report["samples"]["editing_status"] = {"status": panel.status.text(), "build_status": panel.state["build_status"]}
+        check("Editing a sketch reads 'Editing sketch · mm', never 'Rebuild required', and the footer agrees",
+              panel.status.text() == "Editing sketch · mm" and footer_agrees())
+        check("Cancel closes the edit and the status returns to the solid", bool(panel.finish_sketch(cancel=True))
+              and panel.status.text().startswith("1 solid(s)"))
         panel.select_feature("Hole")
         Gui.Selection.clearSelection()
         Gui.Selection.addSelection(doc().Hole)
