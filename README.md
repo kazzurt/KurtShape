@@ -29,7 +29,7 @@ Setup verifies the official runtime download and runs a disposable modeling chec
 - **Find a face's feature:** select a face to highlight its feature in the history tree while keeping the face selected. The highlight follows selection and clears with it. Trimmed faces point to the operation that trimmed them.
 - **Navigate:** middle-drag orbits, Ctrl+middle pans, Shift+middle zooms. Alt+C searches all tools; Shift+/ shows shortcuts.
 - **Section View:** select a face or plane and press Shift+X (or Shift+X, then click one). Round faces cut through their centre on Top, Front or Right, whichever faces you; drag the orange arrow to move the cut; Shift+X or Esc leaves. View only, never saved.
-- **Files:** Ctrl+S saves native FCStd. Open accepts FCStd and STEP; export produces STEP/STL. Messages retains error details for troubleshooting.
+- **Files:** Ctrl+S saves native FCStd. Open accepts FCStd and STEP; the blank part shown at launch closes when you open one, unless you changed it. Export produces STEP/STL. Messages retains error details for troubleshooting.
 
 [Part Studio walkthrough](docs/U2_WALKTHROUGH.md) · [Extrude editing](docs/EXTRUSION_EDIT.md) · [Fillet/Chamfer editing](docs/FILLET_CHAMFER_EDIT.md) · [Assembly workflow](docs/assembly-workflow/WORKFLOW.md)
 

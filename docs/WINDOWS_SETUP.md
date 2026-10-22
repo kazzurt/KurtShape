@@ -88,7 +88,16 @@ For an existing engine at another location, use `setup.ps1 -RuntimeRoot <folder>
 where `<folder>` contains `freecad-1.1.4`. Pass that same `-RuntimeRoot` to
 `launch-kurtshape.ps1` and `tools/assistant.ps1`; the double-click launcher uses
 the default local runtime. `launch-kurtshape.ps1 -PrintOnly` prints resolved paths
-without launching anything.
+without launching anything. To open a native project directly, use
+`launch-kurtshape.ps1 -FilePath "C:\path\to\project.FCStd"` or
+`KurtShape.cmd "C:\path\to\project.FCStd"`. A Windows `.FCStd` association
+can target PowerShell with `-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden
+-File "<checkout>\launch-kurtshape.ps1" -FilePath "%1"`. This launches the
+current code in that checkout and opens the selected file without an extra
+empty document. File startup is separate from `-Validation`. When KurtShape is
+already running with the same profile, the launcher hands the file to it
+(`tools/open-in-running-app.ps1`): it opens in that window, or switches to its
+tab if it is already open, instead of starting a second KurtShape.
 
 Report problems with the Git commit (`git rev-parse HEAD`), Windows version,
 steps, expected/actual behavior and relevant Messages text. Review reports for

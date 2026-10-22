@@ -184,6 +184,9 @@ class Panel(QtGui.QDockWidget):
         self.placement_document = self.task_document = None
         self.workspace_modes = {}
         self.workspace_documents = {}
+        # The blank part made at launch; opening a file replaces it while it is untouched.
+        self.startup_blank = None
+        self.open_handoff = None  # files from a second launch (open_handoff.py), set by start()
         self.workspace_mode = "part_studio"
         self.rollback_selected = False
         self.studio_dialog = None
@@ -1461,6 +1464,8 @@ class Panel(QtGui.QDockWidget):
             self.sketch_history.enter(self.document().getObject(self.state["active_sketch_edit"]))
             Gui.activeDocument().setEdit(self.state["active_sketch_edit"])
             self.sync_edit_ui()
+        if op in {"open", "import_step", "recover"}:
+            self.close_startup_blank()
         if resume_preview:
             self.begin_preview()
         return self.state
@@ -3085,7 +3090,7 @@ class Panel(QtGui.QDockWidget):
             return
         return self.operation("create_body", id=self.unique("Body"), name="Part " + str(len(self.sketch_owners()) + 1))
 
-    def new(self):
+    def new(self, startup=False):
         if not self.parameter_section.flush_pending():
             return None
         self.cancel_placement()
@@ -3093,6 +3098,16 @@ class Panel(QtGui.QDockWidget):
             navigation.reset_new_document_view()
             Gui.activeDocument().activeView().setAxisCross(True)
             self.editor.hide()
+            if startup:
+                self.startup_blank = {"document_id": self.state["document_id"], "revision": self.state["revision"],
+                                      "objects": sorted(obj.Name for obj in self.document().Objects)}
+
+    def close_startup_blank(self):
+        """Close the launch's blank part once another project is open, if it was never touched."""
+        blank, self.startup_blank = self.startup_blank, None
+        if blank and self.state and self.state.get("document_id") != blank["document_id"]:
+            if self.core.close_untouched(blank["document_id"], blank["revision"], blank["objects"]):
+                self.workspace_modes.pop(blank["document_id"], None)
 
     def open(self):
         if not self.parameter_section.flush_pending():
@@ -4503,6 +4518,8 @@ class Panel(QtGui.QDockWidget):
         return False
 
     def shutdown(self):
+        if self.open_handoff:
+            self.open_handoff.close()
         self.parameter_section.close()
         self.section_layout.flush()
         self._step_export_closed = True
@@ -4557,15 +4574,21 @@ def start():
     Gui.kurtshape_panel = panel
     main.destroyed.connect(panel.shutdown)
     demo = ROOT / "examples" / "acceptance-plate.FCStd"
-    if demo.exists() and os.environ.get("KURTSHAPE_DEMO"):
+    open_file = os.environ.get("KURTSHAPE_OPEN_FILE")
+    if open_file:
+        panel.open_path(open_file)
+    elif demo.exists() and os.environ.get("KURTSHAPE_DEMO"):
         panel.operation("open", path=str(demo))
         panel.isometric()
         panel.fit()
     else:
-        panel.new()
+        panel.new(startup=True)
     navigation.apply_navigation()
     for area in main.findChildren(QtGui.QMdiArea):
         for sub in area.subWindowList():
             if sub.windowTitle() in {"Start", "Start page"}:
                 sub.close()
+    # Double-clicking an .FCStd while this app runs opens it here, not in a second KurtShape.
+    from .open_handoff import OpenHandoff
+    panel.open_handoff = OpenHandoff(panel, os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime")))
     return panel

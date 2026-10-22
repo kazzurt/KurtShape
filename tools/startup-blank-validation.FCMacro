@@ -1,0 +1,199 @@
+"""Opening a project replaces the blank part made at launch, but only while it is untouched.
+
+Runs ui.start() in a hidden native window (no startup file), lets the panel and
+recovery timers run, then opens copies of the example plate through the GUI
+paths (Panel.open_path, a failed open, STEP import) and checks which documents
+stay open. Touched blanks (a KurtShape operation or a native FreeCAD edit) and
+a part made with New must survive.
+"""
+import json
+import os
+from pathlib import Path
+import shutil
+import sys
+import traceback
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+os.environ.pop("KURTSHAPE_OPEN_FILE", None)
+from kurtshape import ui
+from kurtshape_evidence import evidence_dir
+
+
+class HiddenWindows(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+hidden = HiddenWindows(app)
+app.installEventFilter(hidden)
+output = evidence_dir("startup-blank")
+output.mkdir(parents=True, exist_ok=True)
+work = session / "startup-blank"
+report = {"passed": False, "checks": [], "steps": [], "pid": os.getpid(),
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "method": "Hidden native window; ui.start() without a startup file, panel and recovery timers running; "
+                    "GUI open paths on copies of examples/acceptance-plate.FCStd and a generated STEP box."}
+panel = None
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition):
+    assert condition, label
+    report["checks"].append(label)
+    save()
+
+
+def settle(ms=1500):
+    QtTest.QTest.qWait(ms)  # the panel tick and the 1 s recovery checkpoint both run
+
+
+def documents():
+    return sorted((doc.Label, doc.FileName or None) for doc in App.listDocuments().values())
+
+
+def record(step):
+    report["steps"].append({"step": step, "documents": documents(),
+                            "active": App.activeDocument().Label if App.activeDocument() else None})
+    save()
+
+
+def plate(name):
+    target = work / name
+    shutil.copy2(root / "examples" / "acceptance-plate.FCStd", target)
+    return str(target)
+
+
+def close_all():
+    for name in list(App.listDocuments()):
+        App.closeDocument(name)
+    settle(300)
+
+
+def opened_only(path):
+    docs = list(App.listDocuments().values())
+    return len(docs) == 1 and Path(docs[0].FileName).resolve() == Path(path).resolve() and App.activeDocument() == docs[0]
+
+
+def validate():
+    global panel
+    try:
+        work.mkdir(parents=True, exist_ok=True)
+        panel = ui.start()
+        settle()
+        record("launch")
+        check("Launch makes one blank part", documents() == [("Untitled part", None)])
+        check("The launch blank is remembered", panel.startup_blank is not None)
+
+        # 1. Untouched launch blank: GUI Open replaces it.
+        first = plate("first.FCStd")
+        check("GUI Open succeeds", bool(panel.open_path(first)))
+        settle(300)
+        record("open untouched")
+        check("GUI Open closes the untouched launch blank", opened_only(first))
+        check("The panel shows the opened project", panel.state and panel.state["native_file"]
+              and Path(panel.state["native_file"]).resolve() == Path(first).resolve())
+        check("The launch blank is forgotten after the first open", panel.startup_blank is None)
+        step = work / "box.step"
+        Part.makeBox(10, 20, 30).exportStep(str(step))
+        check("A second project opens", bool(panel.open_path(str(step))))  # another copy of the plate would be refused
+        settle(300)
+        check("A later open keeps earlier projects", len(App.listDocuments()) == 2)
+        close_all()
+
+        # 2. A launch blank used through KurtShape stays open.
+        panel.new(startup=True)
+        settle()
+        check("A KurtShape operation on the blank succeeds", bool(panel.new_part()))
+        target = plate("after-operation.FCStd")
+        panel.open_path(target)
+        settle(300)
+        record("open after operation")
+        check("A launch blank changed through KurtShape stays open", len(App.listDocuments()) == 2
+              and any(label == "Untitled part" for label, _ in documents()))
+        close_all()
+
+        # 3. A launch blank changed natively (FreeCAD's own tools) stays open.
+        panel.new(startup=True)
+        settle()
+        blank = App.activeDocument()
+        blank.getObject("Body").newObject("Sketcher::SketchObject", "NativeSketch")
+        blank.recompute()
+        target = plate("after-native.FCStd")
+        panel.open_path(target)
+        settle(300)
+        record("open after native edit")
+        check("A launch blank changed natively stays open", len(App.listDocuments()) == 2
+              and any(label == "Untitled part" for label, _ in documents()))
+        close_all()
+
+        # 4. A part made with New is the user's, not the launch blank.
+        panel.new()
+        settle()
+        target = plate("after-new.FCStd")
+        panel.open_path(target)
+        settle(300)
+        record("open after explicit New")
+        check("A part made with New stays open", len(App.listDocuments()) == 2)
+        close_all()
+
+        # 5. A failed open keeps the blank; the next successful open replaces it.
+        panel.new(startup=True)
+        settle()
+        broken = work / "broken.FCStd"
+        broken.write_text("not a project", encoding="utf-8")
+        check("A broken file does not open", not panel.open_path(str(broken)))
+        settle(300)
+        record("failed open")
+        check("A failed open keeps the launch blank", documents() == [("Untitled part", None)])
+        target = plate("after-failure.FCStd")
+        panel.open_path(target)
+        settle(300)
+        record("open after failed open")
+        check("The next successful open replaces the launch blank", opened_only(target))
+        close_all()
+
+        # 6. STEP import replaces the untouched launch blank as well.
+        panel.new(startup=True)
+        settle()
+        check("STEP import succeeds", bool(panel.open_path(str(step))))
+        settle(300)
+        record("STEP import")
+        check("STEP import closes the untouched launch blank", len(App.listDocuments()) == 1
+              and documents()[0][0] != "Untitled part")
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        save()
+        if panel is not None:
+            panel.shutdown()
+            main.destroyed.disconnect(panel.shutdown)
+        for name in list(App.listDocuments()):
+            App.getDocument(name).setClosable(True)
+            App.closeDocument(name)
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(100, app.quit)
+
+
+QtCore.QTimer.singleShot(400, validate)

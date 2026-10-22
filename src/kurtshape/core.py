@@ -2569,6 +2569,33 @@ class Controller:
             finally:
                 self.busy = previous_busy
 
+    def close_untouched(self, identifier, revision, objects):
+        """Close a never-saved document that is exactly as it was created; returns True when closed.
+
+        Used by the app to drop the blank startup part when the user opens a file. Unlike
+        ``close_document`` with ``discard``, nothing is checkpointed: an untouched blank document
+        holds no work, and a checkpoint would push a real discard checkpoint out of recovery.
+        ``revision`` and ``objects`` (sorted object names) are the values recorded at creation.
+        """
+        doc = self.documents.get(identifier)
+        if doc is None or not self._is_open(doc) or doc.FileName or self.busy or identifier in self.sketch_edits:
+            return False
+        if doc.HasPendingTransaction or doc.RedoCount:
+            return False
+        if getattr(App, "GuiUp", False) and self._native_edit_active():
+            return False
+        if callable(self.editor_activity) and self.editor_activity(doc.Name):
+            return False
+        self.sync(doc)  # a native edit made since the last inspection changes the revision here
+        if self._meta(doc).Revision != revision or sorted(obj.Name for obj in doc.Objects) != list(objects):
+            return False
+        if any(user.Document != doc for obj in doc.Objects for user in obj.InList):
+            return False
+        App.closeDocument(doc.Name)
+        for mapping in (self.documents, self.signatures, self.sketch_edits, self.created_sketches, self.last_failures):
+            mapping.pop(identifier, None)
+        return True
+
     def _close_document(self, doc, request, start):
         """Close an open document (contract 3.2); every refusal happens before the native close.
 

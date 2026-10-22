@@ -1,4 +1,5 @@
 param(
+    [string]$FilePath,
     [switch]$Validation,
     [switch]$WriteEvidence,
     [ValidateNotNullOrEmpty()][string]$RuntimeRoot = (Join-Path $PSScriptRoot 'runtime'),
@@ -6,6 +7,13 @@ param(
     [switch]$PrintOnly
 )
 $ErrorActionPreference = 'Stop'
+$openFile = $null
+if ($FilePath) {
+    if ($Validation) { throw '-FilePath cannot be combined with -Validation.' }
+    $openFile = [IO.Path]::GetFullPath($FilePath)
+    if ([IO.Path]::GetExtension($openFile) -ine '.FCStd') { throw 'Select a native .FCStd project.' }
+    if (-not (Test-Path -LiteralPath $openFile -PathType Leaf)) { throw ('Project does not exist: ' + $openFile) }
+}
 $kurtshapeRoot = [IO.Path]::GetFullPath($PSScriptRoot)
 $RuntimeRoot = [IO.Path]::GetFullPath($RuntimeRoot)
 $SessionRoot = [IO.Path]::GetFullPath($SessionRoot)
@@ -43,6 +51,7 @@ $launchArguments += ('"'+$macroPath+'"')
 $launchWindowStyle = if ($Validation) { 'Hidden' } else { 'Normal' }
 $launchEnvironment = [ordered]@{
     KURTSHAPE_ROOT = $kurtshapeRoot
+    KURTSHAPE_OPEN_FILE = $openFile
     KURTSHAPE_SESSION_DIR = $runtimePath
     KURTSHAPE_NO_DEMO = $(if ($Validation) { '1' } else { $null })
     FREECAD_USER_HOME = Join-Path $runtimePath 'user-data'
@@ -72,6 +81,10 @@ if ($PrintOnly) {
     } | ConvertTo-Json -Depth 5
     return
 }
+if ($openFile) {
+    # A KurtShape already running for this session opens the file in its own window.
+    if (& (Join-Path $PSScriptRoot 'tools\open-in-running-app.ps1') -Session $runtimePath -FilePath $openFile) { return }
+}
 if ($Validation) {
     . (Join-Path $PSScriptRoot 'tools\validation-session.ps1')
     Initialize-KurtShapeValidationEnvironment -Root $kurtshapeRoot -Session $runtimePath -SessionBase $SessionRoot -WriteEvidence:$WriteEvidence
@@ -80,6 +93,7 @@ if ($Validation) {
         New-Item -ItemType Directory -Force -Path (Join-Path $runtimePath $folder) | Out-Null
     }
     $env:KURTSHAPE_ROOT = $kurtshapeRoot
+    $env:KURTSHAPE_OPEN_FILE = $openFile
     $env:KURTSHAPE_SESSION_DIR = $runtimePath
     Remove-Item Env:KURTSHAPE_NO_DEMO -ErrorAction SilentlyContinue
     $env:FREECAD_USER_HOME = Join-Path $runtimePath 'user-data'
@@ -90,6 +104,7 @@ if ($Validation) {
     $env:PYTHONDONTWRITEBYTECODE = '1'
 }
 if ($Validation) {
+    Remove-Item Env:KURTSHAPE_OPEN_FILE -ErrorAction SilentlyContinue
     $env:KURTSHAPE_NO_DEMO = '1'
     Remove-Item Env:KURTSHAPE_DEMO -ErrorAction SilentlyContinue
 }
