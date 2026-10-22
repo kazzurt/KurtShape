@@ -79,6 +79,7 @@ SUITES = {
         # Slice A/B wave 1 (docs/slice-ab/RECORD.md): registered ahead of the units so no two of them edit this file.
         "test_icon_cache.IconCacheTests",
         "test_operations_doc.OperationsDocTests",
+        "test_session.SessionTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),
