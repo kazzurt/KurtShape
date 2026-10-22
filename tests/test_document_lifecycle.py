@@ -294,7 +294,9 @@ class DocumentLifecycleTests(unittest.TestCase):
         path = self.native_file("reference")
         self.open(path)
         self.assertFalse(self.state["managed"])
-        self.assertIn("close_document", self.state["operations"])
+        # Slice A/B U6: an open response no longer lists operations (inspect does).
+        inspection = self.core.dispatch({"op": "inspect", "document_id": self.state["document_id"]})["result"]
+        self.assertIn("close_document", inspection["operations"])
         self.call("close_document")
         self.open(path)
         doc = self.doc

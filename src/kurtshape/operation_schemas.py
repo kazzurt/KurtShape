@@ -609,7 +609,9 @@ OPERATIONS = {
                                 "description": "A modeling request (its op and arguments, no envelope); any MODEL "
                                                "operation except rebuild, or a batch {op: batch, steps, label?}"}},
         "required": ["proposal"], "checked_by_handler": {"proposal": "unsupported_preview"},
-        "constraints": ["Commit sends the operation afresh against the preview's base revision",
+        "constraints": ["A read: expected_revision is optional and checked when given (stale_revision); omitted, the "
+                        "proposal is evaluated against the current revision, which base_revision reports",
+                        "Commit sends the operation afresh against the preview's base revision",
                         "accepted is true exactly when the commit would succeed; a batch proposal is echoed as "
                         "{op, label, step_count} and reports batch_report"],
         "examples": [{"op": "preview", "proposal": {"op": "set_parameter", "feature": "Pad", "parameter": "Length", "value": 8}},
@@ -1323,6 +1325,23 @@ EXAMPLE_PLACEHOLDERS = {
     "<recovery_manifest>": "a forced checkpoint manifest of the plate fixture in the session's project-recovery folder",
 }
 
+# Slice A/B U6 (B1): every mutating operation (model, assembly, create, save/export/adopt, history,
+# batch) takes ``detail`` for the shape of its response. The reads keep their own argument sets
+# (inspect and list_documents own a ``detail``), the view operations and close_document return no
+# inspection. The exclusion list mirrors Controller.READ_OPS, VIEW_OPS and LIFECYCLE_OPS; it is pinned
+# by CompactResponseTests.test_schema_offers_detail_on_every_mutation_and_batch.
+RESPONSE_DETAIL = {"enum": ["full", "compact"],
+                   "description": "Shape of the response: compact gives the status header (the list_documents row) "
+                                  "with created_feature, batch_report and the request's reports (about 1 KB); full "
+                                  "gives the full inspection with operations and last_failed_attempt; omitted gives "
+                                  "the full inspection without those two blocks"}
+NO_RESPONSE_DETAIL = frozenset({"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics",
+                                "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
+                                "operation_schema", "list_parameters", "render_view", "set_view", "close_document"})
+for _op, _entry in OPERATIONS.items():
+    if _op not in NO_RESPONSE_DETAIL:
+        _entry["fields"].setdefault("detail", RESPONSE_DETAIL)
+
 # Import-time tables for the generic pre-check: no build needed.
 REQUIRED = {op: tuple(field for field in entry["required"] if field not in entry.get("checked_by_handler", {}))
             for op, entry in OPERATIONS.items()}
@@ -1413,11 +1432,12 @@ def _kind(op, classes):
 def envelope_requirements(op, classes):
     """(document_id required, expected_revision required, request_id tracked) for ``op``.
 
-    Every non-read, non-create operation needs the current revision, plus
-    preview; view operations (render_view, F2) take it optionally.
+    Every non-read, non-create operation needs the current revision; view
+    operations (render_view, F2) and preview (a read, slice A/B U6) take it
+    optionally and check it when given.
     """
     document = op not in classes["create"] and op not in classes["documentless"]
-    revision = op not in classes["read"] | classes["create"] | classes["view"] or op == "preview"
+    revision = op not in classes["read"] | classes["create"] | classes["view"]
     tracked = op not in classes["read"]
     return document, revision, tracked
 
@@ -1434,8 +1454,8 @@ def _envelope(op, classes):
     }
     if not document:
         properties["document_id"]["x-ignored"] = True
-    if op in classes["view"]:
-        # View ops (render_view) are read-only: the revision is optional, but checked when given.
+    if op in classes["view"] or op == "preview":
+        # View ops (render_view) and preview are read-only: the revision is optional, but checked when given.
         properties["expected_revision"] = {"type": "string", "x-mismatch-code": "stale_revision",
                                          "description": "Optional; when given it must equal the current revision "
                                                         "(stale_revision otherwise)"}

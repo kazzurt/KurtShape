@@ -4,7 +4,7 @@
 > `runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe -B tools\generate_operations_doc.py > runtime\test-tmp\operations-doc.log 2>&1`.
 > `tests/test_operations_doc.py` fails when this file and the schema disagree.
 
-One entry per operation of this build (84 operations, schema version 1, schema digest `81df9e8c476d9abb`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
+One entry per operation of this build (84 operations, schema version 1, schema digest `98e00360487290e8`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
 
 ## Reading an entry
 
@@ -175,11 +175,11 @@ Example (fixture `plate`): `{"op": "orphan_helpers", "document_id": "<document_i
 
 ### preview
 
-Evaluate a modeling proposal on a disposable clone; nothing changes. [Contract][contract-historical]. Envelope: `document_id`, `expected_revision`; not undoable, not previewable, not batchable.
+Evaluate a modeling proposal on a disposable clone; nothing changes. [Contract][contract-historical]. Envelope: `document_id`, `expected_revision` optional (checked when given); not undoable, not previewable, not batchable.
 
 - `proposal`: object; **required** (missing: `unsupported_preview`)
 
-Example (fixture `plate`): `{"op": "preview", "document_id": "<document_id>", "expected_revision": "<revision>", "proposal": {"op": "set_parameter", "feature": "Pad", "parameter": "Length", "value": 8}}`
+Example (fixture `plate`): `{"op": "preview", "document_id": "<document_id>", "proposal": {"op": "set_parameter", "feature": "Pad", "parameter": "Length", "value": 8}}`
 
 Schema-named errors: `unsupported_preview`.
 
@@ -243,6 +243,7 @@ Unless an entry says otherwise: envelope: `request_id` (bridge); not undoable, n
 
 New managed unsaved document from a STEP file: one Body per solid. [Contract][contract-30].
 
+- `detail`: full / compact
 - `path`: absolute_path; **required** (missing: `invalid_argument`)
 
 Example (fixture `none`): `{"op": "import_step", "path": "<step_file>"}`
@@ -251,6 +252,7 @@ Example (fixture `none`): `{"op": "import_step", "path": "<step_file>"}`
 
 New managed document with one empty Body. [Contract][contract-intro].
 
+- `detail`: full / compact
 - `name`: string; default `"New part"`
 
 Example (fixture `none`): `{"op": "new", "name": "Bracket"}`
@@ -259,6 +261,7 @@ Example (fixture `none`): `{"op": "new", "name": "Bracket"}`
 
 Open an existing native FCStd file. [Contract][contract-intro].
 
+- `detail`: full / compact
 - `path`: absolute_path; **required**
 
 Example (fixture `none`): `{"op": "open", "path": "<plate_file>"}`
@@ -269,6 +272,7 @@ Schema-named errors: `duplicate_document_id`.
 
 Open a verified checkpoint as a new unsaved document. [Contract][contract-historical].
 
+- `detail`: full / compact
 - `path`: absolute_path; **required**
 
 Example (fixture `none`): `{"op": "recover", "path": "<recovery_manifest>"}`
@@ -285,6 +289,7 @@ Append a fully constrained counter-clockwise circular arc. [Contract][contract-3
 - `construction`: boolean; default `false`
 - `cx`: length; **required** (missing: `invalid_argument`)
 - `cy`: length; **required** (missing: `invalid_argument`)
+- `detail`: full / compact
 - `end_angle`: angle; required when centre form (no x1/y1/x2/y2 given)
 - `radius`: positive_length; required when centre form (no x1/y1/x2/y2 given)
 - `sketch`: feature; **required**
@@ -304,6 +309,7 @@ Append a constrained circle to an existing sketch. [Contract][contract-30].
 
 - `body`: body
 - `construction`: boolean; default `false`
+- `detail`: full / compact
 - `diameter`: positive_length; **required**
 - `sketch`: feature; **required**
 - `x`: length; **required**
@@ -319,6 +325,7 @@ Append a line with driving endpoint coordinates. [Contract][contract-30].
 
 - `body`: body
 - `construction`: boolean; default `false`
+- `detail`: full / compact
 - `sketch`: feature; **required**
 - `x1`: length; **required**
 - `x2`: length; **required**
@@ -336,6 +343,7 @@ Append connected line segments joined by native coincidences. [Contract][contrac
 - `body`: body
 - `closed`: boolean; default `false`
 - `construction`: boolean; default `false`
+- `detail`: full / compact
 - `points`: array of point2; **required** (missing: `invalid_argument`)
 - `sketch`: feature; **required**
 
@@ -349,6 +357,7 @@ Append a constrained rectangle to an existing sketch. [Contract][contract-30].
 
 - `body`: body
 - `construction`: boolean; default `false`
+- `detail`: full / compact
 - `height`: positive_length; **required**
 - `sketch`: feature; **required**
 - `width`: positive_length; **required**
@@ -364,6 +373,7 @@ Schema-named errors: `ambiguous_body`.
 Union, subtract or intersect independent parts. [Contract][contract-studio].
 
 - `body`: body
+- `detail`: full / compact
 - `id`: new_id; id `StudioFeature` when omitted
 - `keep_tools`: boolean; default `false`
 - `kind`: union / subtract / intersect; default `"union"`
@@ -382,6 +392,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`.
 Native equal-distance chamfer on edges of the current part. [Contract][contract-multi].
 
 - `body`: body
+- `detail`: full / compact
 - `edges`: array of (reference or multi_reference); **required** (missing: `invalid_argument`)
 - `id`: new_id; id `Chamfer` when omitted
 - `part`: part
@@ -401,6 +412,7 @@ Rotated copies of parts about an axis. [Contract][contract-patterns].
 - `axis`: axis; default `{"direction": [0, 0, 1], "origin": [0, 0, 0]}`
 - `body`: body
 - `count`: integer 2..100; default `2`
+- `detail`: full / compact
 - `id`: new_id; id `StudioFeature` when omitted
 - `include_source`: boolean; default `false`
 - `merge_scope`: merge_scope; default `"auto"`
@@ -418,6 +430,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`.
 
 New native PartDesign Body. [Contract][contract-historical].
 
+- `detail`: full / compact
 - `id`: new_id; id `Body` when omitted
 - `name`: string
 - `source_feature_id`: string
@@ -432,6 +445,7 @@ Schema-named errors: `duplicate_feature`.
 Native top-level helix for sweep paths. [Contract][contract-31].
 
 - `axis`: axis; default `{"direction": [0, 0, 1], "origin": [0, 0, 0]}`
+- `detail`: full / compact
 - `handedness`: right / left; default `"right"`
 - `height`: positive_length; **required** (missing: `invalid_argument`)
 - `id`: new_id; id `Helix` when omitted
@@ -453,6 +467,7 @@ Schema-named errors: `duplicate_feature`.
 Create a model parameter (length, angle or number) with a value, a formula over other parameters, or by promoting existing dimensions (bind). [Contract][contract-32-parameters].
 
 - `bind`: array of object
+- `detail`: full / compact
 - `expression`: string
 - `name`: string; **required**
 - `type`: length / angle / number
@@ -470,6 +485,7 @@ Native datum plane: offset, point-normal, three-point or line-angle. [Contract][
 - `axis`: axis or reference; required when line-angle mode
 - `base_plane`: origin_plane; default `"XY"` when `support`, `origin`, `normal`, `x_direction`, `points`, `axis`, `reference_normal`, `angle` are absent
 - `body`: body
+- `detail`: full / compact
 - `id`: new_id; id `Plane` when omitted
 - `name`: string
 - `normal`: direction3; required when point-normal mode
@@ -491,6 +507,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
 Empty attached native sketch on an origin plane, datum plane or planar face. [Contract][contract-30].
 
 - `body`: body
+- `detail`: full / compact
 - `id`: new_id; id `Sketch` when omitted
 - `plane`: origin_plane; default `"XY"` when `support` is absent
 - `source_feature_id`: string
@@ -507,6 +524,7 @@ Delete one feature; dependents need cascade. [Contract][contract-30]. Envelope: 
 
 - `body`: body
 - `cascade`: boolean; default `false`
+- `detail`: full / compact
 - `feature`: feature; **required**
 
 Example (fixture `plate`): `{"op": "delete_feature", "document_id": "<document_id>", "expected_revision": "<revision>", "feature": "Pocket"}`
@@ -519,6 +537,7 @@ Delete a validated set of features in one transaction. [Contract][contract-30]. 
 
 - `body`: body
 - `cascade`: boolean; default `false`
+- `detail`: full / compact
 - `features`: array of feature; **required** (missing: `invalid_argument`)
 
 Example (fixture `plate`): `{"op": "delete_features", "document_id": "<document_id>", "expected_revision": "<revision>", "features": ["Pocket", "HoleProfile"]}`
@@ -529,6 +548,7 @@ Schema-named errors: `ambiguous_body`, `dependent_features`.
 
 Delete a parameter; consumers reject unless freeze_consumers keeps their current values. [Contract][contract-32-parameters]. Envelope: `document_id`, `expected_revision`, `request_id` (bridge); undoable, previewable, not batchable.
 
+- `detail`: full / compact
 - `freeze_consumers`: boolean; default `false`
 - `name`: string; **required**
 
@@ -541,6 +561,7 @@ Schema-named errors: `parameter_in_use`.
 Consume a current part in history (undo restores it). [Contract][contract-studio].
 
 - `body`: body
+- `detail`: full / compact
 - `id`: new_id; id `StudioFeature` when omitted
 - `name`: string
 - `part`: part; **required** (missing: `missing_part`)
@@ -556,6 +577,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`, `missing_part`.
 Copy a sketch, Pad or Pocket in its Body, keeping links. [Contract][contract-historical]. Envelope: `document_id`, `expected_revision`, `request_id` (bridge); undoable, previewable, not batchable.
 
 - `body`: body
+- `detail`: full / compact
 - `feature`: feature; **required**
 - `fingerprint`: string
 
@@ -568,6 +590,7 @@ Schema-named errors: `ambiguous_body`.
 Change the edges, size or formula of an existing fillet or chamfer in place. [Contract][contract-multi].
 
 - `body`: body
+- `detail`: full / compact
 - `edges`: array of (reference or multi_reference)
 - `expression`: expression or null
 - `feature`: feature; **required** (missing: `missing_reference`)
@@ -583,6 +606,7 @@ Schema-named errors: `ambiguous_body`, `ambiguous_reference`, `invalid_selector`
 Edit an Extrude/Remove in place: depth, depth formula, direction, end condition. [Contract][contract-30].
 
 - `body`: body
+- `detail`: full / compact
 - `end_type`: blind / through_all / up_to_face
 - `expression`: expression or null
 - `feature`: feature; **required** (missing: `missing_reference`)
@@ -597,6 +621,7 @@ Schema-named errors: `ambiguous_body`, `expression_driven`, `missing_reference`.
 
 Change a parameter's value or formula; dependents rebuild, unchanged consumers are pruned. [Contract][contract-32-parameters].
 
+- `detail`: full / compact
 - `expression`: string or null
 - `name`: string; **required**
 - `value`: number or string
@@ -610,6 +635,7 @@ Schema-named errors: `expression_driven`.
 Extrude one planar face into a studio result. [Contract][contract-studio].
 
 - `body`: body
+- `detail`: full / compact
 - `face`: reference; **required**
 - `id`: new_id; id `ExtrudeFace` when omitted
 - `length`: positive_length; **required** (missing: `invalid_argument`)
@@ -630,6 +656,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
 Native fillet on edges of the current part. [Contract][contract-multi].
 
 - `body`: body
+- `detail`: full / compact
 - `edges`: array of (reference or multi_reference); **required** (missing: `invalid_argument`)
 - `id`: new_id; id `Fillet` when omitted
 - `part`: part
@@ -649,6 +676,7 @@ Native PartDesign Hole at a sketch's circles and points. [Contract][contract-stu
 - `counterbore`: object
 - `countersink`: object
 - `depth`: positive_length; required when end_type blind (the default)
+- `detail`: full / compact
 - `diameter`: positive_length; **required** (missing: `invalid_argument`)
 - `end_type`: blind / through_all; default `"blind"`
 - `id`: new_id; id `Hole, Hole001, ...` when omitted
@@ -669,6 +697,7 @@ Linear copies of parts, optionally combined with a merge scope. [Contract][contr
 
 - `body`: body
 - `count`: integer 2..100; default `2`
+- `detail`: full / compact
 - `direction`: direction3; default `[1, 0, 0]`
 - `id`: new_id; id `StudioFeature` when omitted
 - `include_source`: boolean; default `false`
@@ -690,6 +719,7 @@ Loft through ordered sketch sections into a studio result. [Contract][contract-s
 
 - `body`: body
 - `closed`: boolean; default `false`
+- `detail`: full / compact
 - `id`: new_id; id `StudioFeature` when omitted
 - `merge_scope`: merge_scope; default `"auto"`
 - `name`: string
@@ -709,6 +739,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`.
 Mirrored copies of parts. [Contract][contract-patterns].
 
 - `body`: body
+- `detail`: full / compact
 - `id`: new_id; id `StudioFeature` when omitted
 - `include_source`: boolean; default `false`
 - `merge_scope`: merge_scope; default `"auto"`
@@ -730,6 +761,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
 Offset parallel planar faces of a part. [Contract][contract-studio].
 
 - `body`: body
+- `detail`: full / compact
 - `distance`: length; **required** (missing: `invalid_argument`)
 - `faces`: array of reference; **required** (missing: `invalid_argument`)
 - `id`: new_id; id `MoveFace` when omitted
@@ -747,6 +779,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
 Extrude (native Pad, or a studio result with operation/merge_scope). [Contract][contract-studio].
 
 - `body`: body
+- `detail`: full / compact
 - `end_type`: blind / through_all / up_to_face; default `"blind"` when `up_to_face` is absent
 - `face`: reference; **one of** this or `profile`
 - `id`: new_id; id `Pad` when omitted
@@ -770,6 +803,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
 Coincide a sketch point with the crossing of a curve edge and the sketch plane. [Contract][contract-historical].
 
 - `body`: body
+- `detail`: full / compact
 - `geometry`: integer 0..; **required**
 - `point`: 1 / 2 / 3; default `1`
 - `sketch`: feature; **required**
@@ -785,6 +819,7 @@ Schema-named errors: `ambiguous_body`, `ambiguous_intersection`, `invalid_select
 Remove (native Pocket, or a studio result with operation/merge_scope). [Contract][contract-studio].
 
 - `body`: body
+- `detail`: full / compact
 - `end_type`: blind / through_all / up_to_face
 - `face`: reference; **one of** this or `profile`
 - `id`: new_id; id `Pocket` when omitted
@@ -810,6 +845,7 @@ Project associated edges into a sketch as defining or reference geometry. [Contr
 
 - `body`: body
 - `defining`: boolean; default `true`
+- `detail`: full / compact
 - `references`: array of reference; **required** (missing: `invalid_argument`)
 - `sketch`: feature; **required**
 
@@ -821,7 +857,7 @@ Schema-named errors: `ambiguous_body`, `invalid_selector`.
 
 Touch native modeling features and recompute. [Contract][contract-30]. Envelope: `document_id`, `expected_revision`, `request_id` (bridge); undoable, not previewable, not batchable.
 
-- No arguments.
+- `detail`: full / compact
 
 Example (fixture `plate`): `{"op": "rebuild", "document_id": "<document_id>", "expected_revision": "<revision>"}`
 
@@ -830,6 +866,7 @@ Example (fixture `plate`): `{"op": "rebuild", "document_id": "<document_id>", "e
 Change a feature's, Body's or assembly object's label, keeping its ID. [Contract][contract-30].
 
 - `body`: body
+- `detail`: full / compact
 - `feature`: feature; **required**
 - `name`: string; **required**
 
@@ -841,6 +878,7 @@ Schema-named errors: `ambiguous_body`.
 
 Rename a parameter; every consumer formula is rewritten natively and verified. [Contract][contract-32-parameters]. Envelope: `document_id`, `expected_revision`, `request_id` (bridge); undoable, previewable, not batchable.
 
+- `detail`: full / compact
 - `name`: string; **required**
 - `new_name`: string; **required**
 
@@ -853,6 +891,7 @@ Schema-named errors: `rename_failed`.
 Remove unconsumed leftover helper groups in one undoable transaction. [Contract][contract-30]. Envelope: `document_id`, `expected_revision`, `request_id` (bridge); undoable, previewable, not batchable.
 
 - `body`: body
+- `detail`: full / compact
 - `owners`: array of string
 
 No schema example (none runs on the fixtures); the bare request is `{"op": "repair_orphan_helpers", "document_id": "<document_id>", "expected_revision": "<revision>"}`
@@ -866,6 +905,7 @@ Revolve a sketch profile into a studio result. [Contract][contract-studio].
 - `angle`: positive_angle; default `"360 deg"`
 - `axis`: axis or reference; default `{"direction": [0, 0, 1], "origin": [0, 0, 0]}`
 - `body`: body
+- `detail`: full / compact
 - `id`: new_id; id `StudioFeature` when omitted
 - `merge_scope`: merge_scope; default `"auto"`
 - `name`: string
@@ -884,6 +924,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
 Move the history rollback bar; later features are held. [Contract][contract-studio]. Envelope: `document_id`, `expected_revision`, `request_id` (bridge); undoable, previewable, not batchable.
 
 - `body`: body
+- `detail`: full / compact
 - `index`: integer 0..; **required** (missing: `invalid_argument`)
 
 Example (fixture `studio`): `{"op": "rollback", "document_id": "<document_id>", "expected_revision": "<revision>", "index": 1}`
@@ -895,6 +936,7 @@ Schema-named errors: `ambiguous_body`.
 Set or clear a native dimensional formula. [Contract][contract-historical].
 
 - `body`: body
+- `detail`: full / compact
 - `expression`: expression or null; default `null`
 - `feature`: feature; **required**
 - `parameter`: string; **required**
@@ -908,6 +950,7 @@ Schema-named errors: `ambiguous_body`.
 Set a driving dimension or numeric feature parameter. [Contract][contract-30].
 
 - `body`: body
+- `detail`: full / compact
 - `feature`: feature; **required**
 - `parameter`: string; **required**
 - `value`: number or string; **required**
@@ -922,6 +965,7 @@ Part name, visibility and colour (visibility never removes a part from export). 
 
 - `body`: body
 - `color`: color
+- `detail`: full / compact
 - `name`: string
 - `part`: part; **required** (missing: `missing_part`)
 - `visible`: boolean
@@ -935,6 +979,7 @@ Schema-named errors: `ambiguous_body`, `missing_part`.
 Replace a sketch's support, keeping its local geometry, constraints and expressions. [Contract][contract-30].
 
 - `body`: body
+- `detail`: full / compact
 - `plane`: origin_plane
 - `sketch`: feature; **required**
 - `support`: support
@@ -948,6 +993,7 @@ Schema-named errors: `ambiguous_body`, `invalid_selector`.
 Native thickness (shell) removing the selected faces. [Contract][contract-studio].
 
 - `body`: body
+- `detail`: full / compact
 - `faces`: array of reference; **required** (missing: `invalid_argument`)
 - `id`: new_id; id `Shell` when omitted
 - `part`: part
@@ -966,6 +1012,7 @@ New sketch holding a constrained circle. [Contract][contract-30].
 
 - `body`: body
 - `center_on`: feature
+- `detail`: full / compact
 - `diameter`: positive_length; **required**
 - `id`: new_id; id `Circle` when omitted
 - `plane`: origin_plane; default `"XY"` when `support` is absent
@@ -984,6 +1031,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
 New sketch holding a closed, fully constrained rectangle with Width/Height dimensions. [Contract][contract-30].
 
 - `body`: body
+- `detail`: full / compact
 - `height`: positive_length; **required**
 - `id`: new_id; id `Rectangle` when omitted
 - `plane`: origin_plane; default `"XY"` when `support` is absent
@@ -1003,6 +1051,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
 Split a part by a plane into two editable parts. [Contract][contract-studio].
 
 - `body`: body
+- `detail`: full / compact
 - `face`: reference
 - `id`: new_id; id `StudioFeature` when omitted
 - `name`: string
@@ -1021,6 +1070,7 @@ Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`, 
 Sweep a sketch profile along a path into a studio result. [Contract][contract-studio].
 
 - `body`: body
+- `detail`: full / compact
 - `frenet`: boolean; default `false`
 - `id`: new_id; id `StudioFeature` when omitted
 - `merge_scope`: merge_scope; default `"auto"`
@@ -1043,6 +1093,7 @@ Move, rotate or copy a part. [Contract][contract-studio].
 - `body`: body
 - `coordinate_system`: object
 - `copy`: boolean; default `false`
+- `detail`: full / compact
 - `id`: new_id; id `StudioFeature` when omitted
 - `name`: string
 - `part`: part; **required** (missing: `missing_part`)
@@ -1063,6 +1114,7 @@ Unless an entry says otherwise: envelope: `document_id`, `expected_revision`, `r
 
 Create the document's native assembly and joint group. [Contract][contract-assembly].
 
+- `detail`: full / compact
 - `id`: assembly_id; id `Assembly` when omitted
 - `name`: string; default `"Assembly"`
 
@@ -1075,6 +1127,7 @@ Schema-named errors: `duplicate_id`, `invalid_id`.
 Native joint between two occurrences, then solve. [Contract][contract-assembly].
 
 - `assembly`: string
+- `detail`: full / compact
 - `first`: assembly_reference; **required** (missing: `invalid_assembly_reference`)
 - `id`: assembly_id; id `FixedJoint, RevoluteJoint or SliderJoint` when omitted
 - `joint_type`: fixed / revolute / slider; **required** (missing: `invalid_assembly_joint_type`)
@@ -1091,6 +1144,7 @@ Remove a joint or occurrence; dependent joints need cascade. [Contract][contract
 
 - `assembly`: string
 - `cascade`: boolean; default `false`
+- `detail`: full / compact
 - `feature`: feature; **required** (missing: `unsupported_assembly_delete`)
 
 Example (fixture `assembly`): `{"op": "delete_assembly_object", "document_id": "<document_id>", "expected_revision": "<revision>", "feature": "Hinge"}`
@@ -1102,6 +1156,7 @@ Schema-named errors: `unsupported_assembly_delete`.
 Change a joint's references, type or label and solve. [Contract][contract-assembly].
 
 - `assembly`: string
+- `detail`: full / compact
 - `first`: assembly_reference
 - `joint`: string; **required** (missing: `missing_assembly_joint`)
 - `joint_type`: fixed / revolute / slider
@@ -1117,6 +1172,7 @@ Schema-named errors: `missing_assembly_joint`.
 Make one occurrence the grounded reference and solve. [Contract][contract-assembly].
 
 - `assembly`: string
+- `detail`: full / compact
 - `instance`: string; **required** (missing: `missing_assembly_instance`)
 
 Example (fixture `assembly`): `{"op": "ground_assembly_instance", "document_id": "<document_id>", "expected_revision": "<revision>", "instance": "Free"}`
@@ -1128,6 +1184,7 @@ Schema-named errors: `missing_assembly_instance`.
 Embed a source solid snapshot and add one occurrence (the first is grounded). [Contract][contract-assembly].
 
 - `assembly`: string
+- `detail`: full / compact
 - `id`: assembly_id; id `Instance` when omitted
 - `name`: string
 - `path`: absolute_path; **required** (missing: `invalid_assembly_source`)
@@ -1142,6 +1199,7 @@ Schema-named errors: `duplicate_id`, `invalid_assembly_source`, `invalid_id`, `m
 Place a free occurrence and solve. [Contract][contract-assembly].
 
 - `assembly`: string
+- `detail`: full / compact
 - `instance`: string; **required** (missing: `missing_assembly_instance`)
 - `position_mm`: array of (number or string) x 3; **required** (missing: `invalid_assembly_motion`)
 - `rotation_xyzw`: array of number x 4
@@ -1155,6 +1213,7 @@ Schema-named errors: `assembly_motion_locked`, `invalid_assembly_motion`, `missi
 Set a revolute or slider joint coordinate and solve. [Contract][contract-assembly].
 
 - `assembly`: string
+- `detail`: full / compact
 - `joint`: string; **required** (missing: `missing_assembly_joint`)
 - `value`: number or string; **required** (missing: `invalid_assembly_motion`)
 
@@ -1167,6 +1226,7 @@ Schema-named errors: `fixed_joint`, `invalid_assembly_motion`, `missing_assembly
 Explicit solve of the current assembly intent. [Contract][contract-assembly].
 
 - `assembly`: string
+- `detail`: full / compact
 
 Example (fixture `assembly`): `{"op": "solve_assembly", "document_id": "<document_id>", "expected_revision": "<revision>"}`
 
@@ -1178,6 +1238,7 @@ Unless an entry says otherwise: envelope: `document_id`, `expected_revision`, `r
 
 Save a managed copy of the document under a new path and project identity. [Contract][contract-historical].
 
+- `detail`: full / compact
 - `path`: absolute_path; **required**
 
 Example (fixture `plate`): `{"op": "adopt", "document_id": "<document_id>", "expected_revision": "<revision>", "path": "<project>/adopted.FCStd"}`
@@ -1197,6 +1258,7 @@ Schema-named errors: `document_in_use`, `unsaved_changes`, `user_editing`.
 Export current solid results with provenance; requires a current build and valid geometry checks. [Contract][contract-30].
 
 - `body`: body
+- `detail`: full / compact
 - `path`: absolute_path; **required**
 
 Example (fixture `plate`): `{"op": "export", "document_id": "<document_id>", "expected_revision": "<revision>", "path": "<project>/plate.step"}`
@@ -1207,6 +1269,7 @@ Schema-named errors: `ambiguous_body`.
 
 Staged native save with a recovery copy of the previous file. [Contract][contract-30].
 
+- `detail`: full / compact
 - `path`: absolute_path; **required**
 
 Example (fixture `plate`): `{"op": "save", "document_id": "<document_id>", "expected_revision": "<revision>", "path": "<project>/plate.FCStd"}`
@@ -1220,6 +1283,7 @@ Unless an entry says otherwise: envelope: `document_id`, `expected_revision`, `r
 Start an exclusive managed edit lease on a sketch. [Contract][contract-30].
 
 - `body`: body
+- `detail`: full / compact
 - `feature`: feature; **required**
 
 Example (fixture `plate`): `{"op": "begin_sketch_edit", "document_id": "<document_id>", "expected_revision": "<revision>", "feature": "Target"}`
@@ -1231,6 +1295,7 @@ Schema-named errors: `ambiguous_body`.
 Finish the managed sketch edit as one history step, or cancel it. [Contract][contract-30].
 
 - `cancel`: boolean; default `false`
+- `detail`: full / compact
 
 Example (fixture `plate`, after `{"op": "begin_sketch_edit", "feature": "Target"}`): `{"op": "finish_sketch_edit", "document_id": "<document_id>", "expected_revision": "<revision>"}`
 
@@ -1238,7 +1303,7 @@ Example (fixture `plate`, after `{"op": "begin_sketch_edit", "feature": "Target"
 
 Native redo, or one sketch step inside a managed sketch edit. [Contract][contract-30].
 
-- No arguments.
+- `detail`: full / compact
 
 Example (fixture `plate`, after `{"op": "rename_feature", "feature": "Pad", "name": "Plate body"}`; `{"op": "undo"}`): `{"op": "redo", "document_id": "<document_id>", "expected_revision": "<revision>"}`
 
@@ -1246,7 +1311,7 @@ Example (fixture `plate`, after `{"op": "rename_feature", "feature": "Pad", "nam
 
 Native undo, or one sketch step inside a managed sketch edit. [Contract][contract-30].
 
-- No arguments.
+- `detail`: full / compact
 
 Example (fixture `plate`, after `{"op": "rename_feature", "feature": "Pad", "name": "Plate body"}`): `{"op": "undo", "document_id": "<document_id>", "expected_revision": "<revision>"}`
 
@@ -1258,6 +1323,7 @@ Unless an entry says otherwise: envelope: `document_id`, `expected_revision`, `r
 
 Run 1-32 modeling steps as one native transaction: one undo step and one revision change, or nothing at all when any step or the final result check fails. [Contract][contract-32-batch].
 
+- `detail`: full / compact
 - `label`: string
 - `steps`: array of object; **required**
 

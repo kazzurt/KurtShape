@@ -161,7 +161,7 @@ def envelope_text(op, classes, schemas):
     parts = []
     if document:
         parts.append("`document_id`")
-    if op in classes["view"]:
+    if op in classes["view"] or op == "preview":  # preview: a read since slice A/B U6
         parts.append("`expected_revision` optional (checked when given)")
     elif revision:
         parts.append("`expected_revision`")

@@ -36,7 +36,7 @@ def call(op, **args):
     response = core.dispatch({"op": op, **args})
     if not response["ok"]:
         raise RuntimeError(op + ": " + json.dumps(response["error"], default=str)[:2000])
-    if "features" in response["result"]:  # an inspection: keep the new revision
+    if "revision" in response["result"]:  # a document response (full or compact): keep the new revision
         state = response["result"]
     return response["result"]
 

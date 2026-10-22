@@ -1400,17 +1400,31 @@ class Panel(QtGui.QDockWidget):
             if not doc or not self.state:
                 self.notify("Create or open a project first.", "error")
                 return None
-            response = self.core.dispatch({"op": "inspect", "document_id": self.core.identifier(doc), "measure": self.MEASURE})
-            if not response["ok"]:
-                self.notify(response["error"]["message"], "error")
-                return None
-            self.state = response["result"]
+            identifier = self.core.identifier(doc)
+            revision = None
+            if self.state.get("document_id") == identifier:
+                # A2 (E-05, slice A/B U6): the panel state is this document's, current to the last tick; settle
+                # native edits and read the revision without an inspection. The mutation's own response is the
+                # action's one inspection (and the tick needs no third, see below).
+                try:
+                    self.core.sync(doc)
+                    revision = self.core._meta(doc).Revision
+                except Exception:
+                    # The inspect below runs the same sync and reports the same error as a response.
+                    revision = None
+            if revision is None:
+                response = self.core.dispatch({"op": "inspect", "document_id": identifier, "measure": self.MEASURE})
+                if not response["ok"]:
+                    self.notify(response["error"]["message"], "error")
+                    return None
+                self.state = response["result"]
+                revision = self.state["revision"]
             if staged_document and staged_document != self.state["document_id"]:
                 message = "Command canceled because its source project is no longer active."
                 self.last_operation_error = {"code": "document_changed", "message": message}
                 self.notify(message, "error")
                 return None
-            args.update(document_id=self.state["document_id"], expected_revision=staged_revision or self.state["revision"])
+            args.update(document_id=self.state["document_id"], expected_revision=staged_revision or revision)
             # Only operations that take a body get one (document-wide parameter ops do not).
             if (op in self.core.MODEL_OPS - {"create_body", "rebuild", "delete_features", "edit_extrusion", "repair_orphan_helpers"}
                     and "body" in self.core.ARGS.get(op, ()) and "body" not in args):
@@ -1439,6 +1453,14 @@ class Panel(QtGui.QDockWidget):
             App.setActiveDocument(document_owner.Name)
             Gui.ActiveDocument = Gui.getDocument(document_owner.Name)
             self.maximize_document_view()
+        else:
+            document_owner = self.core.documents.get(self.state["document_id"])
+            if document_owner is not None and self.last_document == document_owner.Name:
+                # A2 (E-05): this response is the action's inspection and the refresh below presents it, so
+                # the observer's refresh flag (set by the mutation's own changes) is honoured here, once; the
+                # tick keeps its early return. A changed document still goes through the tick's path.
+                self.last_status = self.state["build_status"]
+                self.core.observer.state(document_owner)["refresh"] = False
         self.refresh()
         if op in self.core.CREATE_OPS | {"adopt"}:
             self.change_body()

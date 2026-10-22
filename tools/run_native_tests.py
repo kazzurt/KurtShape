@@ -82,6 +82,8 @@ SUITES = {
         "test_session.SessionTests",
         "test_confirm_gating.ConfirmGatingTests",
         "test_launcher_pinning.LauncherPinningTests",
+        # Slice A/B wave 2: registered ahead of each serial unit by the integrator.
+        "test_finish_recompute.FinishRecomputeTests", "test_compact_responses.CompactResponseTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),

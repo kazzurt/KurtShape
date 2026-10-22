@@ -1,7 +1,7 @@
 param(
     [ValidateSet('plane-visibility','step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
         'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline','responsiveness-preview',
-        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','face-feature-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view','startup-blank','open-handoff','sketch-floating-controls','sketch-coincident-lines','sketch-midpoint-motion','confirm-gating')]
+        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','face-feature-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view','startup-blank','open-handoff','sketch-floating-controls','sketch-coincident-lines','sketch-midpoint-motion','confirm-gating','inspection-count')]
     [string]$Recipe = 'interface',
     [ValidateRange(1,7200)][int]$TimeoutSeconds = 900,
     [switch]$WriteEvidence,
@@ -86,6 +86,7 @@ $recipes = @{
     'sketch-coincident-lines' = @('sketch-coincident-lines-validation.FCMacro', 'sketch-coincident-lines\gui-result.json', 0)
     'sketch-midpoint-motion' = @('sketch-midpoint-motion-validation.FCMacro', 'sketch-midpoint-motion\gui-result.json', 0)
     'confirm-gating' = @('confirm-gating-validation.FCMacro', 'confirm-gating\gui-result.json', 0)
+    'inspection-count' = @('inspection-count-validation.FCMacro', 'inspection-count\gui-result.json', 0)
 }
 $recipeDefinition = $recipes[$Recipe]
 $macroPath = Join-Path $PSScriptRoot $recipeDefinition[0]

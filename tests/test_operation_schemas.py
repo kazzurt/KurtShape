@@ -786,8 +786,9 @@ class OperationSchemaTests(unittest.TestCase):
                 self.assertEqual(request["required"][0], "op")
                 self.assertEqual("document_id" in request["required"],
                                  op not in Controller.CREATE_OPS and op not in documentless)
+                # Slice A/B U6: preview is a read; its revision is optional and checked when given.
                 self.assertEqual("expected_revision" in request["required"],
-                                 op not in Controller.READ_OPS | Controller.CREATE_OPS | view or op == "preview")
+                                 op not in Controller.READ_OPS | Controller.CREATE_OPS | view)
                 self.assertNotIn("request_id", request["required"])
                 self.assertNotIn("measure", request["required"])
                 self.assertEqual(request["properties"]["measure"]["enum"], [False, True, "full"])

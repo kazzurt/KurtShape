@@ -70,6 +70,9 @@ STEP/STL are exports.
 2. Mutations use that document's `document_id` and current `expected_revision`.
    Read the new revision from every successful response. Use one distinct
    `request_id` per intended mutation and retain it with the complete request.
+   Add `"detail": "compact"` to a mutation for the status header, the created
+   feature and the request's reports (about 1 KB) instead of the full
+   inspection; `preview` is a read and needs no `expected_revision`.
 3. Prefer sketches and native features; `add_polyline` keeps a connected profile.
    Use `preview` for risky geometry. Use geometry selectors rather than guessed
    face/edge indices when possible. Confirm supported arguments via the contract.

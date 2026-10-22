@@ -52,6 +52,20 @@ SKETCH_CREATE = "KurtShape: create_sketch"
 # Content committed by the first Finish of a newly created sketch. Controller
 # Undo/Redo pairs it with the preceding creation, so the sketch is one step.
 SKETCH_CREATE_CONTENT = "KurtShape: new sketch contents"
+# Slice A/B U6 (A2): FreeCAD keeps 20 undo steps per document (App::Document's built-in cap; the GUI
+# applies this preference when it creates a document, headless Python cannot change it). Raised so
+# a grouped sketch Finish and a lease cancel keep finding the lease's native transactions in a long
+# session; a user's higher value is kept.
+UNDO_STEPS = 200
+UNDO_PREFERENCES = "User parameter:BaseApp/Preferences/Document"
+
+
+def ensure_undo_steps():
+    group = App.ParamGet(UNDO_PREFERENCES)
+    if group.GetInt("MaxUndoSize", 20) < UNDO_STEPS:
+        group.SetInt("MaxUndoSize", UNDO_STEPS)
+
+
 # One typed modeling step inside the caller's transaction (integration C8/C9):
 # the created feature's name (or None) and the per-step report keys it produced.
 ModelStep = namedtuple("ModelStep", "created_feature reports")
@@ -400,6 +414,10 @@ class Controller:
     for _op in MODEL_OPS:
         if "id" in ARGS[_op]:
             ARGS[_op] |= {"source_feature_id", "source_feature_name"}
+    # B1 (slice A/B U6): every mutating operation takes detail (full | compact) for its response; the
+    # reads keep their own sets, the view ops and close_document return no inspection.
+    for _op in OPS - READ_OPS - VIEW_OPS - LIFECYCLE_OPS:
+        ARGS[_op] = ARGS[_op] | {"detail"}
 
     def __init__(self):
         self.documents = {}
@@ -416,6 +434,7 @@ class Controller:
         # document (feature_editor, task, placement, step_export, geometry_check) or None.
         self.editor_activity = None
         self.busy = False
+        ensure_undo_steps()  # A2: before the app's first document, so every GUI document gets UNDO_STEPS
         self.settings = Settings(ROOT)
         self.geometry = geometry.GeometryCache(shape_of=native_assembly.global_shape,
                                                dependencies_of=self._shape_dependencies)
@@ -1283,11 +1302,18 @@ class Controller:
         editing = self.sketch_edits[identifier]
         if doc.HasPendingTransaction:
             doc.abortTransaction()
-        if doc.UndoCount < editing["undo_before"]:
+        try:
+            steps = self._lease_steps(doc, editing)
+        except OperationError:
             self.sketch_edits.pop(identifier, None)
-            raise OperationError("sketch_history_changed", "Native document history changed outside the managed sketch lease")
+            raise
+        if steps is None:
+            if doc.UndoCount < editing["undo_before"]:
+                self.sketch_edits.pop(identifier, None)
+                raise OperationError("sketch_history_changed", "Native document history changed outside the managed sketch lease")
+            steps = doc.UndoCount - editing["undo_before"]
         undone = False
-        while doc.UndoCount > editing["undo_before"]:
+        for _ in range(min(steps, doc.UndoCount)):
             doc.undo()
             undone = True
         sketch = doc.getObject(editing["feature"])
@@ -1304,25 +1330,62 @@ class Controller:
         else:
             self._new_revision(doc)
 
+    def _lease_history(self, doc):
+        """(commits, native undos, native redos) of the document so far, from the observer (A2)."""
+        state = self.observer.state(doc)
+        return state["commit_count"], state["undo_count"], state["redo_count"]
+
+    def _lease_steps(self, doc, editing):
+        """Native steps the lease put on the undo stack since its checkpoint, or None without the counters.
+
+        Commits push, native undo pops, native redo pushes again (Std_Undo/Redo inside the lease),
+        so the count holds at FreeCAD's stack cap, where UndoCount cannot move. More undos than
+        steps crossed the checkpoint into accepted history: ``sketch_history_changed``.
+        """
+        if "history_before" not in editing:
+            return None
+        commits, undos, redos = (now - before for now, before in zip(self._lease_history(doc), editing["history_before"]))
+        steps = commits - undos + redos
+        if steps < 0:
+            raise OperationError("sketch_history_changed", "Native undo inside the sketch lease crossed the edit checkpoint")
+        return steps
+
     def _commit_sketch_edit(self, doc):
-        """Group native command commits within the exclusive sketch lease."""
+        """Regroup the lease's native command commits into one pending transaction (A2).
+
+        Runs before the Finish's one managed recompute: the pending lease step is committed,
+        the lease's commits are undone and the final sketch content is restored inside one
+        grouped transaction, which the caller commits once the recompute, the native build
+        check and the result validation pass (a failure aborts it and keeps the draft). The
+        commits are counted through the document observer, so a saturated native undo stack
+        (FreeCAD's cap) cannot hide them; a lease with more commits than the stack still holds
+        is left as it is. One commit without a creation to merge needs no regrouping.
+        """
         editing = self.sketch_edits[self._meta(doc).DocumentId]
         from .sketch_tools import prune_use_sources
         prune_use_sources(doc, editing["feature"])
         if doc.HasPendingTransaction:
             doc.commitTransaction()
-        if doc.UndoCount < editing["undo_before"]:
-            raise OperationError("sketch_history_changed", "Native document history changed outside the managed sketch lease")
-        created = editing.get("created") and doc.UndoCount > editing["undo_before"]
-        if doc.UndoCount > editing["undo_before"] + 1 or created:
+        steps = self._lease_steps(doc, editing)
+        if steps is None:
+            if doc.UndoCount < editing["undo_before"]:
+                raise OperationError("sketch_history_changed", "Native document history changed outside the managed sketch lease")
+            steps = doc.UndoCount - editing["undo_before"]
+        created = editing.get("created") and steps >= 1
+        if (steps > 1 or created) and steps <= doc.UndoCount:
             sketch = doc.getObject(editing["feature"])
             final = bytes(sketch.dumpContent())
             label = sketch.Label
             from .sketch_tools import capture_use_sources, restore_use_sources
             editing["use_sources"] = capture_use_sources(sketch)
             editing["grouping_started"] = True
-            while doc.UndoCount > editing["undo_before"]:
+            for _ in range(steps):
                 doc.undo()
+            # The accepted history's depth now (below the cap it equals undo_before; a saturated
+            # stack lost older entries, so draft recovery and cancel measure from here), and the
+            # history counts: a Finish retried after a rejection counts only the steps since.
+            editing["undo_before"] = doc.UndoCount
+            editing["history_before"] = self._lease_history(doc)
             sketch = doc.getObject(editing["feature"])
             if sketch is None:
                 raise OperationError("sketch_history_changed", "The accepted sketch no longer exists in native history")
@@ -1330,12 +1393,6 @@ class Controller:
             restore_use_sources(doc, editing["use_sources"])
             restore_sketch_content(sketch, final)
             prune_use_sources(doc, editing["feature"])
-            self._recompute(doc)
-            errors = self._build_status(doc)
-            if errors:
-                raise OperationError("build_failed", "Grouped sketch edit could not rebuild native features", features=errors)
-            doc.commitTransaction()
-            editing.pop("grouping_started", None)
 
     def _preserve_sketch_draft(self, doc, draft):
         """Recover a rejected command or finalization without discarding the lease."""
@@ -1343,9 +1400,12 @@ class Controller:
         if editing.pop("grouping_started", False):
             if doc.HasPendingTransaction:
                 doc.abortTransaction()
-            if doc.UndoCount < editing["undo_before"]:
-                raise OperationError("sketch_history_changed", "Native history crossed the edit checkpoint; draft recovery required")
-            while doc.UndoCount > editing["undo_before"]:
+            steps = self._lease_steps(doc, editing)  # re-baselined by the regroup: normally 0 here
+            if steps is None:
+                if doc.UndoCount < editing["undo_before"]:
+                    raise OperationError("sketch_history_changed", "Native history crossed the edit checkpoint; draft recovery required")
+                steps = doc.UndoCount - editing["undo_before"]
+            for _ in range(min(steps, doc.UndoCount)):
                 doc.undo()
         sketch = doc.getObject(editing["feature"])
         if sketch is None:
@@ -1834,6 +1894,10 @@ class Controller:
             if "measure" in request and request["measure"] is None:
                 raise OperationError("invalid_argument", 'measure must be false, true or "full"')
             measure = self._measure_level(request.get("measure"))
+            # B1 (slice A/B U6): the shape of a mutation's response; inspect and list_documents own their detail.
+            detail = request.get("detail") if op not in {"inspect", "list_documents"} else None
+            if detail is not None and detail not in ("full", "compact"):
+                raise OperationError("invalid_argument", 'detail must be "full" or "compact"', fields=["detail"])
             # Generic missing-field pre-check (F5 §3.3): unconditional required fields that are
             # absent or null reject before any document lookup; handler-checked fields keep their codes.
             absent, groups = operation_schemas.missing_arguments(op, request)
@@ -1973,7 +2037,8 @@ class Controller:
                         self._recompute(doc)
                         self.sketch_edits[self.identifier(doc)] = {"feature": feature, "initial": initial,
                             "undo_before": undo_before, "signature": self._sketch_edit_signature(doc, feature),
-                            "undo": [initial, draft], "redo": [], "result_before": result_before}
+                            "undo": [initial, draft], "redo": [], "result_before": result_before,
+                            "history_before": self._lease_history(doc)}
                         self._new_revision(doc)
             else:
                 doc = self._doc(request)
@@ -2073,7 +2138,10 @@ class Controller:
                     self.sketch_edits[self._meta(doc).DocumentId] = {
                         "feature": sketch.Name, "signature": self._sketch_edit_signature(doc, sketch.Name),
                         "initial": initial, "undo_before": undo_before,
-                        "undo": [initial], "redo": [], "created": created, "result_before": result_before}
+                        "undo": [initial], "redo": [], "created": created, "result_before": result_before,
+                        # A2: the lease's native commits, undos and redos are counted from here (a saturated
+                        # undo stack hides them from UndoCount).
+                        "history_before": self._lease_history(doc)}
                     self._new_revision(doc)
                 elif op == "finish_sketch_edit":
                     editing = self.sketch_edits.get(self._meta(doc).DocumentId)
@@ -2094,6 +2162,9 @@ class Controller:
                     else:
                         draft = bytes(doc.getObject(editing["feature"]).dumpContent())
                         self._profile(doc, editing["feature"])
+                        # A2 (slice A/B U6): regroup the lease's native commits first, then exactly one managed
+                        # recompute, one native build check and one edit-mode validation for the Finish.
+                        self._commit_sketch_edit(doc)
                         self._recompute(doc)
                         errors = self._build_status(doc)
                         if errors:
@@ -2103,11 +2174,12 @@ class Controller:
                         self._validate_results(doc, "edit", before=editing.get("result_before"),
                                                trigger={"op": "finish_sketch_edit", "feature": editing["feature"]},
                                                retry=False, persist=False)
-                        self._commit_sketch_edit(doc)
+                        if doc.HasPendingTransaction:
+                            doc.commitTransaction()
+                        editing.pop("grouping_started", None)
                         committed = True
                     self.sketch_edits.pop(self._meta(doc).DocumentId, None)
                     transaction = False
-                    self._recompute(doc)
                     # Settle, stamp and persist outside the lease; the response keeps the edit-mode report.
                     edit_report = self._reports.get("result_check_report")
                     self._validate_results(doc, "report")
@@ -2219,7 +2291,14 @@ class Controller:
                     self._save(doc, request["path"])
                 elif op == "export":
                     self._export(doc, request["path"], request.get("body"))
-            result = self.inspect(doc, measure)
+            if detail == "compact":
+                # B1: the status header (the list_documents row) plus the request's own additions below.
+                result = self.timings.measure("inspection_compact", self.inspect_compact, doc, None, None, None, True)
+            else:
+                result = self.inspect(doc, measure)
+                if detail != "full" and op not in self.READ_OPS:
+                    # B1: a mutation's default response carries neither block; inspect and detail:"full" do.
+                    del result["operations"], result["last_failed_attempt"]
             if op == "check_geometry":
                 result["geometry_check_report"] = check_report
             if created_feature:
@@ -2435,8 +2514,12 @@ class Controller:
             raise OperationError("busy", "Finish the active operation before previewing")
         if not self.is_managed(doc):
             raise OperationError("unmanaged_document", "Adopt a copy before previewing changes")
-        if request.get("expected_revision") != self._meta(doc).Revision:
-            raise OperationError("stale_revision", "Inspect before previewing a proposal")
+        # A read (slice A/B U6): the revision is optional and, when given, must be the current one.
+        base_revision = self._meta(doc).Revision
+        expected = request.get("expected_revision")
+        if expected is not None and expected != base_revision:
+            raise OperationError("stale_revision", "The preview's expected_revision is not the current revision; inspect, or omit it",
+                                 expected=expected, actual=base_revision)
         proposal = request.get("proposal")
         is_batch = isinstance(proposal, dict) and proposal.get("op") == "batch"
         if self._meta(doc).DocumentId in self.sketch_edits or doc.HasPendingTransaction and not is_batch:
@@ -2457,7 +2540,7 @@ class Controller:
                 steps = batch.validate(self, proposal)
             except OperationError as exc:
                 count = len(proposal["steps"]) if isinstance(proposal.get("steps"), list) else 0
-                return {"base_revision": request["expected_revision"],
+                return {"base_revision": base_revision,
                         "proposal": {"op": "batch", "label": proposal.get("label"), "step_count": count},
                         "accepted": False, "valid": False, "error": {"code": exc.code, "message": str(exc), **exc.details},
                         "build_status": None, "build_errors": [], "measurements": None, "discarded": True,
@@ -2468,7 +2551,7 @@ class Controller:
         absent, groups = operation_schemas.missing_arguments(proposal["op"], proposal) if not is_batch else ((), ())
         if absent or groups:
             fields = list(absent or groups[0])
-            return {"base_revision": request["expected_revision"], "proposal": proposal, "accepted": False, "valid": False,
+            return {"base_revision": base_revision, "proposal": proposal, "accepted": False, "valid": False,
                     "error": {"code": "invalid_argument", "message": "Missing required fields: " + ", ".join(fields),
                               "fields": fields, "one_of": bool(groups and not absent), "reason": "missing_required"},
                     "build_status": None, "build_errors": [], "measurements": None, "discarded": True}
@@ -2532,7 +2615,7 @@ class Controller:
                     evaluated["measurements"] = None
                 echo = ({"op": "batch", "label": proposal.get("label"), "step_count": len(steps)} if is_batch
                         else proposal)
-                preview = {"base_revision": request["expected_revision"], "proposal": echo, "accepted": accepted,
+                preview = {"base_revision": base_revision, "proposal": echo, "accepted": accepted,
                            # valid means "the commit would be accepted": pre-existing result failures fold into the
                            # predicted build_status but never reject (F1 §6), so the native status decides here.
                            "valid": accepted and self.observer.state(clone).get("native_status", evaluated["build_status"]) in {"valid", "sketch_only"},
