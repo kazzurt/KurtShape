@@ -129,6 +129,9 @@ runs another tree.
 runs the registered regression suites using the bundled runtime. Three tests
 need external private examples and skip when absent; four performance tests
 are opt-in. `-Full` requires the external examples and all performance checks.
-The GUI recipes use private processes/profiles, but headless or scripted checks
-do not replace human viewport acceptance. Never restart the user's app without
-asking, and never reuse its profile for a probe.
+The GUI recipes (`tools/run_gui_recipe.ps1`) use private processes and profiles on a
+private Windows desktop (since 2026-10-22; the script's header says how), so nothing a
+recipe opens reaches the user's screen and a run fails if its window probe saw a
+window there. Headless or scripted checks still do not replace human viewport
+acceptance. Never restart the user's app without asking, and never reuse its
+profile for a probe.

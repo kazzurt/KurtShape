@@ -104,7 +104,7 @@ def timed(function, repeat):
 def base_report(fixture, holes, method):
     try:
         commit = subprocess.check_output(["git", "-c", "safe.directory=" + str(ROOT), "-C", str(ROOT), "rev-parse", "HEAD"],
-                                         stderr=subprocess.PIPE).decode("ascii").strip()
+                                         stderr=subprocess.PIPE, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)).decode("ascii").strip()
     except (OSError, subprocess.CalledProcessError):
         commit = None
     return {"passed": False, "method": method, "checks": [], "engine": {}, "base_commit": commit,

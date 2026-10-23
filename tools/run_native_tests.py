@@ -82,6 +82,8 @@ SUITES = {
         "test_session.SessionTests",
         "test_confirm_gating.ConfirmGatingTests",
         "test_launcher_pinning.LauncherPinningTests",
+        # GUI recipe harness (2026-10-22): recipe processes run on a private Windows desktop.
+        "test_private_desktop.PrivateDesktopTests",
         # Slice A/B wave 2: registered ahead of each serial unit by the integrator.
         "test_finish_recompute.FinishRecomputeTests", "test_compact_responses.CompactResponseTests",
         "test_feedback_ui.FeedbackUiTests",
