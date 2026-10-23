@@ -330,3 +330,5 @@ copy to delete first) and `ks2`; their `runtime\bench\{int6..int9,rev6..rev9,u6.
 the committed paths, so `git status` there lists the branch's new files as deleted in its working
 tree (the other session's uncommitted edits are untouched). Briefs, rules, diff snapshots, the U9
 review and this wave's hand-over note live in the side-session notes folder.
+
+**Recipe-harness merge (2026-10-23 11:48, on Kurt's instruction).** `d81569b` merges `claude/recipe-windows-hidden` (`8acaa7a`: every GUI recipe runs on a private Windows desktop through `tools/private_desktop.py`, and a run whose window probe saw a window on the user's desktop fails) into `claude/slice-ab` after the wave-2 record; no conflicts, seven files. Verified in the clean worktree on the merged tree: `PrivateDesktopTests` 7/7 (`runtime/bench/merge/pd.json`), `everyday-ui` 57/57 through the new harness with 359 probe samples, 0 windows on the interactive desktop, 3 on the private one, the foreground never taken (`runtime/ci-gui/everyday-ui/run-706b8b7c…`). From this commit on, recipes run from the branch cannot show a window on Kurt's desktop; checkouts of older commits still can.
