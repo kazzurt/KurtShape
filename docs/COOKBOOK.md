@@ -106,17 +106,20 @@ instance cuts, the source included, and no tool part remains. (dodec-hub Sockets
 {"op": "circular_pattern_parts", "id": "Sockets", "parts": ["<tool part>"], "axis": {"origin": [0, 0, 0], "direction": [0, 0, 1]}, "angle": "360 deg", "count": 3, "operation": "remove", "merge_scope": ["<part>"], "include_source": true}
 ```
 
-### Remove and Hole directions
+### Extrude, Remove and Hole directions
 
-The two use opposite polarity. A studio Remove (`pocket` with `operation` or `merge_scope`) with
-`reversed` omitted cuts against the sketch normal, and `reversed:false` cuts along it;
-`through_all:true` cuts both sides of the sketch plane, so give a blind depth. A `hole` drills against
-the sketch normal by default, and `reversed:true` drills along it. Check the sign of
+Say the side with `direction`: `"along"` or `"against"` the sketch normal (the sketch's +Z). Omitted, a
+`pad` extrudes along it, a `pocket` (studio or legacy) cuts against it and a `hole` drills against it,
+into the material under the sketch. A studio Remove's `through_all:true` (its default) cuts both sides
+of the sketch plane, so give a blind depth when the side matters. `reversed` still works for one
+release but means opposite things per operation (a studio Remove's `false` and a hole's `true` are
+both "along"), so do not mix the two: giving both is `invalid_argument`. When a cut or add changes
+nothing, the error's `try_direction` names the other side. Check the sign of
 `result_report.volume_delta_mm3` (negative: removed). (led-pole-battery, dodec-hub)
 
 ```json
-{"op": "pocket", "id": "BayPocket", "profile": "BayProfile", "operation": "remove", "merge_scope": ["<part>"], "through_all": false, "length": 8}
-{"op": "hole", "id": "Drill1", "part": "<part>", "sketch": "DrillCenters1", "diameter": 1.6, "depth": 6.288, "point_angle": "118 deg"}
+{"op": "pocket", "id": "BayPocket", "profile": "BayProfile", "operation": "remove", "merge_scope": ["<part>"], "through_all": false, "length": 8, "direction": "against"}
+{"op": "hole", "id": "Drill1", "part": "<part>", "sketch": "DrillCenters1", "diameter": 1.6, "depth": 6.288, "point_angle": "118 deg", "direction": "against"}
 ```
 
 ### Tilted features and the precision frame

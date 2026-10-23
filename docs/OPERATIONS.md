@@ -4,7 +4,7 @@
 > `runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe -B tools\generate_operations_doc.py > runtime\test-tmp\operations-doc.log 2>&1`.
 > `tests/test_operations_doc.py` fails when this file and the schema disagree.
 
-One entry per operation of this build (84 operations, schema version 1, schema digest `e9e05b0b05a6c023`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
+One entry per operation of this build (84 operations, schema version 1, schema digest `b14097bffb3acd7f`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
 
 ## Reading an entry
 
@@ -678,6 +678,7 @@ Native PartDesign Hole at a sketch's circles and points. [Contract][contract-stu
 - `depth`: positive_length; required when end_type blind (the default)
 - `detail`: full / compact
 - `diameter`: positive_length; **required** (missing: `invalid_argument`)
+- `direction`: along / against
 - `end_type`: blind / through_all; default `"blind"`
 - `id`: new_id; id `Hole, Hole001, ...` when omitted
 - `part`: part
@@ -689,7 +690,7 @@ Native PartDesign Hole at a sketch's circles and points. [Contract][contract-stu
 
 Example (fixture `plate`): `{"op": "hole", "document_id": "<document_id>", "expected_revision": "<revision>", "depth": 4, "diameter": 3, "reversed": true, "sketch": "BossProfile"}`
 
-Schema-named errors: `ambiguous_body`, `duplicate_feature`, `missing_reference`.
+Schema-named errors: `ambiguous_body`, `duplicate_feature`, `empty_cut`, `missing_reference`.
 
 ### linear_pattern_parts
 
@@ -780,6 +781,7 @@ Extrude (native Pad, or a studio result with operation/merge_scope). [Contract][
 
 - `body`: body
 - `detail`: full / compact
+- `direction`: along / against
 - `end_type`: blind / through_all / up_to_face; default `"blind"` when `up_to_face` is absent
 - `face`: reference; **one of** this or `profile`
 - `id`: new_id; id `Pad` when omitted
@@ -796,7 +798,7 @@ Extrude (native Pad, or a studio result with operation/merge_scope). [Contract][
 
 Example (fixture `plate`): `{"op": "pad", "document_id": "<document_id>", "expected_revision": "<revision>", "id": "Boss", "length": 10, "profile": "BossProfile"}`
 
-Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
+Schema-named errors: `ambiguous_body`, `duplicate_feature`, `empty_add`, `empty_merge_scope`, `invalid_selector`.
 
 ### pierce
 
@@ -820,6 +822,7 @@ Remove (native Pocket, or a studio result with operation/merge_scope). [Contract
 
 - `body`: body
 - `detail`: full / compact
+- `direction`: along / against
 - `end_type`: blind / through_all / up_to_face
 - `face`: reference; **one of** this or `profile`
 - `id`: new_id; id `Pocket` when omitted
@@ -837,7 +840,7 @@ Remove (native Pocket, or a studio result with operation/merge_scope). [Contract
 
 Example (fixture `plate`): `{"op": "pocket", "document_id": "<document_id>", "expected_revision": "<revision>", "id": "Recess", "length": 3, "profile": "BossProfile", "through_all": false}`
 
-Schema-named errors: `ambiguous_body`, `duplicate_feature`, `empty_cut`, `invalid_selector`.
+Schema-named errors: `ambiguous_body`, `duplicate_feature`, `empty_cut`, `empty_merge_scope`, `invalid_selector`.
 
 ### project_geometry
 

@@ -18,12 +18,13 @@ because a commit known to fail is not offered; that rejection is remembered
 for those fields until they change or the task restarts.
 
 Provisional acceptance is allowed only where the commit itself validates the
-geometry: a Part Studio document (Add / Remove / Intersect run result checks)
-and a legacy Remove material (the native pocket requires removed material).
-A legacy Extrude has no empty-add check at commit, so it keeps the exact gate.
-Where the provisional path produces nothing (Up to face, Through all, an edit,
-a face extrusion, a legacy Remove without a direction) the exact gate is
-unchanged as well.
+geometry: a Part Studio document (Add / Remove / Intersect run result checks),
+a legacy Remove material (the native pocket requires removed material:
+``empty_cut``) and, since slice A/B U9, a legacy Extrude (the native pad must
+add material: ``empty_add``). So every new Extrude / Remove task qualifies and
+edits keep the exact gate. Where the provisional path produces nothing (Up to
+face, Through all, an edit, a face extrusion, a legacy Remove without a
+direction) the exact gate is unchanged as well.
 """
 
 EXACT = "exact"
@@ -45,15 +46,13 @@ def provisional_allowed(op, studio=False, editing=False, proposal=None):
 
     ``op`` is the task kind (``"pad"`` or ``"pocket"``), ``studio`` the
     document's Part Studio flag, ``editing`` whether an existing feature is
-    being edited, ``proposal`` the dialog's proposal when available: a pad or
-    pocket carrying ``operation`` or ``merge_scope`` runs as a Part Studio
-    operation with result checks even on a document that is not a Part Studio
-    yet (the controller routes it to the studio handler), so it qualifies too.
+    being edited, ``proposal`` the dialog's proposal when available. Every new
+    pad or pocket commit validates its geometry (Part Studio result checks, the
+    legacy pocket's removed material, the legacy pad's added material since
+    slice A/B U9), so ``studio`` and ``proposal`` no longer change the answer;
+    they stay in the signature for the callers.
     """
-    if editing or op not in {"pad", "pocket"}:
-        return False
-    scoped = isinstance(proposal, dict) and ("operation" in proposal or "merge_scope" in proposal)
-    return bool(studio) or scoped or op == "pocket"
+    return not editing and op in {"pad", "pocket"}
 
 
 def remembers_rejection(error):

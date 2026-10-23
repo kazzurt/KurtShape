@@ -103,6 +103,84 @@ def _bool(req, name, default=False):
     return value
 
 
+# B2 (slice A/B U9): one direction vocabulary for pad, pocket and hole. ``direction`` names the side of
+# the profile normal (a sketch's +Z, a selected face's outward normal) the tool runs to. ``reversed``
+# stays accepted for one release with its per-operation meaning; REVERSED_ALONG is the ``reversed``
+# value that means "along" for each kind and REVERSED_DEFAULT what an omitted ``reversed`` means.
+DIRECTIONS = ("along", "against")
+REVERSED_ALONG = {"pad": False, "pocket": False, "legacy_pocket": True, "hole": True}
+REVERSED_DEFAULT = {"pad": False, "pocket": True, "legacy_pocket": False, "hole": False}
+
+
+def direction_kind(req):
+    """The polarity kind of a pad, pocket or hole request: a pocket without a studio result is legacy."""
+    op = req.get("op")
+    if op == "pocket" and "operation" not in req and "merge_scope" not in req:
+        return "legacy_pocket"
+    return op
+
+
+def apply_direction(req):
+    """``req`` with ``direction`` translated into the operation's own ``reversed`` (B2, U9).
+
+    Without ``direction`` the request is returned unchanged. ``direction`` and ``reversed`` together,
+    or a value other than ``"along"``/``"against"``, reject with ``invalid_argument``.
+    """
+    if "direction" not in req:
+        return req
+    if "reversed" in req:
+        raise _error("invalid_argument", "Give direction or reversed, not both (reversed is kept for one release)",
+                     fields=["direction", "reversed"])
+    direction = req["direction"]
+    if direction not in DIRECTIONS:
+        raise _error("invalid_argument", 'direction must be "along" or "against" (the profile normal)',
+                     fields=["direction"])
+    along = REVERSED_ALONG[direction_kind(req)]
+    result = {key: value for key, value in req.items() if key != "direction"}
+    result["reversed"] = along if direction == "along" else not along
+    return result
+
+
+def direction_of(req, reversed_value=None):
+    """``"along"`` or ``"against"``: the side of the profile normal a pad, pocket or hole request runs to."""
+    kind = direction_kind(req)
+    if reversed_value is None:
+        reversed_value = req.get("reversed", REVERSED_DEFAULT[kind])
+    return "along" if bool(reversed_value) == REVERSED_ALONG[kind] else "against"
+
+
+def _both_ways(req):
+    """Whether a studio extrusion runs both ways from the profile plane (through all), so direction cannot help."""
+    if "operation" not in req and "merge_scope" not in req or "face" in req:
+        return False
+    if "up_to_face" in req or req.get("end_type") == "up_to_face":
+        return False
+    return req.get("end_type") == "through_all" or req.get("op") == "pocket" and req.get("through_all", True) is True
+
+
+def direction_hint(req, outcome, reversed_value=None):
+    """Fix-hint details for an extrusion or hole that changed nothing (B3, slice A/B U9).
+
+    ``outcome`` says what happened ("removed no material", ...). Where the direction decides the
+    outcome the details carry ``direction_used`` and ``try_direction`` (the other side of the profile
+    normal) beside the ``hint`` text; a studio through-all tool runs both ways, so its hint names the
+    profile's position instead, and other tools get a position hint only. An up-to-face end decides
+    its own side (``direction`` has no effect there), so it gets a position hint too.
+    """
+    if req.get("op") not in {"pad", "pocket", "hole"}:
+        return {"hint": f"The tool {outcome}; check where the profile sits relative to the part"}
+    if req.get("op") != "hole" and ("up_to_face" in req or req.get("end_type") == "up_to_face"):
+        return {"hint": f"The up-to-face tool {outcome}; direction has no effect on an up-to-face end, so check "
+                        "where the profile sits relative to the end face"}
+    if _both_ways(req):
+        return {"hint": f"The through-all tool {outcome}; it runs both ways from the profile plane, so move the "
+                        "profile or name the parts in merge_scope"}
+    used = direction_of(req, reversed_value)
+    other = "against" if used == "along" else "along"
+    return {"hint": f'The tool runs {used} the profile normal and {outcome}; try direction:"{other}", '
+                    "or check where the profile sits", "direction_used": used, "try_direction": other}
+
+
 def _prop(obj, kind, name, value=None):
     if name in obj.PropertiesList and obj.getTypeIdOfProperty(name) != kind:
         # Metadata links intentionally span Body containers. Older documents
@@ -313,11 +391,35 @@ def current_parts(doc, before=None):
     return [entry[0] for entry in _state(doc, _cutoff(doc, before)).values()]
 
 
+PART_CHOICE_LIMIT = 20
+
+
+def part_choices(parts, wanted=None):
+    """``[{id, name}]`` of current parts for a ``missing_part`` fix hint (B3, slice A/B U9).
+
+    Names closest to ``wanted`` come first, then document order; at most PART_CHOICE_LIMIT rows.
+    """
+    import difflib
+    rows, seen = [], set()
+    for body in parts:
+        key = part_id(body)
+        if key not in seen:
+            seen.add(key)
+            rows.append({"id": key, "name": getattr(body, "KurtShapePartName", body.Label)})
+    if isinstance(wanted, str) and wanted:
+        def closeness(row):
+            return max(difflib.SequenceMatcher(None, wanted.lower(), str(text).lower()).ratio()
+                       for text in (row["id"], row["name"]))
+        rows.sort(key=lambda row: -closeness(row))
+    return rows[:PART_CHOICE_LIMIT]
+
+
 def current_part(doc, part, before=None):
     candidates = current_parts(doc, before)
     match = [obj for obj in candidates if part in {obj.Name, part_id(obj)}]
     if len(match) != 1:
-        raise _error("missing_part", "Choose a current part ID", part=part)
+        raise _error("missing_part", "Choose a current part ID", part=part,
+                     current_parts=part_choices(candidates, part))
     return match[0]
 
 
@@ -1154,7 +1256,8 @@ def _inputs(doc, ids, prefix, refine=None):
         body = current_part(doc, key)
         entry = available.get(part_id(body))
         if not entry:
-            raise _error("missing_part", "The selected part has no solid at the rollback bar", part=key)
+            raise _error("missing_part", "The selected part has no solid at the rollback bar", part=key,
+                         current_parts=part_choices([entry[0] for entry in available.values()], key))
         snap = _snapshot(doc, body, entry[1], prefix + "Input", refine)
         result.append((part_id(body), snap))
     doc.recompute()
@@ -1682,7 +1785,11 @@ def _result_operation(controller, doc, req, name):
     else:
         raise _error("invalid_argument", "Merge scope must be auto or a nonempty part list")
     if not chosen:
-        raise _error("empty_merge_scope", "The result does not touch a part in the selected scope")
+        # B3 (slice A/B U9): an auto scope the tool touches nowhere; say which direction to try.
+        tool_volume = tool_body.Shape.Volume if not tool_body.Shape.isNull() else 0.0
+        raise _error("empty_merge_scope", "The result does not touch a part in the selected scope",
+                     tool_volume_mm3=tool_volume,
+                     **direction_hint(req, "touches no part"))
     snapshots = _inputs(doc, chosen, name, refine)
     through = req.get("end_type") == "through_all" or req["op"] == "pocket" and req.get("through_all", True)
     if through and tool.TypeId == "Part::Extrusion":
@@ -1712,7 +1819,15 @@ def _result_operation(controller, doc, req, name):
                                           "subtract" if operation == "remove" else "intersect", refine)
             outputs.append(result)
             reps.append(rep)
-    report = _checked_result(doc, req, name, operation, tool_body, snapshots, outputs, reps, refine)
+    try:
+        report = _checked_result(doc, req, name, operation, tool_body, snapshots, outputs, reps, refine)
+    except Exception as exc:
+        # B3 (slice A/B U9): an empty Remove or Add names the direction to try beside its tool volume.
+        outcome = {"empty_cut": "removed no material", "empty_add": "added no material"}.get(getattr(exc, "code", None))
+        if outcome and hasattr(exc, "details"):
+            for key, value in direction_hint(req, outcome).items():
+                exc.details.setdefault(key, value)
+        raise
     controller._reports["result_report"] = report
     _prop(reps[0], "App::PropertyLinkGlobal", "KurtShapeTool", tool)
     _prop(reps[0], "App::PropertyLinkGlobal", "KurtShapeNeutralToolBody", tool_body)

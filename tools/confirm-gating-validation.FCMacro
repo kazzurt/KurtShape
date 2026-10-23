@@ -2,15 +2,17 @@
 
 On the native plate fixture (BENCH_HOLES, default 60 = plate60) the real dialog is driven
 through the real Confirm button and keyboard. Provisional acceptance applies only where the
-commit validates geometry (confirm_gate.provisional_allowed): a legacy Remove material and a
-Part Studio Extrude / Remove. Measured and reported for a legacy Remove on plate60:
+commit validates geometry (confirm_gate.provisional_allowed): a legacy Remove material, a legacy
+Extrude (its empty-add check, slice A/B U9) and a Part Studio Extrude / Remove. Measured and
+reported for a legacy Remove on plate60:
 
 - shell latency: Confirm click -> the Controller receives the pocket request (first dispatch);
 - total: Confirm click -> the new history row exists in the feature tree;
 - the exact-preview wait that Confirm no longer waits for (measured on a separate exact pass);
 - committed Body volume versus the exact preview's volume_mm3 for the same fields.
 
-Also checked: a legacy Extrude keeps the exact-only gate; Enter and Shift+Enter commit once each
+Also checked: a legacy Extrude commits from its provisional and one that only fills existing
+material is rejected at commit with empty_add (U9); Enter and Shift+Enter commit once each
 on a provisional result; a Confirm delivered while the preview snapshot pumps Qt commits once;
 a Remove that removes nothing is rejected at commit, the dialog stays open and the rejection is
 remembered on those fields; a Part Studio Extrude commits from its provisional and an Add that
@@ -62,7 +64,6 @@ SHELL_LIMIT_MS = 100
 GATE_SOURCES = ("ui.py", "feature_panel.py", "extrusion_preview.py", "confirm_gate.py", "preview_worker.py",
                 "core.py", "bodies.py", "result_checks.py", "studio.py")
 PROVISIONAL_TEXT = "Confirm commits now"
-EXACT_ONLY_TEXT = "checking exact result"
 
 
 def source_hashes():
@@ -100,6 +101,13 @@ def volume(document):
 def model(document):
     return (intent_signature(document), panel.core._meta(document).Revision, document.UndoCount,
             document.RedoCount, document.HasPendingTransaction, round(volume(document), 6))
+
+
+def content(document):
+    """model() without RedoCount: after an Undo, any later request opens a native transaction that
+    drops the redo step, also when it is rejected (pre-existing FreeCAD behaviour)."""
+    state = model(document)
+    return state[:3] + state[4:]
 
 
 def type_into(widget, text):
@@ -202,20 +210,54 @@ def validate():
         plate_volume = volume(document)
         baseline = model(document)
 
-        # --- A legacy Extrude keeps the exact-only gate (no empty-add check at commit). ---
+        # --- A legacy Extrude commits from its provisional; one that only fills material is rejected (U9). ---
+        # BenchPreviewProfile lies on XY under the plate (z = 0..12, clear of the holes): 25 mm along +Z
+        # adds the part above the plate; 5 mm stays inside the plate and adds nothing.
         start_extrude("BenchPreviewProfile")
         type_into(panel.depth.lineEdit(), "25")
-        check("Legacy Extrude shows a provisional result but keeps Confirm disabled",
-              preview.result is not None and preview.result.provisional and not panel.confirm.isEnabled()
-              and EXACT_ONLY_TEXT in panel.editor.verdict.text())
+        check("Legacy Extrude shows a provisional result and already enables Confirm",
+              preview.result is not None and preview.result.provisional and panel.confirm.isEnabled()
+              and PROVISIONAL_TEXT in panel.editor.verdict.text())
+        rows_before = set(panel.items)
         with DispatchSpy() as spy:
             QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+            QtTest.QTest.qWait(50)
+        rows = new_row(rows_before)
+        check("Legacy Extrude commits once from the provisional and adds material",
+              [op for _, op in spy.marks] == ["pad"] and len(rows) == 1 and panel.task is None
+              and not panel.editor.isVisible() and volume(document) > plate_volume + 1)
+        report["legacy_extrude"] = {"feature": rows[0], "volume_added_mm3": volume(document) - plate_volume}
+        call("undo")
+        check("One Undo removes the committed legacy Extrude", abs(volume(document) - plate_volume) < 1e-6
+              and document.getObject(rows[0]) is None)
+        legacy_baseline = content(document)
+        start_extrude("BenchPreviewProfile")
+        type_into(panel.depth.lineEdit(), "5")
+        check("Legacy Extrude inside the plate shows a provisional result and enables Confirm",
+              preview.result is not None and preview.result.provisional and panel.confirm.isEnabled())
+        with DispatchSpy() as spy:
+            QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+            QtTest.QTest.qWait(50)
+        error = panel.last_operation_error or {}
+        report["rejected_legacy_extrude"] = {"error": error, "verdict": panel.editor.verdict.text(),
+                                             "confirm_enabled": panel.confirm.isEnabled()}
+        check("The legacy Extrude that adds nothing is rejected with empty_add at commit, the dialog stays open "
+              "and the model is unchanged",
+              [op for _, op in spy.marks] == ["pad"] and error.get("code") == "empty_add" and panel.editor.isVisible()
+              and panel.task == "pad" and content(document) == legacy_baseline)
+        check("The empty_add rejection is shown and remembered (Confirm disabled)",
+              error.get("message", "?") in panel.editor.verdict.text() and not panel.confirm.isEnabled()
+              and preview.result is not None and not preview.result.provisional and not preview.result.valid)
+        with DispatchSpy() as spy:
             QtTest.QTest.keyClick(panel.depth.lineEdit(), QtCore.Qt.Key_Return)
             QtTest.QTest.qWait(30)
-        check("Confirm and Enter on a legacy Extrude provisional do not commit", not spy.marks and panel.task == "pad"
-              and model(document) == baseline)
+        check("Enter on the remembered legacy Extrude rejection does not commit again",
+              not spy.marks and panel.task == "pad" and content(document) == legacy_baseline)
         panel.cancel_task()
         QtTest.QTest.qWait(30)
+        check("Cancel after the rejected legacy Extrude leaves the model unchanged",
+              content(document) == legacy_baseline and not panel.editor.isVisible())
+        baseline = model(document)  # the later checks compare the full model again
 
         # --- Exact reference pass (legacy Remove): the wait Confirm used to impose, and the exact volume. ---
         blind_remove("BenchPreviewProfile", "5", True)

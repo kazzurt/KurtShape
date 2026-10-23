@@ -98,8 +98,10 @@ class CompactResponseTests(unittest.TestCase):
 
     def test_compact_batch_response_carries_the_created_features(self):
         self.plate()
+        # The XY sketch lies under the 5 mm plate: 8 mm reaches through it, so the Boss adds material
+        # (a legacy pad that adds nothing rejects with empty_add since slice A/B U9).
         steps = [{"op": "sketch_circle", "id": "BossSketch", "as": "boss", "x": 10, "y": 10, "diameter": 6},
-                 {"op": "pad", "id": "Boss", "profile": {"$ref": "boss"}, "length": 4}]
+                 {"op": "pad", "id": "Boss", "profile": {"$ref": "boss"}, "length": 8}]
         result = self.call("batch", steps=steps, label="boss", detail="compact")
         self.assertLessEqual(set(result), HEADER_KEYS | REPORT_KEYS, sorted(result))
         self.assertEqual(result["batch_report"]["created_features"], ["BossSketch", "Boss"])

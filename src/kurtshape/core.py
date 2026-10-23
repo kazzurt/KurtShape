@@ -148,12 +148,34 @@ def number(value, name, positive=False, unit="mm"):
     return float(value)
 
 
-def write_path(raw, suffixes, roots=None):
+def did_you_mean(name, choices, limit=3):
+    """The closest names in ``choices`` to a misspelled ``name`` (B3 fix hint), best first."""
+    import difflib
+    folded = {choice.lower(): choice for choice in choices}
+    matches = difflib.get_close_matches(name.lower(), folded, n=limit, cutoff=0.6)
+    if not matches:
+        # A fragment of a longer name ("rect" for sketch_rectangle) is still a useful hint.
+        matches = sorted(key for key in folded if name and name.lower() in key)[:limit]
+    return [folded[match] for match in matches]
+
+
+def write_path(raw, suffixes, roots=None, settings_file=None):
     if not isinstance(raw, str) or not Path(raw).is_absolute():
         raise OperationError("invalid_argument", "Destination must be an absolute path")
     path = Path(raw).resolve()
-    if not any(path.is_relative_to(root) for root in (roots or {WRITE_ROOT})):
-        raise OperationError("path_outside_workspace", "Choose this project folder in the app before an assistant writes there")
+    allowed = roots or {WRITE_ROOT}
+    if not any(path.is_relative_to(root) for root in allowed):
+        # B3 (slice A/B U9): list the allowed roots and the headless remedies beside the GUI one.
+        folder = str(path.parent)
+        remedy = {"app": "Save to this folder once from the app's Save dialog; that grants it",
+                  "headless": "Add the folder to project_roots in the session's settings.json, or pass it to "
+                              "kurtshape.session.Session.headless(root, project_roots=[...])",
+                  "settings_json": str(settings_file) if settings_file else None,
+                  "project_roots_line": '"project_roots": ' + json.dumps(sorted({folder, *map(str, allowed)})),
+                  "hidden_app": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\\assistant.ps1 -Hidden "
+                                '-ProjectRoot "' + folder + '"'}
+        raise OperationError("path_outside_workspace", "Choose this project folder in the app before an assistant writes there",
+                             path=str(path), roots=sorted(str(root) for root in allowed), remedy=remedy)
     if path.suffix.lower() not in suffixes:
         raise OperationError("invalid_format", f"Expected {', '.join(suffixes)}")
     if not path.parent.is_dir():
@@ -405,8 +427,9 @@ class Controller:
         ARGS[_op] = ARGS.get(_op, set()) | set(_args)
     for _op, _args in modeling_geometry.ARGS.items():
         ARGS[_op] = ARGS.get(_op, set()) | set(_args)
-    ARGS["pad"] |= {"end_type", "up_to_face"}
-    ARGS["pocket"] |= {"end_type", "up_to_face"}
+    # B2 (slice A/B U9): direction ("along" | "against" the profile normal) beside the legacy reversed.
+    ARGS["pad"] |= {"end_type", "up_to_face", "direction"}
+    ARGS["pocket"] |= {"end_type", "up_to_face", "direction"}
     # A helix is a top-level path curve; FreeCAD keeps Part curves out of Bodies.
     # Parameter ops are document-wide (F3a §6): no body.
     for _op in MODEL_OPS - {"create_body", "rebuild", "create_helix"} - parameters.OPS | {"begin_sketch_edit"}:
@@ -694,7 +717,7 @@ class Controller:
                 raise OperationError("cancelled_step_export", "STEP export request is no longer current")
 
         require_current_request()
-        path = write_path(raw, {".step", ".stp", ".stl"}, self.settings.roots)
+        path = write_path(raw, {".step", ".stp", ".stl"}, self.settings.roots, self.settings.path)
         if (path.suffix.lower() not in {".step", ".stp"} or self.busy
                 or not self._is_open(doc) or not self.is_managed(doc)):
             require_current_request()
@@ -811,7 +834,7 @@ class Controller:
 
     def _step_export_destination_current(self, bundle, *, check_files=True):
         try:
-            path = write_path(bundle["raw_destination"], {".step", ".stp"}, self.settings.roots)
+            path = write_path(bundle["raw_destination"], {".step", ".stp"}, self.settings.roots, self.settings.path)
             parent = path.parent.stat()
             return (path == bundle["destination"]
                     and (parent.st_dev, parent.st_ino) == bundle["destination_parent_identity"]
@@ -1063,7 +1086,8 @@ class Controller:
             selected = studio.current_body(doc, request["body"]) if isinstance(request.get("body"), str) else None
         except OperationError as exc:
             if exc.code == "missing_part":
-                raise OperationError("missing_body", "body must identify a native PartDesign Body") from exc
+                raise OperationError("missing_body", "body must identify a native PartDesign Body",
+                                     **{key: exc.details[key] for key in ("part", "current_parts") if key in exc.details}) from exc
             raise
         if "body" in request and (selected is None or selected.TypeId != "PartDesign::Body"):
             raise OperationError("missing_body", "body must identify a native PartDesign Body")
@@ -1670,7 +1694,8 @@ class Controller:
         if parts is not None:
             unknown = [part for part in parts if part not in part_lookup]
             if unknown:
-                raise OperationError("missing_part", "Unknown part ids", parts=unknown)
+                raise OperationError("missing_part", "Unknown part ids", parts=unknown,
+                                     current_parts=studio.part_choices(bodies, unknown[0]))
         if features is not None:
             unknown = [name for name in features if name not in positions]
             if unknown:
@@ -1885,7 +1910,11 @@ class Controller:
         try:
             self._prune_closed_sketch_edits()
             if not isinstance(request, dict) or request.get("op") not in self.OPS:
-                raise OperationError("unsupported_operation", "Unknown operation")
+                # B3 (slice A/B U9): echo the name and offer the closest operation names.
+                name = request.get("op") if isinstance(request, dict) else None
+                raise OperationError("unsupported_operation", "Unknown operation",
+                                     **({"op": name, "did_you_mean": did_you_mean(name, self.OPS)}
+                                        if isinstance(name, str) else {}))
             op = request["op"]
             unknown = set(request) - self.ARGS[op] - {"op"} - self.TRANSPORT_FIELDS
             if unknown:
@@ -1937,7 +1966,8 @@ class Controller:
                     unknown = [name for name in names if name not in document["operations"]]
                     if unknown:
                         raise OperationError("invalid_argument", "Unknown operations: " + ", ".join(unknown),
-                                             fields=["operations"], unknown=unknown)
+                                             fields=["operations"], unknown=unknown,
+                                             did_you_mean={name: did_you_mean(name, self.OPS) for name in unknown})
                 selected = operation_schemas.select(document, names)
                 selected.update(contract=CONTRACT_VERSION, contract_revision=CONTRACT_REVISION)
                 return {"ok": True, "result": selected}
@@ -2728,7 +2758,7 @@ class Controller:
                                        "operation_ms": round((time.perf_counter() - start) * 1000, 2)}}
 
     def _adopt(self, source, raw):
-        path = write_path(raw, {".fcstd"}, self.settings.roots)
+        path = write_path(raw, {".fcstd"}, self.settings.roots, self.settings.path)
         if path.exists() or source.FileName and path == Path(source.FileName).resolve():
             raise OperationError("adoption_destination_exists", "Adoption requires a new file, preserving the original")
         unsupported = self.inspect(source)["unsupported_objects"]
@@ -2901,7 +2931,8 @@ class Controller:
             raise OperationError("unsupported_reference", "Face support requires a native solid feature")
         index = int(element[4:]) - 1
         if index >= len(obj.Shape.Faces):
-            raise OperationError("missing_reference", "Selected face does not exist")
+            # B3 (slice A/B U9): echo the reference and offer the nearest faces, like the selector sites.
+            raise native_selectors.missing(doc, reference, entity_type="face", message="Selected face does not exist")
         if not isinstance(obj.Shape.Faces[index].Surface, Part.Plane):
             raise OperationError("nonplanar_support", "A sketch needs a planar face or datum plane")
         return obj, element
@@ -3397,6 +3428,9 @@ class Controller:
             created = modeling_geometry.handle(self, doc, req)
             self._record_source(doc, req, doc.getObject(created) if created else None)
             return created
+        if op in {"pad", "pocket"}:
+            # B2 (slice A/B U9): direction becomes this route's reversed; handlers and records see reversed only.
+            req = studio.apply_direction(req)
         if op in studio.OPS - {"pad", "pocket"} or op in {"pad", "pocket"} and ("operation" in req or "merge_scope" in req):
             if reference_tools.is_selector(req.get("face")):
                 original_face = req["face"]
@@ -3524,7 +3558,26 @@ class Controller:
                     feature.Reversed = True
                     self._recompute(doc)
                 if not cut_valid():
-                    raise OperationError("empty_cut", "Pocket removes no valid material in the requested direction")
+                    # B3 (slice A/B U9): with the direction omitted both sides were tried.
+                    hint = (studio.direction_hint(req, "removed no material") if "reversed" in req else
+                            {"hint": "Neither side of the profile normal removes material; check where the profile sits"})
+                    raise OperationError("empty_cut", "Pocket removes no valid material in the requested direction",
+                                         feature=feature.Name, **hint)
+            elif (req.get("_result_checks") != "live" and not set(feature.State) & {"Error", "Invalid"}
+                  and self._meta(doc).BuildStatus in {"valid", "sketch_only"}):
+                # B3 (slice A/B U9): a legacy Pad must add material, mirroring the Pocket's cut check and the
+                # Part Studio empty_add. The GUI's exact preview ("live") reports empty_preview instead. A
+                # document that is failed or needs a rebuild meets the legacy single-solid gate's build_failed
+                # first (_model_step), as before.
+                # The Pad's own solid against its base feature's: the Body's Tip and shape follow only after
+                # reconciliation in a Part Studio document.
+                base = feature.BaseFeature
+                before = base.Shape.Volume if base is not None and not base.Shape.isNull() else 0.0
+                added = (feature.Shape.Volume if not feature.Shape.isNull() else 0.0) - before
+                if added < 1e-7:
+                    raise OperationError("empty_add", f"{feature.Name} added no material to the Body", feature=feature.Name,
+                                         volume_before_mm3=before, volume_added_mm3=added,
+                                         **studio.direction_hint(req, "added no material"))
         elif op in {"set_parameter", "set_expression"}:
             parameter = req["parameter"]
             spec = parameters.target(doc, req["feature"], parameter)
@@ -3652,7 +3705,7 @@ class Controller:
         meta.SourceMapping = json.dumps(mapping, sort_keys=True)
 
     def _save(self, doc, raw, overwrite=None):
-        path=write_path(raw,{".fcstd"}, self.settings.roots)
+        path=write_path(raw,{".fcstd"}, self.settings.roots, self.settings.path)
         if overwrite is not None and not isinstance(overwrite, bool):
             raise OperationError("invalid_argument", "overwrite must be true or false", fields=["overwrite"])
         if path.exists() and not overwrite:
@@ -3766,7 +3819,7 @@ class Controller:
                              path=str(path), existing_document_id=existing, existing_project=label)
 
     def _export(self, doc, raw, body_id=None):
-        path=write_path(raw,{".step",".stp",".stl"}, self.settings.roots)
+        path=write_path(raw,{".step",".stp",".stl"}, self.settings.roots, self.settings.path)
         # Contract 3.2 F1: pending result operations are validated before the status gate.
         self._validate_results(doc, "export")
         if self._meta(doc).BuildStatus!="valid":

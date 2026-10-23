@@ -86,6 +86,7 @@ SUITES = {
         "test_finish_recompute.FinishRecomputeTests", "test_compact_responses.CompactResponseTests",
         "test_feedback_ui.FeedbackUiTests",
         "test_save_safety.SaveSafetyTests", "test_recovery_policy.RecoveryPolicyTests",
+        "test_fix_hints.FixHintTests", "test_direction.DirectionTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),

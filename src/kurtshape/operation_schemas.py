@@ -349,6 +349,14 @@ FIELDS = {
 }
 
 _SOURCE = {"source_feature_id": {}, "source_feature_name": {}}
+
+
+def _direction(omitted):
+    """B2 (slice A/B U9): the one direction vocabulary of pad, pocket and hole."""
+    return {"type": "string", "enum": Ref("studio", "DIRECTIONS"),
+            "description": "Side of the profile normal (the sketch's +Z, or a selected face's outward normal) the tool "
+                           "runs to. Omitted: " + omitted + ". Replaces reversed, which keeps its own per-operation "
+                           "meaning for one release; giving both rejects with invalid_argument"}
 _RESULT = {"operation": {"default": "new"}, "merge_scope": {"default": "auto"}, "refine": {"default": True},
            "name": {"description": "Label of a new part (operation new); default from the profile's part or \"Part N\""}}
 _UNUSED_NAME = {"description": "Accepted and recorded with the operation; it labels nothing"}
@@ -840,7 +848,10 @@ OPERATIONS = {
         "summary": "Extrude (native Pad, or a studio result with operation/merge_scope)",
         "fields": {"id": {"x-default-id": "Pad", "description": "Default Pad (legacy) or Extrude (studio)"},
                    "profile": {}, "face": {"description": "Planar face to extrude (studio path only)"},
-                   "length": {}, "reversed": {"default": False},
+                   "length": {},
+                   "direction": _direction("extrudes along the normal (studio through_all: both ways)"),
+                   "reversed": {"default": False, "description": "Legacy for direction (one release): true extrudes "
+                                                                 "against the profile normal"},
                    "end_type": {"enum": Ref("extrusion_edit", "END_TYPES"), "default": "blind",
                                 "x-default-when": {"absent": ["up_to_face"]},
                                 "description": "through_all needs the studio path; ignored when up_to_face is given"},
@@ -858,7 +869,11 @@ OPERATIONS = {
         "constraints": ["profile and face are mutually exclusive",
                         "up_to_face selects the up-to-face end; end_type is then ignored",
                         "face, end_type through_all and refine need operation or merge_scope (the studio path)",
-                        "A legacy Pad must leave one valid solid in its Body"],
+                        "direction and reversed are mutually exclusive (invalid_argument)",
+                        "A legacy Pad must add material (empty_add, with hint, direction_used and try_direction) and "
+                        "leave one valid solid in its Body",
+                        "A studio Add whose tool touches no part of an auto merge_scope rejects with empty_merge_scope "
+                        "(hint, try_direction, tool_volume_mm3)"],
         "examples": [{"op": "pad", "id": "Boss", "profile": "BossProfile", "length": 10},
                      {"op": "pad", "id": "BossExtrude", "profile": "BossProfile", "length": 15, "operation": "add"},
                      {"op": "pad", "id": "BossPart", "profile": "BossProfile", "length": 15, "merge_scope": ["Body"]}],
@@ -870,8 +885,14 @@ OPERATIONS = {
                    "profile": {}, "face": {"description": "Planar face to cut from (studio path only)"},
                    "length": {"description": "Blind depth (with through_all false)"},
                    "through_all": {"type": "boolean", "default": True, "x-default-when": {"absent": ["up_to_face"]}},
-                   "reversed": {"description": "Omitted: cut against the sketch normal; a legacy Pocket then tries the "
-                                               "other direction when that removes nothing. An explicit value is kept"},
+                   "direction": _direction("cuts against the normal; a legacy Pocket then tries along it when "
+                                           "that removes nothing (an explicit direction is kept); a studio through-all "
+                                           "cut runs both ways"),
+                   "reversed": {"description": "Legacy for direction (one release), with opposite meanings: a legacy "
+                                               "Pocket's true cuts along the profile normal, a studio Remove's false "
+                                               "does. Omitted: cut against the sketch normal; a legacy Pocket then "
+                                               "tries the other direction when that removes nothing. An explicit "
+                                               "value is kept"},
                    "end_type": {"enum": Ref("extrusion_edit", "END_TYPES"),
                                 "description": "up_to_face, or through_all; through_all:true (the default) also cuts through all"},
                    "up_to_face": {"description": "Face that ends the cut; given, it selects the up-to-face end"},
@@ -888,7 +909,11 @@ OPERATIONS = {
         "constraints": ["profile and face are mutually exclusive",
                         "up_to_face selects the up-to-face end; end_type and through_all are then ignored",
                         "face and refine need operation or merge_scope",
-                        "Must remove material (empty_cut) and keep one connected solid"],
+                        "direction and reversed are mutually exclusive (invalid_argument)",
+                        "Must remove material (empty_cut, with hint, direction_used and try_direction) and keep one "
+                        "connected solid",
+                        "A studio Remove whose tool touches no part of an auto merge_scope rejects with "
+                        "empty_merge_scope (hint, try_direction, tool_volume_mm3)"],
         "examples": [{"op": "pocket", "id": "Recess", "profile": "BossProfile", "through_all": False, "length": 3},
                      {"op": "pocket", "id": "BossCut", "profile": "BossProfile", "operation": "remove"},
                      {"op": "pocket", "id": "BossHole", "profile": "BossProfile", "merge_scope": ["Body"]}],
@@ -1118,7 +1143,9 @@ OPERATIONS = {
                    "point_angle": {"anyOf": [_d("angle"), {"const": "flat"}], "default": "118 deg",
                                    "x-default-when": {"not_equal": {"end_type": "through_all"}},
                                    "description": "Included drill-point angle, 1 to 179 deg; 0 or \"flat\" for a flat bottom"},
-                   "reversed": {"default": False, "description": "Drill along the sketch normal instead of against it"},
+                   "direction": _direction("drills against the normal"),
+                   "reversed": {"default": False, "description": "Legacy for direction (one release): true drills along "
+                                                                 "the sketch normal instead of against it"},
                    "counterbore": {"type": "object", "required": ["diameter", "depth"], "additionalProperties": False,
                                    "properties": {"diameter": _d("positive_length"), "depth": _d("positive_length")}},
                    "countersink": {"type": "object", "required": ["diameter"], "additionalProperties": False,
@@ -1130,6 +1157,8 @@ OPERATIONS = {
         "x-cut-args": Ref("hole_tools", "CUT_ARGS", "key_sets"),
         "x-required-when": {"depth": "end_type blind (the default)"},
         "constraints": ["through_all takes no depth or point_angle", "At most one of counterbore or countersink",
+                        "direction and reversed are mutually exclusive (invalid_argument)",
+                        "Must remove material (empty_cut, with hint, direction_used and try_direction)",
                         "A depth beyond the native through-all length rejects with maximum_depth"],
         "examples": [{"op": "hole", "sketch": "BossProfile", "diameter": 3, "depth": 4, "reversed": True}],
         "x-example-fixture": "plate", "doc": DOC_STUDIO},

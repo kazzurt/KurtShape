@@ -142,8 +142,8 @@ class ConfirmGatingTests(unittest.TestCase):
         self.assertEqual(confirm_gate.verdict(exact_valid, fields, provisional=False), confirm_gate.EXACT)
 
     def test_provisional_acceptance_policy_follows_where_the_commit_validates_geometry(self):
-        # Legacy pad: no empty-add check at commit -> exact only. Legacy pocket: cut_valid -> allowed.
-        self.assertFalse(confirm_gate.provisional_allowed("pad", studio=False))
+        # Legacy pad: the empty-add check at commit (slice A/B U9) -> allowed. Legacy pocket: cut_valid -> allowed.
+        self.assertTrue(confirm_gate.provisional_allowed("pad", studio=False))
         self.assertTrue(confirm_gate.provisional_allowed("pocket", studio=False))
         # Part Studio Add / Remove / Intersect run result checks -> allowed for both kinds.
         self.assertTrue(confirm_gate.provisional_allowed("pad", studio=True))
@@ -348,7 +348,8 @@ class ConfirmGatingTests(unittest.TestCase):
         self.call("sketch_circle", id="Inner", x=10, y=5, diameter=4, plane="XY")
         self.assertTrue(confirm_gate.provisional_allowed("pad", studio=False, proposal={"operation": "add"}))
         self.assertTrue(confirm_gate.provisional_allowed("pad", studio=False, proposal={"merge_scope": "auto"}))
-        self.assertFalse(confirm_gate.provisional_allowed("pad", studio=False, proposal={"length": 2}))
+        # A legacy pad qualifies too since its commit checks for added material (slice A/B U9).
+        self.assertTrue(confirm_gate.provisional_allowed("pad", studio=False, proposal={"length": 2}))
         self.assertFalse(confirm_gate.provisional_allowed("pad", studio=False, proposal={"operation": "add"}, editing=True))
         adapter = self.adapter()
         raw = dict(op="pad", profile="Inner", length=2, reversed=False, operation="add")

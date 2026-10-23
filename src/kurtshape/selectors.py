@@ -1152,12 +1152,135 @@ def _detailed_matches(doc, selector, before=None, entity_type=None):
     return [row for row in values if row["entity_type"] == entity_type] if entity_type else values
 
 
+CANDIDATE_LIMIT = 5
+# Rows measured exactly when a candidate search ranks by distance to a selector's point.
+_CANDIDATE_MEASURED = 40
+
+
+def _selector_hints(selector, found=None, depth=0):
+    """``{point, radius..., direction, entity_type, literal}`` named anywhere in a selector tree."""
+    found = {} if found is None else found
+    if depth > 24 or not isinstance(selector, dict):
+        return found
+    if "feature" in selector and "kind" not in selector and "selector" not in selector:
+        found.setdefault("literal", selector)
+        match = re.fullmatch(r"(Face|Edge|Vertex)[1-9][0-9]*", str(selector.get("subelement", "")))
+        if match:
+            found.setdefault("entity_type", match.group(1).lower())
+    kind = selector.get("kind")
+    if kind == "closest":
+        found.setdefault("point", selector.get("point"))
+    if kind == "parallel":
+        found.setdefault("direction", selector.get("direction"))
+    if kind == "geometry":
+        found.setdefault("geometry", selector.get("geometry"))
+        for name in _PARAMETERS:
+            if name in selector:
+                found.setdefault(name, selector[name])
+    if isinstance(selector.get("entity_type"), str):
+        found.setdefault("entity_type", selector["entity_type"].lower())
+    for key in ("selector", "query", "subtract"):
+        _selector_hints(selector.get(key), found, depth + 1)
+    for query in selector.get("queries") or () if isinstance(selector.get("queries"), list) else ():
+        _selector_hints(query, found, depth + 1)
+    return found
+
+
+def _relaxed(selector, depth=0):
+    """Looser selectors for one that matched nothing, nearest first: the outermost filter goes first."""
+    if depth > 24 or not isinstance(selector, dict):
+        return []
+    if set(selector) == {"selector"}:
+        return _relaxed(selector["selector"], depth + 1)
+    kind = selector.get("kind")
+    if kind == "created_by" and "cap" in selector:
+        return [{key: value for key, value in selector.items() if key != "cap"}]
+    if kind in {"geometry", "parallel", "closest", "adjacent", "tangent", "subtraction"}:
+        inner = selector.get("query")
+        return ([inner] if isinstance(inner, dict) else []) + _relaxed(inner, depth + 1)
+    if kind in {"union", "intersection"} and isinstance(selector.get("queries"), list):
+        queries = [query for query in selector["queries"] if isinstance(query, dict)]
+        looser = [relaxed[0] for relaxed in (_relaxed(query, depth + 1) for query in queries) if relaxed]
+        return ([{"kind": "union", "queries": queries}] if kind == "intersection" and queries else []) + (
+            [{"kind": "union", "queries": looser}] if looser else [])
+    return []
+
+
+def candidates(doc, selector, before=None, entity_type=None, limit=CANDIDATE_LIMIT, on=None):
+    """The nearest elements for a selector that matched nothing (B3 fix hint, slice A/B U9).
+
+    The selector's filters are loosened from the outside in until something of the requested entity
+    type matches (a literal reference falls back to its feature's elements, everything else to all
+    elements of the type); a ``closest`` point, geometry parameters or a ``parallel`` direction in the
+    selector rank them. Rows are ``{feature, subelement, entity_type, part, summary}`` with the
+    resolve_selector geometry summary (plus ``distance_mm`` when a point ranks them), at most ``limit``.
+    ``on`` keeps only elements of that native result (the part a group input must use).
+    Never raises: a failure here returns ``[]`` so the original error stays the answer.
+    """
+    try:
+        hints = _selector_hints(selector)
+        wanted = entity_type or hints.get("entity_type") or "face"
+        context = _Context(doc, before)
+
+        def keep(row):
+            return row["entity_type"] == wanted and (on is None or row["feature"] == on)
+        rows = []
+        for looser in _relaxed(selector):
+            try:
+                rows = [row for row in _evaluate(context, looser) if keep(row)]
+            except Exception:
+                rows = []
+            if rows:
+                break
+        if not rows:
+            pool = [row for row in context.rows if keep(row)]
+            literal = hints.get("literal")
+            if literal is not None:
+                owned = [row for row in pool if literal.get("feature") in {row["feature"], row["part"]}]
+                pool = owned or pool
+            rows = pool
+        rows = list({_identity(row): row for row in rows}.values())
+        distances = {}
+        point = hints.get("point")
+        if isinstance(point, (list, tuple)) and len(point) == 3:
+            vertex = Part.Vertex(_vector(point, "point"))
+            vertex_box = geometry.bounding_box(vertex)
+            near = sorted(rows, key=lambda row: (geometry.bbox_distance(geometry.bounding_box(row["_shape"]), vertex_box),
+                                                 _identity(row)))[:_CANDIDATE_MEASURED]
+            distances = {_identity(row): geometry.distance(row["_shape"], vertex) for row in near}
+            rows = near
+
+        def score(row):
+            parameter = sum(abs((_row_scalar(row, name) or math.inf) - float(hints[name]))
+                            for name in _PARAMETERS if isinstance(hints.get(name), (int, float)))
+            shape_match = 0 if not hints.get("geometry") or _geometry(row) == hints["geometry"] else 1
+            return (distances.get(_identity(row), 0.0), shape_match, parameter, _element_order(row), _identity(row))
+        chosen = sorted(rows, key=score)[:limit]
+        result = []
+        for row in chosen:
+            entry = {key: value for key, value in row.items() if not key.startswith("_")}
+            entry["summary"] = _summary(row, detail=True)
+            if _identity(row) in distances:
+                entry["distance_mm"] = distances[_identity(row)]
+            result.append(entry)
+        return result
+    except Exception:
+        return []
+
+
+def missing(doc, selector, before=None, entity_type=None, message="Reference selector resolves to no matching element",
+            on=None, **details):
+    """The ``missing_reference`` error with the selector echoed and its nearest ``candidates`` (B3, U9)."""
+    return _error("missing_reference", message, selector=selector,
+                  candidates=candidates(doc, selector, before, entity_type, on=on), **details)
+
+
 def native_reference(doc, spec, before=None, entity_type=None):
     values = resolve(doc, spec, before)
     if entity_type:
         values = [row for row in values if row["entity_type"] == entity_type]
     if not values:
-        raise _error("missing_reference", "Reference selector resolves to no matching element")
+        raise missing(doc, spec, before, entity_type)
     if len(values) != 1:
         raise _error("ambiguous_reference", "Reference selector resolves to several elements",
                      matches=_detailed_matches(doc, spec, before, entity_type))
@@ -1291,7 +1414,7 @@ def bind(feature, input_name, selector, native_property="AttachmentSupport", man
         info["index"] = index
     values = resolve(feature.Document, selector, before=feature)
     if not values:
-        raise _error("missing_reference", "Reference selector resolves to no matching element")
+        raise missing(feature.Document, selector, feature, input=input_name)
     if not many and len(values) != 1:
         raise _error("ambiguous_reference", "Reference selector resolves to several elements",
                      matches=_detailed_matches(feature.Document, selector, before=feature))
@@ -1457,17 +1580,17 @@ def bind_group(feature, prefix, entries, base, native_property="Base", entity_ty
                     if row["feature"] == base.Name and row["entity_type"] == entity_type]
             if info["many"]:
                 if not refs:
-                    raise _error("missing_reference", "Multi reference selector matches no " + entity_type + " of the current part",
-                                 input=name, match_count=len(values))
+                    raise missing(doc, selector, feature, entity_type, "Multi reference selector matches no " + entity_type
+                                  + " of the current part", on=base.Name, input=name, match_count=len(values))
             else:
                 if not values:
-                    raise _error("missing_reference", "Reference selector resolves to no matching element", input=name)
+                    raise missing(doc, selector, feature, entity_type, input=name)
                 if len(values) != 1:
                     raise _error("ambiguous_reference", "Reference selector resolves to several elements", input=name,
                                  matches=_detailed_matches(doc, selector, before=feature))
                 if not refs:
-                    raise _error("missing_reference", "Reference does not resolve on the current part; select it again or use a selector",
-                                 input=name)
+                    raise missing(doc, selector, feature, entity_type, "Reference does not resolve on the current part; "
+                                  "select it again or use a selector", on=base.Name, input=name)
             for source in _sources(doc, selector, before=feature):
                 if source == feature or feature in source.OutListRecursive:
                     raise _error("cyclic_reference", "Reference selector cannot target its consumer or a downstream feature")
