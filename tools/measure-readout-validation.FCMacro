@@ -72,7 +72,7 @@ def body(probe):
     Gui.Selection.addSelection(right, "Vertex1")
     text = readout()
     probe.report["log"].append({"two occurrence vertices": text})
-    expected = right.getGlobalPlacement().Base - left.getGlobalPlacement().Base
+    expected = right.Placement.Base - left.Placement.Base
     probe.check("Occurrence vertices are measured where they sit in the assembly",
                 text.startswith("Distance ") and f"ΔX {expected.x:.3f}" in text, (text, expected))
 

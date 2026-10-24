@@ -358,7 +358,7 @@ def _render_jobs():
 
 class Controller:
     READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
-                "operation_schema", "list_parameters", "part_inventory", "assembly_instance_source"}
+                "operation_schema", "list_parameters", "part_inventory", "assembly_instance_source", "measure"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
                     "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly", "refresh_assembly_part",
                     "set_assembly_folders", "move_assembly_instances"}
@@ -409,6 +409,7 @@ class Controller:
         "assembly_candidates": {"path", "final_only"}, "create_assembly": {"id", "name", "folder"},
         "part_inventory": {"include_history"},
         "assembly_instance_source": {"assembly", "instance"},
+        "measure": {"references"},
         "refresh_assembly_part": {"assembly", "instance", "path", "source_id", "shared", "folder"},
         "set_assembly_folders": {"assembly", "folders", "membership"},
         "move_assembly_instances": {"assembly", "instances", "folder"},
@@ -2091,6 +2092,9 @@ class Controller:
                                                   measure if "measure" in request else None)
                     result["operation_ms"] = round((time.perf_counter() - start) * 1000, 2)
                     return {"ok": True, "result": result}
+                if op == "measure":
+                    from .measure_readout import measure_references
+                    return {"ok": True, "result": measure_references(doc, request.get("references"))}
                 if op == "assembly_instance_source":
                     return {"ok": True, "result": native_assembly.instance_source(doc, request)}
                 if op == "part_inventory":

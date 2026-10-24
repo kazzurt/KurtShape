@@ -23,6 +23,7 @@ from .section_view import SectionView
 from . import selection_mode
 from .assembly_instance_links import AssemblyInstanceLinks
 from .assembly_tree import AssemblyTree, instance_rows
+from .measure_label import MeasureLabel
 from .theme import apply_theme, apply_view_theme, COLORS
 from .feature_tools import available_catalog
 from .quantity_field import QuantityField
@@ -136,14 +137,17 @@ class SelectionObserver:
         QtCore.QTimer.singleShot(0, p.capture_feature_selection)
         p.history_controller.face_links.schedule(reveal=True)
         p.assembly_links.schedule()
+        p.measure_label.schedule()
 
     def removeSelection(self, *args):
         self.panel.history_controller.face_links.schedule()
         self.panel.assembly_links.schedule()
+        self.panel.measure_label.schedule()
 
     def clearSelection(self, *args):
         self.panel.history_controller.face_links.schedule()
         self.panel.assembly_links.schedule()
+        self.panel.measure_label.schedule()
 
 class Panel(QtGui.QDockWidget):
     MEASURE = False
@@ -245,6 +249,8 @@ class Panel(QtGui.QDockWidget):
         self.assembly_links = AssemblyInstanceLinks(self)
         # Assembly UX item 3: folders in both instance lists and their context menu.
         self.assembly_tree = AssemblyTree(self)
+        # Assembly UX item 6: live measurement of the selection, right of the status line.
+        self.measure_label = MeasureLabel(self)
         self.observer = SelectionObserver(self)
         Gui.Selection.addObserver(self.observer)
         self.general_actions = GeneralActions(self)
@@ -4631,20 +4637,15 @@ class Panel(QtGui.QDockWidget):
             hide_native_panels()
 
     def measure(self):
-        selections = Gui.Selection.getSelectionEx()
-        shapes = [shape for s in selections for shape in s.SubObjects]
-        if not shapes:
-            shapes = [s.Object.Shape for s in selections if hasattr(s.Object, "Shape")]
-        if len(shapes) >= 2:
-            self.notify(f"Minimum distance: {geometry.distance(shapes[0], shapes[1]):.4f} mm")
-        elif shapes:
-            shape = shapes[0]
-            if shape.ShapeType == "Edge":
-                self.notify(f"Edge length: {geometry.scalar(shape, 'length'):.4f} mm")
-            elif shape.ShapeType == "Face":
-                self.notify(f"Face area: {geometry.scalar(shape, 'area'):.4f} mm²")
-            else:
-                self.notify(f"Volume: {geometry.scalar(shape, 'volume'):.4f} mm³ · area: {geometry.scalar(shape, 'area'):.4f} mm²")
+        from .measure_label import selection_entries
+        from .measure_readout import measure_selection
+        entries = selection_entries(self.document()) if self.document() else []
+        if entries:
+            # Item 6: the same global-frame measurement as the live readout.
+            try:
+                self.notify(measure_selection(entries)["text"] or "Nothing measurable in the selection")
+            except Exception as exc:
+                self.notify("Cannot measure this selection: " + str(exc))
         else:
             doc, body = self.document(), self.active_body()
             if not doc or not body:
@@ -4829,6 +4830,7 @@ class Panel(QtGui.QDockWidget):
     def shutdown(self):
         self.additive_selection.shutdown()
         self.assembly_links.close()
+        self.measure_label.close()
         if self.open_handoff:
             self.open_handoff.close()
         self.parameter_section.close()

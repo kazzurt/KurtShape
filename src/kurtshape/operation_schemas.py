@@ -136,6 +136,7 @@ DOC_31 = _DOC + "contract-31--fail-fast-studio-results-typed-helices-and-tight-b
 DOC_HISTORICAL = _DOC + "historical-contract-2-additions--october-2-review-follow-up"
 DOC_ASSEMBLY = _DOC + "assembly-increment--october-2"
 DOC_ASSEMBLY_FOLDERS = _DOC + "instance-folders-assembly-ux-2026-10-24"
+DOC_MEASURE = _DOC + "measure-assembly-ux-2026-10-24"
 _FOLDER = {"anyOf": [{"type": "string", "maxLength": 2000}, {"type": "null"}],
            "description": "Instance-list folder path such as \"Fasteners/M3\" (created when missing); null or omitted keeps the root"}
 DOC_STUDIO = _DOC + "u2-part-studio-and-reference-queries--october-2"
@@ -639,6 +640,17 @@ OPERATIONS = {
         "required": ["path"], "checked_by_handler": {"path": "invalid_assembly_source"},
         "examples": [{"op": "assembly_candidates", "path": "<plate_file>"}], "x-example-fixture": "none",
         "doc": DOC_ASSEMBLY},
+    "measure": {
+        "summary": "Measure 1-24 references in global coordinates: length/area/Ø, distances with ΔX ΔY ΔZ, angles",
+        "fields": {"references": {"type": "array", "minItems": 1, "maxItems": 24, "items": {"type": "object"},
+                                  "description": "Selectors (each must match one element) or {object, subelement} "
+                                                 "native references; an occurrence's subelement is measured where it "
+                                                 "sits in the assembly; an omitted subelement measures the whole object"}},
+        "required": ["references"], "checked_by_handler": {"references": "invalid_argument"},
+        "constraints": ["Read-only; returns {kind, text, values}: the same readout the GUI shows for a selection",
+                        "Parallel/perpendicular within 0.5°, coaxial within 1 µm radial; lengths mm, angles degrees"],
+        "examples": [{"op": "measure", "references": [_PLATE_TOP]}],
+        "x-example-fixture": "plate", "doc": DOC_MEASURE},
     "assembly_instance_source": {
         "summary": "The saved source an occurrence was embedded from: path, kind (fcstd/step), whether it exists and is open",
         "fields": {"assembly": {}, "instance": {"type": "string", "description": "Occurrence id"}},
@@ -1435,7 +1447,7 @@ RESPONSE_DETAIL = {"enum": ["full", "compact"],
 NO_RESPONSE_DETAIL = frozenset({"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics",
                                 "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
                                 "operation_schema", "list_parameters", "render_view", "set_view", "close_document",
-                                "part_inventory", "assembly_instance_source"})
+                                "part_inventory", "assembly_instance_source", "measure"})
 for _op, _entry in OPERATIONS.items():
     if _op not in NO_RESPONSE_DETAIL:
         _entry["fields"].setdefault("detail", RESPONSE_DETAIL)

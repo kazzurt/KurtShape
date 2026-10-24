@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "checks": [
+    "The readout label exists in the status area",
+    "Nothing selected leaves the readout empty",
+    "One planar face shows its area and normal",
+    "Two parallel faces show the parallel distance",
+    "notify() writes its own label and leaves the readout alone",
+    "Two vertices show the distance and the signed \u0394X \u0394Y \u0394Z",
+    "Clearing the selection clears the readout",
+    "Occurrence vertices are measured where they sit in the assembly"
+  ],
+  "log": [
+    {
+      "two parallel faces": "Parallel distance -8.000 mm \u00b7 overlapping"
+    },
+    {
+      "two vertices": "Distance 24.658 mm \u00b7 \u0394X 20.000 \u00b7 \u0394Y 12.000 \u00b7 \u0394Z 8.000 mm"
+    },
+    {
+      "two occurrence vertices": "Distance 100.000 mm \u00b7 \u0394X 100.000 \u00b7 \u0394Y 0.000 \u00b7 \u0394Z 0.000 mm"
+    }
+  ],
+  "method": "Production Panel; native Gui.Selection picks in a part and in an assembly; the KurtShapeMeasure status label read after its debounce. Private desktop.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "seconds": 19.538905099994736,
+  "check_count": 8
+}

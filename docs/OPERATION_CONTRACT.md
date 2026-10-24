@@ -527,6 +527,21 @@ Folders group occurrences in the two instance lists; they are presentation metad
 
 Both are revision-checked, one undo step each. `inspect.assembly.folders` returns the tree and each `instances[*].folder` the instance's path (null at the root). Deleting an occurrence drops its membership; a membership naming a missing instance or folder is ignored on read; a damaged property shows everything at the root rather than failing. **Agents building assemblies organise occurrences by function or sub-assembly (`Frame`, `Fasteners/M3`, `Electronics`) and leave no more than about 12 at the root.**
 
+### Measure (assembly UX, 2026-10-24)
+
+`measure {references:[...]}` (read-only) measures 1-24 references in **global** coordinates and returns `{kind, text, values}`, the same readout the GUI shows right of the status line for the current selection (`KurtShapeMeasure`, updated 80 ms after a selection change). A reference is a selector (it must match exactly one element: `missing_reference` / `ambiguous_reference` otherwise) or `{object, subelement}`; an occurrence's sub-element is measured where it sits in the assembly, and an omitted subelement measures the whole object. Lengths are mm (3 decimals in `text`), angles degrees (2 decimals); `values` holds the unrounded numbers.
+
+| Selection | `kind` | Reported |
+|---|---|---|
+| vertex / edge / circular edge / planar face / cylindrical face / other face / whole part | `point` / `edge` / `circle` / `plane` / `cylinder` / `face` / `body` | X Y Z / Length / Ø R / Area + normal / Ø R axis length / Area / ΔX ΔY ΔZ + volume |
+| two vertices; a vertex and anything | `distance`; `point_distance` | distance (minimum) and signed ΔX ΔY ΔZ, first → second |
+| two planar faces | `parallel_planes` / `plane_angle` | parallel (normals within 0.5°): distance signed along the first normal and whether they overlap in projection; else the acute angle and the minimum distance |
+| two axes (cylinders, cones, tori, circular edges) | `coaxial` / `parallel_axes` / `axis_angle` | coaxial within 1 µm radial; parallel: axis distance and ΔX ΔY ΔZ between the axes; else axis angle and the distance between the axis lines; the diameters |
+| plane and axis | `axis_to_plane` / `axis_plane_angle` | axis parallel to the plane: distance; else the angle between axis and plane |
+| two straight edges | `parallel_lines` / `line_angle` | parallel distance, or the angle and minimum distance |
+| any other pair | `minimum_distance` | minimum distance |
+| three or more | `selection` | minimum distance of the first two and the overall ΔX ΔY ΔZ |
+
 ## U2 Part Studio and reference queries — October 2
 
 This section supersedes the earlier multi-body, rollback and preview limitations. Existing single-Body files and requests retain their native behavior. An explicit studio operation, part appearance change or rollback lazily adopts the native feature history; no separate migration file is required. Managed files use `UseHasher=false` so the pinned runtime exposes complete composite element names. Switching that cache mode during attachment completes a native recompute before inspection.

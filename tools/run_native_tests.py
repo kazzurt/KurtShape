@@ -93,6 +93,7 @@ SUITES = {
         "test_selection_mode.SelectionModeTests", "test_assembly_instance_links.AssemblyInstanceLinkTests",
         "test_assembly_folders.FolderStructureTests", "test_assembly_folders.AssemblyFolderTests",
         "test_assembly_instance_source.AssemblyInstanceSourceTests",
+        "test_measure_readout.MeasureReadoutTests", "test_measure_readout.MeasureAssemblyTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),
