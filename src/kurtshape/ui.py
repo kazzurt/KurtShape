@@ -20,6 +20,7 @@ from .shortcuts import ShortcutRouter
 from .general_actions import GeneralActions
 from .viewport_actions import callbacks as viewport_callbacks
 from .section_view import SectionView
+from . import selection_mode
 from .theme import apply_theme, apply_view_theme, COLORS
 from .feature_tools import available_catalog
 from .quantity_field import QuantityField
@@ -264,6 +265,8 @@ class Panel(QtGui.QDockWidget):
         self.main.installEventFilter(self)
         QtGui.QApplication.instance().installEventFilter(self)
         self.responsiveness = install_monitor(self)
+        # Assembly UX item 1: a plain click on geometry toggles it in the selection.
+        self.additive_selection = selection_mode.install(self)
         self.feature_model = HistoryModel(self.features)
         self.part_model = HistoryModel(self.parts)
 
@@ -1138,7 +1141,7 @@ class Panel(QtGui.QDockWidget):
         dialog.setObjectName("KurtShapeAssemblyJointDialog")
         dialog.setWindowTitle("Edit joint" if joint else "Connect joint")
         layout = QtGui.QVBoxLayout(dialog)
-        help_text = QtGui.QLabel("Ctrl-select a reference on each instance before opening this tool, or choose them below. Use EdgeN / FaceN / VertexN references; leave blank to use the instance origin. Revolute and slider align the reference axes. Ground one instance first. Move adjusts the allowed rotation or translation.")
+        help_text = QtGui.QLabel("Click a reference on each instance before opening this tool (clicks add to the selection), or choose them below. Use EdgeN / FaceN / VertexN references; leave blank to use the instance origin. Revolute and slider align the reference axes. Ground one instance first. Move adjusts the allowed rotation or translation.")
         help_text.setWordWrap(True)
         layout.addWidget(help_text)
         form = QtGui.QFormLayout()
@@ -4794,6 +4797,7 @@ class Panel(QtGui.QDockWidget):
         return False
 
     def shutdown(self):
+        self.additive_selection.shutdown()
         if self.open_handoff:
             self.open_handoff.close()
         self.parameter_section.close()

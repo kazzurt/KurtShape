@@ -2,6 +2,13 @@
 
 ## Behavior changes
 
+### Click selection adds (2026-10-24)
+
+- A click on a face, edge or vertex **adds** it to the selection; clicking an element that is already selected removes it. Hovering a selected face outlines it in orange (a click removes it), an unselected one in blue.
+- A click on empty space, or **Space**, clears the selection. Ctrl-click does the same toggle; Shift-click is unchanged.
+- Sketch editing, native task dialogs, the joint dialog and every KurtShape picker (sketch plane, Section View, feature references) keep FreeCAD's own click behaviour.
+- **Settings → Selection → Click adds to selection** turns it off (preference `KurtShape/Preferences/AdditiveSelection`); a click then replaces the selection again.
+
 ### Search tools (Alt+C, or the toolbar search field)
 
 The dialog lists every tool in one place:

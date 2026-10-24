@@ -1,0 +1,89 @@
+{
+  "passed": true,
+  "checks": [
+    "Additive selection is on by default",
+    "Saved part opens",
+    "Part: a plain click selects one face",
+    "Part: a second plain click on another face adds it (both selected)",
+    "Part: a plain click on an already selected face removes only that face",
+    "Part: Ctrl-click still adds (alias of the same toggle)",
+    "Part: a click on empty space clears the selection",
+    "Part: selection rebuilt for the Space check",
+    "Part: Space clears the selection",
+    "The filter rewrote plain clicks on geometry",
+    "With AdditiveSelection off a plain click replaces the selection",
+    "Saved assembly opens",
+    "The assembly tab is active",
+    "Assembly: a plain click selects one face",
+    "Assembly: a second plain click on another face adds it (both selected)",
+    "Assembly: a plain click on an already selected face removes only that face",
+    "Assembly: Ctrl-click still adds (alias of the same toggle)",
+    "Assembly: a click on empty space clears the selection",
+    "Assembly: selection rebuilt for the Space check",
+    "Assembly: Space clears the selection",
+    "Sketch editing is active",
+    "The filter leaves sketch editing to native selection",
+    "No click is rewritten during sketch editing"
+  ],
+  "log": [
+    {
+      "Part": {
+        "one": [
+          [
+            "BodySolid",
+            "Face6"
+          ]
+        ],
+        "two": [
+          [
+            "BodySolid",
+            "Face3"
+          ],
+          [
+            "BodySolid",
+            "Face6"
+          ]
+        ]
+      }
+    },
+    {
+      "Assembly": {
+        "one": [
+          [
+            "Left",
+            "Face6"
+          ]
+        ],
+        "two": [
+          [
+            "Left",
+            "Face6"
+          ],
+          [
+            "Right",
+            "Face6"
+          ]
+        ]
+      }
+    }
+  ],
+  "method": "Production Panel; real QTest mouse events on the active viewer's QOpenGLWidget (hover move, then click) in a fresh private native process; selection read back from Gui.Selection.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "open_after_close": [
+    "KurtShape"
+  ],
+  "seconds": 26.755620100011583,
+  "check_count": 23
+}
