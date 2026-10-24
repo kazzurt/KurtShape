@@ -24,6 +24,8 @@ from . import selection_mode
 from .assembly_instance_links import AssemblyInstanceLinks
 from .assembly_tree import AssemblyTree, instance_rows
 from .measure_label import MeasureLabel
+from .assembly_refresh_button import AssemblyRefresh
+from . import assembly_sync
 from .theme import apply_theme, apply_view_theme, COLORS
 from .feature_tools import available_catalog
 from .quantity_field import QuantityField
@@ -251,6 +253,9 @@ class Panel(QtGui.QDockWidget):
         self.assembly_tree = AssemblyTree(self)
         # Assembly UX item 6: live measurement of the selection, right of the status line.
         self.measure_label = MeasureLabel(self)
+        # Assembly UX item 7: Refresh finds parts changed on disk; the GUI hashes only on request.
+        assembly_sync.INSPECT_HASHES = False
+        self.assembly_refresh = AssemblyRefresh(self)
         self.observer = SelectionObserver(self)
         Gui.Selection.addObserver(self.observer)
         self.general_actions = GeneralActions(self)
@@ -677,7 +682,9 @@ class Panel(QtGui.QDockWidget):
             ("Slider", lambda: self.assembly_joint("slider"), "Select two axes; permit translation along their joint axis"),
             ("Move", self.move_assembly_selection, "Select a revolute / slider joint to move its allowed coordinate, or an unjointed instance"),
             ("Edit", self.edit_assembly_selection, "Edit the selected joint or unjointed instance placement"),
-            ("Solve", lambda: self.operation("solve_assembly"), "Recompute and solve the assembly")]:
+            ("Solve", lambda: self.operation("solve_assembly"), "Recompute and solve the assembly"),
+            ("Refresh", lambda: self.assembly_refresh.click(),
+             "Check parts for changes on disk; click again to update the changed ones · F5")]:
             self.assembly_actions.append(self.tool(self.assembly_bar, label, callback, tip))
         self.assembly_bar.addSeparator()
         self.tool(self.assembly_bar, "Joints", self.toggle_assembly_joints, "Show or hide joints · J / H")
@@ -1625,6 +1632,11 @@ class Panel(QtGui.QDockWidget):
             self.sketch_history.enter(self.document().getObject(self.state["active_sketch_edit"]))
             Gui.activeDocument().setEdit(self.state["active_sketch_edit"])
             self.sync_edit_ui()
+        if op == "save" and self.document() is not None and self.document().FileName:
+            users = [label for label in self.assembly_refresh.source_saved(self.document().FileName)
+                     if label != self.document().Label]
+            if users:
+                self.notify("Saved · used in " + ", ".join(users) + " · Refresh there to update")
         if op in {"open", "import_step", "recover"}:
             self.close_startup_blank()
         if resume_preview:
@@ -2060,7 +2072,9 @@ class Panel(QtGui.QDockWidget):
                 suffix = " · grounded" if entry.get("grounded") else (" · " + str(entry.get("joint_type", entry.get("type", "joint"))) if category == "joints" else "")
                 if category == "joints" and entry.get("suppressed"):
                     suffix += " · suppressed"
-                row = {"key": entry["id"], "text": entry["name"] + suffix,
+                outdated, color = self.assembly_refresh.decoration(entry) if category == "instances" else ("", None)
+                suffix += outdated
+                row = {"key": entry["id"], "text": entry["name"] + suffix, "color": color,
                        "data": {QtCore.Qt.UserRole: entry["id"]},
                        "tooltip": entry["id"] + (" · reference fixed in place" if entry.get("grounded") else "")}
                 obj = doc.getObject(entry["id"])
@@ -2082,9 +2096,10 @@ class Panel(QtGui.QDockWidget):
         self.features_title.setText(assembly.get("name", "Assembly"))
         self.parts.blockSignals(True)
         def part_row(entry):
+            outdated, color = self.assembly_refresh.decoration(entry)
             row = {"key": entry["id"],
-                   "text": entry["name"] + (" · grounded" if entry.get("grounded") else ""),
-                   "data": {QtCore.Qt.UserRole: entry["id"]}}
+                   "text": entry["name"] + (" · grounded" if entry.get("grounded") else "") + outdated,
+                   "data": {QtCore.Qt.UserRole: entry["id"]}, "color": color}
             obj = doc.getObject(entry["id"])
             if (entry.get("source") or {}).get("kind") == "step":
                 row["icon"] = icon_for("Imported part")  # item 5: STEP-sourced occurrence
@@ -2111,6 +2126,7 @@ class Panel(QtGui.QDockWidget):
         self.editor.hide()
         self.sync_edit_ui()
         self.parameter_section.set_unavailable("Parameters are edited in part studios")
+        self.assembly_refresh.on_refresh()
         self.feedback_complete()
 
     def filter_features(self, *args):
@@ -4747,6 +4763,7 @@ class Panel(QtGui.QDockWidget):
         callbacks.update({"assembly.insert": self.insert_assembly_part,
                           "assembly.fasten": lambda: self.assembly_joint("fixed"),
                           "assembly.mates": self.toggle_assembly_joints,
+                          "assembly.refresh": lambda: self.assembly_refresh.click(),
                           "assembly.show_mates": self.toggle_assembly_joints})
         callbacks.update(viewport_callbacks(self))
         return callbacks

@@ -47,6 +47,7 @@
     {"id":"assembly.insert","key":"I","contexts":["assembly"],"label":"Insert saved FCStd part","status":"callback","note":"Choose an eligible Body or solid; repeated insertion creates independent native instances. Nested assemblies are deferred."},
     {"id":"assembly.fasten","key":"M","contexts":["assembly"],"label":"Fixed joint","status":"callback","note":"Select two instance references; a fixed joint fastens their frames."},
     {"id":"assembly.show_mates","key":"H","contexts":["assembly"],"label":"Show or hide joints","status":"callback"},
+    {"id":"assembly.refresh","key":"F5","contexts":["assembly"],"label":"Refresh changed parts","status":"callback","note":"First press checks every part's saved source; press again to update the changed occurrences (shared:all)."},
     {"id":"assembly.snap","key":"Shift+S","contexts":["assembly"],"label":"Assembly snap mode","status":"unsupported","note":"Assembly snap mode is not implemented."},
     {"id":"view.back","key":"Shift+2","contexts":["view"],"label":"Back view","status":"native","native_command":"Std_ViewRear"},
     {"id":"view.bottom","key":"Shift+6","contexts":["view"],"label":"Bottom view","status":"native","native_command":"Std_ViewBottom"},

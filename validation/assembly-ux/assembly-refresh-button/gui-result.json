@@ -1,0 +1,57 @@
+{
+  "passed": true,
+  "checks": [
+    "The assembly bar has a Refresh button",
+    "Refresh with nothing changed says All parts current",
+    "The part opens in its own tab",
+    "The assembly tab comes back",
+    "Unsaved edits in another tab are reported, not treated as stale",
+    "Back to the part tab",
+    "Saving the part names the open assembly that uses it",
+    "The assembly tab comes back again",
+    "The first click finds both occurrences outdated",
+    "A1 shows \u00b7 outdated with the amber badge in both lists",
+    "A1 shows \u00b7 outdated with the amber badge in both lists",
+    "A2 shows \u00b7 outdated with the amber badge in both lists",
+    "A2 shows \u00b7 outdated with the amber badge in both lists",
+    "The second click updates both",
+    "The occurrences now embed the saved revision",
+    "The badges are gone",
+    "A further Refresh says All parts current"
+  ],
+  "log": [
+    {
+      "unsaved": [
+        "2 unsaved in another tab",
+        [
+          "A1 \u00b7 grounded \u00b7 unsaved in refresh-part",
+          "A1 \u00b7 grounded \u00b7 unsaved in refresh-part"
+        ]
+      ]
+    },
+    {
+      "stale": "2 parts changed on disk \u00b7 Refresh again to update"
+    },
+    {
+      "updated": "Updated 2 parts",
+      "messages": "16:49:47  Migrating Start Workbench to Start command... done.\n"
+    }
+  ],
+  "method": "Production Panel; Refresh toolbar QAction triggered; a headless-built part edited and saved in its own GUI tab; row texts, foreground colours and the status line read back. Private desktop.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "save_notice": "Saved \u00b7 used in Refresh button assembly \u00b7 Refresh there to update",
+  "seconds": 20.967764000000898,
+  "check_count": 17
+}

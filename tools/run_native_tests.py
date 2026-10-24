@@ -94,6 +94,7 @@ SUITES = {
         "test_assembly_folders.FolderStructureTests", "test_assembly_folders.AssemblyFolderTests",
         "test_assembly_instance_source.AssemblyInstanceSourceTests",
         "test_measure_readout.MeasureReadoutTests", "test_measure_readout.MeasureAssemblyTests",
+        "test_assembly_refresh_flow.AssemblyRefreshFlowTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),

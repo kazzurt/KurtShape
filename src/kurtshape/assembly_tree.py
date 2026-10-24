@@ -311,6 +311,8 @@ class AssemblyTree:
                 menu.addAction("Move allowed coordinate", p.move_assembly_selection)
             menu.addAction("Rename", p.rename_selected)
             menu.addAction("Remove", p.delete_selected)
+            if any((entry.get("source") or {}).get("status") == "changed" for entry in self.assembly().get("instances", [])):
+                menu.addAction("Update changed parts", p.assembly_refresh.update)
             menu.addSeparator()
         self.folder_entries(menu, tree, item)
         return menu if menu.actions() else None

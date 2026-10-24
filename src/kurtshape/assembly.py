@@ -18,6 +18,7 @@ import zipfile
 
 import FreeCAD as App
 from . import assembly_folders
+from . import assembly_sync
 import Part
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -192,14 +193,14 @@ def _preflight_source(path):
             tree = ET.fromstring(data)
             object_data = {obj.get("name"): obj for obj in tree.findall("./ObjectData/Object")}
             metadata_object = object_data.get("KurtShapeProject")
-            def null_proxy(prop):
+            def null_proxy(prop, name="Proxy", allowed=("", "null")):
                 python = prop.find("Python")
-                if prop.get("name") != "Proxy" or python is None or python.get("module") or python.get("class"):
+                if prop.get("name") != name or python is None or python.get("module") or python.get("class"):
                     return False
                 value = python.get("value", "")
                 if python.get("encoded") == "yes":
                     value = base64.b64decode(value, validate=True).decode("utf-8")
-                return value in {"", "null"}
+                return value in allowed
             metadata_safe = metadata_object is not None and all(
                 "Python" not in prop.get("type", "") or null_proxy(prop)
                 for prop in metadata_object.findall("./Properties/Property"))
@@ -217,8 +218,13 @@ def _preflight_source(path):
                 gui = ET.fromstring(archive.read("GuiDocument.xml"))
                 gui_metadata = next((obj for obj in gui.findall(".//ViewProvider") if obj.get("name") == "KurtShapeProject"), None)
                 metadata_properties = [] if gui_metadata is None else gui_metadata.findall(".//Property")
+                # A sketch edited in the GUI keeps Sketcher's TempoVis as a null Python object
+                # (no module, no class, value null): data-free, so it does not make a source unsafe.
+                # A GUI save stores the metadata view provider's proxy as the JSON scalar 1
+                # (data, no module or class): as data-free as null.
                 if any("Python" in prop.get("type", "") and not
-                       (metadata_safe and prop in metadata_properties and null_proxy(prop))
+                       (metadata_safe and prop in metadata_properties and null_proxy(prop, allowed=("", "null", "0", "1")))
+                       and not (prop.get("type") == "App::PropertyPythonObject" and null_proxy(prop, "TempoVis"))
                        for prop in gui.findall(".//Property")):
                     raise _error("unsafe_assembly_source", "Scripted source view providers are outside the safe insertion workflow")
     except (OSError, zipfile.BadZipFile, KeyError, ET.ParseError, ValueError) as exc:
@@ -350,6 +356,8 @@ def _source_document(path):
             yield doc, source, before
             if hashlib.sha256(source.read_bytes()).hexdigest() != before:
                 raise _error("assembly_source_changed", "The source changed during insertion")
+            # Item 7: these bytes were just hashed; the staleness pre-check need not hash them again.
+            assembly_sync.remember(source, before)
     finally:
         # Insertion intentionally modifies the assembly inside the yield.
         # Capture that current GUI state rather than restoring its earlier
@@ -1005,6 +1013,9 @@ def inspect(doc):
                            "placement": {"base": list(obj.Placement.Base), "rotation": list(obj.Placement.Rotation.Q)},
                            "source": {"path": getattr(obj.LinkedObject, "SourcePath", ""),
                                       "kind": source_kind(getattr(obj.LinkedObject, "SourcePath", "")),
+                                      # Item 7: changed on disk? (SHA-256, hashed only when mtime/size moved)
+                                      **assembly_sync.source_state(getattr(obj.LinkedObject, "SourcePath", ""),
+                                                                   getattr(obj.LinkedObject, "SourceSHA256", "")),
                                       "sha256": getattr(obj.LinkedObject, "SourceSHA256", ""),
                                       "object": getattr(obj.LinkedObject, "SourceObject", "")},
                            "embedded_source": obj.LinkedObject.Name if obj.LinkedObject else None,

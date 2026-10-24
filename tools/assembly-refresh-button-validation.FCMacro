@@ -44,7 +44,7 @@ def body(probe):
     probe.check("The part opens in its own tab", panel.open_path(str(part)))
     part_doc = panel.document().Name
     probe.call("sketch_rectangle", id="Boss", width=4, height=4, x=2, y=2, body="Body")
-    probe.call("pad", id="BossPad", profile="Boss", length=3, body="Body")
+    probe.call("pad", id="BossPad", profile="Boss", length=3, reversed=True, body="Body")  # below the block, fused
     probe.check("The assembly tab comes back", panel.assembly_tree.activate(assembly_doc))
     probe.wait(200)
     refresh.trigger()
@@ -74,7 +74,7 @@ def body(probe):
     before = App.getDocument(assembly_doc).getObject("A1").LinkedObject.SourceSHA256
     refresh.trigger()
     probe.wait(500)
-    probe.report["log"].append({"updated": panel.message.text()})
+    probe.report["log"].append({"updated": panel.message.text(), "messages": panel.messages.toPlainText()[-3000:]})
     probe.check("The second click updates both", panel.message.text() == "Updated 2 parts", panel.message.text())
     after = App.getDocument(assembly_doc).getObject("A1").LinkedObject
     probe.check("The occurrences now embed the saved revision",
