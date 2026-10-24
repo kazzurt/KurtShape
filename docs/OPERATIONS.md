@@ -4,7 +4,7 @@
 > `runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe -B tools\generate_operations_doc.py > runtime\test-tmp\operations-doc.log 2>&1`.
 > `tests/test_operations_doc.py` fails when this file and the schema disagree.
 
-One entry per operation of this build (84 operations, schema version 1, schema digest `b14097bffb3acd7f`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
+One entry per operation of this build (86 operations, schema version 1, schema digest `6ef37e04859b1d5c`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
 
 ## Reading an entry
 
@@ -78,23 +78,24 @@ Bridge and client outcomes (`invalid_request`, `queue_full`, `outcome_unknown`, 
 
 ## Index
 
-- **Reads:** [assembly_candidates](#assembly_candidates), [capabilities](#capabilities), [check_geometry](#check_geometry), [diagnostics](#diagnostics), [inspect](#inspect), [list_documents](#list_documents), [list_parameters](#list_parameters), [operation_schema](#operation_schema), [orphan_helpers](#orphan_helpers), [preview](#preview), [request_status](#request_status), [resolve_selector](#resolve_selector)
+- **Reads:** [assembly_candidates](#assembly_candidates), [capabilities](#capabilities), [check_geometry](#check_geometry), [diagnostics](#diagnostics), [inspect](#inspect), [list_documents](#list_documents), [list_parameters](#list_parameters), [operation_schema](#operation_schema), [orphan_helpers](#orphan_helpers), [part_inventory](#part_inventory), [preview](#preview), [request_status](#request_status), [resolve_selector](#resolve_selector)
 - **View:** [render_view](#render_view), [set_view](#set_view)
 - **Open or create a document:** [import_step](#import_step), [new](#new), [open](#open), [recover](#recover)
 - **Modeling:** [add_arc](#add_arc), [add_circle](#add_circle), [add_line](#add_line), [add_polyline](#add_polyline), [add_rectangle](#add_rectangle), [boolean_parts](#boolean_parts), [chamfer](#chamfer), [circular_pattern_parts](#circular_pattern_parts), [create_body](#create_body), [create_helix](#create_helix), [create_parameter](#create_parameter), [create_plane](#create_plane), [create_sketch](#create_sketch), [delete_feature](#delete_feature), [delete_features](#delete_features), [delete_parameter](#delete_parameter), [delete_part](#delete_part), [duplicate_feature](#duplicate_feature), [edit_dress_up](#edit_dress_up), [edit_extrusion](#edit_extrusion), [edit_parameter](#edit_parameter), [extrude_face](#extrude_face), [fillet](#fillet), [hole](#hole), [linear_pattern_parts](#linear_pattern_parts), [loft](#loft), [mirror_parts](#mirror_parts), [move_face](#move_face), [pad](#pad), [pierce](#pierce), [pocket](#pocket), [project_geometry](#project_geometry), [rebuild](#rebuild), [rename_feature](#rename_feature), [rename_parameter](#rename_parameter), [repair_orphan_helpers](#repair_orphan_helpers), [revolve](#revolve), [rollback](#rollback), [set_expression](#set_expression), [set_parameter](#set_parameter), [set_part_appearance](#set_part_appearance), [set_sketch_support](#set_sketch_support), [shell](#shell), [sketch_circle](#sketch_circle), [sketch_rectangle](#sketch_rectangle), [split_part](#split_part), [sweep](#sweep), [transform_part](#transform_part)
-- **Assembly:** [create_assembly](#create_assembly), [create_assembly_joint](#create_assembly_joint), [delete_assembly_object](#delete_assembly_object), [edit_assembly_joint](#edit_assembly_joint), [ground_assembly_instance](#ground_assembly_instance), [insert_assembly_part](#insert_assembly_part), [move_assembly_instance](#move_assembly_instance), [move_assembly_joint](#move_assembly_joint), [solve_assembly](#solve_assembly)
+- **Assembly:** [create_assembly](#create_assembly), [create_assembly_joint](#create_assembly_joint), [delete_assembly_object](#delete_assembly_object), [edit_assembly_joint](#edit_assembly_joint), [ground_assembly_instance](#ground_assembly_instance), [insert_assembly_part](#insert_assembly_part), [move_assembly_instance](#move_assembly_instance), [move_assembly_joint](#move_assembly_joint), [refresh_assembly_part](#refresh_assembly_part), [solve_assembly](#solve_assembly)
 - **File lifecycle:** [adopt](#adopt), [close_document](#close_document), [export](#export), [save](#save)
 - **History and sketch editing:** [begin_sketch_edit](#begin_sketch_edit), [finish_sketch_edit](#finish_sketch_edit), [redo](#redo), [undo](#undo)
 - **Batch:** [batch](#batch)
 
 ## Reads
 
-Unless an entry says otherwise: envelope: none; not undoable, not previewable, not batchable.
+Unless an entry says otherwise: envelope: `document_id`; not undoable, not previewable, not batchable.
 
 ### assembly_candidates
 
-Selectable final solids of an FCStd or STEP assembly source, without opening a user document. [Contract][contract-assembly].
+Selectable native solids of an FCStd or STEP source, with final/helper/history roles. [Contract][contract-assembly]. Envelope: none; not undoable, not previewable, not batchable.
 
+- `final_only`: boolean; default `false`
 - `path`: absolute_path; **required** (missing: `invalid_assembly_source`)
 
 Example (fixture `none`): `{"op": "assembly_candidates", "path": "<plate_file>"}`
@@ -103,7 +104,7 @@ Schema-named errors: `invalid_assembly_source`.
 
 ### capabilities
 
-Contract identity, supported operations, measurement levels and limits. [Contract][contract-historical].
+Contract identity, supported operations, measurement levels and limits. [Contract][contract-historical]. Envelope: none; not undoable, not previewable, not batchable.
 
 - No arguments.
 
@@ -111,7 +112,7 @@ Example (fixture `none`): `{"op": "capabilities"}`
 
 ### check_geometry
 
-Explicit cached BRepCheck of current solids, with per-result issues. [Contract][contract-30]. Envelope: `document_id`; not undoable, not previewable, not batchable.
+Explicit cached BRepCheck of current solids, with per-result issues. [Contract][contract-30].
 
 - `body`: body
 
@@ -121,7 +122,7 @@ Schema-named errors: `ambiguous_body`.
 
 ### diagnostics
 
-Bounded timing samples and the checkpoint location. [Contract][contract-historical].
+Bounded timing samples and the checkpoint location. [Contract][contract-historical]. Envelope: none; not undoable, not previewable, not batchable.
 
 - No arguments.
 
@@ -129,7 +130,7 @@ Example (fixture `none`): `{"op": "diagnostics"}`
 
 ### inspect
 
-Read the document: features, parameters, dependencies, build status and measurements. [Contract][contract-30]. Envelope: `document_id`; not undoable, not previewable, not batchable.
+Read the document: features, parameters, dependencies, build status and measurements. [Contract][contract-30].
 
 - `detail`: full / compact; default `"full"` when `features`, `parts` are absent
 - `features`: array of string
@@ -141,7 +142,7 @@ Schema-named errors: `missing_part`, `missing_reference`.
 
 ### list_documents
 
-Inspect every document open in this session. [Contract][contract-30].
+Inspect every document open in this session. [Contract][contract-30]. Envelope: none; not undoable, not previewable, not batchable.
 
 - `detail`: full / compact; default `"full"`
 
@@ -149,7 +150,7 @@ Example (fixture `plate`): `{"op": "list_documents", "measure": false}`
 
 ### list_parameters
 
-The document's model parameters with values, formulas, consumers and the features and parts they affect. [Contract][contract-32-parameters]. Envelope: `document_id`; not undoable, not previewable, not batchable.
+The document's model parameters with values, formulas, consumers and the features and parts they affect. [Contract][contract-32-parameters].
 
 - `names`: array of string
 
@@ -159,7 +160,7 @@ Schema-named errors: `missing_parameter`.
 
 ### operation_schema
 
-Argument schemas, defaults, constraints and examples of the operations this build supports. [Contract][contract-32-bridge].
+Argument schemas, defaults, constraints and examples of the operations this build supports. [Contract][contract-32-bridge]. Envelope: none; not undoable, not previewable, not batchable.
 
 - `operations`: array of string
 
@@ -167,11 +168,19 @@ Example (fixture `none`): `{"op": "operation_schema"}`
 
 ### orphan_helpers
 
-Helper groups whose owning studio operation no longer exists. [Contract][contract-30]. Envelope: `document_id`; not undoable, not previewable, not batchable.
+Helper groups whose owning studio operation no longer exists. [Contract][contract-30].
 
 - No arguments.
 
 Example (fixture `plate`): `{"op": "orphan_helpers", "document_id": "<document_id>"}`
+
+### part_inventory
+
+Current usable solids across legacy, studio and assembly documents. [Contract][contract-assembly].
+
+- `include_history`: boolean; default `false`
+
+Example (fixture `plate`): `{"op": "part_inventory", "document_id": "<document_id>"}`
 
 ### preview
 
@@ -185,7 +194,7 @@ Schema-named errors: `unsupported_preview`.
 
 ### request_status
 
-Status of a bridge request_id in this session's ledger, with its retained response. [Contract][contract-historical].
+Status of a bridge request_id in this session's ledger, with its retained response. [Contract][contract-historical]. Envelope: none; not undoable, not previewable, not batchable.
 
 - `request_id`: string
 
@@ -193,7 +202,7 @@ Example (fixture `none`): `{"op": "request_status", "request_id": "agent-0001"}`
 
 ### resolve_selector
 
-Matched native elements of a selector, with part identity and geometry summaries. [Contract][contract-selectors]. Envelope: `document_id`; not undoable, not previewable, not batchable.
+Matched native elements of a selector, with part identity and geometry summaries. [Contract][contract-selectors].
 
 - `selector`: selector; **required** (missing: `invalid_selector`)
 
@@ -1223,6 +1232,21 @@ Set a revolute or slider joint coordinate and solve. [Contract][contract-assembl
 Example (fixture `assembly`): `{"op": "move_assembly_joint", "document_id": "<document_id>", "expected_revision": "<revision>", "joint": "Hinge", "value": 30}`
 
 Schema-named errors: `fixed_joint`, `invalid_assembly_motion`, `missing_assembly_joint`.
+
+### refresh_assembly_part
+
+Refresh an occurrence from a saved source without replacing its identity or placement. [Contract][contract-assembly].
+
+- `assembly`: string
+- `detail`: full / compact
+- `instance`: string; **required** (missing: `missing_assembly_instance`)
+- `path`: absolute_path
+- `shared`: instance / all
+- `source_id`: string
+
+Example (fixture `assembly`): `{"op": "refresh_assembly_part", "document_id": "<document_id>", "expected_revision": "<revision>", "instance": "Free", "shared": "instance"}`
+
+Schema-named errors: `missing_assembly_instance`.
 
 ### solve_assembly
 

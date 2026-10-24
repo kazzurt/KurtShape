@@ -35,7 +35,7 @@ SUITES = {
         "test_sketch_cursor.SketchCursorTests",
         "test_sketch_constraints.SketchConstraintTests",
         "test_review_followup.ReviewFollowupTests", "test_step_import.StepImportTests",
-        "test_assembly.AssemblyWorkflowTests", "test_extrusion_preview.ExtrusionPreviewTests",
+        "test_assembly.AssemblyWorkflowTests", "test_assembly_refresh.AssemblyRefreshTests", "test_assembly_persistence.AssemblyPersistenceTests", "test_extrusion_preview.ExtrusionPreviewTests",
         "test_extrusion_edit.ExtrusionEditTests", "test_history_lifecycle.HistoryLifecycleTests",
         "test_everyday_modeling.EverydayModelingDirectionTests",
         "test_dress_up_edit.DressUpEditTests", "test_holes.HoleTests",

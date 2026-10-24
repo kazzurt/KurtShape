@@ -136,6 +136,12 @@ def result_objects(doc):
     return [obj for obj in values[0].Group if obj.TypeId == "App::Link"] if len(values) == 1 else []
 
 
+def is_embedded_source(obj):
+    """Identify an owned snapshot, excluding properties forwarded by App::Link."""
+    return (obj is not None and obj.TypeId == "Part::Feature"
+            and "KurtShapeEmbeddedSource" in obj.PropertiesList and bool(obj.KurtShapeEmbeddedSource))
+
+
 def _instance(asm, identifier):
     value = asm.Document.getObject(identifier) if isinstance(identifier, str) else None
     if value not in result_objects(asm.Document):
@@ -355,10 +361,10 @@ def _source_document(path):
         _restore_source_gui(gui_after)
 
 
-def candidates(path):
+def candidates(path, final_only=False):
+    from .part_inventory import source_candidates
     with _source_document(path) as (doc, source, digest):
-        values = [{"id": obj.Name, "name": obj.Label, "type": obj.TypeId,
-                   "solid_count": len(obj.Shape.Solids)} for obj in _source_results(doc)]
+        values = source_candidates(doc, final_only)
         if not values:
             raise _error("empty_assembly_source", "This source contains no final solid Body or Part result")
         return values
@@ -372,8 +378,9 @@ def _as_saved(shape):
     A source recomputed for insertion can carry such values, so the snapshot
     would no longer match its geometry fingerprint after the assembly is saved
     and reopened. Taking the snapshot through one save/restore cycle makes the
-    stored shape, its fingerprint and every reopen agree; further cycles are
-    exact.
+    stored shape starts in the native persistence domain. Some analytic frames
+    renormalize on every read, so this alone does not stabilize fingerprints;
+    assembly_persistence seals the actual serialized snapshot on every save.
     """
     active = App.ActiveDocument.Name if App.ActiveDocument else None
     with tempfile.TemporaryDirectory(prefix="kurtshape-assembly-snapshot-") as temporary:
@@ -410,7 +417,7 @@ def insert(doc, request):
         label = _name(request.get("name"), selected.Label)
         # One embedded snapshot is shared by repeated occurrences of the same
         # saved source revision. Later source edits require explicit reinsertion.
-        embedded = next((obj for obj in doc.Objects if getattr(obj, "KurtShapeEmbeddedSource", False)
+        embedded = next((obj for obj in doc.Objects if is_embedded_source(obj)
                          and obj.SourceSHA256 == digest and obj.SourceObject == source_id), None)
         if embedded is None:
             shape = selected.Shape.copy()
@@ -712,7 +719,7 @@ def present(doc):
             obj.ViewObject.Visibility = True
     for obj in result_objects(doc):
         source = obj.LinkedObject
-        if source is not None and getattr(source, "KurtShapeEmbeddedSource", False) and source.ViewObject:
+        if is_embedded_source(source) and source.ViewObject:
             source.ViewObject.Visibility = False
 
 
@@ -730,13 +737,13 @@ def safe_object(obj):
                 and not any(link.Document != doc for link in value.OutList))
     if obj == asm or obj.TypeId == "Assembly::JointGroup" and obj in asm.Group:
         return ordinary(obj)
-    if obj.TypeId == "Part::Feature" and getattr(obj, "KurtShapeEmbeddedSource", False):
+    if is_embedded_source(obj):
         return (ordinary(obj) and not obj.OutList and all(hasattr(obj, name) for name in
                 ("SourcePath", "SourceSHA256", "SourceObject", "SourcePlacement", "SourceGeometryFingerprint")))
     if obj.TypeId == "App::Link" and obj in asm.Group:
         source = obj.LinkedObject
         return (ordinary(obj) and obj.ElementCount == 0 and source is not None and source.Document == doc
-                and source.TypeId == "Part::Feature" and getattr(source, "KurtShapeEmbeddedSource", False)
+                and is_embedded_source(source)
                 and safe_object(source))
     if obj.TypeId != "App::FeaturePython":
         return False

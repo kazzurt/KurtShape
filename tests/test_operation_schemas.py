@@ -81,6 +81,11 @@ def outcome(response):
         if isinstance(result.get("documents"), list):
             # list_documents: the shape of each row tells full from compact (contract 3.2 detail).
             facts["documents"] = [sorted(row) for row in result["documents"] if isinstance(row, dict)]
+        for key in ("candidates", "parts"):
+            if isinstance(result.get(key), list):
+                # Discovery filters change membership and explicit roles, not
+                # the native document. Keep those response facts observable.
+                facts[key] = rounded(result[key])
         return facts
     measurements = result.get("measurements") or {}
     studio = result.get("studio") or {}
@@ -222,6 +227,18 @@ _BODY_FRONT = {"kind": "closest", "point": [20, 0, 5], "query": {"kind": "owned_
 # Each runs on a fresh fixture after its setup requests (and native step), with the
 # field omitted, set to its default and set to its wrong value.
 DEFAULT_PROBES = {
+    "assembly_final_candidates": {
+        "fixture": "studio",
+        "setup": [{"op": "pad", "id": "InventoryBoss", "profile": "BossProfile", "length": 15,
+                   "operation": "add", "merge_scope": ["Body"]},
+                  {"op": "save", "path": "<inventory_source>"}],
+        "request": {"op": "assembly_candidates", "path": "<inventory_source>"},
+        "fields": ["final_only"]},
+    "inventory_history": {
+        "fixture": "studio",
+        "setup": [{"op": "pad", "id": "InventoryBoss", "profile": "BossProfile", "length": 15,
+                   "operation": "add", "merge_scope": ["Body"]}],
+        "request": {"op": "part_inventory"}, "fields": ["include_history"]},
     # U5: freezing matters only when the parameter has a consumer.
     "delete_in_use": {
         "fixture": "plate",
@@ -434,6 +451,7 @@ class SchemaRunner:
 
     def __init__(self, core, folder, files):
         self.core, self.folder, self.files = core, Path(folder), dict(files)
+        self.files["<inventory_source>"] = self.folder / "inventory-source-with-history.FCStd"
         self.state = None
         self.initial_documents = set(App.listDocuments())
         self.leaked_transactions = []  # (op of the last dispatched request, transaction name)

@@ -630,10 +630,17 @@ OPERATIONS = {
         "fields": {}, "required": [], "examples": [{"op": "diagnostics"}], "x-example-fixture": "none",
         "doc": DOC_HISTORICAL},
     "assembly_candidates": {
-        "summary": "Selectable final solids of an FCStd or STEP assembly source, without opening a user document",
-        "fields": {"path": {"description": "Absolute existing source file", "x-suffixes": [".FCStd", ".step", ".stp"]}},
+        "summary": "Selectable native solids of an FCStd or STEP source, with final/helper/history roles",
+        "fields": {"path": {"description": "Absolute existing source file", "x-suffixes": [".FCStd", ".step", ".stp"]},
+                   "final_only": {"type": "boolean", "default": False, "description": "Only current final results; false preserves legacy candidate membership"}},
         "required": ["path"], "checked_by_handler": {"path": "invalid_assembly_source"},
         "examples": [{"op": "assembly_candidates", "path": "<plate_file>"}], "x-example-fixture": "none",
+        "doc": DOC_ASSEMBLY},
+    "part_inventory": {
+        "summary": "Current usable solids across legacy, studio and assembly documents",
+        "fields": {"include_history": {"type": "boolean", "default": False,
+                                         "description": "Include helper, historical and embedded-source solids with explicit roles"}},
+        "required": [], "examples": [{"op": "part_inventory"}], "x-example-fixture": "plate",
         "doc": DOC_ASSEMBLY},
     "resolve_selector": {
         "summary": "Matched native elements of a selector, with part identity and geometry summaries",
@@ -1239,6 +1246,18 @@ OPERATIONS = {
         "checked_by_handler": {"path": "invalid_assembly_source", "source_id": "missing_assembly_source_part"},
         "examples": [{"op": "insert_assembly_part", "path": "<plate_file>", "source_id": "Body", "id": "Extra"}],
         "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY},
+    "refresh_assembly_part": {
+        "summary": "Refresh an occurrence from a saved source without replacing its identity or placement",
+        "fields": {"assembly": {}, "instance": {},
+                   "path": {"description": "Saved FCStd/STEP source; omitted uses the recorded source path", "x-suffixes": [".FCStd", ".step", ".stp"]},
+                   "source_id": {"type": "string", "description": "Saved native source ID; omitted uses the recorded source object"},
+                   "shared": {"enum": ["instance", "all"], "description": "Required when multiple occurrences share the snapshot: copy-on-write for one, or refresh every user"}},
+        "required": ["instance"], "checked_by_handler": {"instance": "missing_assembly_instance"},
+        "constraints": ["Native transaction validates before commit and rolls back on failure",
+                        "Preserves occurrence identity, appearance, placement and grounding; changed joint subelements or connector frames reject",
+                        "Changing saved source placement does not move existing occurrences"],
+        "examples": [{"op": "refresh_assembly_part", "instance": "Free", "shared": "instance"}],
+        "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY},
     "ground_assembly_instance": {
         "summary": "Make one occurrence the grounded reference and solve",
         "fields": {"assembly": {}, "instance": {}},
@@ -1375,7 +1394,8 @@ RESPONSE_DETAIL = {"enum": ["full", "compact"],
                                   "the full inspection without those two blocks"}
 NO_RESPONSE_DETAIL = frozenset({"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics",
                                 "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
-                                "operation_schema", "list_parameters", "render_view", "set_view", "close_document"})
+                                "operation_schema", "list_parameters", "render_view", "set_view", "close_document",
+                                "part_inventory"})
 for _op, _entry in OPERATIONS.items():
     if _op not in NO_RESPONSE_DETAIL:
         _entry["fields"].setdefault("detail", RESPONSE_DETAIL)

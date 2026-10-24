@@ -24,6 +24,7 @@ from .bodies import bodies, owner, origin_plane, results as native_results
 from .recovery import RecoveryStore
 from .timing import Timings
 from . import assembly as native_assembly
+from .assembly_persistence import save_copy as save_native_copy
 from . import studio
 from . import selectors as native_selectors
 from . import reference_tools
@@ -357,9 +358,9 @@ def _render_jobs():
 
 class Controller:
     READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
-                "operation_schema", "list_parameters"}
+                "operation_schema", "list_parameters", "part_inventory"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
-                    "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}
+                    "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly", "refresh_assembly_part"}
     MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline",
                  "pad", "pocket", "edit_extrusion", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "repair_orphan_helpers", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS | parameters.OPS
     EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline", "set_parameter", "set_expression", "set_sketch_support", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
@@ -374,7 +375,7 @@ class Controller:
     DOCUMENTLESS_OPS = frozenset({"capabilities", "list_documents", "request_status", "diagnostics", "assembly_candidates",
                                   "operation_schema"})
     QUIET_OPS = frozenset({"capabilities", "operation_schema", "diagnostics", "request_status", "list_documents", "inspect",
-                           "resolve_selector", "orphan_helpers", "list_parameters"}) | VIEW_OPS
+                           "resolve_selector", "orphan_helpers", "list_parameters", "part_inventory"}) | VIEW_OPS
     # Envelope fields every request may carry besides its own arguments (C6).
     TRANSPORT_FIELDS = frozenset({"document_id", "expected_revision", "request_id", "measure"})
     OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | VIEW_OPS | LIFECYCLE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export", "batch"}
@@ -403,7 +404,9 @@ class Controller:
         "pierce": {"sketch", "geometry", "point", "target", "subelement"},
         "save": {"path", "overwrite"}, "export": {"path", "body"},
         "capabilities": set(), "request_status": {"request_id"}, "preview": {"proposal"}, "diagnostics": set(),
-        "assembly_candidates": {"path"}, "create_assembly": {"id", "name"},
+        "assembly_candidates": {"path", "final_only"}, "create_assembly": {"id", "name"},
+        "part_inventory": {"include_history"},
+        "refresh_assembly_part": {"assembly", "instance", "path", "source_id", "shared"},
         "insert_assembly_part": {"assembly", "path", "source_id", "id", "name"},
         "ground_assembly_instance": {"assembly", "instance"},
         "create_assembly_joint": {"assembly", "joint_type", "first", "second", "id", "name"},
@@ -556,7 +559,7 @@ class Controller:
                 worker.borrow_snapshot(lease)
                 lease = None
             else:
-                doc.saveCopy(str(worker.snapshot))
+                save_native_copy(doc, worker.snapshot)
                 # Pin the identity acquired at capture, never a later replacement.
                 worker.own_snapshot(key, _snapshot_file_identity(worker.snapshot))
             bundle = {"worker": worker, "document": doc, "document_id": self.identifier(doc),
@@ -806,7 +809,7 @@ class Controller:
                 worker.borrow_snapshot(lease)
                 lease = None
             else:
-                doc.saveCopy(str(worker.snapshot))
+                save_native_copy(doc, worker.snapshot)
                 worker.own_snapshot(key, _snapshot_file_identity(worker.snapshot))
             bundle = {"worker": worker, "document": doc, "document_id": self.identifier(doc),
                       "snapshot_key": key, "target_ids": names, "targets": tuple(targets), "body": body,
@@ -1828,7 +1831,8 @@ class Controller:
         if parameter_set is not None:
             # Every result follows the parameter set (F3a §6.6): an invalid set fails them, a touched one is pending.
             flags |= set(parameter_set.State) & {"Touched", "Invalid", "Error"}
-        if obj.Shape.isNull() or not obj.Shape.Solids:
+        # Null embedded sources leave App::Link without Shape; retain failure diagnostics and recovery.
+        if not hasattr(obj, "Shape") or obj.Shape.isNull() or not obj.Shape.Solids:
             metrics = None
         elif measure is None:
             # Compact rows: the cached solid count and verdict only; nothing is computed.
@@ -1896,6 +1900,7 @@ class Controller:
         created_feature = None
         owns_busy = False
         assembly_transaction_id = None
+        refresh_rollback = None
         model_transaction_id = None
         step_reports = {}
         window = NULL_WINDOW
@@ -1991,7 +1996,7 @@ class Controller:
                 if self.sketch_edits or getattr(App, "GuiUp", False) and self._native_edit_active():
                     raise OperationError("sketch_edit_active", "Finish graphical editing before choosing an assembly source")
                 self.busy = owns_busy = True
-                return {"ok": True, "result": {"candidates": native_assembly.candidates(request.get("path")), "source_policy": "embedded_shape_snapshot"}}
+                return {"ok": True, "result": {"candidates": native_assembly.candidates(request.get("path"), request.get("final_only", False)), "source_policy": "embedded_shape_snapshot"}}
             if op not in self.READ_OPS and self.busy:
                 raise OperationError("busy", "A modeling operation is already active")
             if op in self.CREATE_OPS and any(identifier in self.sketch_edits and self._is_open(existing)
@@ -2081,6 +2086,9 @@ class Controller:
                                                   measure if "measure" in request else None)
                     result["operation_ms"] = round((time.perf_counter() - start) * 1000, 2)
                     return {"ok": True, "result": result}
+                if op == "part_inventory":
+                    from .part_inventory import rows
+                    return {"ok": True, "result": {"parts": rows(doc, request.get("include_history", False))}}
                 if op == "orphan_helpers":
                     return {"ok": True, "result": {"groups": studio.orphan_groups(doc)}}
                 if op == "list_parameters":
@@ -2224,7 +2232,12 @@ class Controller:
                     doc.openTransaction(f"KurtShape: {op.replace('_', ' ')}")
                     assembly_transaction_id = (App.getActiveTransaction() or (None, None))[1]
                     transaction = True
-                    created_feature = native_assembly.handle(doc, request)
+                    if op == "refresh_assembly_part":
+                        from .assembly_refresh import refresh, rollback_state
+                        refresh_rollback = rollback_state(doc)
+                        self._reports["refresh_report"] = refresh(doc, request)
+                    else:
+                        created_feature = native_assembly.handle(doc, request)
                     created_feature = created_feature.Name if hasattr(created_feature, "Name") else created_feature
                     self._recompute(doc)
                     errors = self._build_status(doc)
@@ -2383,7 +2396,13 @@ class Controller:
                         exc = rollback_error
                         self._new_revision(doc)
                 else:
-                    doc.abortTransaction()
+                    if op == "refresh_assembly_part":
+                        # Native joint Offset restoration can otherwise solve
+                        # while undo is halfway through restoring the link graph.
+                        with native_assembly._explicit_solve():
+                            doc.abortTransaction()
+                    else:
+                        doc.abortTransaction()
                     if assembly_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == assembly_transaction_id:
                         App.closeActiveTransaction(True)
                     if model_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == model_transaction_id:
@@ -2393,6 +2412,9 @@ class Controller:
                         # A recovered split undid commits and wrote a discard boundary: history moved.
                         history_moved = getattr(exc, "code", None) == "transaction_split"
                     self._recompute(doc)
+                    if refresh_rollback is not None:
+                        from .assembly_refresh import restore_rollback
+                        restore_rollback(doc, refresh_rollback)
                     self.signatures[self._meta(doc).DocumentId] = self._signature(doc)
                     self.observer.state(doc).pop("assembly_source_changed", None)
                     if (window is not NULL_WINDOW and getattr(window, "before", None) is not None
@@ -2601,7 +2623,7 @@ class Controller:
         try:
             with tempfile.TemporaryDirectory(prefix="kurtshape-parameter-preview-") as temporary:
                 path = Path(temporary) / "native-preview.FCStd"
-                doc.saveCopy(str(path))
+                save_native_copy(doc, path)
                 clone = App.openDocument(str(path), True)
                 failure = None
                 step = ModelStep(None, {})
@@ -2769,7 +2791,7 @@ class Controller:
         saved_program_version = source.getProgramVersion()
         try:
             with tempfile.TemporaryDirectory(prefix="kurtshape-native-adoption-") as temporary:
-                source.saveCopy(str(Path(temporary) / "adoption-source.FCStd"))
+                save_native_copy(source, Path(temporary) / "adoption-source.FCStd")
                 clone = App.openDocument(str(Path(temporary) / "adoption-source.FCStd"))
                 clone.openTransaction("KurtShape: adopt native copy")
                 meta = metadata(clone)
@@ -3716,7 +3738,7 @@ class Controller:
         # A4: the GUI paints "Saving…" before the synchronous native write and clears it afterwards.
         self.recovery.stall("Saving…")
         try:
-            doc.saveCopy(str(stage))
+            save_native_copy(doc, stage)
             # Ensure stage is a readable native ZIP before replacing the previous file.
             import zipfile
             with zipfile.ZipFile(stage) as archive:
