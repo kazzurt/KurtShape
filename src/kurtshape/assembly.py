@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 import FreeCAD as App
+from . import assembly_folders
 import Part
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -656,7 +657,9 @@ def remove(doc, identifier, cascade=False):
         for joint in dependent:
             doc.removeObject(joint.Name)
         source = obj.LinkedObject
+        identity = obj.Name
         doc.removeObject(obj.Name)
+        assembly_folders.forget(asm, identity)
         if not any(value.LinkedObject == source for value in result_objects(doc)):
             doc.removeObject(source.Name)
         remaining = result_objects(doc)
@@ -992,7 +995,9 @@ def inspect(doc):
             status = "embedded source geometry changed"
     except Exception:
         status = "unsupported or broken native assembly"
+    folders = assembly_folders.read(asm, [obj.Name for obj in instances])
     return {"id": asm.Name, "name": asm.Label, "supported": True,
+            "folders": folders["folders"],
             "solver_status": status,
             "solver_code": getattr(asm, "SolverCode", None),
             "source_policy": "embedded solid snapshots; no external dependencies or automatic updates",
@@ -1002,17 +1007,73 @@ def inspect(doc):
                                       "sha256": getattr(obj.LinkedObject, "SourceSHA256", ""),
                                       "object": getattr(obj.LinkedObject, "SourceObject", "")},
                            "embedded_source": obj.LinkedObject.Name if obj.LinkedObject else None,
+                           "folder": folders["membership"].get(obj.Name),
                            "connected_to_ground": bool(asm.isPartConnected(obj))} for obj in instances],
             "joints": joints,
             "disconnected_count": sum(not asm.isPartConnected(obj) for obj in instances)}
 
 
+def _folders(doc, request, change):
+    """Apply a folder change to the assembly's presentation metadata (item 3)."""
+    asm = get(doc, request.get("assembly"))
+    ids = [obj.Name for obj in result_objects(doc)]
+    try:
+        data = change(assembly_folders.read(asm, ids), ids)
+    except assembly_folders.FolderError as exc:
+        raise _error("invalid_assembly_folders", str(exc), **exc.details) from None
+    assembly_folders.write(asm, data)
+    return asm
+
+
+def set_folders(doc, request):
+    def change(current, ids):
+        membership = request.get("membership")
+        if membership is None:
+            # Keep existing memberships whose folder survives the new tree.
+            membership = current["membership"]
+            folders = assembly_folders.normalize_tree(request.get("folders"))
+            known = set(assembly_folders.paths(folders))
+            membership = {key: value for key, value in membership.items() if value in known}
+        return assembly_folders.structure(request.get("folders"), membership, ids)
+    return _folders(doc, request, change)
+
+
+def move_to_folder(doc, request, instances=None):
+    instances = request.get("instances") if instances is None else instances
+    if not isinstance(instances, list) or not instances or not all(isinstance(value, str) for value in instances):
+        raise _error("missing_assembly_instance", "instances must be a non-empty list of occurrence ids", fields=["instances"])
+    def change(current, ids):
+        unknown = [value for value in instances if value not in ids]
+        if unknown:
+            raise _error("missing_assembly_instance", "Choose existing occurrences", instances=unknown)
+        return assembly_folders.moved(current, instances, request.get("folder"))
+    return _folders(doc, request, change)
+
+
 def handle(doc, request):
     op = request["op"]
     if op == "create_assembly":
-        return create(doc, request.get("id"), request.get("name")).Name
+        created = create(doc, request.get("id"), request.get("name"))
+        if request.get("folder") is not None:
+            _folders(doc, {"assembly": created.Name}, lambda current, ids: assembly_folders.moved(current, [], request["folder"]))
+        return created.Name
     if op == "insert_assembly_part":
-        return insert(doc, request).Name
+        if request.get("folder") is not None:
+            # Validate the path before the snapshot is embedded.
+            try:
+                assembly_folders.split(request["folder"])
+            except assembly_folders.FolderError as exc:
+                raise _error("invalid_assembly_folders", str(exc), **exc.details) from None
+        instance = insert(doc, request)
+        if request.get("folder") is not None:
+            move_to_folder(doc, request, [instance.Name])
+        return instance.Name
+    if op == "set_assembly_folders":
+        set_folders(doc, request)
+        return None
+    if op == "move_assembly_instances":
+        move_to_folder(doc, request)
+        return None
     if op == "ground_assembly_instance":
         return ground(doc, request.get("instance"), request.get("assembly"))
     if op == "create_assembly_joint":

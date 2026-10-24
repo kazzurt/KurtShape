@@ -22,6 +22,7 @@ from .viewport_actions import callbacks as viewport_callbacks
 from .section_view import SectionView
 from . import selection_mode
 from .assembly_instance_links import AssemblyInstanceLinks
+from .assembly_tree import AssemblyTree, instance_rows
 from .theme import apply_theme, apply_view_theme, COLORS
 from .feature_tools import available_catalog
 from .quantity_field import QuantityField
@@ -242,6 +243,8 @@ class Panel(QtGui.QDockWidget):
         self.merge_parts.itemChanged.connect(self.schedule_preview)
         # Assembly UX item 2: occurrence geometry selects its instance rows.
         self.assembly_links = AssemblyInstanceLinks(self)
+        # Assembly UX item 3: folders in both instance lists and their context menu.
+        self.assembly_tree = AssemblyTree(self)
         self.observer = SelectionObserver(self)
         Gui.Selection.addObserver(self.observer)
         self.general_actions = GeneralActions(self)
@@ -2043,7 +2046,7 @@ class Panel(QtGui.QDockWidget):
                      "text": label + " (" + str(len(assembly.get(category, []))) + ")",
                      "data": {QtCore.Qt.UserRole: "assembly_group:" + category},
                      "expand_new": True, "children": []}
-            for entry in assembly.get(category, []):
+            def history_row(entry, category=category):
                 suffix = " · grounded" if entry.get("grounded") else (" · " + str(entry.get("joint_type", entry.get("type", "joint"))) if category == "joints" else "")
                 if category == "joints" and entry.get("suppressed"):
                     suffix += " · suppressed"
@@ -2053,7 +2056,11 @@ class Panel(QtGui.QDockWidget):
                 obj = doc.getObject(entry["id"])
                 if obj:
                     row["icon"] = obj.ViewObject.Icon
-                group["children"].append(row)
+                return row
+            if category == "instances":
+                group["children"] = instance_rows(assembly, history_row, self.assembly_tree.folder_icon())
+            else:
+                group["children"] = [history_row(entry) for entry in assembly.get(category, [])]
             rows.append(group)
         identity = (self.state["document_id"], "assembly")
         self.items = self.feature_model.reconcile(identity, rows)
@@ -2062,15 +2069,15 @@ class Panel(QtGui.QDockWidget):
         self.refreshing = False
         self.features_title.setText(assembly.get("name", "Assembly"))
         self.parts.blockSignals(True)
-        part_rows = []
-        for entry in assembly.get("instances", []):
+        def part_row(entry):
             row = {"key": entry["id"],
                    "text": entry["name"] + (" · grounded" if entry.get("grounded") else ""),
                    "data": {QtCore.Qt.UserRole: entry["id"]}}
             obj = doc.getObject(entry["id"])
             if obj:
                 row["icon"] = icon_for("Part", native=obj.ViewObject.Icon)
-            part_rows.append(row)
+            return row
+        part_rows = instance_rows(assembly, part_row, self.assembly_tree.folder_icon())
         self.part_model.reconcile(identity, part_rows)
         self.parts.blockSignals(False)
         self.parts_title.setText("Instances (" + str(len(assembly.get("instances", []))) + ")")
@@ -2097,9 +2104,19 @@ class Panel(QtGui.QDockWidget):
         for i in range(self.features.topLevelItemCount()):
             item = self.features.topLevelItem(i)
             if self.workspace_mode == "assembly":
+                def matches(row):
+                    # Folders stay visible while any instance inside them matches (item 3).
+                    shown = [matches(row.child(j)) for j in range(row.childCount())]
+                    if row.childCount() and str(row.data(0, QtCore.Qt.UserRole) or "").startswith("assembly_folder:"):
+                        hit = any(shown) or not text
+                        if text and any(shown):
+                            row.setExpanded(True)
+                    else:
+                        hit = not text or text in row.text(0).lower()
+                    row.setHidden(not hit)
+                    return hit
                 for j in range(item.childCount()):
-                    child = item.child(j)
-                    child.setHidden(bool(text and text not in child.text(0).lower()))
+                    matches(item.child(j))
                 item.setHidden(bool(text and all(item.child(j).isHidden() for j in range(item.childCount()))))
             else:
                 item.setHidden(bool(text and item.data(0, QtCore.Qt.UserRole) != "origin" and text not in item.text(0).lower()))
@@ -2253,6 +2270,11 @@ class Panel(QtGui.QDockWidget):
 
     def part_menu(self, position):
         item = self.parts.itemAt(position)
+        if self.workspace_mode == "assembly":
+            menu = self.assembly_tree.menu(self.parts, item)
+            if menu:
+                menu.exec_(self.parts.mapToGlobal(position))
+            return
         if not item or self.workspace_mode != "part_studio":
             return
         self.parts.setCurrentItem(item)
@@ -4413,6 +4435,11 @@ class Panel(QtGui.QDockWidget):
 
     def history_menu(self, position):
         item = self.features.itemAt(position)
+        if self.workspace_mode == "assembly":
+            menu = self.assembly_tree.menu(self.features, item)
+            if menu:
+                menu.exec_(self.features.mapToGlobal(position))
+            return
         if not item:
             return
         if not item.isSelected():
@@ -4423,20 +4450,6 @@ class Panel(QtGui.QDockWidget):
             return
         menu = QtGui.QMenu(self)
         menu.addAction("Hide" if obj.ViewObject.Visibility else "Show", lambda: self.set_visibility(obj, not obj.ViewObject.Visibility))
-        if self.workspace_mode == "assembly":
-            Gui.Selection.clearSelection()
-            Gui.Selection.addSelection(obj)
-            instances = {entry["id"] for entry in self.assembly_state().get("instances", [])}
-            if key in instances:
-                menu.addAction("Ground as reference", self.ground_assembly_instance)
-                menu.addAction("Move free instance", self.move_assembly_selection)
-            else:
-                menu.addAction("Edit joint", self.edit_assembly_selection)
-                menu.addAction("Move allowed coordinate", self.move_assembly_selection)
-            menu.addAction("Rename", self.rename_selected)
-            menu.addAction("Remove", self.delete_selected)
-            menu.exec_(self.features.mapToGlobal(position))
-            return
         keys = self.selected_ids()
         if len(keys) > 1:
             menu.clear()

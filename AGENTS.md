@@ -18,6 +18,10 @@ backlog, not an instruction to implement all findings.
 - Check `capabilities` and `list_documents` before modeling. Use the current
   document UUID/revision and keep mutation request IDs for reconciliation.
   A timeout does not prove a mutation failed; see the quickstart.
+- Assemblies: organise occurrences into instance folders by function or
+  sub-assembly (`Frame`, `Fasteners/M3`, `Electronics`; `folder` on
+  `insert_assembly_part`, `move_assembly_instances`) and leave no more than
+  about 12 instances at the root.
 - Ask before restarting or closing an existing app. It may have unsaved work.
   Code updates require a new app process; a running process keeps its old code.
   `python -B tools/assistant_client.py --build-check` tells whether the running app

@@ -107,6 +107,11 @@ STEP/STL are exports.
 9. Images (§3.2.2): `render_view` returns PNGs of the current model (views, sections,
    labelled highlights) without touching Kurt's view; check a result visually before
    reporting it.
+10. Assemblies: organise occurrences into instance-list folders by function or
+   sub-assembly (`Frame`, `Fasteners/M3`, `Electronics`) and leave no more than about
+   12 at the root. Pass `folder` to `insert_assembly_part`, or regroup with
+   `move_assembly_instances` / `set_assembly_folders`; `inspect` returns each
+   instance's `folder` and the tree ([contract](OPERATION_CONTRACT.md#instance-folders-assembly-ux-2026-10-24)).
 
 ### Slow operations and retries
 

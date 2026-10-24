@@ -64,7 +64,7 @@ LABEL_ICONS = {
     "recovery": "recovery", "shortcuts": "shortcuts", "new part": "new-part",
     "create assembly": "assembly", "insert": "insert", "ground": "ground", "fixed": "fixed-joint",
     "revolute": "revolute-joint", "slider": "slider-joint", "move": "transform", "solve": "rebuild",
-    "joints": "fixed-joint",
+    "joints": "fixed-joint", "folder": "folder",
 }
 
 COMMAND_ICONS = {

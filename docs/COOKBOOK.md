@@ -157,10 +157,15 @@ name is the part name. Insert it with `insert_assembly_part` and place it with
 `move_assembly_instance`. Occurrences are embedded snapshots: after changing a part, re-export and
 insert it again. (led-pole-battery, dodec-pipe-bolts-single-iteration)
 
+Group occurrences into folders as you insert them, by function or sub-assembly, and keep the root
+to about 12 instances; the folders are what Kurt sees in both instance lists. They are metadata
+only (solver, export and occurrence order are unchanged).
+
 ```json
 {"op": "assembly_candidates", "path": "<absolute path of Cell 18650.FCStd>"}
 {"op": "create_assembly", "id": "LEDPoleBattery", "name": "LED Pole Battery Assembly"}
-{"op": "insert_assembly_part", "path": "<absolute path of Cell 18650.FCStd>", "source_id": "<candidate id>", "id": "Cell1", "name": "Cell 18650"}
+{"op": "insert_assembly_part", "path": "<absolute path of Cell 18650.FCStd>", "source_id": "<candidate id>", "id": "Cell1", "name": "Cell 18650", "folder": "Electronics/Cells"}
+{"op": "move_assembly_instances", "instances": ["Bolt1", "Bolt2"], "folder": "Fasteners/M3"}
 {"op": "move_assembly_instance", "instance": "Cell1", "position_mm": [26.7, 22.4, -60], "rotation_xyzw": [0, 0, 0, 1]}
 ```
 

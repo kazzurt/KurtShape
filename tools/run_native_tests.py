@@ -91,6 +91,7 @@ SUITES = {
         "test_fix_hints.FixHintTests", "test_direction.DirectionTests",
         # Assembly UX program (docs/assembly-ux/STATUS.md).
         "test_selection_mode.SelectionModeTests", "test_assembly_instance_links.AssemblyInstanceLinkTests",
+        "test_assembly_folders.FolderStructureTests", "test_assembly_folders.AssemblyFolderTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),

@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "checks": [
+    "An inline name editor (not a dialog) opens over the row",
+    "New folder on an instance creates the folder and moves the instance into it",
+    "features tree shows the folder with its count and icon",
+    "features tree nests the instance under the folder",
+    "Instances list shows the folder with its count and icon",
+    "Instances list nests the instance under the folder",
+    "Move to folder moves every selected instance",
+    "An inline name editor (not a dialog) opens over the row",
+    "New folder on a folder creates a subfolder",
+    "An instance moves into the nested folder",
+    "Counts include subfolders",
+    "The filter keeps a match inside collapsed folders and hides the rest",
+    "and expands the folders that hold it",
+    "Clearing the filter shows every row again",
+    "An inline name editor (not a dialog) opens over the row",
+    "Rename folder renames it and keeps members and subfolders",
+    "Escape cancels a rename",
+    "Remove folder moves its instances and subfolder to the parent (root)",
+    "Folder metadata never reorders the native occurrences",
+    "One Undo restores the removed folder"
+  ],
+  "log": [],
+  "method": "Production Panel; folder context-menu actions triggered from the built QMenu, names typed in the inline editor with QTest keys, filter text set on the panel field; state read back from inspect. Private desktop.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "editors_before_escape": 0,
+  "seconds": 21.392106400002376,
+  "check_count": 20
+}

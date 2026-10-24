@@ -4,7 +4,7 @@
 > `runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe -B tools\generate_operations_doc.py > runtime\test-tmp\operations-doc.log 2>&1`.
 > `tests/test_operations_doc.py` fails when this file and the schema disagree.
 
-One entry per operation of this build (86 operations, schema version 1, schema digest `6ef37e04859b1d5c`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
+One entry per operation of this build (88 operations, schema version 1, schema digest `668addb0e34ed040`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
 
 ## Reading an entry
 
@@ -82,7 +82,7 @@ Bridge and client outcomes (`invalid_request`, `queue_full`, `outcome_unknown`, 
 - **View:** [render_view](#render_view), [set_view](#set_view)
 - **Open or create a document:** [import_step](#import_step), [new](#new), [open](#open), [recover](#recover)
 - **Modeling:** [add_arc](#add_arc), [add_circle](#add_circle), [add_line](#add_line), [add_polyline](#add_polyline), [add_rectangle](#add_rectangle), [boolean_parts](#boolean_parts), [chamfer](#chamfer), [circular_pattern_parts](#circular_pattern_parts), [create_body](#create_body), [create_helix](#create_helix), [create_parameter](#create_parameter), [create_plane](#create_plane), [create_sketch](#create_sketch), [delete_feature](#delete_feature), [delete_features](#delete_features), [delete_parameter](#delete_parameter), [delete_part](#delete_part), [duplicate_feature](#duplicate_feature), [edit_dress_up](#edit_dress_up), [edit_extrusion](#edit_extrusion), [edit_parameter](#edit_parameter), [extrude_face](#extrude_face), [fillet](#fillet), [hole](#hole), [linear_pattern_parts](#linear_pattern_parts), [loft](#loft), [mirror_parts](#mirror_parts), [move_face](#move_face), [pad](#pad), [pierce](#pierce), [pocket](#pocket), [project_geometry](#project_geometry), [rebuild](#rebuild), [rename_feature](#rename_feature), [rename_parameter](#rename_parameter), [repair_orphan_helpers](#repair_orphan_helpers), [revolve](#revolve), [rollback](#rollback), [set_expression](#set_expression), [set_parameter](#set_parameter), [set_part_appearance](#set_part_appearance), [set_sketch_support](#set_sketch_support), [shell](#shell), [sketch_circle](#sketch_circle), [sketch_rectangle](#sketch_rectangle), [split_part](#split_part), [sweep](#sweep), [transform_part](#transform_part)
-- **Assembly:** [create_assembly](#create_assembly), [create_assembly_joint](#create_assembly_joint), [delete_assembly_object](#delete_assembly_object), [edit_assembly_joint](#edit_assembly_joint), [ground_assembly_instance](#ground_assembly_instance), [insert_assembly_part](#insert_assembly_part), [move_assembly_instance](#move_assembly_instance), [move_assembly_joint](#move_assembly_joint), [refresh_assembly_part](#refresh_assembly_part), [solve_assembly](#solve_assembly)
+- **Assembly:** [create_assembly](#create_assembly), [create_assembly_joint](#create_assembly_joint), [delete_assembly_object](#delete_assembly_object), [edit_assembly_joint](#edit_assembly_joint), [ground_assembly_instance](#ground_assembly_instance), [insert_assembly_part](#insert_assembly_part), [move_assembly_instance](#move_assembly_instance), [move_assembly_instances](#move_assembly_instances), [move_assembly_joint](#move_assembly_joint), [refresh_assembly_part](#refresh_assembly_part), [set_assembly_folders](#set_assembly_folders), [solve_assembly](#solve_assembly)
 - **File lifecycle:** [adopt](#adopt), [close_document](#close_document), [export](#export), [save](#save)
 - **History and sketch editing:** [begin_sketch_edit](#begin_sketch_edit), [finish_sketch_edit](#finish_sketch_edit), [redo](#redo), [undo](#undo)
 - **Batch:** [batch](#batch)
@@ -1127,6 +1127,7 @@ Unless an entry says otherwise: envelope: `document_id`, `expected_revision`, `r
 Create the document's native assembly and joint group. [Contract][contract-assembly].
 
 - `detail`: full / compact
+- `folder`: string or null
 - `id`: assembly_id; id `Assembly` when omitted
 - `name`: string; default `"Assembly"`
 
@@ -1197,6 +1198,7 @@ Embed a source solid snapshot and add one occurrence (the first is grounded). [C
 
 - `assembly`: string
 - `detail`: full / compact
+- `folder`: string or null
 - `id`: assembly_id; id `Instance` when omitted
 - `name`: string
 - `path`: absolute_path; **required** (missing: `invalid_assembly_source`)
@@ -1220,6 +1222,19 @@ Example (fixture `assembly`): `{"op": "move_assembly_instance", "document_id": "
 
 Schema-named errors: `assembly_motion_locked`, `invalid_assembly_motion`, `missing_assembly_instance`.
 
+### move_assembly_instances
+
+Move occurrences into an instance-list folder (created when missing) or back to the root. [Contract][contract-assembly-folders].
+
+- `assembly`: string
+- `detail`: full / compact
+- `folder`: string or null
+- `instances`: array of string; **required** (missing: `missing_assembly_instance`)
+
+Example (fixture `assembly`): `{"op": "move_assembly_instances", "document_id": "<document_id>", "expected_revision": "<revision>", "folder": "Fasteners/M3", "instances": ["Free"]}`
+
+Schema-named errors: `missing_assembly_instance`.
+
 ### move_assembly_joint
 
 Set a revolute or slider joint coordinate and solve. [Contract][contract-assembly].
@@ -1239,6 +1254,7 @@ Refresh an occurrence from a saved source without replacing its identity or plac
 
 - `assembly`: string
 - `detail`: full / compact
+- `folder`: string or null
 - `instance`: string; **required** (missing: `missing_assembly_instance`)
 - `path`: absolute_path
 - `shared`: instance / all
@@ -1247,6 +1263,19 @@ Refresh an occurrence from a saved source without replacing its identity or plac
 Example (fixture `assembly`): `{"op": "refresh_assembly_part", "document_id": "<document_id>", "expected_revision": "<revision>", "instance": "Free", "shared": "instance"}`
 
 Schema-named errors: `missing_assembly_instance`.
+
+### set_assembly_folders
+
+Replace the instance-list folder tree (presentation metadata only). [Contract][contract-assembly-folders].
+
+- `assembly`: string
+- `detail`: full / compact
+- `folders`: array of (object or string); **required** (missing: `invalid_assembly_folders`)
+- `membership`: object
+
+Example (fixture `assembly`): `{"op": "set_assembly_folders", "document_id": "<document_id>", "expected_revision": "<revision>", "folders": [{"children": [{"children": [], "name": "M3"}], "name": "Fasteners"}, "Frame"], "membership": {"Free": "Fasteners/M3"}}`
+
+Schema-named errors: `invalid_assembly_folders`.
 
 ### solve_assembly
 
@@ -1366,6 +1395,7 @@ Example (fixture `plate`): `{"op": "batch", "document_id": "<document_id>", "exp
 [contract-32-parameters]: OPERATION_CONTRACT.md#323-parameters
 [contract-32-render]: OPERATION_CONTRACT.md#322-model-images
 [contract-assembly]: OPERATION_CONTRACT.md#assembly-increment--october-2
+[contract-assembly-folders]: OPERATION_CONTRACT.md#instance-folders-assembly-ux-2026-10-24
 [contract-historical]: OPERATION_CONTRACT.md#historical-contract-2-additions--october-2-review-follow-up
 [contract-intro]: OPERATION_CONTRACT.md#shared-operation-contract
 [contract-multi]: OPERATION_CONTRACT.md#multi-edge-references

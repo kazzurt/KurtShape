@@ -135,6 +135,9 @@ DOC_30 = _DOC + "contract-30--q03-lightweight-status-and-explicit-checks"
 DOC_31 = _DOC + "contract-31--fail-fast-studio-results-typed-helices-and-tight-boxes"
 DOC_HISTORICAL = _DOC + "historical-contract-2-additions--october-2-review-follow-up"
 DOC_ASSEMBLY = _DOC + "assembly-increment--october-2"
+DOC_ASSEMBLY_FOLDERS = _DOC + "instance-folders-assembly-ux-2026-10-24"
+_FOLDER = {"anyOf": [{"type": "string", "maxLength": 2000}, {"type": "null"}],
+           "description": "Instance-list folder path such as \"Fasteners/M3\" (created when missing); null or omitted keeps the root"}
 DOC_STUDIO = _DOC + "u2-part-studio-and-reference-queries--october-2"
 DOC_PATTERNS = _DOC + "pattern-tools"
 DOC_PLANES = _DOC + "datum-planes"
@@ -1232,7 +1235,8 @@ OPERATIONS = {
     "create_assembly": {
         "summary": "Create the document's native assembly and joint group",
         "fields": {"id": {"$ref": "#/$defs/assembly_id", "x-default-id": "Assembly"},
-                   "name": {"maxLength": 200, "default": "Assembly"}},
+                   "name": {"maxLength": 200, "default": "Assembly"},
+                   "folder": {**_FOLDER, "description": "An empty instance-list folder path to create with the assembly"}},
         "required": [], "constraints": ["One assembly per document"],
         "examples": [{"op": "create_assembly", "id": "Assembly", "name": "Plate assembly"}],
         "x-example-fixture": "plate", "doc": DOC_ASSEMBLY},
@@ -1241,7 +1245,8 @@ OPERATIONS = {
         "fields": {"assembly": {}, "path": {"description": "Absolute FCStd or STEP source", "x-suffixes": [".FCStd", ".step", ".stp"]},
                    "source_id": {"type": "string", "description": "Body or solid ID from assembly_candidates"},
                    "id": {"$ref": "#/$defs/assembly_id", "x-default-id": "Instance"},
-                   "name": {"maxLength": 200, "description": "Label; defaults to the source label"}},
+                   "name": {"maxLength": 200, "description": "Label; defaults to the source label"},
+                   "folder": _FOLDER},
         "required": ["path", "source_id"],
         "checked_by_handler": {"path": "invalid_assembly_source", "source_id": "missing_assembly_source_part"},
         "examples": [{"op": "insert_assembly_part", "path": "<plate_file>", "source_id": "Body", "id": "Extra"}],
@@ -1251,7 +1256,8 @@ OPERATIONS = {
         "fields": {"assembly": {}, "instance": {},
                    "path": {"description": "Saved FCStd/STEP source; omitted uses the recorded source path", "x-suffixes": [".FCStd", ".step", ".stp"]},
                    "source_id": {"type": "string", "description": "Saved native source ID; omitted uses the recorded source object"},
-                   "shared": {"enum": ["instance", "all"], "description": "Required when multiple occurrences share the snapshot: copy-on-write for one, or refresh every user"}},
+                   "shared": {"enum": ["instance", "all"], "description": "Required when multiple occurrences share the snapshot: copy-on-write for one, or refresh every user"},
+                   "folder": {**_FOLDER, "description": "Also move the refreshed occurrence into this folder path"}},
         "required": ["instance"], "checked_by_handler": {"instance": "missing_assembly_instance"},
         "constraints": ["Native transaction validates before commit and rolls back on failure",
                         "Preserves occurrence identity, appearance, placement and grounding; changed joint subelements or connector frames reject",
@@ -1315,6 +1321,32 @@ OPERATIONS = {
         "required": ["feature"], "checked_by_handler": {"feature": "unsupported_assembly_delete"},
         "examples": [{"op": "delete_assembly_object", "feature": "Hinge"}],
         "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY},
+    "set_assembly_folders": {
+        "summary": "Replace the instance-list folder tree (presentation metadata only)",
+        "fields": {"assembly": {},
+                   "folders": {"type": "array", "maxItems": 500,
+                               "items": {"anyOf": [{"type": "object"}, {"type": "string"}]},
+                               "description": "Folder tree [{name, children:[...]}]; a string is a shorthand path "
+                                              "(\"Fasteners/M3\"). Names are non-empty, without '/', distinct among siblings"},
+                   "membership": {"type": "object",
+                                  "description": "Instance id → folder path (null = root). Omitted keeps current "
+                                                 "memberships whose folder still exists"}},
+        "required": ["folders"], "checked_by_handler": {"folders": "invalid_assembly_folders"},
+        "constraints": ["Stored as JSON on the assembly (KurtShapeInstanceFolders); solver, export and occurrence order are unchanged",
+                        "One undoable transaction; instances not in membership show at the root"],
+        "examples": [{"op": "set_assembly_folders", "folders": [{"name": "Fasteners", "children": [{"name": "M3", "children": []}]},
+                                                                 "Frame"], "membership": {"Free": "Fasteners/M3"}}],
+        "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY_FOLDERS},
+    "move_assembly_instances": {
+        "summary": "Move occurrences into an instance-list folder (created when missing) or back to the root",
+        "fields": {"assembly": {},
+                   "instances": {"type": "array", "minItems": 1, "uniqueItems": True, "items": {"type": "string"},
+                                 "description": "Occurrence ids"},
+                   "folder": {**_FOLDER, "description": "Folder path such as \"Fasteners/M3\"; null moves to the root"}},
+        "required": ["instances"], "checked_by_handler": {"instances": "missing_assembly_instance"},
+        "constraints": ["Presentation metadata only; revision-checked and undoable like every assembly mutation"],
+        "examples": [{"op": "move_assembly_instances", "instances": ["Free"], "folder": "Fasteners/M3"}],
+        "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY_FOLDERS},
     "solve_assembly": {
         "summary": "Explicit solve of the current assembly intent",
         "fields": {"assembly": {}}, "required": [], "examples": [{"op": "solve_assembly"}],

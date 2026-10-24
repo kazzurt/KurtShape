@@ -513,6 +513,18 @@ All assembly mutations require the existing current document UUID/revision and b
 
 `rename_feature` additionally accepts supported assembly/instance/joint IDs and preserves internal references. Inspection adds `assembly`; capabilities identify native solver, single-level scope, source snapshot policy and motion units. Undo/redo restore transaction placements and solver evidence without rerunning the solver on idle. Assembly current-solid export includes every occurrence globally transformed once, excludes embedded sources, and rejects a `body` filter. Its sidecar includes the inspected assembly state. Solver failure rolls back typed mutations; unresolved native intent is never current valid geometry. Reopen/recovery uses native persistence and rechecks solving. Arbitrary proxy/cross-document safety remains narrow; this is not a general FCStd trust waiver.
 
+### Instance folders (assembly UX, 2026-10-24)
+
+Folders group occurrences in the two instance lists; they are presentation metadata, not native structure. The tree and the membership live as JSON in the assembly's `KurtShapeInstanceFolders` string property (`{"folders":[{"name","children"}],"membership":{"<instance id>":"A/B"}}`), so the solver, `result_objects()`, export, joints and reopen see the same flat occurrence list as before, and the property travels in the FCStd. Paths join names with `/`; names are non-empty, without `/`, at most 120 characters and distinct among siblings; folders nest up to 16 levels.
+
+| Operation | Arguments | Behavior |
+|---|---|---|
+| `set_assembly_folders` | `folders` (tree, or path strings as shorthand); optional `membership` {id: path\|null}, `assembly` | Replace the whole structure; omitted `membership` keeps memberships whose folder survives. Unknown instances or folders reject with `invalid_assembly_folders` |
+| `move_assembly_instances` | `instances` [ids]; optional `folder` (path, created when missing; null = root), `assembly` | Move occurrences; unknown ids reject with `missing_assembly_instance` |
+| `create_assembly`, `insert_assembly_part`, `refresh_assembly_part` | optional `folder` | Create the (empty) folder / place the new occurrence / move the refreshed occurrence there |
+
+Both are revision-checked, one undo step each. `inspect.assembly.folders` returns the tree and each `instances[*].folder` the instance's path (null at the root). Deleting an occurrence drops its membership; a membership naming a missing instance or folder is ignored on read; a damaged property shows everything at the root rather than failing. **Agents building assemblies organise occurrences by function or sub-assembly (`Frame`, `Fasteners/M3`, `Electronics`) and leave no more than about 12 at the root.**
+
 ## U2 Part Studio and reference queries — October 2
 
 This section supersedes the earlier multi-body, rollback and preview limitations. Existing single-Body files and requests retain their native behavior. An explicit studio operation, part appearance change or rollback lazily adopts the native feature history; no separate migration file is required. Managed files use `UseHasher=false` so the pinned runtime exposes complete composite element names. Switching that cache mode during attachment completes a native recompute before inspection.

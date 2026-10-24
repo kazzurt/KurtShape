@@ -1,0 +1,79 @@
+﻿{
+    "recipe":  "assembly-folders",
+    "passed":  true,
+    "session":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\ksasm\\runtime\\ci-gui\\assembly-folders\\run-a65da6d625564a328dff6678ab05fde6",
+    "macro":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\ksasm\\tools\\assembly-folders-validation.FCMacro",
+    "report":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\ksasm\\runtime\\ci-gui\\assembly-folders\\run-a65da6d625564a328dff6678ab05fde6\\evidence\\assembly-folders\\gui-result.json",
+    "log":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\ksasm\\runtime\\ci-gui\\assembly-folders\\run-a65da6d625564a328dff6678ab05fde6\\freecad.log",
+    "stdout":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\ksasm\\runtime\\ci-gui\\assembly-folders\\run-a65da6d625564a328dff6678ab05fde6\\freecad-stdout.txt",
+    "stderr":  "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\ksasm\\runtime\\ci-gui\\assembly-folders\\run-a65da6d625564a328dff6678ab05fde6\\freecad-stderr.txt",
+    "started_utc":  "2026-10-24T21:54:58.3100735Z",
+    "exited_utc":  "2026-10-24T21:55:26.3631994Z",
+    "pid":  31428,
+    "exit_code":  0,
+    "timed_out":  false,
+    "method":  "Independent native FreeCAD process on a private Windows desktop (tools\\private_desktop.py; never the interactive desktop); the interactive desktop probed for its windows during the whole run; recipe report checked after owned process exit.",
+    "desktop_probe":  {
+                          "samples":  208,
+                          "interactive_desktop":  "Default",
+                          "interactive_visible_max":  0,
+                          "private_visible_max":  3,
+                          "foreground_in_tree_samples":  0,
+                          "process_tree_max":  3,
+                          "leaked_windows":  [
+
+                                             ],
+                          "private_windows":  [
+                                                  {
+                                                      "hwnd":  860474,
+                                                      "pid":  31428,
+                                                      "title":  "",
+                                                      "class":  "UAC_InputIndicatorOverlayWnd",
+                                                      "rect":  [
+                                                                   0,
+                                                                   0,
+                                                                   0,
+                                                                   0
+                                                               ],
+                                                      "iconic":  false,
+                                                      "first_sample":  9
+                                                  },
+                                                  {
+                                                      "hwnd":  1974448,
+                                                      "pid":  31428,
+                                                      "title":  "",
+                                                      "class":  "UAC Input Indicator",
+                                                      "rect":  [
+                                                                   1675,
+                                                                   1035,
+                                                                   1675,
+                                                                   1035
+                                                               ],
+                                                      "iconic":  false,
+                                                      "first_sample":  9
+                                                  },
+                                                  {
+                                                      "hwnd":  139978,
+                                                      "pid":  31428,
+                                                      "title":  "FreeCAD",
+                                                      "class":  "Qt683QWindowIcon",
+                                                      "rect":  [
+                                                                   564,
+                                                                   317,
+                                                                   1143,
+                                                                   751
+                                                               ],
+                                                      "iconic":  false,
+                                                      "first_sample":  9
+                                                  }
+                                              ],
+                          "desktop":  "KurtShapeRecipe-0c1c6ce3a328",
+                          "child_exit_code":  0,
+                          "elapsed_s":  27.958,
+                          "method":  "Child started by CreateProcessW with lpDesktop=WinSta0\\KurtShapeRecipe-0c1c6ce3a328 (CreateDesktopEx, never switched to); EnumDesktopWindows+IsWindowVisible over the child\u0027s process tree on the interactive desktop every sample; GetForegroundWindow owner checked.",
+                          "passed":  true
+                      },
+    "private_desktop":  "KurtShapeRecipe-0c1c6ce3a328",
+    "launcher_pid":  36732,
+    "finished_utc":  "2026-10-24T21:55:26.4439910Z"
+}

@@ -360,7 +360,8 @@ class Controller:
     READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
                 "operation_schema", "list_parameters", "part_inventory"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
-                    "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly", "refresh_assembly_part"}
+                    "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly", "refresh_assembly_part",
+                    "set_assembly_folders", "move_assembly_instances"}
     MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline",
                  "pad", "pocket", "edit_extrusion", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "repair_orphan_helpers", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS | parameters.OPS
     EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline", "set_parameter", "set_expression", "set_sketch_support", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
@@ -404,10 +405,12 @@ class Controller:
         "pierce": {"sketch", "geometry", "point", "target", "subelement"},
         "save": {"path", "overwrite"}, "export": {"path", "body"},
         "capabilities": set(), "request_status": {"request_id"}, "preview": {"proposal"}, "diagnostics": set(),
-        "assembly_candidates": {"path", "final_only"}, "create_assembly": {"id", "name"},
+        "assembly_candidates": {"path", "final_only"}, "create_assembly": {"id", "name", "folder"},
         "part_inventory": {"include_history"},
-        "refresh_assembly_part": {"assembly", "instance", "path", "source_id", "shared"},
-        "insert_assembly_part": {"assembly", "path", "source_id", "id", "name"},
+        "refresh_assembly_part": {"assembly", "instance", "path", "source_id", "shared", "folder"},
+        "set_assembly_folders": {"assembly", "folders", "membership"},
+        "move_assembly_instances": {"assembly", "instances", "folder"},
+        "insert_assembly_part": {"assembly", "path", "source_id", "id", "name", "folder"},
         "ground_assembly_instance": {"assembly", "instance"},
         "create_assembly_joint": {"assembly", "joint_type", "first", "second", "id", "name"},
         "edit_assembly_joint": {"assembly", "joint", "joint_type", "first", "second", "name"},
@@ -2235,7 +2238,9 @@ class Controller:
                     if op == "refresh_assembly_part":
                         from .assembly_refresh import refresh, rollback_state
                         refresh_rollback = rollback_state(doc)
-                        self._reports["refresh_report"] = refresh(doc, request)
+                        self._reports["refresh_report"] = refresh(doc, {key: value for key, value in request.items() if key != "folder"})
+                        if request.get("folder") is not None:
+                            native_assembly.move_to_folder(doc, request, [request.get("instance")])
                     else:
                         created_feature = native_assembly.handle(doc, request)
                     created_feature = created_feature.Name if hasattr(created_feature, "Name") else created_feature

@@ -1,0 +1,111 @@
+"""Instance folders in both assembly lists (assembly UX item 3).
+
+Run through tools/run_gui_recipe.ps1 -Recipe assembly-folders.
+"""
+import os
+from pathlib import Path
+import sys
+
+_root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(_root / "tools"))
+sys.path.insert(0, str(_root / "src"))
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+from assembly_ux_probe import Probe
+from kurtshape import assembly_folders
+from kurtshape.assembly_tree import action, folder_key
+
+
+def body(probe):
+    panel = probe.panel
+    source = probe.source_part("folder-block", Part.makeBox(10, 6, 4))
+    probe.call("new", name="Folders")
+    probe.call("create_assembly", id="Assembly")
+    for index in range(5):
+        probe.call("insert_assembly_part", path=str(source), source_id="Body", id=f"Inst{index}", name=f"Inst{index}")
+    probe.wait(200)
+
+    def membership():
+        return {row["id"]: row["folder"] for row in panel.assembly_state()["instances"]}
+
+    def tree_paths():
+        return assembly_folders.paths(panel.assembly_state()["folders"])
+
+    def trigger(tree, items, key, text):
+        menu = panel.assembly_tree.menu(tree, items[key])
+        entry = action(menu, text) if menu else None
+        if entry is None:
+            raise AssertionError(f"menu of {key} has no {text!r}: " + repr([a.text() for a in (menu.actions() if menu else [])]))
+        entry.trigger()
+        probe.wait(200)
+
+    def type_name(text):
+        editor = panel.assembly_tree.editor
+        probe.check("An inline name editor (not a dialog) opens over the row",
+                    editor is not None and editor.isVisible() and not editor.isWindow())
+        editor.setText(text)
+        QtTest.QTest.keyClick(editor, QtCore.Qt.Key_Return)
+        probe.wait(300)
+
+    trigger(panel.parts, panel.part_model.items, "Inst0", "New folder")
+    type_name("Fasteners")
+    probe.check("New folder on an instance creates the folder and moves the instance into it",
+                membership()["Inst0"] == "Fasteners" and tree_paths() == ["Fasteners"], (membership(), tree_paths()))
+    for tree, items, label in ((panel.features, panel.items, "features tree"),
+                               (panel.parts, panel.part_model.items, "Instances list")):
+        folder = items.get(folder_key("Fasteners"))
+        probe.check(label + " shows the folder with its count and icon",
+                    folder is not None and folder.text(0) == "Fasteners (1)" and not folder.icon(0).isNull())
+        probe.check(label + " nests the instance under the folder", items["Inst0"].parent() is folder)
+    panel.features.clearSelection()
+    panel.items["Inst1"].setSelected(True)
+    panel.items["Inst2"].setSelected(True)
+    trigger(panel.features, panel.items, "Inst2", "Fasteners")
+    probe.check("Move to folder moves every selected instance",
+                membership()["Inst1"] == "Fasteners" and membership()["Inst2"] == "Fasteners", membership())
+    trigger(panel.features, panel.items, folder_key("Fasteners"), "New folder")
+    type_name("M3")
+    probe.check("New folder on a folder creates a subfolder", tree_paths() == ["Fasteners", "Fasteners/M3"], tree_paths())
+    panel.parts.clearSelection()
+    trigger(panel.parts, panel.part_model.items, "Inst2", "M3")
+    probe.check("An instance moves into the nested folder", membership()["Inst2"] == "Fasteners/M3", membership())
+    probe.check("Counts include subfolders", panel.items[folder_key("Fasteners")].text(0) == "Fasteners (3)",
+                panel.items[folder_key("Fasteners")].text(0))
+    # Filter: a match inside a collapsed folder is still shown.
+    panel.items[folder_key("Fasteners")].setExpanded(False)
+    panel.items[folder_key("Fasteners/M3")].setExpanded(False)
+    panel.filter.setText("inst2")
+    probe.wait(150)
+    shown = [key for key, item in panel.items.items() if not item.isHidden() and str(key).startswith(("Inst", "assembly_folder:"))]
+    probe.check("The filter keeps a match inside collapsed folders and hides the rest",
+                sorted(shown) == sorted(["Inst2", folder_key("Fasteners"), folder_key("Fasteners/M3")]), shown)
+    probe.check("and expands the folders that hold it",
+                panel.items[folder_key("Fasteners")].isExpanded() and panel.items[folder_key("Fasteners/M3")].isExpanded())
+    panel.filter.clear()
+    probe.wait(150)
+    probe.check("Clearing the filter shows every row again", not any(item.isHidden() for item in panel.items.values()))
+    trigger(panel.features, panel.items, folder_key("Fasteners"), "Rename folder")
+    type_name("Hardware")
+    probe.check("Rename folder renames it and keeps members and subfolders",
+                tree_paths() == ["Hardware", "Hardware/M3"] and membership()["Inst2"] == "Hardware/M3", (tree_paths(), membership()))
+    editor_count = len(panel.features.viewport().findChildren(QtWidgets.QLineEdit, "KurtShapeFolderNameEditor"))
+    trigger(panel.parts, panel.part_model.items, folder_key("Hardware"), "Rename folder")
+    QtTest.QTest.keyClick(panel.assembly_tree.editor, QtCore.Qt.Key_Escape)
+    probe.wait(200)
+    probe.check("Escape cancels a rename", tree_paths() == ["Hardware", "Hardware/M3"])
+    trigger(panel.features, panel.items, folder_key("Hardware"), "Remove folder")
+    probe.check("Remove folder moves its instances and subfolder to the parent (root)",
+                tree_paths() == ["M3"] and membership() == {"Inst0": None, "Inst1": None, "Inst2": "M3", "Inst3": None, "Inst4": None},
+                (tree_paths(), membership()))
+    probe.check("Folder metadata never reorders the native occurrences",
+                [row["id"] for row in panel.assembly_state()["instances"]] == [f"Inst{i}" for i in range(5)])
+    probe.call("undo")
+    probe.check("One Undo restores the removed folder", tree_paths() == ["Hardware", "Hardware/M3"], tree_paths())
+    probe.report["editors_before_escape"] = editor_count
+
+
+Probe("assembly-folders",
+      "Production Panel; folder context-menu actions triggered from the built QMenu, names typed in the inline "
+      "editor with QTest keys, filter text set on the panel field; state read back from inspect. Private desktop.").run(body)
