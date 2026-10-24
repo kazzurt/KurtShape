@@ -358,7 +358,7 @@ def _render_jobs():
 
 class Controller:
     READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
-                "operation_schema", "list_parameters", "part_inventory"}
+                "operation_schema", "list_parameters", "part_inventory", "assembly_instance_source"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
                     "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly", "refresh_assembly_part",
                     "set_assembly_folders", "move_assembly_instances"}
@@ -376,7 +376,8 @@ class Controller:
     DOCUMENTLESS_OPS = frozenset({"capabilities", "list_documents", "request_status", "diagnostics", "assembly_candidates",
                                   "operation_schema"})
     QUIET_OPS = frozenset({"capabilities", "operation_schema", "diagnostics", "request_status", "list_documents", "inspect",
-                           "resolve_selector", "orphan_helpers", "list_parameters", "part_inventory"}) | VIEW_OPS
+                           "resolve_selector", "orphan_helpers", "list_parameters", "part_inventory",
+                           "assembly_instance_source"}) | VIEW_OPS
     # Envelope fields every request may carry besides its own arguments (C6).
     TRANSPORT_FIELDS = frozenset({"document_id", "expected_revision", "request_id", "measure"})
     OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | VIEW_OPS | LIFECYCLE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export", "batch"}
@@ -407,6 +408,7 @@ class Controller:
         "capabilities": set(), "request_status": {"request_id"}, "preview": {"proposal"}, "diagnostics": set(),
         "assembly_candidates": {"path", "final_only"}, "create_assembly": {"id", "name", "folder"},
         "part_inventory": {"include_history"},
+        "assembly_instance_source": {"assembly", "instance"},
         "refresh_assembly_part": {"assembly", "instance", "path", "source_id", "shared", "folder"},
         "set_assembly_folders": {"assembly", "folders", "membership"},
         "move_assembly_instances": {"assembly", "instances", "folder"},
@@ -2089,6 +2091,8 @@ class Controller:
                                                   measure if "measure" in request else None)
                     result["operation_ms"] = round((time.perf_counter() - start) * 1000, 2)
                     return {"ok": True, "result": result}
+                if op == "assembly_instance_source":
+                    return {"ok": True, "result": native_assembly.instance_source(doc, request)}
                 if op == "part_inventory":
                     from .part_inventory import rows
                     return {"ok": True, "result": {"parts": rows(doc, request.get("include_history", False))}}

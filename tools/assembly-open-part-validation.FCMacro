@@ -1,0 +1,107 @@
+"""Open part from an assembly instance (assembly UX item 4).
+
+Run through tools/run_gui_recipe.ps1 -Recipe assembly-open-part.
+"""
+import os
+from pathlib import Path
+import sys
+
+_root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(_root / "tools"))
+sys.path.insert(0, str(_root / "src"))
+import FreeCAD as App
+import Part
+from PySide6 import QtWidgets
+from assembly_ux_probe import Probe, SESSION
+from kurtshape.assembly_tree import action
+
+
+def body(probe):
+    panel = probe.panel
+    fixture = probe.managed_parts()
+    native = Path(fixture["single_body"]["path"])
+    gone = probe.source_part("open-gone", Part.makeCylinder(3, 8))
+    step = SESSION / "open-imported.step"
+    Part.makeBox(3, 4, 5).exportStep(str(step))
+    probe.call("new", name="Open part assembly")
+    probe.call("create_assembly", id="Assembly")
+    probe.call("insert_assembly_part", path=str(native), source_id="Body", id="Native", name="Native")
+    probe.call("insert_assembly_part", path=str(gone), source_id="Body", id="Gone", name="Gone")
+    candidate = panel.core.dispatch({"op": "assembly_candidates", "path": str(step)})["result"]["candidates"][0]["id"]
+    probe.call("insert_assembly_part", path=str(step), source_id=candidate, id="Imported", name="Imported")
+    assembly_doc = panel.document().Name
+    mdi = probe.main.findChild(QtWidgets.QMdiArea)
+    # The launch's blank part would be replaced by the first open; close it so views count cleanly.
+    for name in list(App.listDocuments()):
+        if name != assembly_doc:
+            App.closeDocument(name)
+    panel.tick()
+    probe.wait(200)
+
+    def views():
+        return len(mdi.subWindowList())
+
+    def back():
+        probe.check("The assembly tab is still open", panel.assembly_tree.activate(assembly_doc))
+        probe.wait(200)
+
+    def menu_for(tree, items, key):
+        menu = panel.assembly_tree.menu(tree, items[key])
+        probe.report["log"].append({key: [entry.text() for entry in menu.actions()]})
+        return menu
+
+    menu = menu_for(panel.parts, panel.part_model.items, "Native")
+    probe.check("Open part is the first entry of the instance menu", menu.actions()[0].text() == "Open part")
+    probe.check("A native-FCStd instance offers no Show source file", action(menu, "Show source file") is None)
+    before = views()
+    action(menu, "Open part").trigger()
+    trace = [("now", App.ActiveDocument.Name, mdi.activeSubWindow().windowTitle() if mdi.activeSubWindow() else None)]
+    for tick in range(8):
+        probe.wait(50)
+        trace.append((tick, App.ActiveDocument.Name, mdi.activeSubWindow().windowTitle() if mdi.activeSubWindow() else None))
+    probe.report["activation_trace"] = trace
+    active = App.ActiveDocument
+    probe.check("Open part opens the source in a second MDI view", views() == before + 1, (before, views()))
+    probe.check("and the active document is the source",
+                Path(active.FileName or "-").resolve() == native.resolve(), (active.Name, active.FileName, panel.message.text(),
+                {n: (d.FileName, bool(d.getObject("KurtShapeProject"))) for n, d in App.listDocuments().items()},
+                [d.Name for d in panel.general_actions._documents()], [w.windowTitle() for w in mdi.subWindowList()]))
+    back()
+    panel.history_double_click(panel.items["Native"])
+    probe.wait(300)
+    probe.check("Double-click opens it again without a third view", views() == before + 1, views())
+    probe.check("and activates the source tab", Path(App.ActiveDocument.FileName).resolve() == native.resolve())
+    back()
+    menu = menu_for(panel.features, panel.items, "Imported")
+    probe.check("A STEP instance also offers Show source file", action(menu, "Show source file") is not None)
+    action(menu, "Show source file").trigger()
+    probe.wait(100)
+    probe.check("Show source file names the STEP path in the status line", str(step.resolve()) in panel.message.text(),
+                panel.message.text())
+    action(menu_for(panel.features, panel.items, "Imported"), "Open part").trigger()
+    probe.wait(600)
+    probe.check("Open part on a STEP instance imports it into a new tab", views() == before + 2, views())
+    probe.check("as a part studio carrying import_source",
+                bool(panel.state.get("import_source")) and App.ActiveDocument.Name != assembly_doc,
+                panel.state.get("import_source"))
+    probe.report["import_source"] = panel.state.get("import_source")
+    back()
+    gone.unlink()
+    messages_before = panel.messages.toPlainText() if hasattr(panel.messages, "toPlainText") else ""
+    action(menu_for(panel.parts, panel.part_model.items, "Gone"), "Open part").trigger()
+    probe.wait(300)
+    probe.check("A missing source opens nothing", views() == before + 2, views())
+    probe.check("and names the recorded path in the status line",
+                "Source file not found" in panel.message.text() and str(gone.resolve()) in panel.message.text(),
+                panel.message.text())
+    probe.check("and in Messages", str(gone.resolve()) in panel.messages.toPlainText()
+                and panel.messages.toPlainText() != messages_before)
+    probe.check("No dialog or extra window appeared",
+                not [w for w in QtWidgets.QApplication.topLevelWidgets()
+                     if w.isVisible() and w is not probe.main and isinstance(w, QtWidgets.QDialog)])
+
+
+Probe("assembly-open-part",
+      "Production Panel; instance context-menu actions triggered from the built QMenu and the double-click handler; "
+      "MDI subwindows counted, active document read back. Private desktop.").run(body)

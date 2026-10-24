@@ -639,6 +639,14 @@ OPERATIONS = {
         "required": ["path"], "checked_by_handler": {"path": "invalid_assembly_source"},
         "examples": [{"op": "assembly_candidates", "path": "<plate_file>"}], "x-example-fixture": "none",
         "doc": DOC_ASSEMBLY},
+    "assembly_instance_source": {
+        "summary": "The saved source an occurrence was embedded from: path, kind (fcstd/step), whether it exists and is open",
+        "fields": {"assembly": {}, "instance": {"type": "string", "description": "Occurrence id"}},
+        "required": ["instance"], "checked_by_handler": {"instance": "missing_assembly_instance"},
+        "constraints": ["Read-only; the embedded snapshot's SourcePath is the source of truth",
+                        "exists is a file check, not a hash; open_documents lists open documents of that file"],
+        "examples": [{"op": "assembly_instance_source", "instance": "Free"}],
+        "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY_FOLDERS},
     "part_inventory": {
         "summary": "Current usable solids across legacy, studio and assembly documents",
         "fields": {"include_history": {"type": "boolean", "default": False,
@@ -1427,7 +1435,7 @@ RESPONSE_DETAIL = {"enum": ["full", "compact"],
 NO_RESPONSE_DETAIL = frozenset({"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics",
                                 "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
                                 "operation_schema", "list_parameters", "render_view", "set_view", "close_document",
-                                "part_inventory"})
+                                "part_inventory", "assembly_instance_source"})
 for _op, _entry in OPERATIONS.items():
     if _op not in NO_RESPONSE_DETAIL:
         _entry["fields"].setdefault("detail", RESPONSE_DETAIL)

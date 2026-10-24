@@ -1013,6 +1013,49 @@ def inspect(doc):
             "disconnected_count": sum(not asm.isPartConnected(obj) for obj in instances)}
 
 
+def source_kind(path):
+    """"step" for a .step/.stp source, "fcstd" for a native project, None when unrecorded."""
+    suffix = Path(path).suffix.lower() if path else ""
+    return "step" if suffix in {".step", ".stp"} else "fcstd" if suffix == ".fcstd" else None
+
+
+def open_documents_for(path):
+    """Names of open App documents whose file is ``path``."""
+    try:
+        target = Path(path).resolve()
+    except (OSError, ValueError):
+        return []
+    names = []
+    for name, value in App.listDocuments().items():
+        try:
+            if value.FileName and Path(value.FileName).resolve() == target:
+                names.append(name)
+        except (OSError, ValueError):
+            continue
+    return names
+
+
+def instance_source(doc, request):
+    """Where an occurrence came from: the embedded snapshot's recorded source (item 4)."""
+    asm = get(doc, request.get("assembly"))
+    identifier = request.get("instance")
+    obj = doc.getObject(identifier) if isinstance(identifier, str) else None
+    if obj is None or obj not in result_objects(doc) or asm not in obj.InList:
+        raise _error("missing_assembly_instance", "Choose an existing assembly occurrence", instance=identifier)
+    source = obj.LinkedObject if is_embedded_source(obj.LinkedObject) else None
+    path = getattr(source, "SourcePath", "") if source is not None else ""
+    exists = bool(path) and Path(path).is_file()
+    open_names = open_documents_for(path) if exists else []
+    return {"instance": obj.Name, "name": obj.Label,
+            "embedded_source": source.Name if source is not None else None,
+            "path": path or None, "kind": source_kind(path), "exists": exists,
+            "sha256": getattr(source, "SourceSHA256", "") if source is not None else "",
+            "object": getattr(source, "SourceObject", "") if source is not None else "",
+            "open_documents": open_names,
+            "shared_with": sorted(value.Name for value in result_objects(doc)
+                                  if value is not obj and source is not None and value.LinkedObject == source)}
+
+
 def _folders(doc, request, change):
     """Apply a folder change to the assembly's presentation metadata (item 3)."""
     asm = get(doc, request.get("assembly"))

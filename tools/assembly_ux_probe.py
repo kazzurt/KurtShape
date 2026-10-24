@@ -92,6 +92,25 @@ class Probe:
         self.wait(100)
         return path
 
+    def managed_parts(self, name="managed"):
+        """KurtShape projects built by tools/headless_part_fixture.py in a separate headless Python.
+
+        Returns its summary: ``single_body`` (one native Body) and ``studio`` (one studio part), the way an
+        assistant saves them (no GuiDocument.xml), so they are safe assembly sources and managed tabs.
+        """
+        import json
+        import subprocess
+        folder = SESSION / name
+        folder.mkdir(parents=True, exist_ok=True)
+        python = Path(App.getHomePath()) / "bin" / "python.exe"
+        environment = {key: value for key, value in os.environ.items() if key not in {"PYTHONHOME", "PYTHONPATH"}}
+        environment["PYTHONDONTWRITEBYTECODE"] = "1"
+        completed = subprocess.run([str(python), "-B", str(ROOT / "tools" / "headless_part_fixture.py"), str(folder)],
+                                   cwd=str(ROOT), env=environment, capture_output=True, text=True, timeout=600,
+                                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        assert completed.returncode == 0, "Headless fixture failed: " + completed.stdout[-2000:] + completed.stderr[-4000:]
+        return json.loads(completed.stdout.strip().splitlines()[-1])
+
     def close_active(self):
         App.closeDocument(self.panel.document().Name)
         self.panel.tick()

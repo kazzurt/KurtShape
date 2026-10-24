@@ -331,6 +331,8 @@ class Panel(QtGui.QDockWidget):
         self.parts.setHeaderHidden(True)
         self.parts.setMinimumHeight(58)
         self.parts.itemClicked.connect(self.part_selection)
+        self.parts.itemDoubleClicked.connect(lambda item, column=0: self.workspace_mode == "assembly"
+                                             and self.assembly_tree.double_click(item))
         self.parts.itemChanged.connect(self.part_visibility_changed)
         self.parts.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.parts.customContextMenuRequested.connect(self.part_menu)
@@ -2230,6 +2232,9 @@ class Panel(QtGui.QDockWidget):
             self.notify("Roll forward through this feature before editing it.")
             return
         if self.workspace_mode == "assembly":
+            # Item 4: double-click an instance opens its part; folders only expand.
+            if self.assembly_tree.double_click(item):
+                return None
             return self.edit_assembly_selection()
         if key.startswith("plane:"):
             if not self.pending_sketch:

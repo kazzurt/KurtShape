@@ -20,7 +20,7 @@
 param(
     [ValidateSet('plane-visibility','step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
         'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline','responsiveness-preview',
-        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','face-feature-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view','startup-blank','open-handoff','sketch-floating-controls','sketch-coincident-lines','sketch-midpoint-motion','confirm-gating','inspection-count','escape-sketch','dialog-enter','save-feedback','additive-selection','assembly-instance-links','assembly-folders')]
+        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','face-feature-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view','startup-blank','open-handoff','sketch-floating-controls','sketch-coincident-lines','sketch-midpoint-motion','confirm-gating','inspection-count','escape-sketch','dialog-enter','save-feedback','additive-selection','assembly-instance-links','assembly-folders','assembly-open-part')]
     [string]$Recipe = 'interface',
     [ValidateRange(1,7200)][int]$TimeoutSeconds = 900,
     [switch]$WriteEvidence,
@@ -142,6 +142,7 @@ $recipes = @{
     'dialog-enter' = @('dialog-enter-validation.FCMacro', 'dialog-enter\gui-result.json', 0)
     'save-feedback' = @('save-feedback-validation.FCMacro', 'save-feedback\gui-result.json', 0)
     'additive-selection' = @('additive-selection-validation.FCMacro', 'additive-selection\gui-result.json', 0)
+    'assembly-open-part' = @('assembly-open-part-validation.FCMacro', 'assembly-open-part\gui-result.json', 0)
     'assembly-folders' = @('assembly-folders-validation.FCMacro', 'assembly-folders\gui-result.json', 0)
     'assembly-instance-links' = @('assembly-instance-links-validation.FCMacro', 'assembly-instance-links\gui-result.json', 0)
 }

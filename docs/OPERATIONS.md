@@ -4,7 +4,7 @@
 > `runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe -B tools\generate_operations_doc.py > runtime\test-tmp\operations-doc.log 2>&1`.
 > `tests/test_operations_doc.py` fails when this file and the schema disagree.
 
-One entry per operation of this build (88 operations, schema version 1, schema digest `668addb0e34ed040`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
+One entry per operation of this build (89 operations, schema version 1, schema digest `57c372823091d635`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
 
 ## Reading an entry
 
@@ -78,7 +78,7 @@ Bridge and client outcomes (`invalid_request`, `queue_full`, `outcome_unknown`, 
 
 ## Index
 
-- **Reads:** [assembly_candidates](#assembly_candidates), [capabilities](#capabilities), [check_geometry](#check_geometry), [diagnostics](#diagnostics), [inspect](#inspect), [list_documents](#list_documents), [list_parameters](#list_parameters), [operation_schema](#operation_schema), [orphan_helpers](#orphan_helpers), [part_inventory](#part_inventory), [preview](#preview), [request_status](#request_status), [resolve_selector](#resolve_selector)
+- **Reads:** [assembly_candidates](#assembly_candidates), [assembly_instance_source](#assembly_instance_source), [capabilities](#capabilities), [check_geometry](#check_geometry), [diagnostics](#diagnostics), [inspect](#inspect), [list_documents](#list_documents), [list_parameters](#list_parameters), [operation_schema](#operation_schema), [orphan_helpers](#orphan_helpers), [part_inventory](#part_inventory), [preview](#preview), [request_status](#request_status), [resolve_selector](#resolve_selector)
 - **View:** [render_view](#render_view), [set_view](#set_view)
 - **Open or create a document:** [import_step](#import_step), [new](#new), [open](#open), [recover](#recover)
 - **Modeling:** [add_arc](#add_arc), [add_circle](#add_circle), [add_line](#add_line), [add_polyline](#add_polyline), [add_rectangle](#add_rectangle), [boolean_parts](#boolean_parts), [chamfer](#chamfer), [circular_pattern_parts](#circular_pattern_parts), [create_body](#create_body), [create_helix](#create_helix), [create_parameter](#create_parameter), [create_plane](#create_plane), [create_sketch](#create_sketch), [delete_feature](#delete_feature), [delete_features](#delete_features), [delete_parameter](#delete_parameter), [delete_part](#delete_part), [duplicate_feature](#duplicate_feature), [edit_dress_up](#edit_dress_up), [edit_extrusion](#edit_extrusion), [edit_parameter](#edit_parameter), [extrude_face](#extrude_face), [fillet](#fillet), [hole](#hole), [linear_pattern_parts](#linear_pattern_parts), [loft](#loft), [mirror_parts](#mirror_parts), [move_face](#move_face), [pad](#pad), [pierce](#pierce), [pocket](#pocket), [project_geometry](#project_geometry), [rebuild](#rebuild), [rename_feature](#rename_feature), [rename_parameter](#rename_parameter), [repair_orphan_helpers](#repair_orphan_helpers), [revolve](#revolve), [rollback](#rollback), [set_expression](#set_expression), [set_parameter](#set_parameter), [set_part_appearance](#set_part_appearance), [set_sketch_support](#set_sketch_support), [shell](#shell), [sketch_circle](#sketch_circle), [sketch_rectangle](#sketch_rectangle), [split_part](#split_part), [sweep](#sweep), [transform_part](#transform_part)
@@ -101,6 +101,17 @@ Selectable native solids of an FCStd or STEP source, with final/helper/history r
 Example (fixture `none`): `{"op": "assembly_candidates", "path": "<plate_file>"}`
 
 Schema-named errors: `invalid_assembly_source`.
+
+### assembly_instance_source
+
+The saved source an occurrence was embedded from: path, kind (fcstd/step), whether it exists and is open. [Contract][contract-assembly-folders].
+
+- `assembly`: string
+- `instance`: string; **required** (missing: `missing_assembly_instance`)
+
+Example (fixture `assembly`): `{"op": "assembly_instance_source", "document_id": "<document_id>", "instance": "Free"}`
+
+Schema-named errors: `missing_assembly_instance`.
 
 ### capabilities
 

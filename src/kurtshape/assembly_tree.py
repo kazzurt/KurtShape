@@ -204,6 +204,81 @@ class AssemblyTree:
         self.editor = InlineName(tree, item, name, lambda text: text != name and self.rename(path, text))
         return self.editor
 
+    # Open part (item 4) -------------------------------------------------
+    def source(self, instance):
+        from . import assembly
+        doc = self.panel.document()
+        try:
+            return assembly.instance_source(doc, {"instance": instance}) if doc is not None else None
+        except Exception as exc:  # AssemblyError: not an occurrence of this assembly
+            self.panel.notify(str(exc), "error")
+            return None
+
+    def open_part(self, instance):
+        """Open the occurrence's saved source in its own tab, or activate the tab that has it.
+
+        An FCStd source opens as a project (``open``); a STEP source imports into a new part
+        studio (``import_step``). A missing file is reported in the status line and Messages.
+        """
+        info = self.source(instance)
+        if info is None:
+            return None
+        if not info["path"]:
+            self.panel.notify(info["name"] + " has no recorded source file", "error")
+            return None
+        if not info["exists"]:
+            self.panel.notify("Source file not found: " + info["path"], "error",
+                              detail=info["name"] + ": the source file recorded in the assembly is missing: " + info["path"])
+            return None
+        import FreeCADGui as Gui
+        # A live selection in the assembly makes the native GUI re-activate the assembly tab
+        # after another document opens (measured 2026-10-24); the new tab must stay in front.
+        Gui.Selection.clearSelection()
+        if info["kind"] == "fcstd" and info["open_documents"]:
+            name = info["open_documents"][0]
+            if self.activate(name):
+                self.panel.notify("Opened " + info["name"] + " · already open in its tab")
+            return name
+        state = self.panel.open_path(info["path"])
+        if state:
+            # Make the new tab current even when the window system delays MDI activation.
+            opened = self.panel.core.documents.get(state.get("document_id"))
+            if opened is not None:
+                self.activate(opened.Name)
+            self.panel.notify(("Imported " if info["kind"] == "step" else "Opened ") + info["name"] + " from " + info["path"])
+        return state
+
+    def activate(self, name):
+        """Bring the document's tab to the front (its MDI subwindow), then make it active."""
+        import FreeCAD as App
+        doc = App.listDocuments().get(name)
+        if doc is None:
+            return False
+        from pathlib import Path
+        names = {doc.Label, doc.Name, Path(doc.FileName).stem if doc.FileName else doc.Name}
+        mdi = self.panel.main.findChild(QtGui.QMdiArea)
+        if mdi is not None:
+            for window in mdi.subWindowList():
+                title = window.windowTitle().replace("[*]", "")
+                if (title.rpartition(" : ")[0] or title) in names:
+                    mdi.setActiveSubWindow(window)
+                    break
+        return self.panel.general_actions._activate(name)
+
+    def show_source(self, instance):
+        info = self.source(instance)
+        if info is not None:
+            self.panel.notify((info["kind"] or "Source").upper() + " source: " + (info["path"] or "not recorded")
+                              + ("" if info["exists"] else " (missing)"))
+        return info
+
+    def double_click(self, item):
+        key = item.data(0, QtCore.Qt.UserRole) if item is not None else None
+        if key in set(self.instance_ids()):
+            self.open_part(key)
+            return True
+        return folder_path(key) is not None
+
     # Menu ---------------------------------------------------------------
     def menu(self, tree, item):
         """The assembly context menu for a row of either list (built, not shown)."""
@@ -220,6 +295,12 @@ class AssemblyTree:
             if len(self.selected_instances(tree, item)) <= 1:
                 Gui.Selection.clearSelection()
                 Gui.Selection.addSelection(obj)
+            if key in set(self.instance_ids()):
+                menu.addAction("Open part", lambda: self.open_part(key))
+                info = self.source(key)
+                if info is not None and info["kind"] == "step":
+                    menu.addAction("Show source file", lambda: self.show_source(key))
+                menu.addSeparator()
             visible = bool(obj.ViewObject and obj.ViewObject.Visibility)
             menu.addAction("Hide" if visible else "Show", lambda: p.set_visibility(obj, not visible))
             if key in set(self.instance_ids()):
