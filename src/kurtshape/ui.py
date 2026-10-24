@@ -21,6 +21,7 @@ from .general_actions import GeneralActions
 from .viewport_actions import callbacks as viewport_callbacks
 from .section_view import SectionView
 from . import selection_mode
+from .assembly_instance_links import AssemblyInstanceLinks
 from .theme import apply_theme, apply_view_theme, COLORS
 from .feature_tools import available_catalog
 from .quantity_field import QuantityField
@@ -133,12 +134,15 @@ class SelectionObserver:
                 QtCore.QTimer.singleShot(0, lambda: p.choose_support(document, object_name, subelement))
         QtCore.QTimer.singleShot(0, p.capture_feature_selection)
         p.history_controller.face_links.schedule(reveal=True)
+        p.assembly_links.schedule()
 
     def removeSelection(self, *args):
         self.panel.history_controller.face_links.schedule()
+        self.panel.assembly_links.schedule()
 
     def clearSelection(self, *args):
         self.panel.history_controller.face_links.schedule()
+        self.panel.assembly_links.schedule()
 
 class Panel(QtGui.QDockWidget):
     MEASURE = False
@@ -236,6 +240,8 @@ class Panel(QtGui.QDockWidget):
         self.result_operation.currentIndexChanged.connect(self.result_operation_changed)
         self.merge_scope.currentIndexChanged.connect(self.schedule_preview)
         self.merge_parts.itemChanged.connect(self.schedule_preview)
+        # Assembly UX item 2: occurrence geometry selects its instance rows.
+        self.assembly_links = AssemblyInstanceLinks(self)
         self.observer = SelectionObserver(self)
         Gui.Selection.addObserver(self.observer)
         self.general_actions = GeneralActions(self)
@@ -4798,6 +4804,7 @@ class Panel(QtGui.QDockWidget):
 
     def shutdown(self):
         self.additive_selection.shutdown()
+        self.assembly_links.close()
         if self.open_handoff:
             self.open_handoff.close()
         self.parameter_section.close()

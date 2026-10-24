@@ -1,0 +1,48 @@
+{
+  "passed": true,
+  "checks": [
+    "Both instance lists hold every occurrence",
+    "The 3D selection is untouched (two faces, no whole occurrence)",
+    "features tree: both owning rows are selected",
+    "features tree: the latest instance's row is vertically centred",
+    "Instances list: both owning rows are selected",
+    "Instances list: the latest instance's row is vertically centred",
+    "Deselecting removes that row's highlight",
+    "Clearing the selection clears both lists",
+    "Clicking a row still selects the whole occurrence in 3D",
+    "and keeps that row highlighted"
+  ],
+  "log": [
+    {
+      "features tree": [
+        168,
+        177.5
+      ]
+    },
+    {
+      "Instances list": [
+        64,
+        54.5
+      ]
+    }
+  ],
+  "method": "Production Panel with a 40-occurrence assembly; native Gui.Selection face picks; Qt tree selection and visualItemRect read back. Private desktop, fresh profile.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "owners": [
+    "Block10"
+  ],
+  "seconds": 49.511988999991445,
+  "check_count": 10
+}

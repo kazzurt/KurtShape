@@ -1,0 +1,77 @@
+"""Selected occurrence geometry highlights its instance rows (assembly UX item 2).
+
+Run through tools/run_gui_recipe.ps1 -Recipe assembly-instance-links.
+"""
+import os
+from pathlib import Path
+import sys
+
+_root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(_root / "tools"))
+sys.path.insert(0, str(_root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from assembly_ux_probe import Probe
+
+COUNT = 40
+
+
+def centred(tree, item):
+    rect = tree.visualItemRect(item)
+    middle = tree.viewport().height() / 2
+    return rect.isValid() and abs(rect.center().y() - middle) <= rect.height(), (rect.center().y(), middle)
+
+
+def body(probe):
+    panel = probe.panel
+    source = probe.source_part("links-block", Part.makeBox(10, 6, 4))
+    probe.call("new", name="Instance links")
+    probe.call("create_assembly", id="Assembly")
+    for index in range(COUNT):
+        probe.call("insert_assembly_part", path=str(source), source_id="Body", id=f"Block{index:02d}")
+        if index:
+            probe.call("move_assembly_instance", instance=f"Block{index:02d}", position_mm=[0, 10 * index, 0],
+                       rotation_xyzw=[0, 0, 0, 1])
+    probe.wait(300)
+    doc = panel.document()
+    links = panel.assembly_links
+    probe.check("Both instance lists hold every occurrence",
+                all(f"Block{i:02d}" in panel.items and f"Block{i:02d}" in panel.part_model.items for i in range(COUNT)))
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(doc.getObject("Block03"), "Face6")
+    probe.wait(150)
+    Gui.Selection.addSelection(doc.getObject("Block31"), "Face2")
+    probe.wait(200)
+    native = sorted((e.ObjectName, s) for e in Gui.Selection.getSelectionEx() for s in e.SubElementNames)
+    probe.check("The 3D selection is untouched (two faces, no whole occurrence)",
+                native == [("Block03", "Face6"), ("Block31", "Face2")], native)
+    for tree, items, label in ((panel.features, panel.items, "features tree"),
+                               (panel.parts, panel.part_model.items, "Instances list")):
+        selected = sorted(item.data(0, QtCore.Qt.UserRole) for item in tree.selectedItems())
+        probe.check(label + ": both owning rows are selected", selected == ["Block03", "Block31"], selected)
+        ok, where = centred(tree, items["Block31"])
+        probe.report["log"].append({label: where})
+        probe.check(label + ": the latest instance's row is vertically centred", ok, where)
+    Gui.Selection.removeSelection(doc.getObject("Block31"), "Face2")
+    probe.wait(200)
+    probe.check("Deselecting removes that row's highlight",
+                sorted(i.data(0, QtCore.Qt.UserRole) for i in panel.parts.selectedItems()) == ["Block03"])
+    Gui.Selection.clearSelection()
+    probe.wait(200)
+    probe.check("Clearing the selection clears both lists",
+                not panel.parts.selectedItems() and not panel.features.selectedItems())
+    panel.part_selection(panel.part_model.items["Block10"])
+    probe.wait(200)
+    whole = [(e.ObjectName, tuple(e.SubElementNames)) for e in Gui.Selection.getSelectionEx()]
+    probe.check("Clicking a row still selects the whole occurrence in 3D", whole == [("Block10", ())], whole)
+    probe.check("and keeps that row highlighted",
+                [i.data(0, QtCore.Qt.UserRole) for i in panel.parts.selectedItems()] == ["Block10"])
+    probe.report["owners"] = links.owners
+
+
+Probe("assembly-instance-links",
+      "Production Panel with a 40-occurrence assembly; native Gui.Selection face picks; Qt tree selection and "
+      "visualItemRect read back. Private desktop, fresh profile.").run(body, seconds=600)
