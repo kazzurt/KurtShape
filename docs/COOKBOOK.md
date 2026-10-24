@@ -169,6 +169,17 @@ only (solver, export and occurrence order are unchanged).
 {"op": "move_assembly_instance", "instance": "Cell1", "position_mm": [26.7, 22.4, -60], "rotation_xyzw": [0, 0, 0, 1]}
 ```
 
+Check a clearance with `measure` instead of exporting geometry: whole occurrences give their minimum
+distance, sub-elements the specific case (parallel faces, coaxial bores). After editing a part and
+saving it, `inspect` reports its occurrences with `source.status:"changed"`; refresh them in place
+(identity, placement, folders and unchanged joints survive). Worked example:
+[`examples/assembly_folders_refresh.py`](../examples/assembly_folders_refresh.py).
+
+```json
+{"op": "measure", "references": [{"object": "Pin1"}, {"object": "Plate", "subelement": "Face6"}]}
+{"op": "refresh_assembly_part", "instance": "Pin1", "shared": "all"}
+```
+
 ### Verify
 
 Every Add, Remove and Intersect is checked and returns `result_report` (`volume_delta_mm3`); a

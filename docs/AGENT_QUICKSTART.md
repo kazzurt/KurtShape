@@ -112,6 +112,13 @@ STEP/STL are exports.
    12 at the root. Pass `folder` to `insert_assembly_part`, or regroup with
    `move_assembly_instances` / `set_assembly_folders`; `inspect` returns each
    instance's `folder` and the tree ([contract](OPERATION_CONTRACT.md#instance-folders-assembly-ux-2026-10-24)).
+11. Measure inside KurtShape: `measure {references:[...]}` takes selectors or
+   `{object, subelement}` (an occurrence is measured where it sits) and returns
+   `{kind, text, values}` (distance with ΔX ΔY ΔZ, parallel distance, angles, Ø;
+   [contract](OPERATION_CONTRACT.md#measure-assembly-ux-2026-10-24)). After changing a part,
+   `inspect` shows `source.status:"changed"` on its occurrences; update them with
+   `refresh_assembly_part {instance, shared:"all"}`. `assembly_instance_source {instance}`
+   gives an occurrence's source path and kind.
 
 ### Slow operations and retries
 

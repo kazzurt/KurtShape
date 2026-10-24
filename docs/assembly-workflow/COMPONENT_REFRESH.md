@@ -32,6 +32,11 @@ the result; studio files also retain Bodies used for tools and history.
 
 ## Refresh an occurrence
 
+Since 2026-10-24 `inspect` tells which occurrences need it (`source.status:"changed"` with the
+file's `current_sha256`), and the assembly studio's **Refresh** button (F5) does the same check and,
+on a second press, refreshes every changed source with `shared:"all"`
+([workflow](WORKFLOW.md#selection-folders-open-part-measure-and-refresh-2026-10-24)).
+
 ```json
 {"op":"refresh_assembly_part","instance":"Cartridge","path":"C:/projects/cartridge/cartridge.FCStd","source_id":"Cartridge","shared":"instance"}
 ```
