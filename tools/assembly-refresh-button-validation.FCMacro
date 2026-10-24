@@ -1,0 +1,90 @@
+"""The assembly Refresh button: outdated badges, status text and update (assembly UX item 7).
+
+Run through tools/run_gui_recipe.ps1 -Recipe assembly-refresh-button.
+"""
+import os
+from pathlib import Path
+import shutil
+import sys
+
+_root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(_root / "tools"))
+sys.path.insert(0, str(_root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+from assembly_ux_probe import Probe, SESSION
+from kurtshape.assembly_refresh_button import AMBER
+
+
+def body(probe):
+    panel = probe.panel
+    fixture = Path(probe.managed_parts()["single_body"]["path"])
+    part = SESSION / "refresh-part.FCStd"
+    shutil.copy2(fixture, part)
+    probe.call("new", name="Refresh button assembly")
+    probe.call("create_assembly", id="Assembly")
+    probe.call("insert_assembly_part", path=str(part), source_id="Body", id="A1", name="A1")
+    probe.call("insert_assembly_part", path=str(part), source_id="Body", id="A2", name="A2")
+    probe.call("move_assembly_instance", instance="A2", position_mm=[60, 0, 0], rotation_xyzw=[0, 0, 0, 1])
+    probe.call("save", path=str(SESSION / "refresh-assembly.FCStd"))
+    assembly_doc = panel.document().Name
+    refresh = next(action for action in panel.assembly_bar.actions() if action.text() == "Refresh")
+    probe.check("The assembly bar has a Refresh button", refresh.isVisible() or panel.assembly_bar.isVisible())
+
+    def rows(key):
+        return [panel.items[key], panel.part_model.items[key]]
+
+    refresh.trigger()
+    probe.wait(200)
+    probe.check("Refresh with nothing changed says All parts current", panel.message.text() == "All parts current",
+                panel.message.text())
+    # Edit the part in its own tab (a GUI edit, so the saved file carries GUI sketch state).
+    Gui.Selection.clearSelection()
+    probe.check("The part opens in its own tab", panel.open_path(str(part)))
+    part_doc = panel.document().Name
+    probe.call("sketch_rectangle", id="Boss", width=4, height=4, x=2, y=2, body="Body")
+    probe.call("pad", id="BossPad", profile="Boss", length=3, body="Body")
+    probe.check("The assembly tab comes back", panel.assembly_tree.activate(assembly_doc))
+    probe.wait(200)
+    refresh.trigger()
+    probe.wait(300)
+    text = [row.text(0) for row in rows("A1")]
+    probe.report["log"].append({"unsaved": [panel.message.text(), text]})
+    probe.check("Unsaved edits in another tab are reported, not treated as stale",
+                "unsaved in another tab" in panel.message.text() and all("unsaved in" in value for value in text),
+                (panel.message.text(), text))
+    probe.check("Back to the part tab", panel.assembly_tree.activate(part_doc))
+    probe.call("save", path=str(part))
+    probe.report["save_notice"] = panel.message.text()
+    probe.check("Saving the part names the open assembly that uses it", "used in" in panel.message.text(),
+                panel.message.text())
+    probe.check("The assembly tab comes back again", panel.assembly_tree.activate(assembly_doc))
+    probe.wait(300)
+    refresh.trigger()
+    probe.wait(300)
+    probe.report["log"].append({"stale": panel.message.text()})
+    probe.check("The first click finds both occurrences outdated",
+                panel.message.text() == "2 parts changed on disk · Refresh again to update", panel.message.text())
+    for key in ("A1", "A2"):
+        for row in rows(key):
+            probe.check(f"{key} shows · outdated with the amber badge in both lists",
+                        row.text(0).endswith(" · outdated") and row.foreground(0).color().name() == AMBER,
+                        (row.text(0), row.foreground(0).color().name()))
+    before = App.getDocument(assembly_doc).getObject("A1").LinkedObject.SourceSHA256
+    refresh.trigger()
+    probe.wait(500)
+    probe.report["log"].append({"updated": panel.message.text()})
+    probe.check("The second click updates both", panel.message.text() == "Updated 2 parts", panel.message.text())
+    after = App.getDocument(assembly_doc).getObject("A1").LinkedObject
+    probe.check("The occurrences now embed the saved revision",
+                after.SourceSHA256 != before and after == App.getDocument(assembly_doc).getObject("A2").LinkedObject)
+    probe.check("The badges are gone", not any(row.text(0).endswith("outdated") for key in ("A1", "A2") for row in rows(key)))
+    refresh.trigger()
+    probe.wait(200)
+    probe.check("A further Refresh says All parts current", panel.message.text() == "All parts current", panel.message.text())
+
+
+Probe("assembly-refresh-button",
+      "Production Panel; Refresh toolbar QAction triggered; a headless-built part edited and saved in its own GUI "
+      "tab; row texts, foreground colours and the status line read back. Private desktop.").run(body, seconds=600)

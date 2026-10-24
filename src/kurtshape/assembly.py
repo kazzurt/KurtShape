@@ -1004,6 +1004,7 @@ def inspect(doc):
             "instances": [{"id": obj.Name, "name": obj.Label, "grounded": obj in grounds,
                            "placement": {"base": list(obj.Placement.Base), "rotation": list(obj.Placement.Rotation.Q)},
                            "source": {"path": getattr(obj.LinkedObject, "SourcePath", ""),
+                                      "kind": source_kind(getattr(obj.LinkedObject, "SourcePath", "")),
                                       "sha256": getattr(obj.LinkedObject, "SourceSHA256", ""),
                                       "object": getattr(obj.LinkedObject, "SourceObject", "")},
                            "embedded_source": obj.LinkedObject.Name if obj.LinkedObject else None,

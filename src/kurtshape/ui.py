@@ -1985,7 +1985,8 @@ class Panel(QtGui.QDockWidget):
                        "data": {QtCore.Qt.UserRole: entry["id"], QtCore.Qt.UserRole + 1: entry["body"]},
                        "bold": entry["body"] == self.body_choice.currentData()}
                 if body:
-                    row["icon"] = icon_for("Part", native=body.ViewObject.Icon)
+                    row["icon"] = (icon_for("Imported part") if self.state.get("import_source")
+                                   else icon_for("Part", native=body.ViewObject.Icon))
                 row["tooltip"] = entry["id"] + (" · active part for new features" if entry["body"] == self.body_choice.currentData() else "") + " · right-click to rename, color or operate on this part"
                 part_rows.append(row)
                 count += 1
@@ -1996,7 +1997,8 @@ class Panel(QtGui.QDockWidget):
                 continue
             body_name, body_label = body.Name, body.Label
             body_visible = body.ViewObject.Visibility
-            body_icon = icon_for("Part", native=body.ViewObject.Icon)
+            body_icon = (icon_for("Imported part") if self.state.get("import_source")
+                         else icon_for("Part", native=body.ViewObject.Icon))
             body_active = body_name == self.body_choice.currentData()
             for i, solid in enumerate(solids):
                 part_rows.append({"key": body_name + ":" + str(i),
@@ -2056,7 +2058,9 @@ class Panel(QtGui.QDockWidget):
                        "data": {QtCore.Qt.UserRole: entry["id"]},
                        "tooltip": entry["id"] + (" · reference fixed in place" if entry.get("grounded") else "")}
                 obj = doc.getObject(entry["id"])
-                if obj:
+                if category == "instances" and (entry.get("source") or {}).get("kind") == "step":
+                    row["icon"] = icon_for("Imported part")  # item 5: STEP-sourced occurrence
+                elif obj:
                     row["icon"] = obj.ViewObject.Icon
                 return row
             if category == "instances":
@@ -2076,7 +2080,9 @@ class Panel(QtGui.QDockWidget):
                    "text": entry["name"] + (" · grounded" if entry.get("grounded") else ""),
                    "data": {QtCore.Qt.UserRole: entry["id"]}}
             obj = doc.getObject(entry["id"])
-            if obj:
+            if (entry.get("source") or {}).get("kind") == "step":
+                row["icon"] = icon_for("Imported part")  # item 5: STEP-sourced occurrence
+            elif obj:
                 row["icon"] = icon_for("Part", native=obj.ViewObject.Icon)
             return row
         part_rows = instance_rows(assembly, part_row, self.assembly_tree.folder_icon())

@@ -1,0 +1,59 @@
+"""Distinct icons for imported (STEP) and native parts (assembly UX item 5).
+
+Run through tools/run_gui_recipe.ps1 -Recipe assembly-icons.
+"""
+import os
+from pathlib import Path
+import sys
+
+_root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(_root / "tools"))
+sys.path.insert(0, str(_root / "src"))
+import Part
+from assembly_ux_probe import Probe, SESSION
+from kurtshape.presentation_icons import icon_for, icon_signature
+
+
+def body(probe):
+    panel = probe.panel
+    native = probe.managed_parts()["single_body"]["path"]
+    step = SESSION / "icon-imported.step"
+    Part.makeBox(3, 4, 5).exportStep(str(step))
+    imported_signature = icon_signature(icon_for("Imported part"))
+    probe.check("The imported-part icon loads", not icon_for("Imported part").isNull())
+    probe.call("new", name="Icons")
+    probe.call("create_assembly", id="Assembly")
+    probe.call("insert_assembly_part", path=native, source_id="Body", id="Native", name="Native")
+    candidate = panel.core.dispatch({"op": "assembly_candidates", "path": str(step)})["result"]["candidates"][0]["id"]
+    probe.call("insert_assembly_part", path=str(step), source_id=candidate, id="Imported", name="Imported")
+    kinds = {row["id"]: row["source"]["kind"] for row in panel.assembly_state()["instances"]}
+    probe.check("inspect reports source.kind per instance", kinds == {"Native": "fcstd", "Imported": "step"}, kinds)
+    for tree_items, label in ((panel.items, "features tree"), (panel.part_model.items, "Instances list")):
+        native_sig = icon_signature(tree_items["Native"].icon(0))
+        step_sig = icon_signature(tree_items["Imported"].icon(0))
+        probe.report["log"].append({label: {"native": str(native_sig)[:60], "step": str(step_sig)[:60]}})
+        probe.check(label + ": STEP and native instance rows have different icons", native_sig != step_sig)
+        probe.check(label + ": the STEP row shows the imported-part icon", step_sig == imported_signature)
+    sets = panel.part_model.icon_sets
+    panel.refresh_assembly()
+    probe.wait(100)
+    probe.check("A refresh with unchanged rows sets no icon again (cache rule)", panel.part_model.icon_sets == sets,
+                (sets, panel.part_model.icon_sets))
+    probe.check("A STEP import opens", panel.open_path(str(step)))
+    probe.wait(300)
+    probe.check("The import carries import_source", bool(panel.state.get("import_source")))
+    rows = list(panel.part_model.items.values())
+    probe.check("The imported part studio's Parts list uses the imported icon",
+                rows and all(icon_signature(item.icon(0)) == imported_signature for item in rows),
+                [str(icon_signature(item.icon(0)))[:40] for item in rows])
+    probe.check("A native project opens", panel.open_path(native))
+    probe.wait(300)
+    rows = list(panel.part_model.items.values())
+    probe.check("A native project's Parts list keeps the native part icon",
+                rows and all(icon_signature(item.icon(0)) != imported_signature for item in rows))
+
+
+Probe("assembly-icons",
+      "Production Panel; row icons compared with presentation_icons.icon_signature; STEP and headless-built "
+      "managed FCStd sources. Private desktop.").run(body)

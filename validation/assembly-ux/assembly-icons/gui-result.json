@@ -1,0 +1,47 @@
+{
+  "passed": true,
+  "checks": [
+    "The imported-part icon loads",
+    "inspect reports source.kind per instance",
+    "features tree: STEP and native instance rows have different icons",
+    "features tree: the STEP row shows the imported-part icon",
+    "Instances list: STEP and native instance rows have different icons",
+    "Instances list: the STEP row shows the imported-part icon",
+    "A refresh with unchanged rows sets no icon again (cache rule)",
+    "A STEP import opens",
+    "The import carries import_source",
+    "The imported part studio's Parts list uses the imported icon",
+    "A native project opens",
+    "A native project's Parts list keeps the native part icon"
+  ],
+  "log": [
+    {
+      "features tree": {
+        "native": "(24, 24, 96, <Format.Format_ARGB32_Premultiplied: 6>, 1.0, b",
+        "step": "(48, 48, 192, <Format.Format_ARGB32_Premultiplied: 6>, 1.5, "
+      }
+    },
+    {
+      "Instances list": {
+        "native": "(24, 24, 96, <Format.Format_ARGB32_Premultiplied: 6>, 1.0, b",
+        "step": "(48, 48, 192, <Format.Format_ARGB32_Premultiplied: 6>, 1.5, "
+      }
+    }
+  ],
+  "method": "Production Panel; row icons compared with presentation_icons.icon_signature; STEP and headless-built managed FCStd sources. Private desktop.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "seconds": 18.363236300006974,
+  "check_count": 12
+}

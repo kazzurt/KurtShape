@@ -62,6 +62,15 @@ class AssemblyInstanceSourceTests(unittest.TestCase):
         embedded = self.doc.getObject("Only").LinkedObject.Name
         self.reject("assembly_instance_source", "missing_assembly_instance", instance=embedded)
 
+    def test_inspect_reports_source_kind(self):
+        # Item 5: agents tell imported from native occurrences in inspect.
+        self.call("create_assembly", id="Asm")
+        self.insert("Native")
+        step, candidate = self.step_source()
+        self.call("insert_assembly_part", path=str(step), source_id=candidate, id="Imported")
+        kinds = {row["id"]: row["source"]["kind"] for row in self.call("inspect")["assembly"]["instances"]}
+        self.assertEqual(kinds, {"Native": "fcstd", "Imported": "step"})
+
     def test_kind_classification(self):
         self.assertEqual(assembly.source_kind("C:/a/b.STEP"), "step")
         self.assertEqual(assembly.source_kind("b.stp"), "step")
