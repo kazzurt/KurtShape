@@ -20,6 +20,7 @@ import Part
 
 from .core import OperationError, number
 from . import confirm_gate
+from .assembly_persistence import save_copy as save_native_copy
 from . import geometry
 from .bodies import results as native_results
 
@@ -369,7 +370,7 @@ class ExtrusionEvaluator:
                     self._temporary = tempfile.TemporaryDirectory(prefix="kurtshape-extrusion-preview-")
                     self._snapshot = Path(self._temporary.name) / "extrusion-source.FCStd"
                     self.snapshot_captures += 1
-                    self.document.saveCopy(str(self._snapshot))
+                    save_native_copy(self.document, self._snapshot)
                     self._generation = generation
             key = json.dumps(normalized, sort_keys=True, allow_nan=False)
             if key in self._cache:
@@ -925,7 +926,7 @@ class DebouncedExtrusionPreview:
                             self.snapshot_reuses += 1
                         else:
                             self.snapshot_captures += 1
-                            evaluator.document.saveCopy(str(worker.snapshot))
+                            save_native_copy(evaluator.document, worker.snapshot)
                 finally:
                     if lease is not None:
                         lease.release()

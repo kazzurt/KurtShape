@@ -10,6 +10,7 @@ import zipfile
 from concurrent.futures import ThreadPoolExecutor
 
 from .settings import load_preference
+from .assembly_persistence import save_copy as save_native_copy
 
 DOCUMENT_PREFERENCES = "User parameter:BaseApp/Preferences/Document"
 # ZIP level of a checkpoint archive when recovery_fast_snapshots is on (slice A/B U8). Level 1 restores
@@ -65,7 +66,7 @@ class RecoveryStore:
         self.stall("Checkpoint…")
         try:
             with snapshot_compression(self.compression):
-                doc.saveCopy(str(stage))
+                save_native_copy(doc, stage)
         finally:
             self.stall(None)
 
