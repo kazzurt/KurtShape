@@ -19,7 +19,8 @@ def save_copy(doc, path):
     saveable for recovery, but its mismatching seal must never be blessed.
     """
     from . import assembly
-    sources = [obj for obj in doc.Objects if assembly.is_embedded_source(obj)]
+    # getattr: preview and recovery snapshots may pass a duck-typed document that only has saveCopy.
+    sources = [obj for obj in getattr(doc, "Objects", ()) if assembly.is_embedded_source(obj)]
     accepted = {}
     for source in sources:
         current = assembly._geometry_fingerprint(source)
