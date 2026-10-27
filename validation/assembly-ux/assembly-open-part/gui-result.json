@@ -1,0 +1,156 @@
+{
+  "passed": true,
+  "checks": [
+    "Open part is the first entry of the instance menu",
+    "A native-FCStd instance offers no Show source file",
+    "Open part opens the source in a second MDI view",
+    "and the active document is the source",
+    "The assembly tab is still open",
+    "Double-click opens it again without a third view",
+    "and activates the source tab",
+    "The assembly tab is still open",
+    "A STEP instance also offers Show source file",
+    "Show source file names the STEP path in the status line",
+    "Open part on a STEP instance imports it into a new tab",
+    "as a part studio carrying import_source",
+    "The assembly tab is still open",
+    "A missing source opens nothing",
+    "and names the recorded path in the status line",
+    "and in Messages",
+    "No dialog or extra window appeared"
+  ],
+  "log": [
+    {
+      "Native": [
+        "Open part",
+        "",
+        "Hide",
+        "Ground as reference",
+        "Move free instance",
+        "Rename",
+        "Remove",
+        "",
+        "New folder",
+        "Move to folder"
+      ]
+    },
+    {
+      "Imported": [
+        "Open part",
+        "Show source file",
+        "",
+        "Hide",
+        "Ground as reference",
+        "Move free instance",
+        "Rename",
+        "Remove",
+        "",
+        "New folder",
+        "Move to folder"
+      ]
+    },
+    {
+      "Imported": [
+        "Open part",
+        "Show source file",
+        "",
+        "Hide",
+        "Ground as reference",
+        "Move free instance",
+        "Rename",
+        "Remove",
+        "",
+        "New folder",
+        "Move to folder"
+      ]
+    },
+    {
+      "Gone": [
+        "Open part",
+        "",
+        "Hide",
+        "Ground as reference",
+        "Move free instance",
+        "Rename",
+        "Remove",
+        "",
+        "New folder",
+        "Move to folder"
+      ]
+    }
+  ],
+  "method": "Production Panel; instance context-menu actions triggered from the built QMenu and the double-click handler; MDI subwindows counted, active document read back. Private desktop.",
+  "engine": {
+    "FreeCAD": [
+      "1",
+      "1",
+      "4",
+      "20260928 (Git shallow)",
+      "Unknown",
+      "2026/09/28 13:46:34",
+      "(HEAD detached at 4fd3bf320)",
+      "4fd3bf320d9566a27e60069fc8387448aaa3a094"
+    ],
+    "OCCT": "7.8.1"
+  },
+  "activation_trace": [
+    [
+      "now",
+      "single_body",
+      "single-body : 1[*]"
+    ],
+    [
+      0,
+      "single_body",
+      "single-body : 1[*]"
+    ],
+    [
+      1,
+      "single_body",
+      "single-body : 1[*]"
+    ],
+    [
+      2,
+      "single_body",
+      "single-body : 1[*]"
+    ],
+    [
+      3,
+      "single_body",
+      "single-body : 1[*]"
+    ],
+    [
+      4,
+      "single_body",
+      "single-body : 1[*]"
+    ],
+    [
+      5,
+      "single_body",
+      "single-body : 1[*]"
+    ],
+    [
+      6,
+      "single_body",
+      "single-body : 1[*]"
+    ],
+    [
+      7,
+      "single_body",
+      "single-body : 1[*]"
+    ]
+  ],
+  "import_source": {
+    "assembly_structure": "flattened",
+    "body_ids": [
+      "Body"
+    ],
+    "feature_history": "unavailable",
+    "format": "STEP",
+    "path": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\ksasm\\runtime\\ci-gui\\assembly-open-part\\run-1911f80d0e404408961f0925f3efeccc\\open-imported.step",
+    "reference_ids": [],
+    "sha256": "ef8e023ace560efd589e3b7d7e2958302dadb97b70ec90e655f81d0fc8d4ac62"
+  },
+  "seconds": 21.708240599997225,
+  "check_count": 17
+}

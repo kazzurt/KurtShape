@@ -1,0 +1,192 @@
+"""A second launch with a file hands it to the KurtShape already running for its session.
+
+Runs ui.start() in a hidden native window, then calls tools/open-in-running-app.ps1 and
+launch-kurtshape.ps1 -FilePath as separate PowerShell processes while this app keeps its
+event loop running. The launcher gets -RuntimeRoot pointing at a missing folder: a handoff
+that fails throws "Run install-runtime.ps1 first." instead of starting a FreeCAD window.
+"""
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import time
+import traceback
+
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtTest, QtWidgets
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "src"))
+sys.path.insert(0, str(root / "tools"))
+os.environ.pop("KURTSHAPE_OPEN_FILE", None)
+from kurtshape import ui
+from kurtshape.open_handoff import pipe_name
+from kurtshape_evidence import evidence_dir
+
+
+class HiddenWindows(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+hidden = HiddenWindows(app)
+app.installEventFilter(hidden)
+output = evidence_dir("open-handoff")
+output.mkdir(parents=True, exist_ok=True)
+work = session / "open-handoff"
+powershell = Path(os.environ["SystemRoot"]) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
+report = {"passed": False, "checks": [], "runs": [], "pid": os.getpid(),
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION},
+          "method": "Hidden native window running ui.start(); handoffs from separate hidden PowerShell processes "
+                    "(the helper and the real launcher with a missing runtime root) while this event loop runs.",
+          "limits": "Bringing the window to the front is skipped for hidden windows, so foreground activation is not exercised."}
+panel = None
+
+
+def save():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def check(label, condition):
+    assert condition, label
+    report["checks"].append(label)
+    save()
+
+
+def settle(ms=600):
+    QtTest.QTest.qWait(ms)
+
+
+def powershell_file(script, *arguments, timeout=180):
+    """Run a PowerShell script hidden while this app keeps processing events."""
+    began = time.monotonic()
+    process = subprocess.Popen([str(powershell), "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script), *map(str, arguments)],
+                               cwd=str(root), stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    while process.poll() is None:
+        assert time.monotonic() - began < timeout, "PowerShell did not finish: " + str(script)
+        QtTest.QTest.qWait(30)
+    stdout, stderr = process.communicate()
+    run = {"script": Path(script).name, "arguments": [str(a) for a in arguments], "exit_code": process.returncode,
+           "stdout": stdout.decode("utf-8", "replace").strip(), "stderr": stderr.decode("utf-8", "replace").strip()[-1500:],
+           "seconds": round(time.monotonic() - began, 2)}
+    report["runs"].append(run)
+    save()
+    return run
+
+
+def helper(path, session_dir=session):
+    return powershell_file(root / "tools" / "open-in-running-app.ps1", "-Session", session_dir, "-FilePath", path)
+
+
+def native_project(name):
+    """A distinct native FCStd (each copy of the example plate shares one document ID)."""
+    doc = App.newDocument(Path(name).stem)
+    doc.addObject("Part::Box", "Box")
+    doc.recompute()
+    doc.saveAs(str(work / name))
+    App.closeDocument(doc.Name)
+    return str(work / name)
+
+
+def open_files():
+    return sorted(Path(doc.FileName).name for doc in App.listDocuments().values() if doc.FileName)
+
+
+def active_file():
+    doc = App.activeDocument()
+    return Path(doc.FileName).name if doc and doc.FileName else None
+
+
+def validate():
+    global panel
+    try:
+        work.mkdir(parents=True, exist_ok=True)
+        first = work / "first.FCStd"
+        shutil.copy2(root / "examples" / "acceptance-plate.FCStd", first)
+        second = native_project("second.FCStd")
+        third = native_project("third.FCStd")
+        step = work / "box.step"
+        Part.makeBox(10, 20, 30).exportStep(str(step))
+
+        panel = ui.start()
+        settle()
+        handoff = panel.open_handoff
+        check("The app listens for handed-over files", handoff is not None and handoff.listening)
+        check("The pipe is named after this session", handoff.name == pipe_name(session))
+        check("Launch makes one blank part", [doc.Label for doc in App.listDocuments().values()] == ["Untitled part"])
+
+        run = helper(first, session_dir=work / "no-app-here")
+        check("Without a running app for the session the helper answers False", run["exit_code"] == 0 and run["stdout"] == "False")
+
+        run = helper(first)
+        settle()
+        check("The helper hands the file over", run["exit_code"] == 0 and run["stdout"] == "True")
+        check("The handed-over file opens and replaces the untouched blank",
+              len(App.listDocuments()) == 1 and open_files() == ["first.FCStd"] and active_file() == "first.FCStd")
+
+        run = powershell_file(root / "launch-kurtshape.ps1", "-FilePath", second, "-SessionRoot", session,
+                              "-RuntimeRoot", work / "missing-runtime")
+        settle()
+        check("launch-kurtshape.ps1 -FilePath hands over to the running app", run["exit_code"] == 0)
+        check("The launcher's file opens in the running app", open_files() == ["first.FCStd", "second.FCStd"]
+              and active_file() == "second.FCStd")
+
+        run = helper(first)
+        settle()
+        check("Handing over an open project succeeds", run["exit_code"] == 0 and run["stdout"] == "True")
+        check("An open project becomes the active tab, without a second copy",
+              open_files() == ["first.FCStd", "second.FCStd"] and active_file() == "first.FCStd")
+
+        run = helper(step)
+        settle()
+        check("The app refuses a file that is not a native project", run["exit_code"] != 0 and ".FCStd" in run["stderr"])
+        check("A refused file opens nothing", open_files() == ["first.FCStd", "second.FCStd"])
+
+        dialog = QtWidgets.QDialog(main)
+        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        dialog.show()
+        settle(200)
+        check("A modal dialog is open", QtWidgets.QApplication.activeModalWidget() is dialog)
+        run = helper(third)
+        settle()
+        check("A handoff while a dialog is open is accepted", run["exit_code"] == 0 and run["stdout"] == "True")
+        check("The file waits while the dialog is open", "third.FCStd" not in open_files())
+        dialog.close()
+        settle(1000)
+        check("The file opens once the dialog closes", "third.FCStd" in open_files() and active_file() == "third.FCStd")
+
+        handoff.close()
+        run = helper(first)
+        check("After shutdown no handoff is taken", run["exit_code"] == 0 and run["stdout"] == "False")
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        save()
+        if panel is not None:
+            panel.shutdown()
+            main.destroyed.disconnect(panel.shutdown)
+        for name in list(App.listDocuments()):
+            App.getDocument(name).setClosable(True)
+            App.closeDocument(name)
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(100, app.quit)
+
+
+QtCore.QTimer.singleShot(400, validate)

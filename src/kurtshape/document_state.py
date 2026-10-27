@@ -33,6 +33,7 @@ class DocumentState:
                      "intent_versions": {}, "summary_versions": {},
                      "intent_epoch": 0, "summary_epoch": 0,
                      "change_serial": 0, "full_change_serial": 0, "commit_count": 0,
+                     "undo_count": 0, "redo_count": 0,
                      "result_serial": 0, "history_serial": 0,
                      "change_log": deque(maxlen=2048),
                      "index": document_index.DocumentIndex(doc)}
@@ -201,8 +202,15 @@ class DocumentState:
         state["index"].invalidate(structure=True)
         self.invalidate(doc, changed="")
 
-    slotUndoDocument = slotAbortTransaction
-    slotRedoDocument = slotAbortTransaction
+    def slotUndoDocument(self, doc):
+        # Slice A/B U6: the sketch lease counts native undo and redo beside commits (a saturated
+        # undo stack hides them from UndoCount); otherwise an undo restores like an abort.
+        self.slotAbortTransaction(doc)
+        self.state(doc)["undo_count"] += 1
+
+    def slotRedoDocument(self, doc):
+        self.slotAbortTransaction(doc)
+        self.state(doc)["redo_count"] += 1
 
     def slotFinishRestoreDocument(self, doc):
         state = self._record_change(doc, None, "$restore", domains=document_index.DOMAINS, full=True)

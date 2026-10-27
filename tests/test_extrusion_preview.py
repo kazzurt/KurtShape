@@ -107,7 +107,7 @@ class ExtrusionPreviewTests(unittest.TestCase):
             adapter.clear()
             worker.close.assert_not_called()
             Path(path).write_text("private simulated snapshot", encoding="utf-8")
-        evaluator.document = SimpleNamespace(Name=self.doc.Name, saveCopy=snapshot)
+        evaluator.document = SimpleNamespace(Name=self.doc.Name, Objects=[], saveCopy=snapshot)
         with patch("kurtshape.preview_worker.NativePreviewWorker", return_value=worker), \
                 patch.object(self.core, "snapshot_key", return_value=None):
             adapter._start_exact()
@@ -144,7 +144,7 @@ class ExtrusionPreviewTests(unittest.TestCase):
             # Native saveCopy can pump Qt and deliver newer user input.
             ui.update(camera="new orbit during snapshot", selection="new face during snapshot")
             Path(path).write_text("private simulated snapshot", encoding="utf-8")
-        evaluator.document = SimpleNamespace(Name=self.doc.Name, saveCopy=snapshot)
+        evaluator.document = SimpleNamespace(Name=self.doc.Name, Objects=[], saveCopy=snapshot)
         with patch("kurtshape.preview_worker.NativePreviewWorker", return_value=worker), \
                 patch.object(self.core, "snapshot_key", return_value=None), \
                 patch.object(self.core, "_is_open", return_value=True), \
@@ -284,7 +284,7 @@ class ExtrusionPreviewTests(unittest.TestCase):
                 adapter.check_lifetime = Mock(return_value=True)
                 old_evaluator = adapter.evaluator
                 old_worker = Mock(snapshot=self.folder / ("post-snapshot-" + str(replacement) + ".FCStd"))
-                old_evaluator.document = SimpleNamespace(Name=self.doc.Name,
+                old_evaluator.document = SimpleNamespace(Name=self.doc.Name, Objects=[],
                     saveCopy=lambda path: Path(path).write_text("private simulated snapshot", encoding="utf-8"))
                 new_worker = Mock()
                 new_result = ExtrusionResult(True, self.state["revision"], proposal)

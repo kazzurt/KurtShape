@@ -291,6 +291,84 @@ class GeometryCheckJobTests(unittest.TestCase):
         worker.own_snapshot(self.core.snapshot_key(self.doc), _snapshot_file_identity(worker.snapshot))
         return worker.snapshot.read_bytes()
 
+    def test_oblique_curve_uses_synchronous_check_without_allocating_worker(self):
+        from kurtshape.geometry_check_worker import source_roundtrip_stable
+        obj = self.doc.addObject("Part::Feature", "ObliqueTorus")
+        obj.Shape = Part.makeTorus(50.479194424640504, 22,
+            App.Vector(-338.98113751727601, -246.28421259793501, 22.8399742042516),
+            App.Vector(.18735110628408988, -.95350077593135429, -.23608437744254279))
+        self.doc.recompute()
+        self.core.sync(self.doc)
+        self.state = self.core.inspect(self.doc, measure=False)
+        before = self.invariant()
+        self.assertFalse(source_roundtrip_stable(self.doc, [obj.Name]),
+                         "The regression needs a real numerically unstable native round trip")
+        factory = Mock(side_effect=AssertionError("Inexact capture must not allocate a worker"))
+        self.assertIsNone(self.core.prepare_geometry_check(self.doc, worker_factory=factory))
+        factory.assert_not_called()
+        self.assertEqual(self.invariant(), before)
+        result = self.call("check_geometry")
+        self.assertEqual(result["geometry_check"], "valid")
+        self.assertEqual(result["build_status"], "valid")
+        self.assertEqual(self.invariant(), before)
+
+
+    def test_diagonal_invalid_shape_falls_back_and_keeps_native_invalid_verdict(self):
+        obj = self.invalid_solid(diagonal=True)
+        before = BorrowedPreviewTests.native_shapes(self.doc)
+        revision = self.state["revision"]
+        factory = Mock(side_effect=AssertionError("Inexact capture must not allocate a worker"))
+        self.assertIsNone(self.core.prepare_geometry_check(self.doc, worker_factory=factory))
+        factory.assert_not_called()
+        result = self.call("check_geometry")
+        self.assertEqual(result["geometry_check"], "invalid")
+        self.assertEqual(result["build_status"], "failed")
+        entry, = result["geometry_check_report"]["bodies"]
+        self.assertEqual(entry["id"], obj.Name)
+        self.assertTrue(any("Self-intersecting wire" in issue for issue in entry["issues"]))
+        self.assertEqual(result["revision"], revision)
+        self.assertEqual(BorrowedPreviewTests.native_shapes(self.doc), before)
+
+
+    def test_unstable_embedded_fallback_preserves_genuine_source_change_detection(self):
+        source = App.newDocument("UnstableSource", hidden=True)
+        try:
+            obj = source.addObject("Part::Feature", "Curved")
+            obj.Shape = Part.makeTorus(50.479194424640504, 22,
+                App.Vector(-338.98113751727601, -246.28421259793501, 22.8399742042516),
+                App.Vector(.18735110628408988, -.95350077593135429, -.23608437744254279))
+            path = self.folder / "curved-source.FCStd"
+            source.recompute()
+            source.saveAs(str(path))
+        finally:
+            App.closeDocument(source.Name)
+            App.setActiveDocument(self.doc.Name)
+        self.call("create_assembly")
+        self.call("insert_assembly_part", path=str(path), source_id="Curved", id="Occurrence")
+        embedded = self.doc.Occurrence.LinkedObject
+        seal = embedded.SourceGeometryFingerprint
+        embedded.Placement.Base.x += .01
+        self.doc.recompute()
+        self.core.sync(self.doc)
+        self.state = self.core.inspect(self.doc, measure=False)
+        self.assertEqual(self.state["build_status"], "failed")
+        before = target_fingerprints(self.doc, ["Occurrence"])
+        revision = self.state["revision"]
+        factory = Mock(side_effect=AssertionError("Inexact capture must not allocate a worker"))
+        self.assertIsNone(self.core.prepare_geometry_check(self.doc, worker_factory=factory))
+        factory.assert_not_called()
+        result = self.call("check_geometry")
+        self.assertEqual(result["geometry_check"], "valid")
+        self.assertEqual(result["build_status"], "failed")
+        self.assertEqual(result["revision"], revision)
+        self.assertEqual(embedded.SourceGeometryFingerprint, seal)
+        self.assertEqual(target_fingerprints(self.doc, ["Occurrence"]), before)
+        exported = self.core.dispatch(dict(op="export", path=str(self.folder / "changed-source.step"),
+            document_id=self.state["document_id"], expected_revision=self.state["revision"]))
+        self.assertFalse(exported["ok"], exported)
+        self.assertEqual(exported["error"]["code"], "build_failed")
+
+
     def test_actual_owned_worker_valid_check_matches_native_oracle_and_preserves_source(self):
         body = self.plate()
         expected = geometry.check_shape(body.Shape.copy())

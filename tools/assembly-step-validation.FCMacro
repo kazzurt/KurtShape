@@ -71,9 +71,10 @@ application.installEventFilter(hidden_popups)
 output = evidence_dir("assembly-step-import")
 output.mkdir(parents=True, exist_ok=True)
 report = {"passed": False, "checks": [], "method": "Actual production Panel, native STEP parser, Insert file chooser, solid picker and Qt button events in an independent hidden GUI; isolated profile and no assistant server",
-          "limits": "Synthetic Qt mouse events, one original three-solid STEP fixture. Native C++ networking and physical offline operation are not intercepted.",
+          "limits": "Synthetic Qt mouse events, one three-solid STEP fixture. Native C++ networking and physical offline operation are not intercepted.",
           "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}, "runtime_profile": str(session.relative_to(root))}
 panel = None
+report["fixture_kind"] = os.environ.get("KURTSHAPE_STEP_FIXTURE_KIND", "external-originals")
 cleaned = False
 started = time.perf_counter()
 

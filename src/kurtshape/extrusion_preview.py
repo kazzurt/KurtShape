@@ -19,6 +19,8 @@ import FreeCAD as App
 import Part
 
 from .core import OperationError, number
+from . import confirm_gate
+from .assembly_persistence import save_copy as save_native_copy
 from . import geometry
 from .bodies import results as native_results
 
@@ -368,7 +370,7 @@ class ExtrusionEvaluator:
                     self._temporary = tempfile.TemporaryDirectory(prefix="kurtshape-extrusion-preview-")
                     self._snapshot = Path(self._temporary.name) / "extrusion-source.FCStd"
                     self.snapshot_captures += 1
-                    self.document.saveCopy(str(self._snapshot))
+                    save_native_copy(self.document, self._snapshot)
                     self._generation = generation
             key = json.dumps(normalized, sort_keys=True, allow_nan=False)
             if key in self._cache:
@@ -638,7 +640,9 @@ class DebouncedExtrusionPreview:
 
     Every method runs on Qt's thread. The worker receives an immutable FCStd
     snapshot and JSON proposals, and returns only JSON display/measurement data.
-    flush/current_result never wait: only a matching exact verdict can commit.
+    flush/current_result never wait: a matching exact verdict can commit, and so
+    can a matching provisional result where the caller allows it (confirm_gate);
+    a remembered exact or commit rejection of the same fields never commits.
     """
     def __init__(self, controller, parent=None, status=None, allowed=None, delay_ms=160):
         from PySide import QtCore
@@ -778,6 +782,8 @@ class DebouncedExtrusionPreview:
         self.normalized = normalized
         key = self._key(normalized)
         if key in self.exact_cache:
+            # A valid exact result, or a remembered exact/commit rejection of
+            # these fields: either way the verdict stands until they change.
             self.timer.stop()
             result = self.exact_cache.pop(key)
             self.exact_cache[key] = result
@@ -796,16 +802,58 @@ class DebouncedExtrusionPreview:
         # can paint before saveCopy's unavoidable native serialization cost.
         self.timer.start(self.delay_ms)
 
-    def flush(self):
-        result = self.current_result(self.pending)
-        if result is None and self.normalized is not None and not self.closed:
+    def flush(self, provisional=False):
+        """The committable result for the latest fields, or None without waiting.
+
+        ``provisional`` True also accepts a valid provisional result while no
+        exact verdict exists yet for the same fields (confirm_gate.verdict);
+        an exact invalid verdict for those fields still returns None.
+        """
+        result = self.current_result(self.pending, provisional=provisional)
+        if result is None and self.normalized is not None and not self.closed and self._rejected(self.normalized) is None:
             self.timer.start(0)
         return result
 
-    def current_result(self, proposal=None):
+    def _rejected(self, normalized):
+        """A remembered exact or commit rejection of these normalized fields, or None."""
+        remembered = self.exact_cache.get(self._key(normalized)) if normalized is not None else None
+        return remembered if remembered is not None and not remembered.valid else None
+
+    def _remember(self, key, result):
+        self.exact_cache[key] = result
+        while len(self.exact_cache) > 8:
+            self.exact_cache.popitem(last=False)
+
+    def reject(self, proposal, error):
+        """Remember a commit rejection of these normalized fields until they change or the task restarts.
+
+        A failed commit restarts the preview; without this the same fields
+        would be offered again with Confirm enabled and the error only in the
+        message line. Transient codes (stale revision, busy, …) are not kept.
+        """
+        if self.closed or self.evaluator is None or not confirm_gate.remembers_rejection(error):
+            return
+        evaluator = self.evaluator
+        try:
+            normalized = evaluator._proposal(proposal, solve=False)
+        except Exception:
+            # The caller passes the preview's own normalized proposal. Normalizing
+            # it again can fail where the resolved body is a studio tool body,
+            # which the controller refuses as an explicit target; the proposal
+            # as given is already the key the display and the commit used.
+            normalized = dict(proposal)
+        if self.evaluator is not evaluator:
+            return
+        result = ExtrusionResult(False, evaluator.expected_revision, normalized, error=dict(error))
+        self._remember(self._key(normalized), result)
+        if normalized == self.normalized:
+            self.timer.stop()
+            self._display(result)
+
+    def current_result(self, proposal=None, provisional=False):
         if self.normalizing or self.snapshotting is not None:
             return None
-        if not self.check_lifetime() or self.result is None or not self.result.valid:
+        if not self.check_lifetime() or confirm_gate.verdict(self.result, provisional=provisional) is None:
             return None
         evaluator = self.evaluator
         try:
@@ -840,7 +888,7 @@ class DebouncedExtrusionPreview:
         evaluator = self.evaluator
         if self.current_result(self.pending) is not None:
             return
-        if self.evaluator is not evaluator:
+        if self.evaluator is not evaluator or self._rejected(self.normalized) is not None:
             return
         try:
             evaluator._guard()
@@ -878,7 +926,7 @@ class DebouncedExtrusionPreview:
                             self.snapshot_reuses += 1
                         else:
                             self.snapshot_captures += 1
-                            evaluator.document.saveCopy(str(worker.snapshot))
+                            save_native_copy(evaluator.document, worker.snapshot)
                 finally:
                     if lease is not None:
                         lease.release()
@@ -959,10 +1007,11 @@ class DebouncedExtrusionPreview:
                                      error=response.get("error"), cached=response.get("cached", False),
                                      milliseconds=response["milliseconds"], mesh=response.get("mesh"),
                                      mesh_key="exact:" + self._key(proposal), phase_milliseconds=phases)
-            if result.valid:
-                self.exact_cache[self._key(proposal)] = result
-                while len(self.exact_cache) > 8:
-                    self.exact_cache.popitem(last=False)
+            if result.valid or confirm_gate.remembers_rejection(result.error):
+                # Valid verdicts are reused; geometric rejections are remembered
+                # so a later identical proposal cannot commit on its provisional.
+                # Worker and transport failures (the except path) stay retryable.
+                self._remember(self._key(proposal), result)
             if sequence == self.sequence and proposal == self.normalized:
                 self._display(result)
             elif self.ready_sequence == self.sequence:

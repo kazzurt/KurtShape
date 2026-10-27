@@ -1,0 +1,147 @@
+"""Hidden GUI check (slice A/B U6, A2/E-05): one inspection per committed GUI action.
+
+A spy on the real Controller counts ``Controller.inspect`` calls (the full inspection, whether
+run as a mutation's own response or dispatched as an ``inspect`` request) and ``inspect``
+dispatches, from the start of each ``Panel.operation`` through the two panel ticks that follow.
+Actions on a small plate: a sketch, a pad from that sketch, a parameter edit, undo, and a GUI
+sketch edit (begin, a line, Finish: the A2 path). Asserted: exactly one inspection per action
+(the mutation's own response) and no ``inspect`` dispatch through the two following ticks.
+The recipe measures the current build only; it records no earlier baseline."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+from kurtshape.ui import start
+panel = start()
+output = evidence_dir("inspection-count")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "actions": [],
+          "method": "Separate hidden native GUI; Controller.inspect and dispatch spied around Panel.operation plus two ticks"}
+counts = {"inspect_calls": 0, "inspect_dispatches": 0, "inspect_compact_calls": 0}
+core = panel.core
+real_inspect, real_inspect_compact, real_dispatch = core.inspect, core.inspect_compact, core.dispatch
+
+
+def spy_inspect(doc, measure=None):
+    counts["inspect_calls"] += 1
+    return real_inspect(doc, measure)
+
+
+def spy_inspect_compact(*args, **kwargs):
+    counts["inspect_compact_calls"] += 1
+    return real_inspect_compact(*args, **kwargs)
+
+
+def spy_dispatch(request):
+    if isinstance(request, dict) and request.get("op") == "inspect":
+        counts["inspect_dispatches"] += 1
+    return real_dispatch(request)
+
+
+def check(label, condition):
+    assert condition, label + ": " + panel.message.text()
+    report["checks"].append(label)
+
+
+def wait(ms=80):
+    QtTest.QTest.qWait(ms)
+
+
+def action(label, op, **args):
+    for key in counts:
+        counts[key] = 0
+    state = panel.operation(op, **args)
+    assert state, label + ": " + panel.message.text()
+    inside = dict(counts)
+    for _ in range(2):
+        panel.tick()
+        wait(60)
+    row = {"action": label, "op": op, "inside_operation": inside, "through_two_ticks": dict(counts),
+           "revision": state["revision"], "build_status": state["build_status"]}
+    report["actions"].append(row)
+    return state
+
+
+def validate():
+    try:
+        core.inspect, core.inspect_compact, core.dispatch = spy_inspect, spy_inspect_compact, spy_dispatch
+        wait(200)
+        panel.tick()
+        action("New sketch (sketch_rectangle)", "sketch_rectangle", id="Base", width=20, height=10)
+        action("Pad from the sketch", "pad", id="Plate", profile="Base", length=6)
+        check("The pad built a valid plate", panel.state["build_status"] == "valid"
+              and abs(App.activeDocument().getObject("Body").Shape.Volume - 1200) < 1e-6)
+        action("Parameter edit (Pad Length)", "set_parameter", feature="Plate", parameter="Length", value=8)
+        check("The parameter edit applied", abs(App.activeDocument().getObject("Body").Shape.Volume - 1600) < 1e-6)
+        action("Undo", "undo")
+        check("Undo restored the 6 mm plate", abs(App.activeDocument().getObject("Body").Shape.Volume - 1200) < 1e-6)
+        # The A2 path: a GUI sketch edit (begin enters the native editor), one line, Finish.
+        sketch = panel.begin_sketch(plane="XY")
+        check("A GUI sketch edit began", sketch is not None and panel.active_sketch() is not None)
+        action("Line inside the sketch lease", "add_line", sketch=sketch.Name, x1=30, y1=0, x2=40, y2=0)
+        for key in counts:
+            counts[key] = 0
+        state = panel.finish_sketch()
+        assert state, "Finish: " + panel.message.text()
+        inside = dict(counts)
+        for _ in range(2):
+            panel.tick()
+            wait(60)
+        report["actions"].append({"action": "Finish the sketch (GUI Confirm path)", "op": "finish_sketch_edit",
+                                  "inside_operation": inside, "through_two_ticks": dict(counts),
+                                  "revision": state["revision"], "build_status": state["build_status"]})
+        check("The sketch was finished", panel.active_sketch() is None and state["active_sketch_edit"] is None
+              and App.activeDocument().getObject(sketch.Name).GeometryCount == 1)
+        for row in report["actions"]:
+            check(row["action"] + ": exactly one inspection through the next two ticks",
+                  row["through_two_ticks"]["inspect_calls"] == 1 and row["through_two_ticks"]["inspect_dispatches"] == 0
+                  and row["through_two_ticks"]["inspect_compact_calls"] == 0)
+        # A native edit outside the panel still refreshes the panel through the tick's inspect.
+        for key in counts:
+            counts[key] = 0
+        doc = App.activeDocument()
+        doc.openTransaction("Native length edit")
+        doc.getObject("Plate").Length = 9
+        doc.recompute()
+        doc.commitTransaction()
+        before = panel.state["revision"]
+        for _ in range(3):
+            panel.tick()
+            wait(60)
+        check("A native edit is picked up by the tick with one inspection and a new revision",
+              counts["inspect_calls"] == 1 and panel.state["revision"] != before)
+        report["native_edit"] = dict(counts)
+        report.update(passed=True, engine={"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION})
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        core.inspect, core.inspect_compact, core.dispatch = real_inspect, real_inspect_compact, real_dispatch
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

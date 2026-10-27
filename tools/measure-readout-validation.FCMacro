@@ -1,0 +1,82 @@
+"""Live measurement readout for the selection (assembly UX item 6).
+
+Run through tools/run_gui_recipe.ps1 -Recipe measure-readout.
+"""
+import os
+from pathlib import Path
+import sys
+
+_root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(_root / "tools"))
+sys.path.insert(0, str(_root / "src"))
+import FreeCADGui as Gui
+from PySide6 import QtWidgets
+from assembly_ux_probe import Probe
+
+
+def body(probe):
+    panel = probe.panel
+    label = probe.main.findChild(QtWidgets.QLabel, "KurtShapeMeasure")
+    probe.check("The readout label exists in the status area", label is not None and label.isVisible())
+
+    def readout(ms=250):
+        probe.wait(ms)
+        return label.text()
+
+    def faces_at(obj, predicate):
+        return ["Face" + str(i + 1) for i, face in enumerate(obj.Shape.Faces) if predicate(face)]
+
+    probe.call("new", name="Measure readout part")
+    probe.call("sketch_rectangle", id="Outline", width=20, height=12, body="Body")
+    probe.call("pad", id="Extrude", profile="Outline", length=8, body="Body")
+    doc = panel.document()
+    solid = doc.Body
+    top = faces_at(solid, lambda f: abs(f.CenterOfMass.z - 8) < 1e-7)[0]
+    bottom = faces_at(solid, lambda f: abs(f.CenterOfMass.z) < 1e-7)[0]
+    Gui.Selection.clearSelection()
+    probe.check("Nothing selected leaves the readout empty", readout() == "")
+    Gui.Selection.addSelection(solid, top)
+    probe.check("One planar face shows its area and normal", readout().startswith("Area 240.000 mm²"), label.text())
+    Gui.Selection.addSelection(solid, bottom)
+    text = readout()
+    probe.report["log"].append({"two parallel faces": text})
+    probe.check("Two parallel faces show the parallel distance", text.startswith("Parallel distance") and "8.000 mm" in text, text)
+    status_before = panel.message.text()
+    panel.notify("A status message")
+    probe.check("notify() writes its own label and leaves the readout alone",
+                label.text() == text and panel.message.text() == "A status message")
+    Gui.Selection.clearSelection()
+    points = [(v.Point.x + v.Point.y + v.Point.z, i + 1) for i, v in enumerate(solid.Shape.Vertexes)]
+    first, second = min(points)[1], max(points)[1]
+    Gui.Selection.addSelection(solid, f"Vertex{first}")
+    Gui.Selection.addSelection(solid, f"Vertex{second}")
+    text = readout()
+    probe.report["log"].append({"two vertices": text})
+    probe.check("Two vertices show the distance and the signed ΔX ΔY ΔZ",
+                text.startswith("Distance ") and "ΔX 20.000" in text and "ΔY 12.000" in text and "ΔZ 8.000" in text, text)
+    Gui.Selection.clearSelection()
+    probe.check("Clearing the selection clears the readout", readout() == "")
+    del status_before
+
+    source = probe.managed_parts()["single_body"]["path"]
+    probe.call("new", name="Measure readout assembly")
+    probe.call("create_assembly", id="Assembly")
+    probe.call("insert_assembly_part", path=source, source_id="Body", id="Left")
+    probe.call("insert_assembly_part", path=source, source_id="Body", id="Right")
+    probe.call("move_assembly_instance", instance="Right", position_mm=[100, 0, 0], rotation_xyzw=[0, 0, 0, 1])
+    adoc = panel.document()
+    left, right = adoc.getObject("Left"), adoc.getObject("Right")
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(left, "Vertex1")
+    Gui.Selection.addSelection(right, "Vertex1")
+    text = readout()
+    probe.report["log"].append({"two occurrence vertices": text})
+    expected = right.Placement.Base - left.Placement.Base
+    probe.check("Occurrence vertices are measured where they sit in the assembly",
+                text.startswith("Distance ") and f"ΔX {expected.x:.3f}" in text, (text, expected))
+
+
+Probe("measure-readout",
+      "Production Panel; native Gui.Selection picks in a part and in an assembly; the KurtShapeMeasure status label "
+      "read after its debounce. Private desktop.").run(body)

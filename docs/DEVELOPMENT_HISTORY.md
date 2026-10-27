@@ -1,6 +1,6 @@
 # Historical development overview
 
-Archived from the README on 2026-10-17. Dated counts and pending milestones below describe earlier checkpoints; use [Sharing status](SHARING_STATUS.md) for the current handoff and the root README for installation.
+Archived from the README on 2026-10-17. Dated counts and pending milestones below describe earlier checkpoints; use [Sharing status](history/SHARING_STATUS.md) for the archived 2026-10-17 handoff and the root README for installation.
 
 # KurtShape — local native CAD
 

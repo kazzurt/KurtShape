@@ -15,8 +15,7 @@ import support
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
-import Part
-from kurtshape.core import Controller, METADATA, OperationError
+from kurtshape.core import Controller, OperationError
 
 
 class DocumentLifecycleTests(unittest.TestCase):
@@ -83,7 +82,7 @@ class DocumentLifecycleTests(unittest.TestCase):
     def native_file(self, name):
         """A plain FreeCAD file (no KurtShape metadata) in the granted folder."""
         doc = App.newDocument(name)
-        body = doc.addObject("PartDesign::Body", "Body")
+        doc.addObject("PartDesign::Body", "Body")
         box = doc.addObject("Part::Box", "Box")
         box.Length = box.Width = box.Height = 5
         doc.recompute()
@@ -294,7 +293,9 @@ class DocumentLifecycleTests(unittest.TestCase):
         path = self.native_file("reference")
         self.open(path)
         self.assertFalse(self.state["managed"])
-        self.assertIn("close_document", self.state["operations"])
+        # Slice A/B U6: an open response no longer lists operations (inspect does).
+        inspection = self.core.dispatch({"op": "inspect", "document_id": self.state["document_id"]})["result"]
+        self.assertIn("close_document", inspection["operations"])
         self.call("close_document")
         self.open(path)
         doc = self.doc

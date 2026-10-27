@@ -1,5 +1,9 @@
 """Transient face-boundary hover; native clicks still select filled faces.
 
+With additive click selection (``selection_mode``) a click on an already
+selected face removes it, so that face's hover outline is drawn in the
+removal colour instead of the usual blue.
+
 The native unified-selection node can disable its own hover rendering while
 leaving clicks enabled. We do this only over faces, publish the same native
 preselection reference for shortcuts/tasks, and draw an unpickable line set.
@@ -15,6 +19,20 @@ import FreeCAD as App
 _controller = None
 _FACE = re.compile(r"(?:^|\.)Face[1-9][0-9]*$")
 _faces_suppressed = False
+
+
+ADD_COLOR = (0.16, 0.42, 0.88)
+REMOVE_COLOR = (0.90, 0.45, 0.10)
+
+
+def hover_selected(obj, element):
+    """Whether the hovered face is already selected while clicks add/remove (selection_mode)."""
+    import FreeCADGui as Gui
+    from .selection_mode import enabled
+    if not enabled():
+        return False
+    return any(entry.Object == obj and element in entry.SubElementNames
+               for entry in Gui.Selection.getSelectionEx(obj.Document.Name))
 
 
 def suppress_faces(suppressed):
@@ -59,6 +77,7 @@ class FaceHoverOutline:
         self.scene = None
         self.node = None
         self.key = None
+        self.key_selected = False
         self.native_modes = []
         self.boundaries = OrderedDict()
         self.cached_points = 0
@@ -119,11 +138,12 @@ class FaceHoverOutline:
         except (RuntimeError, ReferenceError):
             self.native_modes = []
         self.scene = self.node = self.key = None
+        self.key_selected = False
 
-    def show(self, view, document, obj, element):
+    def show(self, view, document, obj, element, selected=False):
         key = (document.Name, obj.Name, element)
         scene = view.getSceneGraph()
-        if key == self.key and scene == self.scene:
+        if key == self.key and scene == self.scene and selected == self.key_selected:
             return
         self.clear()
         polylines = self._boundary(document, obj, element)
@@ -151,7 +171,8 @@ class FaceHoverOutline:
         light.model = coin.SoLightModel.BASE_COLOR
         overlay.addChild(light)
         material = coin.SoMaterial()
-        material.diffuseColor = (0.16, 0.42, 0.88)
+        # Blue adds; orange marks a selected face that a click would remove.
+        material.diffuseColor = REMOVE_COLOR if selected else ADD_COLOR
         overlay.addChild(material)
         style = coin.SoDrawStyle()
         style.lineWidth = 2.5
@@ -166,6 +187,7 @@ class FaceHoverOutline:
         self.scene.addChild(overlay)
         self.node = overlay
         self.key = key
+        self.key_selected = selected
 
     def update(self, view, position):
         import FreeCADGui as Gui
@@ -182,7 +204,7 @@ class FaceHoverOutline:
         element = hit["Component"]
         # Keep native gates authoritative. Publishing normal preselection with
         # its hover renderer disabled preserves N/Y and tool selection hooks.
-        self.show(view, document, obj, element)
+        self.show(view, document, obj, element, hover_selected(obj, element))
         if self.node is not None:
             # type 0 is a normal preselection notification: unlike the default
             # internal/script type 1, it honours the disabled native renderer.

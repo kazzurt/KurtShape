@@ -1,5 +1,6 @@
 """Verified native checkpoints, including an unfinished managed sketch lease."""
 import base64
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -7,6 +8,34 @@ from pathlib import Path
 import time
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
+
+from .settings import load_preference
+from .assembly_persistence import save_copy as save_native_copy
+
+DOCUMENT_PREFERENCES = "User parameter:BaseApp/Preferences/Document"
+# ZIP level of a checkpoint archive when recovery_fast_snapshots is on (slice A/B U8). Level 1 restores
+# every BRep byte-identically and writes up to 1.75x faster (Dodec Hub; small parts unchanged); SaveBinaryBrep was
+# measured and not adopted: its restore differs (TShape Checked bits, and location digits on a real project).
+FAST_SNAPSHOT_COMPRESSION = 1
+
+
+@contextmanager
+def snapshot_compression(level):
+    """FreeCAD's ``CompressionLevel`` at ``level`` for one saveCopy on this thread, restored afterwards."""
+    if level is None:
+        yield
+        return
+    import FreeCAD as App
+    group = App.ParamGet(DOCUMENT_PREFERENCES)
+    previous = group.GetInt("CompressionLevel") if "CompressionLevel" in group.GetInts() else None
+    group.SetInt("CompressionLevel", level)
+    try:
+        yield
+    finally:
+        if previous is None:
+            group.RemInt("CompressionLevel")
+        else:
+            group.SetInt("CompressionLevel", previous)
 
 
 class RecoveryStore:
@@ -23,6 +52,23 @@ class RecoveryStore:
         # Count native snapshot attempts separately from asynchronous publication.
         self.snapshot_count = 0
         self.snapshot_cache_failures = 0
+        self.compression = FAST_SNAPSHOT_COMPRESSION if load_preference(session_directory, "recovery_fast_snapshots") else None
+        # A4 (slice A/B U8): called with "Saving…" / "Checkpoint…" right before a synchronous native save
+        # on this thread and with None when it is done; the GUI binds a status painter, headless leaves None.
+        self.stall_status = None
+
+    def stall(self, text):
+        if self.stall_status is not None:
+            self.stall_status(text)
+
+    def _snapshot(self, doc, stage):
+        """The native checkpoint write, announced before it starts and cleared when it ends."""
+        self.stall("Checkpoint…")
+        try:
+            with snapshot_compression(self.compression):
+                save_native_copy(doc, stage)
+        finally:
+            self.stall(None)
 
     def capture(self, doc, meta, editing=None, force=False, draft=None, background=False, snapshot_cache=None):
         if not force:
@@ -45,7 +91,7 @@ class RecoveryStore:
         path = self.directory / (meta.DocumentId + ".FCStd")
         stage = path.with_suffix(".saving.FCStd")
         self.snapshot_count += 1
-        doc.saveCopy(str(stage))
+        self._snapshot(doc, stage)
         # Check on the native thread after capture. A harmless notification may
         # conservatively reject sharing; recovery still publishes its archive.
         shared = None
@@ -86,7 +132,7 @@ class RecoveryStore:
         path = self.directory / f"{meta.DocumentId}.discarded-{meta.Revision.replace('-', '')[:12]}.FCStd"
         stage = path.with_suffix(".saving.FCStd")
         self.snapshot_count += 1
-        doc.saveCopy(str(stage))
+        self._snapshot(doc, stage)
         record = {"schema": 1, "document_id": meta.DocumentId, "revision": meta.Revision,
                   "name": doc.Label, "source_file": doc.FileName or None, "saved_at": time.time(),
                   "snapshot": path.name, "sketch": None, "accepted_sketch": None, "draft_sketch": None,

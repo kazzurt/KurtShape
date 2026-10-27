@@ -49,9 +49,29 @@ class ToolbarLabels(QtCore.QObject):
             # children to Python GC; destruction removes it and isValid guards
             # the C++ lifetime. No widget is captured by the signal callback.
             button.destroyed.connect(lambda *_args, token=key: self._forget_button(token))
-        self._buttons[key] = (button, label, str(shortcut).strip())
+        # A callable shortcut is read each time the label shows, so a rebinding shows the current key.
+        self._buttons[key] = (button, label, shortcut if callable(shortcut) else str(shortcut or "").strip())
         if not button.accessibleName():
             button.setAccessibleName(label)
+
+    def text_for(self, button):
+        """The label text ``button`` shows: its name, its current shortcut and any extra help."""
+        record = self._buttons.get(id(button))
+        if record is None:
+            return ""
+        _, label, shortcut = record
+        if callable(shortcut):
+            try:
+                shortcut = shortcut()
+            except Exception:
+                shortcut = ""
+        shortcut = str(shortcut or "").strip()
+        text = label + ("  (" + shortcut + ")" if shortcut else "")
+        action = button.defaultAction() if isinstance(button, QtGui.QToolButton) else None
+        detail = action.property("kurtshapeHelp") if action is not None else None
+        if detail:
+            text += "\n" + str(detail)
+        return text
 
     def watch_toolbar(self, bar):
         """Register existing and future QToolButtons, including Qt overflow."""
@@ -120,11 +140,7 @@ class ToolbarLabels(QtCore.QObject):
         # label must never cover their content or imply a toolbar is available.
         if self._app.activePopupWidget() is not None or self._app.activeModalWidget() is not None:
             return
-        text = label + ("  (" + shortcut + ")" if shortcut else "")
-        action = button.defaultAction()
-        detail = action.property("kurtshapeHelp") if action is not None else None
-        if detail:
-            text += "\n" + str(detail)
+        text = self.text_for(button)
         screen = button.screen() or self.main.screen() or self._app.primaryScreen()
         if screen is None:
             return

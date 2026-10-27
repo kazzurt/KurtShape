@@ -5,6 +5,7 @@
 # -Hidden runs a private KurtShape with its own profile and port under runtime\private\<HiddenSession>
 # (offscreen, no window, never the user's app or profile). It prints its session file; pass that to
 # assistant_client.py --session (or send(..., session_path)) for further requests.
+# -PinPerformanceCores / -NoPinPerformanceCores pass through to private-session.ps1 when it starts the hidden app.
 param(
     [string]$RequestFile,
     [ValidateSet('capabilities','list_documents')][string]$Operation = 'capabilities',
@@ -13,7 +14,9 @@ param(
     [switch]$Hidden,
     [switch]$Stop,
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_-]{0,23}$')][string]$HiddenSession = 'agent',
-    [string[]]$ProjectRoot = @()
+    [string[]]$ProjectRoot = @(),
+    [switch]$PinPerformanceCores,
+    [switch]$NoPinPerformanceCores
 )
 $ErrorActionPreference = 'Stop'
 $privateSession = Join-Path $PSScriptRoot 'private-session.ps1'
@@ -28,11 +31,14 @@ if (-not (Test-Path -LiteralPath $pythonPath)) { throw 'Run setup.ps1 first.' }
 $clientArgs = @('-B', (Join-Path $PSScriptRoot 'assistant_client.py'))
 if ($Hidden) {
     if ($Session) { throw '-Hidden and -Session are exclusive.' }
-    & $privateSession -Session $HiddenSession -Ensure -ProjectRoot $ProjectRoot | Out-Null
+    & $privateSession -Session $HiddenSession -Ensure -ProjectRoot $ProjectRoot `
+        -PinPerformanceCores:$PinPerformanceCores -NoPinPerformanceCores:$NoPinPerformanceCores | Out-Null
     $Session = Join-Path (Split-Path -Parent $PSScriptRoot) ('runtime\private\' + $HiddenSession + '\assistant-session.json')
     Write-Host ('Hidden KurtShape session file: ' + $Session + '  (stop it with -Hidden -Stop)')
 } elseif ($ProjectRoot.Count) {
     throw '-ProjectRoot applies only with -Hidden; the user grants folders to their own app via Save.'
+} elseif ($PinPerformanceCores -or $NoPinPerformanceCores) {
+    throw '-PinPerformanceCores / -NoPinPerformanceCores apply only with -Hidden (they set the hidden app''s affinity when it starts).'
 }
 if (-not $Session) {
     $sessionBase = if ($env:KURTSHAPE_SESSION_DIR) { $env:KURTSHAPE_SESSION_DIR } else { Join-Path (Split-Path -Parent $PSScriptRoot) 'runtime' }

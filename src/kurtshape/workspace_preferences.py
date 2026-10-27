@@ -107,6 +107,13 @@ class WorkspacePreferences(QtCore.QObject):
             choice.addItem(name, style)
         choice.setCurrentIndex(choice.findData(navigation.selected_style()))
         form.addRow("Mouse navigation", choice)
+        from . import selection_mode
+        additive = QtGui.QCheckBox("Click adds to selection")
+        additive.setObjectName("KurtShapeAdditiveSelection")
+        additive.setToolTip("On: a click on a face, edge or vertex adds it and a second click removes it; "
+                            "click empty space or press Space to clear. Off: a click replaces the selection.")
+        additive.setChecked(selection_mode.enabled())
+        form.addRow("Selection", additive)
         layout.addLayout(form)
         restore = QtGui.QPushButton("Restore light appearance")
         restore.setObjectName("KurtShapeRestoreLightAppearance")
@@ -144,6 +151,7 @@ class WorkspacePreferences(QtCore.QObject):
         def save():
             try:
                 navigation.set_navigation_style(choice.currentData())
+                selection_mode.set_enabled(additive.isChecked())
                 self.hide_navigation_indicator()
                 self.panel.notify("Mouse navigation saved")
                 dialog.accept()

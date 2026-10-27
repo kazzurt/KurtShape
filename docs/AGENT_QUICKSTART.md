@@ -6,15 +6,22 @@ Paste this into your agent on the Windows machine:
 > folder I own. Read the repository's AGENTS.md and docs/WINDOWS_SETUP.md. Check
 > Git and 7-Zip, run setup.ps1 with Windows PowerShell, and require its installation
 > check to pass. Use the pinned bundled runtime, not a global FreeCAD or Python.
-> Launch KurtShape if it is not already running; ask before restarting an existing
-> instance. Read capabilities and list_documents through tools/assistant.ps1.
-> Tell me the installed commit, check result, and where my CAD files will go.
-> Model through the assistant bridge, not by taking over my screen. Wait for my
-> modeling request before changing a document.
+> Do not launch the KurtShape window yourself: choose the app by the AGENTS.md
+> section "Launching: which app an agent uses" (headless by default, a hidden app
+> when you need the bridge, my running app only when I ask to watch), and ask
+> before restarting an existing instance. Read capabilities and list_documents from
+> the one you use. Tell me the installed commit, check result, and where my CAD
+> files will go. Model through KurtShape's operations, not by taking over my
+> screen. Wait for my modeling request before changing a document.
+
+Which app an agent uses (headless Controller, hidden app, or the user's running app)
+is decided once, in [AGENTS.md](../AGENTS.md#launching-which-app-an-agent-uses).
+Per-operation arguments and examples are in [OPERATIONS.md](OPERATIONS.md); worked
+recipes in [COOKBOOK.md](COOKBOOK.md).
 
 ## Connect
 
-From the checkout root, after launching `KurtShape.cmd`:
+From the checkout root, with the user's KurtShape running (they start it):
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\assistant.ps1
@@ -30,9 +37,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\assistant.ps1 -R
 
 ### Hidden agent app (no window)
 
-When the user does not want to watch, or KurtShape is not running, do not launch the
-visible app: run a hidden one instead. It is a private KurtShape with its own profile,
-port and folder under `runtime\private\agent`, drawn offscreen with no window:
+When the [launch rule](../AGENTS.md#launching-which-app-an-agent-uses) calls for the
+bridge without the user's app, run a hidden one. It is a private KurtShape with its own
+profile, port and folder under `runtime\private\agent`, drawn offscreen with no window:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tools\assistant.ps1 -Hidden -ProjectRoot C:\path\to\my-projects
@@ -51,6 +58,34 @@ By default the client honors `KURTSHAPE_SESSION_DIR`, otherwise it uses this
 checkout's `runtime/assistant-session.json`. It connects only to local loopback
 with proxies disabled. Do not copy the token into a prompt or log.
 
+### Discover and explicitly select a delivery session
+
+`tools/assistant_client.py --discover` reads session files under this checkout's `runtime`
+and verifies each bridge with `capabilities`; `--search-root <folder>` adds another known
+profile location, such as the folder holding a separate fixture viewer. The token-free
+inventory includes session file/id, PID, loaded build, compact document rows, and launch
+visibility (`visible`, `offscreen`, or `headless`). Older session files report `unknown`;
+folder names only supply `purpose_hint` (`benchmark`, `isolated`, or `unspecified`), never
+proof that a GUI is visible. Discovery selects nothing and launches nothing.
+
+After choosing the intended session, open and fit with an explicit target:
+
+```powershell
+# Run these with the bundled pythonw.exe and redirect stdout/stderr to files.
+# Add --search-root for a viewer outside this checkout's runtime folder.
+pythonw.exe -B tools/assistant_client.py --discover --search-root C:\path\to\fixture-viewer
+pythonw.exe -B tools/assistant_client.py --session C:\path\to\fixture-viewer\assistant-session.json --session-id <id-from-inventory> --open C:\path\to\fixture.FCStd
+```
+
+`--open` refuses an omitted `--session`; `--session-id` refuses a replaced session before
+sending. It reuses an already open matching native file and otherwise sends one tracked
+`open`, then `set_view` (`view:iso`, `frame:model`) to the returned document id. It never
+targets the active document by guess, retries an unknown open with a new id, restarts an app,
+closes a document, or saves. Python callers can use `discover_sessions(search_roots=[...])`
+and `open_in_session(path, session_path, expected_session_id=...)` from `assistant_client`.
+Check the returned document's build status as well as `ok`; opening a file successfully
+does not establish geometry validity. Use the delivery-validation workflow before handoff.
+
 ## Modeling rules
 
 Read [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md) and the running app's
@@ -63,12 +98,18 @@ STEP/STL are exports.
 2. Mutations use that document's `document_id` and current `expected_revision`.
    Read the new revision from every successful response. Use one distinct
    `request_id` per intended mutation and retain it with the complete request.
+   Add `"detail": "compact"` to a mutation for the status header, the created
+   feature and the request's reports (about 1 KB) instead of the full
+   inspection; `preview` is a read and needs no `expected_revision`.
 3. Prefer sketches and native features; `add_polyline` keeps a connected profile.
    Use `preview` for risky geometry. Use geometry selectors rather than guessed
    face/edge indices when possible. Confirm supported arguments via the contract.
 4. `save` / `export` need an absolute destination under an allowed folder whose
    directory already exists. New profiles allow `<checkout>/projects` by default.
    A user-chosen Save destination adds that folder. Do not widen grants silently.
+   `save` onto an FCStd that holds another project rejects with
+   `save_destination_other_project` unless you pass `"overwrite": true`; pass it only
+   when Kurt asked for that file to be replaced.
 5. Preserve originals, use descriptive model folders and retain the build recipe.
    Do not overwrite an FCStd open in another app process.
 6. Result checks (contract 3.2, OPERATION_CONTRACT §3.2.1): an edit that would leave a
@@ -94,6 +135,18 @@ STEP/STL are exports.
 9. Images (§3.2.2): `render_view` returns PNGs of the current model (views, sections,
    labelled highlights) without touching Kurt's view; check a result visually before
    reporting it.
+10. Assemblies: organise occurrences into instance-list folders by function or
+   sub-assembly (`Frame`, `Fasteners/M3`, `Electronics`) and leave no more than about
+   12 at the root. Pass `folder` to `insert_assembly_part`, or regroup with
+   `move_assembly_instances` / `set_assembly_folders`; `inspect` returns each
+   instance's `folder` and the tree ([contract](OPERATION_CONTRACT.md#instance-folders-assembly-ux-2026-10-24)).
+11. Measure inside KurtShape: `measure {references:[...]}` takes selectors or
+   `{object, subelement}` (an occurrence is measured where it sits) and returns
+   `{kind, text, values}` (distance with ΔX ΔY ΔZ, parallel distance, angles, Ø;
+   [contract](OPERATION_CONTRACT.md#measure-assembly-ux-2026-10-24)). After changing a part,
+   `inspect` shows `source.status:"changed"` on its occurrences; update them with
+   `refresh_assembly_part {instance, shared:"all"}`. `assembly_instance_source {instance}`
+   gives an occurrence's source path and kind.
 
 ### Slow operations and retries
 
@@ -116,6 +169,9 @@ runs another tree.
 runs the registered regression suites using the bundled runtime. Three tests
 need external private examples and skip when absent; four performance tests
 are opt-in. `-Full` requires the external examples and all performance checks.
-The GUI recipes use private processes/profiles, but headless or scripted checks
-do not replace human viewport acceptance. Never restart the user's app without
-asking, and never reuse its profile for a probe.
+The GUI recipes (`tools/run_gui_recipe.ps1`) use private processes and profiles on a
+private Windows desktop (since 2026-10-22; the script's header says how), so nothing a
+recipe opens reaches the user's screen and a run fails if its window probe saw a
+window there. Headless or scripted checks still do not replace human viewport
+acceptance. Never restart the user's app without asking, and never reuse its
+profile for a probe.

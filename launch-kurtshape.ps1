@@ -1,11 +1,27 @@
 param(
+    [string]$FilePath,
     [switch]$Validation,
     [switch]$WriteEvidence,
     [ValidateNotNullOrEmpty()][string]$RuntimeRoot = (Join-Path $PSScriptRoot 'runtime'),
     [ValidateNotNullOrEmpty()][string]$SessionRoot = (Join-Path $PSScriptRoot 'runtime'),
-    [switch]$PrintOnly
+    [switch]$PrintOnly,
+    [switch]$PinPerformanceCores,
+    [switch]$NoPinPerformanceCores
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'tools\performance-cores.ps1')
+# Reading the CPU sets compiles a small type (~0.2 s); the default-off launch and the file handoff skip it.
+$pinning = $null
+if ($PinPerformanceCores -or $NoPinPerformanceCores -or $PrintOnly -or (Get-KurtShapePinPerformanceCoresDefault)) {
+    $pinning = Get-KurtShapePinningPlan -PinPerformanceCores:$PinPerformanceCores -NoPinPerformanceCores:$NoPinPerformanceCores
+}
+$openFile = $null
+if ($FilePath) {
+    if ($Validation) { throw '-FilePath cannot be combined with -Validation.' }
+    $openFile = [IO.Path]::GetFullPath($FilePath)
+    if ([IO.Path]::GetExtension($openFile) -ine '.FCStd') { throw 'Select a native .FCStd project.' }
+    if (-not (Test-Path -LiteralPath $openFile -PathType Leaf)) { throw ('Project does not exist: ' + $openFile) }
+}
 $kurtshapeRoot = [IO.Path]::GetFullPath($PSScriptRoot)
 $RuntimeRoot = [IO.Path]::GetFullPath($RuntimeRoot)
 $SessionRoot = [IO.Path]::GetFullPath($SessionRoot)
@@ -43,6 +59,7 @@ $launchArguments += ('"'+$macroPath+'"')
 $launchWindowStyle = if ($Validation) { 'Hidden' } else { 'Normal' }
 $launchEnvironment = [ordered]@{
     KURTSHAPE_ROOT = $kurtshapeRoot
+    KURTSHAPE_OPEN_FILE = $openFile
     KURTSHAPE_SESSION_DIR = $runtimePath
     KURTSHAPE_NO_DEMO = $(if ($Validation) { '1' } else { $null })
     FREECAD_USER_HOME = Join-Path $runtimePath 'user-data'
@@ -69,8 +86,13 @@ if ($PrintOnly) {
         environment = $launchEnvironment
         arguments = $launchArguments
         window_style = $launchWindowStyle
+        performance_cores = $pinning
     } | ConvertTo-Json -Depth 5
     return
+}
+if ($openFile) {
+    # A KurtShape already running for this session opens the file in its own window.
+    if (& (Join-Path $PSScriptRoot 'tools\open-in-running-app.ps1') -Session $runtimePath -FilePath $openFile) { return }
 }
 if ($Validation) {
     . (Join-Path $PSScriptRoot 'tools\validation-session.ps1')
@@ -80,6 +102,7 @@ if ($Validation) {
         New-Item -ItemType Directory -Force -Path (Join-Path $runtimePath $folder) | Out-Null
     }
     $env:KURTSHAPE_ROOT = $kurtshapeRoot
+    $env:KURTSHAPE_OPEN_FILE = $openFile
     $env:KURTSHAPE_SESSION_DIR = $runtimePath
     Remove-Item Env:KURTSHAPE_NO_DEMO -ErrorAction SilentlyContinue
     $env:FREECAD_USER_HOME = Join-Path $runtimePath 'user-data'
@@ -90,11 +113,13 @@ if ($Validation) {
     $env:PYTHONDONTWRITEBYTECODE = '1'
 }
 if ($Validation) {
+    Remove-Item Env:KURTSHAPE_OPEN_FILE -ErrorAction SilentlyContinue
     $env:KURTSHAPE_NO_DEMO = '1'
     Remove-Item Env:KURTSHAPE_DEMO -ErrorAction SilentlyContinue
 }
 if (-not (Test-Path -LiteralPath $exePath)) { throw 'Run install-runtime.ps1 first.' }
 $launchProcess = Start-Process -FilePath $exePath -ArgumentList $launchArguments -WorkingDirectory $kurtshapeRoot -WindowStyle $launchWindowStyle -PassThru
+if ($pinning) { $null = Set-KurtShapeProcessAffinity -Process $launchProcess -Plan $pinning }
 if ($Validation) {
     Register-KurtShapeValidationProcess -Process $launchProcess -Executable $exePath -Arguments $launchArguments
     Write-Output ('Report: ' + (Join-Path (Get-KurtShapeEvidenceDirectory 'interface-pass') 'gui-test-result.json'))

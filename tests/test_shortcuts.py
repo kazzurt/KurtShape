@@ -207,6 +207,34 @@ class QtRoutingTests(unittest.TestCase):
         QtTest.QTest.keyClick(self.viewport, QtCore.Qt.Key_Z, QtCore.Qt.ControlModifier)
         self.assertEqual(self.undo_calls, ["model"])
 
+    def test_read_only_text_copy_and_select_all_beat_native_window_shortcuts(self):
+        # Slice A/B U7: with a model object selected, Ctrl+C in read-only Messages used to reach FreeCAD's
+        # Std_Copy (a window shortcut) and its modal Object Selection dialog.
+        native_hits, model_hits = [], []
+        log = QtGui.QPlainTextEdit(self.window)
+        log.setReadOnly(True)
+        log.setPlainText("retained diagnostic ☀\nsecond line")
+        self.window.layout().addWidget(log)
+        for sequence, name in ((QtGui.QKeySequence.Copy, "native copy"), (QtGui.QKeySequence.SelectAll, "native select all")):
+            action = QtGui.QAction(name, self.window)
+            action.setShortcut(QtGui.QKeySequence(sequence))
+            action.setShortcutContext(QtCore.Qt.WindowShortcut)
+            action.triggered.connect(lambda checked=False, label=name: native_hits.append(label))
+            self.window.addAction(action)
+        self.router.callbacks["general.copy"] = lambda: model_hits.append("model copy")
+        self.focus(log)
+        QtTest.QTest.keyClick(log, QtCore.Qt.Key_A, QtCore.Qt.ControlModifier)
+        QtTest.QTest.keyClick(log, QtCore.Qt.Key_C, QtCore.Qt.ControlModifier)
+        self.app.processEvents()
+        self.assertEqual(native_hits, [])
+        self.assertEqual(model_hits, [])
+        self.assertEqual(log.textCursor().selectedText().replace(" ", "\n"), log.toPlainText())
+        self.assertEqual(self.app.clipboard().text(), log.toPlainText())
+        # Outside text the same key is still the model's copy.
+        self.focus(self.viewport)
+        QtTest.QTest.keyClick(self.viewport, QtCore.Qt.Key_C, QtCore.Qt.ControlModifier)
+        self.assertEqual(model_hits, ["model copy"])
+
     def test_shifted_digit_maps_to_standard_view(self):
         self.focus(self.viewport)
         event = QtGui.QKeyEvent(QtCore.QEvent.KeyPress, QtCore.Qt.Key_Exclam,

@@ -2,7 +2,7 @@
 
 A local Windows CAD app built on **FreeCAD 1.1.4 / OCCT 7.8.1**, with native editable sketches and features, a shared Part Studio history, and an assistant bridge for agents. Your `.FCStd` file is the authoritative model; export STEP or STL when needed.
 
-**Preview for friends testing on Windows x64.** Modeling is functional, but this is an actively developed app with known rough edges. See [current status and limits](docs/SHARING_STATUS.md).
+**Preview for friends testing on Windows x64.** Modeling is functional, but this is an actively developed app with known rough edges. The limits recorded for the 2026-10-17 preview are in the [archived sharing handoff](docs/history/SHARING_STATUS.md).
 
 ## Install and launch
 
@@ -21,7 +21,7 @@ Setup verifies the official runtime download and runs a disposable modeling chec
 
 ## Try it
 
-- **Sketch:** Shift+S, choose a plane or planar face, then G for rectangle, C for circle or L for connected lines. Finish accepts the sketch; Cancel discards the edit.
+- **Sketch:** Shift+S, choose a plane or planar face, then G for rectangle, C for circle or L for connected lines. Finish accepts the sketch; Cancel discards the edit. Escape ends the current tool but never leaves the sketch; in any feature dialog Enter confirms and Shift+Enter confirms and repeats.
 - **Coincident:** select two endpoints to join them, or two whole lines to make them collinear. An internal line can align to a linked projected line.
 - **Extrude:** Shift+E opens New / Add / Cut / Intersect with an exact preview.
 - **Parameters:** type a value in the left Parameters section and press Enter; `=` starts a formula; Esc discards. "+" adds one; Copy reference gives the text for a feature's Formula field.
@@ -29,13 +29,15 @@ Setup verifies the official runtime download and runs a disposable modeling chec
 - **Find a face's feature:** select a face to highlight its feature in the history tree while keeping the face selected. The highlight follows selection and clears with it. Trimmed faces point to the operation that trimmed them.
 - **Navigate:** middle-drag orbits, Ctrl+middle pans, Shift+middle zooms. Alt+C searches all tools; Shift+/ shows shortcuts.
 - **Section View:** select a face or plane and press Shift+X (or Shift+X, then click one). Round faces cut through their centre on Top, Front or Right, whichever faces you; drag the orange arrow to move the cut; Shift+X or Esc leaves. View only, never saved.
-- **Files:** Ctrl+S saves native FCStd. Open accepts FCStd and STEP; export produces STEP/STL. Messages retains error details for troubleshooting.
+- **Files:** Ctrl+S saves native FCStd. Open accepts FCStd and STEP; the blank part shown at launch closes when you open one, unless you changed it. Export produces STEP/STL. Messages retains error details for troubleshooting.
 
 [Part Studio walkthrough](docs/U2_WALKTHROUGH.md) · [Extrude editing](docs/EXTRUSION_EDIT.md) · [Fillet/Chamfer editing](docs/FILLET_CHAMFER_EDIT.md) · [Assembly workflow](docs/assembly-workflow/WORKFLOW.md)
 
 ## Agents and developers
 
 Start with [AGENTS.md](AGENTS.md) and the [operation contract](docs/OPERATION_CONTRACT.md). Agents use the token-authenticated loopback bridge, with native transactions and revision checks. Never publish `runtime/assistant-session.json`.
+
+Every operation's arguments, defaults and a runnable example: [operation reference](docs/OPERATIONS.md) (generated from the schema). Modeling recipes, headless first: [cookbook](docs/COOKBOOK.md).
 
 ```powershell
 # App must be running for this read-only connection check:

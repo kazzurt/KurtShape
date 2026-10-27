@@ -24,6 +24,7 @@ from .bodies import bodies, owner, origin_plane, results as native_results
 from .recovery import RecoveryStore
 from .timing import Timings
 from . import assembly as native_assembly
+from .assembly_persistence import save_copy as save_native_copy
 from . import studio
 from . import selectors as native_selectors
 from . import reference_tools
@@ -52,6 +53,20 @@ SKETCH_CREATE = "KurtShape: create_sketch"
 # Content committed by the first Finish of a newly created sketch. Controller
 # Undo/Redo pairs it with the preceding creation, so the sketch is one step.
 SKETCH_CREATE_CONTENT = "KurtShape: new sketch contents"
+# Slice A/B U6 (A2): FreeCAD keeps 20 undo steps per document (App::Document's built-in cap; the GUI
+# applies this preference when it creates a document, headless Python cannot change it). Raised so
+# a grouped sketch Finish and a lease cancel keep finding the lease's native transactions in a long
+# session; a user's higher value is kept.
+UNDO_STEPS = 200
+UNDO_PREFERENCES = "User parameter:BaseApp/Preferences/Document"
+
+
+def ensure_undo_steps():
+    group = App.ParamGet(UNDO_PREFERENCES)
+    if group.GetInt("MaxUndoSize", 20) < UNDO_STEPS:
+        group.SetInt("MaxUndoSize", UNDO_STEPS)
+
+
 # One typed modeling step inside the caller's transaction (integration C8/C9):
 # the created feature's name (or None) and the per-step report keys it produced.
 ModelStep = namedtuple("ModelStep", "created_feature reports")
@@ -134,12 +149,34 @@ def number(value, name, positive=False, unit="mm"):
     return float(value)
 
 
-def write_path(raw, suffixes, roots=None):
+def did_you_mean(name, choices, limit=3):
+    """The closest names in ``choices`` to a misspelled ``name`` (B3 fix hint), best first."""
+    import difflib
+    folded = {choice.lower(): choice for choice in choices}
+    matches = difflib.get_close_matches(name.lower(), folded, n=limit, cutoff=0.6)
+    if not matches:
+        # A fragment of a longer name ("rect" for sketch_rectangle) is still a useful hint.
+        matches = sorted(key for key in folded if name and name.lower() in key)[:limit]
+    return [folded[match] for match in matches]
+
+
+def write_path(raw, suffixes, roots=None, settings_file=None):
     if not isinstance(raw, str) or not Path(raw).is_absolute():
         raise OperationError("invalid_argument", "Destination must be an absolute path")
     path = Path(raw).resolve()
-    if not any(path.is_relative_to(root) for root in (roots or {WRITE_ROOT})):
-        raise OperationError("path_outside_workspace", "Choose this project folder in the app before an assistant writes there")
+    allowed = roots or {WRITE_ROOT}
+    if not any(path.is_relative_to(root) for root in allowed):
+        # B3 (slice A/B U9): list the allowed roots and the headless remedies beside the GUI one.
+        folder = str(path.parent)
+        remedy = {"app": "Save to this folder once from the app's Save dialog; that grants it",
+                  "headless": "Add the folder to project_roots in the session's settings.json, or pass it to "
+                              "kurtshape.session.Session.headless(root, project_roots=[...])",
+                  "settings_json": str(settings_file) if settings_file else None,
+                  "project_roots_line": '"project_roots": ' + json.dumps(sorted({folder, *map(str, allowed)})),
+                  "hidden_app": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\\assistant.ps1 -Hidden "
+                                '-ProjectRoot "' + folder + '"'}
+        raise OperationError("path_outside_workspace", "Choose this project folder in the app before an assistant writes there",
+                             path=str(path), roots=sorted(str(root) for root in allowed), remedy=remedy)
     if path.suffix.lower() not in suffixes:
         raise OperationError("invalid_format", f"Expected {', '.join(suffixes)}")
     if not path.parent.is_dir():
@@ -321,9 +358,10 @@ def _render_jobs():
 
 class Controller:
     READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
-                "operation_schema", "list_parameters"}
+                "operation_schema", "list_parameters", "part_inventory", "assembly_instance_source", "measure", "check_clearance"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
-                    "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly"}
+                    "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly", "refresh_assembly_part",
+                    "set_assembly_folders", "move_assembly_instances"}
     MODEL_OPS = {"create_body", "create_sketch", "sketch_rectangle", "sketch_circle", "add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline",
                  "pad", "pocket", "edit_extrusion", "set_parameter", "set_expression", "set_sketch_support", "duplicate_feature", "pierce", "rename_feature", "delete_feature", "delete_features", "repair_orphan_helpers", "rebuild"} | studio.OPS | reference_tools.OPS | modeling_geometry.OPS | parameters.OPS
     EDIT_OPS = {"add_rectangle", "add_circle", "add_line", "add_arc", "add_polyline", "set_parameter", "set_expression", "set_sketch_support", "pierce", "project_geometry", "finish_sketch_edit", "undo", "redo"}
@@ -338,7 +376,8 @@ class Controller:
     DOCUMENTLESS_OPS = frozenset({"capabilities", "list_documents", "request_status", "diagnostics", "assembly_candidates",
                                   "operation_schema"})
     QUIET_OPS = frozenset({"capabilities", "operation_schema", "diagnostics", "request_status", "list_documents", "inspect",
-                           "resolve_selector", "orphan_helpers", "list_parameters"}) | VIEW_OPS
+                           "resolve_selector", "orphan_helpers", "list_parameters", "part_inventory",
+                           "assembly_instance_source"}) | VIEW_OPS
     # Envelope fields every request may carry besides its own arguments (C6).
     TRANSPORT_FIELDS = frozenset({"document_id", "expected_revision", "request_id", "measure"})
     OPS = READ_OPS | MODEL_OPS | ASSEMBLY_OPS | CREATE_OPS | VIEW_OPS | LIFECYCLE_OPS | {"adopt", "begin_sketch_edit", "finish_sketch_edit", "undo", "redo", "save", "export", "batch"}
@@ -365,10 +404,16 @@ class Controller:
         "set_expression": {"feature", "parameter", "expression"},
         "duplicate_feature": {"feature", "fingerprint"},
         "pierce": {"sketch", "geometry", "point", "target", "subelement"},
-        "save": {"path"}, "export": {"path", "body"},
+        "save": {"path", "overwrite"}, "export": {"path", "body"},
         "capabilities": set(), "request_status": {"request_id"}, "preview": {"proposal"}, "diagnostics": set(),
-        "assembly_candidates": {"path"}, "create_assembly": {"id", "name"},
-        "insert_assembly_part": {"assembly", "path", "source_id", "id", "name"},
+        "assembly_candidates": {"path", "final_only"}, "create_assembly": {"id", "name", "folder"},
+        "part_inventory": {"include_history"},
+        "assembly_instance_source": {"assembly", "instance"},
+        "measure": {"references"},
+        "refresh_assembly_part": {"assembly", "instance", "path", "source_id", "shared", "folder"},
+        "set_assembly_folders": {"assembly", "folders", "membership"},
+        "move_assembly_instances": {"assembly", "instances", "folder"},
+        "insert_assembly_part": {"assembly", "path", "source_id", "id", "name", "folder"},
         "ground_assembly_instance": {"assembly", "instance"},
         "create_assembly_joint": {"assembly", "joint_type", "first", "second", "id", "name"},
         "edit_assembly_joint": {"assembly", "joint", "joint_type", "first", "second", "name"},
@@ -382,6 +427,7 @@ class Controller:
     ARGS["close_document"] = set(operation_schemas.arg_names("close_document"))
     ARGS["render_view"] = set(operation_schemas.arg_names("render_view"))
     ARGS["set_view"] = set(operation_schemas.arg_names("set_view"))
+    ARGS["check_clearance"] = set(operation_schemas.arg_names("check_clearance"))
     ARGS["batch"] = set(operation_schemas.arg_names("batch"))
     for _op in parameters.OPS | parameters.READ_OPS:
         ARGS[_op] = set(operation_schemas.arg_names(_op))
@@ -391,8 +437,9 @@ class Controller:
         ARGS[_op] = ARGS.get(_op, set()) | set(_args)
     for _op, _args in modeling_geometry.ARGS.items():
         ARGS[_op] = ARGS.get(_op, set()) | set(_args)
-    ARGS["pad"] |= {"end_type", "up_to_face"}
-    ARGS["pocket"] |= {"end_type", "up_to_face"}
+    # B2 (slice A/B U9): direction ("along" | "against" the profile normal) beside the legacy reversed.
+    ARGS["pad"] |= {"end_type", "up_to_face", "direction"}
+    ARGS["pocket"] |= {"end_type", "up_to_face", "direction"}
     # A helix is a top-level path curve; FreeCAD keeps Part curves out of Bodies.
     # Parameter ops are document-wide (F3a §6): no body.
     for _op in MODEL_OPS - {"create_body", "rebuild", "create_helix"} - parameters.OPS | {"begin_sketch_edit"}:
@@ -400,6 +447,10 @@ class Controller:
     for _op in MODEL_OPS:
         if "id" in ARGS[_op]:
             ARGS[_op] |= {"source_feature_id", "source_feature_name"}
+    # B1 (slice A/B U6): every mutating operation takes detail (full | compact) for its response; the
+    # reads keep their own sets, the view ops and close_document return no inspection.
+    for _op in OPS - READ_OPS - VIEW_OPS - LIFECYCLE_OPS:
+        ARGS[_op] = ARGS[_op] | {"detail"}
 
     def __init__(self):
         self.documents = {}
@@ -416,6 +467,7 @@ class Controller:
         # document (feature_editor, task, placement, step_export, geometry_check) or None.
         self.editor_activity = None
         self.busy = False
+        ensure_undo_steps()  # A2: before the app's first document, so every GUI document gets UNDO_STEPS
         self.settings = Settings(ROOT)
         self.geometry = geometry.GeometryCache(shape_of=native_assembly.global_shape,
                                                dependencies_of=self._shape_dependencies)
@@ -462,7 +514,7 @@ class Controller:
             if target is None:
                 raise OperationError("missing_body", "body must identify a current solid result")
             targets = [target]
-        return [obj for obj in targets if not obj.Shape.isNull() and obj.Shape.Solids]
+        return [obj for obj in targets if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
 
     def prepare_geometry_check(self, doc, body=None, *, worker_factory=None):
         """Capture one accepted UI check; None retains synchronous behavior.
@@ -472,7 +524,7 @@ class Controller:
         """
         from dataclasses import asdict
         from . import document_index
-        from .geometry_check_worker import NativeGeometryCheckWorker, target_fingerprints
+        from .geometry_check_worker import NativeGeometryCheckWorker, target_fingerprints, source_roundtrip_stable
         from .preview_worker import _snapshot_file_identity
         if self.busy or not self._is_open(doc) or not self.is_managed(doc):
             return None
@@ -492,6 +544,9 @@ class Controller:
             return None
         targets = self._geometry_check_targets(doc, body)
         if not targets or all(self.geometry.check(obj) is not None for obj in targets):
+            return None
+        if not self.timings.measure("geometry_check_roundtrip_admission", source_roundtrip_stable,
+                                    doc, (obj.Name for obj in targets)):
             return None
         executable = Path(App.getHomePath()) / "bin" / ("python.exe" if os.name == "nt" else "python")
         worker = (worker_factory or NativeGeometryCheckWorker)(executable, ROOT / "runtime")
@@ -514,7 +569,7 @@ class Controller:
                 worker.borrow_snapshot(lease)
                 lease = None
             else:
-                doc.saveCopy(str(worker.snapshot))
+                save_native_copy(doc, worker.snapshot)
                 # Pin the identity acquired at capture, never a later replacement.
                 worker.own_snapshot(key, _snapshot_file_identity(worker.snapshot))
             bundle = {"worker": worker, "document": doc, "document_id": self.identifier(doc),
@@ -675,7 +730,7 @@ class Controller:
                 raise OperationError("cancelled_step_export", "STEP export request is no longer current")
 
         require_current_request()
-        path = write_path(raw, {".step", ".stp", ".stl"}, self.settings.roots)
+        path = write_path(raw, {".step", ".stp", ".stl"}, self.settings.roots, self.settings.path)
         if (path.suffix.lower() not in {".step", ".stp"} or self.busy
                 or not self._is_open(doc) or not self.is_managed(doc)):
             require_current_request()
@@ -764,7 +819,7 @@ class Controller:
                 worker.borrow_snapshot(lease)
                 lease = None
             else:
-                doc.saveCopy(str(worker.snapshot))
+                save_native_copy(doc, worker.snapshot)
                 worker.own_snapshot(key, _snapshot_file_identity(worker.snapshot))
             bundle = {"worker": worker, "document": doc, "document_id": self.identifier(doc),
                       "snapshot_key": key, "target_ids": names, "targets": tuple(targets), "body": body,
@@ -792,7 +847,7 @@ class Controller:
 
     def _step_export_destination_current(self, bundle, *, check_files=True):
         try:
-            path = write_path(bundle["raw_destination"], {".step", ".stp"}, self.settings.roots)
+            path = write_path(bundle["raw_destination"], {".step", ".stp"}, self.settings.roots, self.settings.path)
             parent = path.parent.stat()
             return (path == bundle["destination"]
                     and (parent.st_dev, parent.st_ino) == bundle["destination_parent_identity"]
@@ -1044,7 +1099,8 @@ class Controller:
             selected = studio.current_body(doc, request["body"]) if isinstance(request.get("body"), str) else None
         except OperationError as exc:
             if exc.code == "missing_part":
-                raise OperationError("missing_body", "body must identify a native PartDesign Body") from exc
+                raise OperationError("missing_body", "body must identify a native PartDesign Body",
+                                     **{key: exc.details[key] for key in ("part", "current_parts") if key in exc.details}) from exc
             raise
         if "body" in request and (selected is None or selected.TypeId != "PartDesign::Body"):
             raise OperationError("missing_body", "body must identify a native PartDesign Body")
@@ -1096,7 +1152,7 @@ class Controller:
 
     def _geometry(self, doc, objects=None, measure=None):
         objects = native_results(doc) if objects is None else objects
-        solid_objects = [obj for obj in objects if not obj.Shape.isNull() and obj.Shape.Solids]
+        solid_objects = [obj for obj in objects if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
         if not solid_objects:
             return None
         fields = geometry.LEVELS[self._measure_level(measure)]
@@ -1283,11 +1339,18 @@ class Controller:
         editing = self.sketch_edits[identifier]
         if doc.HasPendingTransaction:
             doc.abortTransaction()
-        if doc.UndoCount < editing["undo_before"]:
+        try:
+            steps = self._lease_steps(doc, editing)
+        except OperationError:
             self.sketch_edits.pop(identifier, None)
-            raise OperationError("sketch_history_changed", "Native document history changed outside the managed sketch lease")
+            raise
+        if steps is None:
+            if doc.UndoCount < editing["undo_before"]:
+                self.sketch_edits.pop(identifier, None)
+                raise OperationError("sketch_history_changed", "Native document history changed outside the managed sketch lease")
+            steps = doc.UndoCount - editing["undo_before"]
         undone = False
-        while doc.UndoCount > editing["undo_before"]:
+        for _ in range(min(steps, doc.UndoCount)):
             doc.undo()
             undone = True
         sketch = doc.getObject(editing["feature"])
@@ -1304,25 +1367,62 @@ class Controller:
         else:
             self._new_revision(doc)
 
+    def _lease_history(self, doc):
+        """(commits, native undos, native redos) of the document so far, from the observer (A2)."""
+        state = self.observer.state(doc)
+        return state["commit_count"], state["undo_count"], state["redo_count"]
+
+    def _lease_steps(self, doc, editing):
+        """Native steps the lease put on the undo stack since its checkpoint, or None without the counters.
+
+        Commits push, native undo pops, native redo pushes again (Std_Undo/Redo inside the lease),
+        so the count holds at FreeCAD's stack cap, where UndoCount cannot move. More undos than
+        steps crossed the checkpoint into accepted history: ``sketch_history_changed``.
+        """
+        if "history_before" not in editing:
+            return None
+        commits, undos, redos = (now - before for now, before in zip(self._lease_history(doc), editing["history_before"]))
+        steps = commits - undos + redos
+        if steps < 0:
+            raise OperationError("sketch_history_changed", "Native undo inside the sketch lease crossed the edit checkpoint")
+        return steps
+
     def _commit_sketch_edit(self, doc):
-        """Group native command commits within the exclusive sketch lease."""
+        """Regroup the lease's native command commits into one pending transaction (A2).
+
+        Runs before the Finish's one managed recompute: the pending lease step is committed,
+        the lease's commits are undone and the final sketch content is restored inside one
+        grouped transaction, which the caller commits once the recompute, the native build
+        check and the result validation pass (a failure aborts it and keeps the draft). The
+        commits are counted through the document observer, so a saturated native undo stack
+        (FreeCAD's cap) cannot hide them; a lease with more commits than the stack still holds
+        is left as it is. One commit without a creation to merge needs no regrouping.
+        """
         editing = self.sketch_edits[self._meta(doc).DocumentId]
         from .sketch_tools import prune_use_sources
         prune_use_sources(doc, editing["feature"])
         if doc.HasPendingTransaction:
             doc.commitTransaction()
-        if doc.UndoCount < editing["undo_before"]:
-            raise OperationError("sketch_history_changed", "Native document history changed outside the managed sketch lease")
-        created = editing.get("created") and doc.UndoCount > editing["undo_before"]
-        if doc.UndoCount > editing["undo_before"] + 1 or created:
+        steps = self._lease_steps(doc, editing)
+        if steps is None:
+            if doc.UndoCount < editing["undo_before"]:
+                raise OperationError("sketch_history_changed", "Native document history changed outside the managed sketch lease")
+            steps = doc.UndoCount - editing["undo_before"]
+        created = editing.get("created") and steps >= 1
+        if (steps > 1 or created) and steps <= doc.UndoCount:
             sketch = doc.getObject(editing["feature"])
             final = bytes(sketch.dumpContent())
             label = sketch.Label
             from .sketch_tools import capture_use_sources, restore_use_sources
             editing["use_sources"] = capture_use_sources(sketch)
             editing["grouping_started"] = True
-            while doc.UndoCount > editing["undo_before"]:
+            for _ in range(steps):
                 doc.undo()
+            # The accepted history's depth now (below the cap it equals undo_before; a saturated
+            # stack lost older entries, so draft recovery and cancel measure from here), and the
+            # history counts: a Finish retried after a rejection counts only the steps since.
+            editing["undo_before"] = doc.UndoCount
+            editing["history_before"] = self._lease_history(doc)
             sketch = doc.getObject(editing["feature"])
             if sketch is None:
                 raise OperationError("sketch_history_changed", "The accepted sketch no longer exists in native history")
@@ -1330,12 +1430,6 @@ class Controller:
             restore_use_sources(doc, editing["use_sources"])
             restore_sketch_content(sketch, final)
             prune_use_sources(doc, editing["feature"])
-            self._recompute(doc)
-            errors = self._build_status(doc)
-            if errors:
-                raise OperationError("build_failed", "Grouped sketch edit could not rebuild native features", features=errors)
-            doc.commitTransaction()
-            editing.pop("grouping_started", None)
 
     def _preserve_sketch_draft(self, doc, draft):
         """Recover a rejected command or finalization without discarding the lease."""
@@ -1343,9 +1437,12 @@ class Controller:
         if editing.pop("grouping_started", False):
             if doc.HasPendingTransaction:
                 doc.abortTransaction()
-            if doc.UndoCount < editing["undo_before"]:
-                raise OperationError("sketch_history_changed", "Native history crossed the edit checkpoint; draft recovery required")
-            while doc.UndoCount > editing["undo_before"]:
+            steps = self._lease_steps(doc, editing)  # re-baselined by the regroup: normally 0 here
+            if steps is None:
+                if doc.UndoCount < editing["undo_before"]:
+                    raise OperationError("sketch_history_changed", "Native history crossed the edit checkpoint; draft recovery required")
+                steps = doc.UndoCount - editing["undo_before"]
+            for _ in range(min(steps, doc.UndoCount)):
                 doc.undo()
         sketch = doc.getObject(editing["feature"])
         if sketch is None:
@@ -1447,7 +1544,7 @@ class Controller:
         meta.RebuildReason = ""
 
     def _check_status(self, objects):
-        targets = [obj for obj in objects if not obj.Shape.isNull() and obj.Shape.Solids]
+        targets = [obj for obj in objects if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
         if not targets:
             return "not_applicable"
         checks = [self.geometry.check(obj) for obj in targets]
@@ -1476,7 +1573,7 @@ class Controller:
             if hasattr(obj, "Shape") and self._expects_shape(obj) and obj.Shape.isNull():
                 missing.append(obj.Name)
         included = native_results(doc) if included is None else included
-        solids = [obj for obj in included if not obj.Shape.isNull() and obj.Shape.Solids]
+        solids = [obj for obj in included if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
         solid = bool(solids)
         for obj in solids:
             check = self.geometry.check(obj)
@@ -1610,7 +1707,8 @@ class Controller:
         if parts is not None:
             unknown = [part for part in parts if part not in part_lookup]
             if unknown:
-                raise OperationError("missing_part", "Unknown part ids", parts=unknown)
+                raise OperationError("missing_part", "Unknown part ids", parts=unknown,
+                                     current_parts=studio.part_choices(bodies, unknown[0]))
         if features is not None:
             unknown = [name for name in features if name not in positions]
             if unknown:
@@ -1743,7 +1841,8 @@ class Controller:
         if parameter_set is not None:
             # Every result follows the parameter set (F3a §6.6): an invalid set fails them, a touched one is pending.
             flags |= set(parameter_set.State) & {"Touched", "Invalid", "Error"}
-        if obj.Shape.isNull() or not obj.Shape.Solids:
+        # Null embedded sources leave App::Link without Shape; retain failure diagnostics and recovery.
+        if not hasattr(obj, "Shape") or obj.Shape.isNull() or not obj.Shape.Solids:
             metrics = None
         elif measure is None:
             # Compact rows: the cached solid count and verdict only; nothing is computed.
@@ -1811,6 +1910,7 @@ class Controller:
         created_feature = None
         owns_busy = False
         assembly_transaction_id = None
+        refresh_rollback = None
         model_transaction_id = None
         step_reports = {}
         window = NULL_WINDOW
@@ -1825,7 +1925,11 @@ class Controller:
         try:
             self._prune_closed_sketch_edits()
             if not isinstance(request, dict) or request.get("op") not in self.OPS:
-                raise OperationError("unsupported_operation", "Unknown operation")
+                # B3 (slice A/B U9): echo the name and offer the closest operation names.
+                name = request.get("op") if isinstance(request, dict) else None
+                raise OperationError("unsupported_operation", "Unknown operation",
+                                     **({"op": name, "did_you_mean": did_you_mean(name, self.OPS)}
+                                        if isinstance(name, str) else {}))
             op = request["op"]
             unknown = set(request) - self.ARGS[op] - {"op"} - self.TRANSPORT_FIELDS
             if unknown:
@@ -1834,6 +1938,10 @@ class Controller:
             if "measure" in request and request["measure"] is None:
                 raise OperationError("invalid_argument", 'measure must be false, true or "full"')
             measure = self._measure_level(request.get("measure"))
+            # B1 (slice A/B U6): the shape of a mutation's response; inspect and list_documents own their detail.
+            detail = request.get("detail") if op not in {"inspect", "list_documents"} else None
+            if detail is not None and detail not in ("full", "compact"):
+                raise OperationError("invalid_argument", 'detail must be "full" or "compact"', fields=["detail"])
             # Generic missing-field pre-check (F5 §3.3): unconditional required fields that are
             # absent or null reject before any document lookup; handler-checked fields keep their codes.
             absent, groups = operation_schemas.missing_arguments(op, request)
@@ -1873,7 +1981,8 @@ class Controller:
                     unknown = [name for name in names if name not in document["operations"]]
                     if unknown:
                         raise OperationError("invalid_argument", "Unknown operations: " + ", ".join(unknown),
-                                             fields=["operations"], unknown=unknown)
+                                             fields=["operations"], unknown=unknown,
+                                             did_you_mean={name: did_you_mean(name, self.OPS) for name in unknown})
                 selected = operation_schemas.select(document, names)
                 selected.update(contract=CONTRACT_VERSION, contract_revision=CONTRACT_REVISION)
                 return {"ok": True, "result": selected}
@@ -1897,7 +2006,7 @@ class Controller:
                 if self.sketch_edits or getattr(App, "GuiUp", False) and self._native_edit_active():
                     raise OperationError("sketch_edit_active", "Finish graphical editing before choosing an assembly source")
                 self.busy = owns_busy = True
-                return {"ok": True, "result": {"candidates": native_assembly.candidates(request.get("path")), "source_policy": "embedded_shape_snapshot"}}
+                return {"ok": True, "result": {"candidates": native_assembly.candidates(request.get("path"), request.get("final_only", False)), "source_policy": "embedded_shape_snapshot"}}
             if op not in self.READ_OPS and self.busy:
                 raise OperationError("busy", "A modeling operation is already active")
             if op in self.CREATE_OPS and any(identifier in self.sketch_edits and self._is_open(existing)
@@ -1973,7 +2082,8 @@ class Controller:
                         self._recompute(doc)
                         self.sketch_edits[self.identifier(doc)] = {"feature": feature, "initial": initial,
                             "undo_before": undo_before, "signature": self._sketch_edit_signature(doc, feature),
-                            "undo": [initial, draft], "redo": [], "result_before": result_before}
+                            "undo": [initial, draft], "redo": [], "result_before": result_before,
+                            "history_before": self._lease_history(doc)}
                         self._new_revision(doc)
             else:
                 doc = self._doc(request)
@@ -1986,12 +2096,29 @@ class Controller:
                                                   measure if "measure" in request else None)
                     result["operation_ms"] = round((time.perf_counter() - start) * 1000, 2)
                     return {"ok": True, "result": result}
+                if op == "measure":
+                    from .measure_readout import measure_references
+                    return {"ok": True, "result": measure_references(doc, request.get("references"))}
+                if op == "assembly_instance_source":
+                    return {"ok": True, "result": native_assembly.instance_source(doc, request)}
+                if op == "part_inventory":
+                    from .part_inventory import rows
+                    return {"ok": True, "result": {"parts": rows(doc, request.get("include_history", False))}}
                 if op == "orphan_helpers":
                     return {"ok": True, "result": {"groups": studio.orphan_groups(doc)}}
+                if op == "part_inventory":
+                    from .part_inventory import rows
+                    return {"ok": True, "result": {"parts": rows(doc, request.get("include_history", False))}}
                 if op == "list_parameters":
                     return {"ok": True, "result": parameters.list_result(self, doc, request)}
                 if op == "resolve_selector":
                     return {"ok": True, "result": {"matches": native_selectors.resolve(doc, request.get("selector"), detail=True)}}
+                if op == "check_clearance":
+                    from . import clearance
+                    errors = self._build_status(doc)
+                    if errors or self._meta(doc).BuildStatus != "valid":
+                        raise OperationError("build_failed", "Repair the model before checking clearance", errors=errors)
+                    return {"ok": True, "result": clearance.check(doc, request)}
                 if op == "render_view":
                     # Read-only view op (F2): a cache hit or refusal as a dict, else a Deferred job.
                     return self.renders.request(doc, request)
@@ -2044,7 +2171,7 @@ class Controller:
                         if target is None:
                             raise OperationError("missing_body", "body must identify a current solid result")
                         targets = [target]
-                    targets = [obj for obj in targets if not obj.Shape.isNull() and obj.Shape.Solids]
+                    targets = [obj for obj in targets if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
                     if not targets:
                         raise OperationError("no_solid", "No solid result is available to check")
                     # Contract 3.2 F1: pending result operations are validated first (read-only check mode).
@@ -2073,7 +2200,10 @@ class Controller:
                     self.sketch_edits[self._meta(doc).DocumentId] = {
                         "feature": sketch.Name, "signature": self._sketch_edit_signature(doc, sketch.Name),
                         "initial": initial, "undo_before": undo_before,
-                        "undo": [initial], "redo": [], "created": created, "result_before": result_before}
+                        "undo": [initial], "redo": [], "created": created, "result_before": result_before,
+                        # A2: the lease's native commits, undos and redos are counted from here (a saturated
+                        # undo stack hides them from UndoCount).
+                        "history_before": self._lease_history(doc)}
                     self._new_revision(doc)
                 elif op == "finish_sketch_edit":
                     editing = self.sketch_edits.get(self._meta(doc).DocumentId)
@@ -2094,6 +2224,9 @@ class Controller:
                     else:
                         draft = bytes(doc.getObject(editing["feature"]).dumpContent())
                         self._profile(doc, editing["feature"])
+                        # A2 (slice A/B U6): regroup the lease's native commits first, then exactly one managed
+                        # recompute, one native build check and one edit-mode validation for the Finish.
+                        self._commit_sketch_edit(doc)
                         self._recompute(doc)
                         errors = self._build_status(doc)
                         if errors:
@@ -2103,11 +2236,12 @@ class Controller:
                         self._validate_results(doc, "edit", before=editing.get("result_before"),
                                                trigger={"op": "finish_sketch_edit", "feature": editing["feature"]},
                                                retry=False, persist=False)
-                        self._commit_sketch_edit(doc)
+                        if doc.HasPendingTransaction:
+                            doc.commitTransaction()
+                        editing.pop("grouping_started", None)
                         committed = True
                     self.sketch_edits.pop(self._meta(doc).DocumentId, None)
                     transaction = False
-                    self._recompute(doc)
                     # Settle, stamp and persist outside the lease; the response keeps the edit-mode report.
                     edit_report = self._reports.get("result_check_report")
                     self._validate_results(doc, "report")
@@ -2122,7 +2256,14 @@ class Controller:
                     doc.openTransaction(f"KurtShape: {op.replace('_', ' ')}")
                     assembly_transaction_id = (App.getActiveTransaction() or (None, None))[1]
                     transaction = True
-                    created_feature = native_assembly.handle(doc, request)
+                    if op == "refresh_assembly_part":
+                        from .assembly_refresh import refresh, rollback_state
+                        refresh_rollback = rollback_state(doc)
+                        self._reports["refresh_report"] = refresh(doc, {key: value for key, value in request.items() if key != "folder"})
+                        if request.get("folder") is not None:
+                            native_assembly.move_to_folder(doc, request, [request.get("instance")])
+                    else:
+                        created_feature = native_assembly.handle(doc, request)
                     created_feature = created_feature.Name if hasattr(created_feature, "Name") else created_feature
                     self._recompute(doc)
                     errors = self._build_status(doc)
@@ -2216,10 +2357,17 @@ class Controller:
                         self._validate_results(doc, "report")
                     self._new_revision(doc)
                 elif op == "save":
-                    self._save(doc, request["path"])
+                    self._save(doc, request["path"], request.get("overwrite"))
                 elif op == "export":
                     self._export(doc, request["path"], request.get("body"))
-            result = self.inspect(doc, measure)
+            if detail == "compact":
+                # B1: the status header (the list_documents row) plus the request's own additions below.
+                result = self.timings.measure("inspection_compact", self.inspect_compact, doc, None, None, None, True)
+            else:
+                result = self.inspect(doc, measure)
+                if detail != "full" and op not in self.READ_OPS:
+                    # B1: a mutation's default response carries neither block; inspect and detail:"full" do.
+                    del result["operations"], result["last_failed_attempt"]
             if op == "check_geometry":
                 result["geometry_check_report"] = check_report
             if created_feature:
@@ -2274,7 +2422,13 @@ class Controller:
                         exc = rollback_error
                         self._new_revision(doc)
                 else:
-                    doc.abortTransaction()
+                    if op == "refresh_assembly_part":
+                        # Native joint Offset restoration can otherwise solve
+                        # while undo is halfway through restoring the link graph.
+                        with native_assembly._explicit_solve():
+                            doc.abortTransaction()
+                    else:
+                        doc.abortTransaction()
                     if assembly_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == assembly_transaction_id:
                         App.closeActiveTransaction(True)
                     if model_transaction_id is not None and (App.getActiveTransaction() or (None, None))[1] == model_transaction_id:
@@ -2284,6 +2438,9 @@ class Controller:
                         # A recovered split undid commits and wrote a discard boundary: history moved.
                         history_moved = getattr(exc, "code", None) == "transaction_split"
                     self._recompute(doc)
+                    if refresh_rollback is not None:
+                        from .assembly_refresh import restore_rollback
+                        restore_rollback(doc, refresh_rollback)
                     self.signatures[self._meta(doc).DocumentId] = self._signature(doc)
                     self.observer.state(doc).pop("assembly_source_changed", None)
                     if (window is not NULL_WINDOW and getattr(window, "before", None) is not None
@@ -2435,8 +2592,12 @@ class Controller:
             raise OperationError("busy", "Finish the active operation before previewing")
         if not self.is_managed(doc):
             raise OperationError("unmanaged_document", "Adopt a copy before previewing changes")
-        if request.get("expected_revision") != self._meta(doc).Revision:
-            raise OperationError("stale_revision", "Inspect before previewing a proposal")
+        # A read (slice A/B U6): the revision is optional and, when given, must be the current one.
+        base_revision = self._meta(doc).Revision
+        expected = request.get("expected_revision")
+        if expected is not None and expected != base_revision:
+            raise OperationError("stale_revision", "The preview's expected_revision is not the current revision; inspect, or omit it",
+                                 expected=expected, actual=base_revision)
         proposal = request.get("proposal")
         is_batch = isinstance(proposal, dict) and proposal.get("op") == "batch"
         if self._meta(doc).DocumentId in self.sketch_edits or doc.HasPendingTransaction and not is_batch:
@@ -2457,7 +2618,7 @@ class Controller:
                 steps = batch.validate(self, proposal)
             except OperationError as exc:
                 count = len(proposal["steps"]) if isinstance(proposal.get("steps"), list) else 0
-                return {"base_revision": request["expected_revision"],
+                return {"base_revision": base_revision,
                         "proposal": {"op": "batch", "label": proposal.get("label"), "step_count": count},
                         "accepted": False, "valid": False, "error": {"code": exc.code, "message": str(exc), **exc.details},
                         "build_status": None, "build_errors": [], "measurements": None, "discarded": True,
@@ -2468,7 +2629,7 @@ class Controller:
         absent, groups = operation_schemas.missing_arguments(proposal["op"], proposal) if not is_batch else ((), ())
         if absent or groups:
             fields = list(absent or groups[0])
-            return {"base_revision": request["expected_revision"], "proposal": proposal, "accepted": False, "valid": False,
+            return {"base_revision": base_revision, "proposal": proposal, "accepted": False, "valid": False,
                     "error": {"code": "invalid_argument", "message": "Missing required fields: " + ", ".join(fields),
                               "fields": fields, "one_of": bool(groups and not absent), "reason": "missing_required"},
                     "build_status": None, "build_errors": [], "measurements": None, "discarded": True}
@@ -2488,7 +2649,7 @@ class Controller:
         try:
             with tempfile.TemporaryDirectory(prefix="kurtshape-parameter-preview-") as temporary:
                 path = Path(temporary) / "native-preview.FCStd"
-                doc.saveCopy(str(path))
+                save_native_copy(doc, path)
                 clone = App.openDocument(str(path), True)
                 failure = None
                 step = ModelStep(None, {})
@@ -2532,7 +2693,7 @@ class Controller:
                     evaluated["measurements"] = None
                 echo = ({"op": "batch", "label": proposal.get("label"), "step_count": len(steps)} if is_batch
                         else proposal)
-                preview = {"base_revision": request["expected_revision"], "proposal": echo, "accepted": accepted,
+                preview = {"base_revision": base_revision, "proposal": echo, "accepted": accepted,
                            # valid means "the commit would be accepted": pre-existing result failures fold into the
                            # predicted build_status but never reject (F1 §6), so the native status decides here.
                            "valid": accepted and self.observer.state(clone).get("native_status", evaluated["build_status"]) in {"valid", "sketch_only"},
@@ -2568,6 +2729,33 @@ class Controller:
                     _restore_gui(doc, gui_state)
             finally:
                 self.busy = previous_busy
+
+    def close_untouched(self, identifier, revision, objects):
+        """Close a never-saved document that is exactly as it was created; returns True when closed.
+
+        Used by the app to drop the blank startup part when the user opens a file. Unlike
+        ``close_document`` with ``discard``, nothing is checkpointed: an untouched blank document
+        holds no work, and a checkpoint would push a real discard checkpoint out of recovery.
+        ``revision`` and ``objects`` (sorted object names) are the values recorded at creation.
+        """
+        doc = self.documents.get(identifier)
+        if doc is None or not self._is_open(doc) or doc.FileName or self.busy or identifier in self.sketch_edits:
+            return False
+        if doc.HasPendingTransaction or doc.RedoCount:
+            return False
+        if getattr(App, "GuiUp", False) and self._native_edit_active():
+            return False
+        if callable(self.editor_activity) and self.editor_activity(doc.Name):
+            return False
+        self.sync(doc)  # a native edit made since the last inspection changes the revision here
+        if self._meta(doc).Revision != revision or sorted(obj.Name for obj in doc.Objects) != list(objects):
+            return False
+        if any(user.Document != doc for obj in doc.Objects for user in obj.InList):
+            return False
+        App.closeDocument(doc.Name)
+        for mapping in (self.documents, self.signatures, self.sketch_edits, self.created_sketches, self.last_failures):
+            mapping.pop(identifier, None)
+        return True
 
     def _close_document(self, doc, request, start):
         """Close an open document (contract 3.2); every refusal happens before the native close.
@@ -2618,7 +2806,7 @@ class Controller:
                                        "operation_ms": round((time.perf_counter() - start) * 1000, 2)}}
 
     def _adopt(self, source, raw):
-        path = write_path(raw, {".fcstd"}, self.settings.roots)
+        path = write_path(raw, {".fcstd"}, self.settings.roots, self.settings.path)
         if path.exists() or source.FileName and path == Path(source.FileName).resolve():
             raise OperationError("adoption_destination_exists", "Adoption requires a new file, preserving the original")
         unsupported = self.inspect(source)["unsupported_objects"]
@@ -2629,7 +2817,7 @@ class Controller:
         saved_program_version = source.getProgramVersion()
         try:
             with tempfile.TemporaryDirectory(prefix="kurtshape-native-adoption-") as temporary:
-                source.saveCopy(str(Path(temporary) / "adoption-source.FCStd"))
+                save_native_copy(source, Path(temporary) / "adoption-source.FCStd")
                 clone = App.openDocument(str(Path(temporary) / "adoption-source.FCStd"))
                 clone.openTransaction("KurtShape: adopt native copy")
                 meta = metadata(clone)
@@ -2791,7 +2979,8 @@ class Controller:
             raise OperationError("unsupported_reference", "Face support requires a native solid feature")
         index = int(element[4:]) - 1
         if index >= len(obj.Shape.Faces):
-            raise OperationError("missing_reference", "Selected face does not exist")
+            # B3 (slice A/B U9): echo the reference and offer the nearest faces, like the selector sites.
+            raise native_selectors.missing(doc, reference, entity_type="face", message="Selected face does not exist")
         if not isinstance(obj.Shape.Faces[index].Surface, Part.Plane):
             raise OperationError("nonplanar_support", "A sketch needs a planar face or datum plane")
         return obj, element
@@ -2892,6 +3081,10 @@ class Controller:
         joins = {pos: self._anchor(anchors, point) for pos, point in points.items()}
         if joins[1] is not None and joins[1] == joins[2]:
             raise OperationError("invalid_argument", "Line endpoints must be distinct")
+        # A joined endpoint starts at the anchor's exact location, as in add_polyline.
+        # A sub-tolerance offset (e.g. 0 vs an arc's 8*cos(-pi/2)) lets each native
+        # solve keep either value, so a later solve could rewrite the line by ~1e-15.
+        points = {pos: point if joins[pos] is None else sk.getPoint(*joins[pos]) for pos, point in points.items()}
         before = self._solver_report(sk) if any(join is not None for join in joins.values()) else None
         i = sk.addGeometry(Part.LineSegment(points[1], points[2]), construction)
         for pos, x, y, names in ((1, x1, y1, ("StartX", "StartY")), (2, x2, y2, ("EndX", "EndY"))):
@@ -3287,6 +3480,9 @@ class Controller:
             created = modeling_geometry.handle(self, doc, req)
             self._record_source(doc, req, doc.getObject(created) if created else None)
             return created
+        if op in {"pad", "pocket"}:
+            # B2 (slice A/B U9): direction becomes this route's reversed; handlers and records see reversed only.
+            req = studio.apply_direction(req)
         if op in studio.OPS - {"pad", "pocket"} or op in {"pad", "pocket"} and ("operation" in req or "merge_scope" in req):
             if reference_tools.is_selector(req.get("face")):
                 original_face = req["face"]
@@ -3414,7 +3610,26 @@ class Controller:
                     feature.Reversed = True
                     self._recompute(doc)
                 if not cut_valid():
-                    raise OperationError("empty_cut", "Pocket removes no valid material in the requested direction")
+                    # B3 (slice A/B U9): with the direction omitted both sides were tried.
+                    hint = (studio.direction_hint(req, "removed no material") if "reversed" in req else
+                            {"hint": "Neither side of the profile normal removes material; check where the profile sits"})
+                    raise OperationError("empty_cut", "Pocket removes no valid material in the requested direction",
+                                         feature=feature.Name, **hint)
+            elif (req.get("_result_checks") != "live" and not set(feature.State) & {"Error", "Invalid"}
+                  and self._meta(doc).BuildStatus in {"valid", "sketch_only"}):
+                # B3 (slice A/B U9): a legacy Pad must add material, mirroring the Pocket's cut check and the
+                # Part Studio empty_add. The GUI's exact preview ("live") reports empty_preview instead. A
+                # document that is failed or needs a rebuild meets the legacy single-solid gate's build_failed
+                # first (_model_step), as before.
+                # The Pad's own solid against its base feature's: the Body's Tip and shape follow only after
+                # reconciliation in a Part Studio document.
+                base = feature.BaseFeature
+                before = base.Shape.Volume if base is not None and not base.Shape.isNull() else 0.0
+                added = (feature.Shape.Volume if not feature.Shape.isNull() else 0.0) - before
+                if added < 1e-7:
+                    raise OperationError("empty_add", f"{feature.Name} added no material to the Body", feature=feature.Name,
+                                         volume_before_mm3=before, volume_added_mm3=added,
+                                         **studio.direction_hint(req, "added no material"))
         elif op in {"set_parameter", "set_expression"}:
             parameter = req["parameter"]
             spec = parameters.target(doc, req["feature"], parameter)
@@ -3541,28 +3756,122 @@ class Controller:
         mapping[str(req["source_feature_id"])] = created.Name
         meta.SourceMapping = json.dumps(mapping, sort_keys=True)
 
-    def _save(self, doc, raw):
-        path=write_path(raw,{".fcstd"}, self.settings.roots)
+    def _save(self, doc, raw, overwrite=None):
+        path=write_path(raw,{".fcstd"}, self.settings.roots, self.settings.path)
+        if overwrite is not None and not isinstance(overwrite, bool):
+            raise OperationError("invalid_argument", "overwrite must be true or false", fields=["overwrite"])
+        if path.exists() and not overwrite:
+            # A8 (slice A/B U8): never silently replace another project's file.
+            self._refuse_other_project(doc, path)
         stage=path.with_name(path.stem + ".saving.FCStd")
         old_name=doc.FileName
+        # A4: the GUI paints "Saving…" before the synchronous native write and clears it afterwards.
+        self.recovery.stall("Saving…")
         try:
-            doc.saveCopy(str(stage))
+            save_native_copy(doc, stage)
             # Ensure stage is a readable native ZIP before replacing the previous file.
             import zipfile
             with zipfile.ZipFile(stage) as archive:
                 if "Document.xml" not in archive.namelist() or archive.testzip():
                     raise OperationError("save_failed", "Native staged file is corrupt")
-            if path.exists():
-                import shutil
-                shutil.copy2(path,path.with_suffix(".recovery.FCStd"))
-            os.replace(stage,path)
+            try:
+                if path.exists():
+                    import shutil
+                    # Contents and times, not the mode: a read-only destination must not leave a read-only
+                    # recovery copy that blocks every later save (copy2 copied the attribute).
+                    backup=path.with_suffix(".recovery.FCStd")
+                    shutil.copyfile(path,backup)
+                    previous=path.stat()
+                    os.utime(backup,ns=(previous.st_atime_ns,previous.st_mtime_ns))
+                os.replace(stage,path)
+            except OSError as exc:
+                # A locked (open in another program) or read-only destination: the previous file is intact.
+                raise self._destination_locked(path, exc, stage) from exc
             doc.FileName=str(path)
-        except Exception:
+        except Exception as exc:
             doc.FileName=old_name
+            failure=exc
             raise
+        else:
+            failure=None
+        finally:
+            try:
+                stage.unlink(missing_ok=True)
+            except OSError as cleanup:
+                # Never silent: the leftover stage is named on the error, or reported with the saved result.
+                note={"stage": str(stage), "stage_cleanup_error": cleanup.strerror or str(cleanup)}
+                App.Console.PrintWarning(f"KurtShape save left its stage {stage}: {note['stage_cleanup_error']}\n")
+                if isinstance(failure, OperationError):
+                    failure.details.update(note)
+                elif failure is None:
+                    self._reports["save_stage"]=note
+            self.recovery.stall(None)
+
+    @staticmethod
+    def _destination_locked(path, exc, stage=None):
+        reason = exc.strerror or str(exc)
+        details = {"path": str(path), "reason": reason}
+        # The OS may name the stage (os.replace's source), which is removed below; name the file that blocks.
+        named = [Path(name).resolve() for name in (exc.filename, exc.filename2) if name]
+        blocking = [name for name in named if name != path and (stage is None or name != stage.resolve())]
+        if blocking:
+            details["file"] = str(blocking[0])
+        return OperationError("save_destination_locked",
+                              f"Cannot write {path.name}: {reason}. Close it in the other program (or make it writable), then save again",
+                              **details)
+
+    @staticmethod
+    def _saved_project(path):
+        """``(DocumentId, document label)`` of the FCStd at ``path``, streamed from its Document.xml.
+
+        The DocumentId is None when the file has no KurtShape project metadata. Raises OSError when the
+        file cannot be read (locked) and ValueError when it is not a readable FCStd; nothing is opened.
+        """
+        import zipfile
+        import xml.etree.ElementTree as ET
+        label, stack = None, []
+        try:
+            with zipfile.ZipFile(path) as archive, archive.open("Document.xml") as stream:
+                for event, element in ET.iterparse(stream, events=("start", "end")):
+                    if event == "end":
+                        stack.pop()
+                        element.clear()
+                        continue
+                    stack.append((element.tag, element.get("name")))
+                    if element.tag != "String":
+                        continue
+                    # Document/Properties/Property[Label]/String, then
+                    # Document/ObjectData/Object[KurtShapeProject]/Properties/Property[DocumentId]/String.
+                    if len(stack) == 4 and stack[1][0] == "Properties" and stack[2] == ("Property", "Label"):
+                        label = element.get("value")
+                    elif (len(stack) == 6 and stack[1][0] == "ObjectData" and stack[2] == ("Object", METADATA)
+                          and stack[4] == ("Property", "DocumentId")):
+                        return element.get("value"), label
+        except OSError:
+            raise
+        except Exception as exc:
+            # KeyError, BadZipFile, ParseError, zlib.error (a corrupt deflate stream), EOFError,
+            # NotImplementedError (an unsupported compression), ...: not a readable FCStd.
+            raise ValueError("Not a readable FCStd") from exc
+        return None, label
+
+    def _refuse_other_project(self, doc, path):
+        """Reject ``path`` when it holds an FCStd of another project (another DocumentId, or none)."""
+        try:
+            existing, label = self._saved_project(path)
+        except OSError as exc:
+            raise self._destination_locked(path, exc) from exc
+        except ValueError:
+            existing, label = None, None
+        if existing is not None and existing == self._meta(doc).DocumentId:
+            return
+        project = f" (project {label!r})" if label else ""
+        raise OperationError("save_destination_other_project",
+                             f"{path.name} holds another project's file{project}; save elsewhere, or pass overwrite:true to replace it",
+                             path=str(path), existing_document_id=existing, existing_project=label)
 
     def _export(self, doc, raw, body_id=None):
-        path=write_path(raw,{".step",".stp",".stl"}, self.settings.roots)
+        path=write_path(raw,{".step",".stp",".stl"}, self.settings.roots, self.settings.path)
         # Contract 3.2 F1: pending result operations are validated before the status gate.
         self._validate_results(doc, "export")
         if self._meta(doc).BuildStatus!="valid":

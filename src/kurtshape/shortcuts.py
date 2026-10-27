@@ -219,6 +219,14 @@ class ShortcutRouter:
                     return False
                 if not key:
                     return False
+                if (event.type() == QtCore.QEvent.ShortcutOverride
+                        and (owner._text_input(widget, QtGui) or owner._text_input(receiver, QtGui))
+                        and any(event.matches(sequence) for sequence in owner._text_editing_keys(QtGui))):
+                    # Copy, Select all, Paste, Cut, Undo and Redo belong to a focused text input, read-only
+                    # and selectable ones included: claim the override so no native window shortcut
+                    # (FreeCAD's Std_Copy and its Object Selection dialog) fires instead.
+                    event.accept()
+                    return False
                 entry = owner.resolve(key)
                 if entry is None or entry["status"] == "pass_through":
                     return False
@@ -266,6 +274,11 @@ class ShortcutRouter:
         prefix = [name for mask, name in ((qt.ControlModifier, "Ctrl"), (qt.AltModifier, "Alt"),
                                           (qt.ShiftModifier, "Shift"), (qt.MetaModifier, "Meta")) if mods & mask]
         return normalize_key("+".join(prefix + [base]))
+
+    @staticmethod
+    def _text_editing_keys(QtGui):
+        keys = QtGui.QKeySequence
+        return (keys.Copy, keys.SelectAll, keys.Paste, keys.Cut, keys.Undo, keys.Redo)
 
     @staticmethod
     def _text_input(widget, QtGui):

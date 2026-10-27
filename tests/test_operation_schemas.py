@@ -31,6 +31,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 import unittest
 from unittest.mock import patch
@@ -80,6 +81,11 @@ def outcome(response):
         if isinstance(result.get("documents"), list):
             # list_documents: the shape of each row tells full from compact (contract 3.2 detail).
             facts["documents"] = [sorted(row) for row in result["documents"] if isinstance(row, dict)]
+        for key in ("candidates", "parts"):
+            if isinstance(result.get(key), list):
+                # Discovery filters change membership and explicit roles, not
+                # the native document. Keep those response facts observable.
+                facts[key] = rounded(result[key])
         return facts
     measurements = result.get("measurements") or {}
     studio = result.get("studio") or {}
@@ -221,6 +227,18 @@ _BODY_FRONT = {"kind": "closest", "point": [20, 0, 5], "query": {"kind": "owned_
 # Each runs on a fresh fixture after its setup requests (and native step), with the
 # field omitted, set to its default and set to its wrong value.
 DEFAULT_PROBES = {
+    "assembly_final_candidates": {
+        "fixture": "studio",
+        "setup": [{"op": "pad", "id": "InventoryBoss", "profile": "BossProfile", "length": 15,
+                   "operation": "add", "merge_scope": ["Body"]},
+                  {"op": "save", "path": "<inventory_source>"}],
+        "request": {"op": "assembly_candidates", "path": "<inventory_source>"},
+        "fields": ["final_only"]},
+    "inventory_history": {
+        "fixture": "studio",
+        "setup": [{"op": "pad", "id": "InventoryBoss", "profile": "BossProfile", "length": 15,
+                   "operation": "add", "merge_scope": ["Body"]}],
+        "request": {"op": "part_inventory"}, "fields": ["include_history"]},
     # U5: freezing matters only when the parameter has a consumer.
     "delete_in_use": {
         "fixture": "plate",
@@ -313,6 +331,10 @@ DEFAULT_PROBES = {
                    "diameter": 6}],
         "request": {"op": "hole", "sketch": "TopCentre", "diameter": 3, "depth": 4},
         "fields": ["reversed", "end_type", "point_angle"]},
+    "save_other_project": {
+        # Slice A/B U8: the destination holds another project's FCStd, so without overwrite the save is refused.
+        "fixture": "plate", "setup": [], "request": {"op": "save", "path": "<other_project_file>"},
+        "fields": ["overwrite"]},
 }
 
 # Application-level transactions an example leaves open after its document is
@@ -429,6 +451,7 @@ class SchemaRunner:
 
     def __init__(self, core, folder, files):
         self.core, self.folder, self.files = core, Path(folder), dict(files)
+        self.files["<inventory_source>"] = self.folder / "inventory-source-with-history.FCStd"
         self.state = None
         self.initial_documents = set(App.listDocuments())
         self.leaked_transactions = []  # (op of the last dispatched request, transaction name)
@@ -441,6 +464,13 @@ class SchemaRunner:
                 project = self.folder / ("project-" + uuid.uuid4().hex[:8])
                 project.mkdir()
                 return str(project) + value[len("<project>"):]
+            if value == "<other_project_file>":
+                # Slice A/B U8: a fresh copy of the studio fixture (another project) for save's overwrite probe.
+                project = self.folder / ("project-" + uuid.uuid4().hex[:8])
+                project.mkdir()
+                target = project / "other-project.FCStd"
+                shutil.copy2(self.files["fixture:studio"], target)
+                return str(target)
             if value in self.files:
                 return str(self.files[value])
             raise KeyError("Undocumented example placeholder " + value)
@@ -786,8 +816,9 @@ class OperationSchemaTests(unittest.TestCase):
                 self.assertEqual(request["required"][0], "op")
                 self.assertEqual("document_id" in request["required"],
                                  op not in Controller.CREATE_OPS and op not in documentless)
+                # Slice A/B U6: preview is a read; its revision is optional and checked when given.
                 self.assertEqual("expected_revision" in request["required"],
-                                 op not in Controller.READ_OPS | Controller.CREATE_OPS | view or op == "preview")
+                                 op not in Controller.READ_OPS | Controller.CREATE_OPS | view)
                 self.assertNotIn("request_id", request["required"])
                 self.assertNotIn("measure", request["required"])
                 self.assertEqual(request["properties"]["measure"]["enum"], [False, True, "full"])

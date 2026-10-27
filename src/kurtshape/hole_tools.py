@@ -53,7 +53,7 @@ import math
 
 import FreeCAD as App
 
-ARGS = {"id", "part", "sketch", "diameter", "depth", "end_type", "point_angle", "reversed",
+ARGS = {"id", "part", "sketch", "diameter", "depth", "end_type", "point_angle", "reversed", "direction",
         "counterbore", "countersink"}
 CUT_ARGS = {"counterbore": {"diameter", "depth"}, "countersink": {"diameter", "angle"}}
 # Native Hole BaseProfileType bits: 1 standalone points, 2 circles, 4 arcs.
@@ -422,6 +422,9 @@ def _clamped(hole, prop, wanted):
 def handle(core, doc, req):
     from .core import OperationError, number
     from .bodies import owner
+    from .studio import apply_direction
+    # B2 (slice A/B U9): direction "along" the sketch normal is the hole's reversed=true.
+    req = apply_direction(req)
     body_request = dict(req)
     if "part" in req:
         body_request["body"] = req["part"]
@@ -587,8 +590,11 @@ def _validate(hole, tip, diameter, depth, point_angle, cut, reversed_direction, 
                              feature=hole.Name, hole_count=count, centre_count=expected)
     before, after = tip.Shape.Volume, hole.Shape.Volume
     if after >= before - 1e-7:
-        raise OperationError("empty_cut", "The holes remove no material; check the sketch position or set reversed"
-                             + ("=false" if reversed_direction else "=true"), feature=hole.Name)
+        # B2/B3 (slice A/B U9): the direction vocabulary; along the sketch normal is reversed=true for a hole.
+        from .studio import direction_hint
+        hint = direction_hint({"op": "hole"}, "removed no material", bool(reversed_direction))
+        raise OperationError("empty_cut", 'The holes remove no material; check the sketch position or set direction:"'
+                             + hint["try_direction"] + '"', feature=hole.Name, **hint)
     if depth is not None and count:
         limit = count * _tool_volume(diameter, depth, point_angle, cut) * (1 + 1e-6) + 1e-6 * abs(before)
         if before - after > limit:

@@ -123,6 +123,18 @@ def click_action(bar, label):
     return item
 
 
+def start_cut():
+    # Remove material is the More -> Cut -> "Extrude - Cut" preset of Extrude
+    # (docs/EVERYDAY_UI.md); trigger that real menu QAction, as search does.
+    cut_menu = next(item.menu() for item in panel.tool_menus["More"].actions() if item.menu() and item.text() == "Cut")
+    item = action(cut_menu, "Extrude \u00b7 Cut")
+    check("Extrude \u00b7 Cut: actual More menu action usable", item.isEnabled())
+    item.trigger()
+    wait(80)
+    check("Extrude \u00b7 Cut opens Extrude in Cut mode", panel.task == "pocket" and panel.result_operation.currentData() == "remove")
+    return item
+
+
 def preview():
     result = wait_for_exact(panel.extrusion_preview)
     report["last_preview"] = {"valid": result.valid, "proposal": result.proposal, "error": result.error, "measurements": result.measurements}
@@ -238,13 +250,14 @@ def removal_render_gate(expect_visible=True):
 def toolbar_coverage(width):
     main.resize(width, 900 if width == 1200 else 1000)
     wait(180)
-    required = {"Sketch", "Extrude", "Remove", "Revolve", "Sweep", "Loft", "Fillet", "Chamfer", "Shell", "Draft", "Mirror", "Linear pattern", "Circular pattern", "Boolean", "Plane"}
+    required = {"Sketch", "Extrude", "Revolve", "Sweep", "Loft", "Fillet", "Chamfer", "Shell", "Draft", "Mirror", "Linear pattern", "Circular pattern", "Boolean", "Plane"}
     labels = {item.text() for item in panel.model_bar.actions()}
     check(str(width) + "px: requested modeling tools in direct toolbar", required.issubset(labels))
     for label in sorted(required):
         button = panel.model_bar.widgetForAction(action(panel.model_bar, label))
         check(str(width) + "px: " + label + " directly visible", button is not None and button.isVisible() and panel.model_bar.rect().contains(button.geometry()))
     check(str(width) + "px: Hole omitted from default direct toolbar", "Hole" not in labels)
+    check(str(width) + "px: Remove material is Extrude's Cut mode, not a separate button", "Remove" not in labels)
     check(str(width) + "px: part and plane names explain actions", "New part" in labels and "Show planes" in labels and "New Body" not in labels)
     check(str(width) + "px: implementation prefixes absent from toolbar", all("native" not in (item.text() + " " + item.toolTip()).lower() for item in panel.model_bar.actions()))
     more = panel.tool_menus["More"]
@@ -389,6 +402,7 @@ def validate():
         select_history("Profile")
         click_action(panel.model_bar, "Extrude")
         result = set_depth("7 mm")
+        panel.core.settings.grant_destination(str(session / "preview-uncommitted.FCStd"))  # as the human Save dialog does
         call("save", path=str(session / "preview-uncommitted.FCStd"))
         result = preview()
         check("Save preserves open extrusion fields and restarts valid preview", panel.task == "pad" and panel.editor.isVisible() and result.valid and abs(result.measurements["volume_mm3"] - 1400) < 1e-6)
@@ -421,7 +435,7 @@ def validate():
         call("sketch_circle", id="CutProfile", x=10, y=5, diameter=4)
         select_history("CutProfile")
         before_cut = authoritative_state()
-        click_action(panel.model_bar, "Remove")
+        start_cut()
         result = preview()
         assert_live_overlay("Through-all removal preview", result)
         check("Through-all preview removes real full-depth material", abs(result.measurements["volume_mm3"] - (1400 - math.pi * 4 * 7)) < 1e-5)
@@ -437,7 +451,7 @@ def validate():
         check("Removal Cancel preserves original solid", abs(panel.document().Body.Shape.Volume - 1400) < 1e-6 and panel.extrusion_preview.overlay.node is None)
 
         select_history("CutProfile")
-        click_action(panel.model_bar, "Remove")
+        start_cut()
         preview()
         call("rebuild")
         # refresh may show the selected sketch's normal parameter editor.
@@ -446,7 +460,7 @@ def validate():
         check("Rebuild during preview leaves accepted solid unchanged", abs(panel.document().Body.Shape.Volume - 1400) < 1e-6)
 
         select_history("CutProfile")
-        click_action(panel.model_bar, "Remove")
+        start_cut()
         preview()
         doc = panel.document()
         current = panel.core.inspect(doc)

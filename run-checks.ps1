@@ -23,7 +23,7 @@ try {
     }
     $reportFolder = Get-KurtShapeEvidenceDirectory 'checks'
     New-Item -ItemType Directory -Force -Path $reportFolder | Out-Null
-    $nativeArgs = @('-B','tools\run_native_tests.py','--require-native','--report',(Join-Path $reportFolder 'native.json'),'--junit',(Join-Path $reportFolder 'junit.xml'))
+    $nativeArgs = @('-B','tools\run_native_tests.py','--require-native','--timeout','3600','--report',(Join-Path $reportFolder 'native.json'),'--junit',(Join-Path $reportFolder 'junit.xml'))
     if ($Full) { $env:KURTSHAPE_PERF = '1'; $nativeArgs += '--require-external' }
     if ($KeepNativeTemp) { $nativeArgs += '--keep-temp' }
     Invoke-KurtShapeValidationPython -Executable $pythonPath -Arguments $nativeArgs -Name 'all-test-suites' -TimeoutSeconds 7500

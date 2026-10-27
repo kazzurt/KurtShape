@@ -47,7 +47,7 @@ def run():
         edit = Gui.getDocument(doc.Name).getInEdit()
         report["stages"].append({"name":name, "pending_transaction":doc.HasPendingTransaction,
             "undo_count":doc.UndoCount, "redo_count":doc.RedoCount,
-            "geometry_count":doc.Profile.GeometryCount,
+            "geometry_count":getattr(doc.getObject("Profile"), "GeometryCount", None),
             "edit_type":str(getattr(edit,"TypeId",None)),
             "edit_object_type":str(getattr(getattr(edit,"Object",None),"TypeId",None)),
             "gui_modified":bool(Gui.getDocument(doc.Name).Modified),
@@ -112,10 +112,16 @@ def run():
         stage("native_resetEdit_before_finish")
         dispatch("finish_sketch_edit")
         stage("managed_finish")
+        # The first Finish of a newly created sketch is one Undo step with its creation
+        # (docs/HISTORY_LIFECYCLE.md): Undo removes the sketch, Redo restores it and its support.
+        placement = doc.Profile.Placement
+        support = [(link.Name, subs) for link, subs in doc.Profile.AttachmentSupport]
         dispatch("undo")
-        assert doc.Profile.GeometryCount == 0
+        assert doc.getObject("Profile") is None
         dispatch("redo")
         assert doc.Profile.GeometryCount == 5
+        assert doc.Profile.Placement.isSame(placement, 1e-9)
+        assert [(link.Name, subs) for link, subs in doc.Profile.AttachmentSupport] == support
         stage("document_undo_redo_after_finish")
         dispatch("begin_sketch_edit", feature="Profile")
         Gui.getDocument(doc.Name).setEdit("Profile")
@@ -129,13 +135,23 @@ def run():
         assert not doc.HasPendingTransaction
         stage("managed_cancel")
         dispatch("undo")
-        assert doc.Profile.GeometryCount == 0
+        assert doc.getObject("Profile") is None
         stage("undo_prior_accepted_edit_after_cancel")
         dispatch("redo")
         assert doc.Profile.GeometryCount == 5
         stage("redo_prior_accepted_edit_does_not_resurrect_cancelled_line")
         assert not doc.RedoCount
+        dispatch("begin_sketch_edit", feature="Profile")
+        dispatch("add_line", sketch="Profile", x1=1,y1=2,x2=4,y2=5,construction=True)
+        dispatch("finish_sketch_edit")
+        assert doc.Profile.GeometryCount == 6
+        dispatch("undo")
+        assert doc.getObject("Profile") is not None and doc.Profile.GeometryCount == 5
+        dispatch("redo")
+        assert doc.Profile.GeometryCount == 6 and not doc.RedoCount
+        stage("existing_sketch_edit_is_its_own_undo_step")
         saved = evidence_dir("") / "sketch-lifecycle-project.FCStd"
+        core.settings.grant_destination(str(saved))  # as the human Save dialog does
         undo_before_save = doc.UndoCount
         dispatch("save", path=str(saved))
         assert not Gui.getDocument(doc.Name).Modified

@@ -56,6 +56,8 @@ jobs:
         run: ./install-runtime.ps1
       - name: Verify runtime layout
         run: ./tools/ci/check-runtime-layout.ps1
+      - name: Install pinned drawing dependencies
+        run: ./tools/setup-drawing-deps.ps1
       - name: Run isolated suites
         run: |
           . ./tools/validation-session.ps1
@@ -65,7 +67,7 @@ jobs:
           $env:KURTSHAPE_TEST_TMP = Join-Path $root 'runtime/test-tmp'
           $env:KURTSHAPE_TEST_OUTSIDE = '${{ runner.temp }}'
           $python = Join-Path $root 'runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin/python.exe'
-          Invoke-KurtShapeValidationPython -Executable $python -Arguments @('-B','tools/run_native_tests.py','--require-native','--report',(Join-Path $session 'evidence/native.json'),'--junit',(Join-Path $session 'evidence/junit.xml')) -Name 'github-native-tests' -TimeoutSeconds 7500
+          Invoke-KurtShapeValidationPython -Executable $python -Arguments @('-B','tools/run_native_tests.py','--require-native','--timeout','3600','--report',(Join-Path $session 'evidence/native.json'),'--junit',(Join-Path $session 'evidence/junit.xml')) -Name 'github-native-tests' -TimeoutSeconds 7500
       - name: Verify newcomer setup
         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./setup.ps1
       - name: Repository stays clean
@@ -151,8 +153,6 @@ jobs:
       fail-fast: false
       matrix:
         recipe: [interface, ui-refinement, extrusion-preview, sketch-behavior, review-interaction, review-lifecycle, review-copy, messages, assembly, part-studio, step-import, assembly-step, review-recovery, review-startup, bench-gui]
-    env:
-      QT_OPENGL: software
     steps:
       - uses: actions/checkout@v4
         with:
@@ -162,8 +162,37 @@ jobs:
           path: runtime/downloads/FreeCAD_1.1.4-Windows-x86_64-py311.7z
           key: freecad-win64-${{ env.FREECAD_ARCHIVE_SHA256 }}
       - run: ./install-runtime.ps1
+      - name: Use the bundled software OpenGL
+        # Hosted runners have no GPU driver, so the system opengl32.dll is Windows' GDI OpenGL 1.1, on
+        # which FreeCAD's 3D view crashes (0xC0000374). QT_OPENGL=software cannot select the bundled Mesa
+        # llvmpipe: FreeCAD 1.1.4 sets Qt::AA_UseDesktopOpenGL at startup, and Qt 6 checks that attribute
+        # before QT_OPENGL (and before FreeCAD's UseSoftwareOpenGL preference). An opengl32.dll next to
+        # freecad.exe is loaded before the system one, so Qt, Coin and VTK all use Mesa. CI-only: this
+        # changes the runner's throwaway engine copy, never a local install.
+        run: |
+          $bin = 'runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin'
+          Copy-Item -LiteralPath (Join-Path $bin 'opengl32sw.dll') -Destination (Join-Path $bin 'opengl32.dll')
+      - name: Generate public STEP fixtures
+        if: matrix.recipe == 'step-import' || matrix.recipe == 'assembly-step'
+        run: |
+          . ./tools/validation-session.ps1
+          $root = (Get-Location).Path
+          $session = Join-Path $root 'runtime/ci-local/step-fixture-generation'
+          Initialize-KurtShapeValidationEnvironment -Root $root -Session $session
+          $fixtures = Join-Path $session 'public-step-fixtures'
+          $python = Join-Path $root 'runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin/python.exe'
+          Invoke-KurtShapeValidationPython -Executable $python -Arguments @('-B','tools/ci/generate-step-fixtures.py',$fixtures) -Name 'generate-step-fixtures' -TimeoutSeconds 120
+          "KURTSHAPE_ONSHAPE_EXAMPLES=$fixtures" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          'KURTSHAPE_STEP_FIXTURE_KIND=generated-public-primitives' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Run blocking hidden recipe
         run: ./tools/run_gui_recipe.ps1 -Recipe '${{ matrix.recipe }}'
+      - name: Report the OpenGL renderer FreeCAD used
+        if: always()
+        run: |
+          $lines = @(Get-ChildItem -Path 'runtime/ci-gui/${{ matrix.recipe }}' -Filter freecad.log -Recurse -ErrorAction SilentlyContinue |
+              Select-String -Pattern 'OpenGL version is' | ForEach-Object { $_.Line })
+          $lines | Write-Output
+          if (-not $lines -or ($lines | Where-Object { $_ -notmatch 'Mesa' })) { Write-Output '::warning::FreeCAD did not report the bundled Mesa OpenGL.' }
       - name: Repository stays clean
         if: always()
         run: ./tools/ci/assert-clean-tree.ps1

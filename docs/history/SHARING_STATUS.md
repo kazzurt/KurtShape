@@ -1,5 +1,10 @@
 # Windows friends preview — 2026-10-17
 
+> **Archived 2026-10-21 by the slice A/B work:** a dated handoff; the current entry points are
+> [README.md](../../README.md), [AGENTS.md](../../AGENTS.md), [docs/OPERATIONS.md](../OPERATIONS.md) and
+> [docs/COOKBOOK.md](../COOKBOOK.md). Moved from `docs/SHARING_STATUS.md`; below this banner only its three
+> relative links changed (they now start with `../`).
+
 This handoff prepares the current `main` application for other Windows users.
 Its modeling baseline is `f57d59267857ad32c302d2ae6e6c1368ce3c6a68`; it does not
 merge unreviewed feature branches or implement the Fable backlog wholesale.
@@ -41,7 +46,7 @@ merge unreviewed feature branches or implement the Fable backlog wholesale.
   after the check; no user document was opened or mutated.
 - Ruff 0.16.10: clean. Documentation links and Git whitespace checks: clean.
 
-[Compact evidence and source hashes](sharing-release/validation-2026-10-17.json).
+[Compact evidence and source hashes](../sharing-release/validation-2026-10-17.json).
 The [Windows workflow](https://github.com/kazzurt/KurtShape/actions/workflows/windows-ci.yml)
 records hosted results after push and now also exercises newcomer setup under
 Windows PowerShell. The earlier Fable report describes the baseline separately.
@@ -54,14 +59,14 @@ rejecting files placed there or any other unexpected repository changes.
 ## Known limitations to tell testers
 
 - This is a preview, with ongoing sketch/status/viewport polish documented in
-  the [review](fable-deep-review/FABLE_REVIEW.md). Performance on large models
+  the [review](../fable-deep-review/FABLE_REVIEW.md). Performance on large models
   can stall during snapshot capture, save and committed recompute.
 - Pattern-reference and cross-body Mirror work on separate branches is not
   included by this sharing change. A Mirror link-scope warning can still occur.
 - Assembly parts are embedded snapshots; editing a source part does not update
   the assembly automatically. Advanced mates and nested assemblies are deferred.
 - Slow bridge operations need explicit request-status reconciliation; the
-  [agent guide](AGENT_QUICKSTART.md) describes safe retries. The current app does
+  [agent guide](../AGENT_QUICKSTART.md) describes safe retries. The current app does
   not report the loaded source commit in its title/capabilities. A setup report
   identifies checked source only; save and relaunch after updating.
 - Cylindrical Move face, retained-error deletion and further Sweep improvements
@@ -2004,3 +2009,34 @@ Decisions for Kurt:
 - Keep Codex's plane-visibility change in this commit (done, as you asked) or commit it separately.
 - Batches stop at 20 s in the app (about 12 steps on a large part); parameter names start lowercase; images are
   session artifacts; deletions, rollback and parameter rename/delete are not batchable.
+
+### GUI recipe drift: ui-refinement, sketch-behavior, review-interaction, review-lifecycle (2026-10-19)
+
+These four recipes failed on f4b222b and on 5f4b9d0, on the Intel GPU and under Mesa alike. All four
+expectations were stale after intended app changes; no app regression was found, so only the recipes
+changed. Causes found with `git log -S`:
+
+- **ui-refinement.** a558615 (10-14) removed the separate Remove toolbar button: Remove material is now
+  Extrude's Cut mode and the More → Cut → "Extrude · Cut" preset (docs/EVERYDAY_UI.md). The recipe still
+  required "Remove" in the bar (Boolean and Plane were there all along) and clicked it three times. It now
+  checks that Remove is *not* a separate button and starts each cut from the real More → Cut menu action,
+  checking that Cut mode opened. The next hidden failure was `path_outside_workspace` on Save: the portable
+  first-run layout from c596685 (10-17) grants only `<checkout>/projects`. The recipe now grants its session
+  file as the Save dialog does.
+- **review-interaction.** 4681ddf (10-13) moved the error status colour from `#a2322c` to the theme token
+  `COLORS["error"]` (`#bd3039`). It updated messages-validation but not gui-review-validation, which now
+  uses the token.
+- **review-lifecycle** and the Undo checks in **sketch-behavior.** 52b50b8 (10-14) made the first Finish
+  of a *new* sketch one Undo step with its creation (docs/HISTORY_LIFECYCLE.md,
+  tests/test_history_lifecycle.py). Both recipes still expected an empty sketch after Undo. They now
+  expect the sketch to be gone and Redo to restore its geometry; lifecycle also checks the placement and
+  attachment support. Lifecycle also gained a check that an accepted edit of an *existing* sketch is its
+  own Undo step and leaves the sketch in place. That keeps the original "Undo removes no more than the
+  accepted edit" intent where the contract still promises it. Lifecycle's stage recorder now tolerates the
+  removed sketch, and its Save grants its destination (c596685).
+- **sketch-behavior**, next hidden failure. The same 4681ddf palette refresh changed ink from `#243447` to
+  `COLORS["ink"]` (`#2d3338`). The floating-parameter and hostile-style checks now compare against
+  `ui.COLORS['ink']` and `['surface']`.
+
+Local hidden runs (`tools/run_gui_recipe.ps1`, Intel GPU): all four pass. Recipes in one checkout must run
+one at a time, because concurrent runs collide on `runtime/longrun/created.txt` and `pids.txt`.

@@ -81,14 +81,39 @@ resolve the update. Do not reset or clean the checkout to force an update.
 | Setup check fails | Read the printed report and process logs. The failure does not affect an already-open app or your CAD files. |
 | Bridge connection refused | Launch this checkout and retry `tools/assistant.ps1`. A stale session file is not proof the app is running. |
 | Bridge authentication fails / wrong document list | Confirm you selected the correct checkout/session; do not print the token or connect to a different instance by guessing. |
-| Black or broken viewport | Close the app after saving; test launching from a terminal with `$env:QT_OPENGL='software'`. This is a diagnostic fallback; performance can be lower. |
+| Black or broken viewport | Close the app after saving and update the graphics driver; FreeCAD needs OpenGL 2.0 or later and logs `OpenGL version is` at startup. `QT_OPENGL=software` has no effect: FreeCAD 1.1.4 forces desktop OpenGL before Qt reads it. |
 | Old behavior after updating | Save, close and relaunch. A running app cannot hot-reload the new checkout. |
 
 For an existing engine at another location, use `setup.ps1 -RuntimeRoot <folder>`
 where `<folder>` contains `freecad-1.1.4`. Pass that same `-RuntimeRoot` to
 `launch-kurtshape.ps1` and `tools/assistant.ps1`; the double-click launcher uses
 the default local runtime. `launch-kurtshape.ps1 -PrintOnly` prints resolved paths
-without launching anything.
+without launching anything. To open a native project directly, use
+`launch-kurtshape.ps1 -FilePath "C:\path\to\project.FCStd"` or
+`KurtShape.cmd "C:\path\to\project.FCStd"`. A Windows `.FCStd` association
+can target PowerShell with `-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden
+-File "<checkout>\launch-kurtshape.ps1" -FilePath "%1"`. This launches the
+current code in that checkout and opens the selected file without an extra
+empty document. File startup is separate from `-Validation`. When KurtShape is
+already running with the same profile, the launcher hands the file to it
+(`tools/open-in-running-app.ps1`): it opens in that window, or switches to its
+tab if it is already open, instead of starting a second KurtShape.
+
+**Performance cores (hybrid Intel CPUs).** `launch-kurtshape.ps1`,
+`tools/private-session.ps1` and `tools/assistant.ps1 -Hidden` accept
+`-PinPerformanceCores` (or `-NoPinPerformanceCores`). The switch restricts the
+`freecad.exe` they start, and the preview/render workers it later spawns, to the
+performance cores (the highest efficiency class in `tools/performance-cores.ps1`;
+`0xffff` on a 16-thread P-core CPU). On a CPU without efficiency cores it applies
+nothing. `-PrintOnly` shows the resolved mask under `performance_cores`. The
+default is **off**. In a bench-gui A/B on 2026-10-21 (4 clean runs per side),
+no gain of 10 % or more was detected. The kernel-bound metrics were 4.5-7.5 %
+lower pinned, which is within the spread of four runs per side, and panel
+refresh was 25 % slower pinned. The hidden-GUI A/B of 2026-10-19 saw unpinned
+hidden apps fall into a mode where everything ran 1.5-3x slower; pinned runs
+there stayed fast. The 2026-10-21 A/B did not reproduce that mode: no clean run
+was in it. The switch is for unattended or hidden benchmark runs, or for a busy
+machine where the app turns sluggish.
 
 Report problems with the Git commit (`git rev-parse HEAD`), Windows version,
 steps, expected/actual behavior and relevant Messages text. Review reports for

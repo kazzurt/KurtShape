@@ -135,6 +135,10 @@ DOC_30 = _DOC + "contract-30--q03-lightweight-status-and-explicit-checks"
 DOC_31 = _DOC + "contract-31--fail-fast-studio-results-typed-helices-and-tight-boxes"
 DOC_HISTORICAL = _DOC + "historical-contract-2-additions--october-2-review-follow-up"
 DOC_ASSEMBLY = _DOC + "assembly-increment--october-2"
+DOC_ASSEMBLY_FOLDERS = _DOC + "instance-folders-assembly-ux-2026-10-24"
+DOC_MEASURE = _DOC + "measure-assembly-ux-2026-10-24"
+_FOLDER = {"anyOf": [{"type": "string", "maxLength": 2000}, {"type": "null"}],
+           "description": "Instance-list folder path such as \"Fasteners/M3\" (created when missing); null or omitted keeps the root"}
 DOC_STUDIO = _DOC + "u2-part-studio-and-reference-queries--october-2"
 DOC_PATTERNS = _DOC + "pattern-tools"
 DOC_PLANES = _DOC + "datum-planes"
@@ -349,6 +353,14 @@ FIELDS = {
 }
 
 _SOURCE = {"source_feature_id": {}, "source_feature_name": {}}
+
+
+def _direction(omitted):
+    """B2 (slice A/B U9): the one direction vocabulary of pad, pocket and hole."""
+    return {"type": "string", "enum": Ref("studio", "DIRECTIONS"),
+            "description": "Side of the profile normal (the sketch's +Z, or a selected face's outward normal) the tool "
+                           "runs to. Omitted: " + omitted + ". Replaces reversed, which keeps its own per-operation "
+                           "meaning for one release; giving both rejects with invalid_argument"}
 _RESULT = {"operation": {"default": "new"}, "merge_scope": {"default": "auto"}, "refine": {"default": True},
            "name": {"description": "Label of a new part (operation new); default from the profile's part or \"Part N\""}}
 _UNUSED_NAME = {"description": "Accepted and recorded with the operation; it labels nothing"}
@@ -609,7 +621,9 @@ OPERATIONS = {
                                 "description": "A modeling request (its op and arguments, no envelope); any MODEL "
                                                "operation except rebuild, or a batch {op: batch, steps, label?}"}},
         "required": ["proposal"], "checked_by_handler": {"proposal": "unsupported_preview"},
-        "constraints": ["Commit sends the operation afresh against the preview's base revision",
+        "constraints": ["A read: expected_revision is optional and checked when given (stale_revision); omitted, the "
+                        "proposal is evaluated against the current revision, which base_revision reports",
+                        "Commit sends the operation afresh against the preview's base revision",
                         "accepted is true exactly when the commit would succeed; a batch proposal is echoed as "
                         "{op, label, step_count} and reports batch_report"],
         "examples": [{"op": "preview", "proposal": {"op": "set_parameter", "feature": "Pad", "parameter": "Length", "value": 8}},
@@ -620,10 +634,36 @@ OPERATIONS = {
         "fields": {}, "required": [], "examples": [{"op": "diagnostics"}], "x-example-fixture": "none",
         "doc": DOC_HISTORICAL},
     "assembly_candidates": {
-        "summary": "Selectable final solids of an FCStd or STEP assembly source, without opening a user document",
-        "fields": {"path": {"description": "Absolute existing source file", "x-suffixes": [".FCStd", ".step", ".stp"]}},
+        "summary": "Selectable native solids of an FCStd or STEP source, with final/helper/history roles",
+        "fields": {"path": {"description": "Absolute existing source file", "x-suffixes": [".FCStd", ".step", ".stp"]},
+                   "final_only": {"type": "boolean", "default": False, "description": "Only current final results; false preserves legacy candidate membership"}},
         "required": ["path"], "checked_by_handler": {"path": "invalid_assembly_source"},
         "examples": [{"op": "assembly_candidates", "path": "<plate_file>"}], "x-example-fixture": "none",
+        "doc": DOC_ASSEMBLY},
+    "measure": {
+        "summary": "Measure 1-24 references in global coordinates: length/area/Ø, distances with ΔX ΔY ΔZ, angles",
+        "fields": {"references": {"type": "array", "minItems": 1, "maxItems": 24, "items": {"type": "object"},
+                                  "description": "Selectors (each must match one element) or {object, subelement} "
+                                                 "native references; an occurrence's subelement is measured where it "
+                                                 "sits in the assembly; an omitted subelement measures the whole object"}},
+        "required": ["references"], "checked_by_handler": {"references": "invalid_argument"},
+        "constraints": ["Read-only; returns {kind, text, values}: the same readout the GUI shows for a selection",
+                        "Parallel/perpendicular within 0.5°, coaxial within 1 µm radial; lengths mm, angles degrees"],
+        "examples": [{"op": "measure", "references": [_PLATE_TOP]}],
+        "x-example-fixture": "plate", "doc": DOC_MEASURE},
+    "assembly_instance_source": {
+        "summary": "The saved source an occurrence was embedded from: path, kind (fcstd/step), whether it exists and is open",
+        "fields": {"assembly": {}, "instance": {"type": "string", "description": "Occurrence id"}},
+        "required": ["instance"], "checked_by_handler": {"instance": "missing_assembly_instance"},
+        "constraints": ["Read-only; the embedded snapshot's SourcePath is the source of truth",
+                        "exists is a file check, not a hash; open_documents lists open documents of that file"],
+        "examples": [{"op": "assembly_instance_source", "instance": "Free"}],
+        "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY_FOLDERS},
+    "part_inventory": {
+        "summary": "Current usable solids across legacy, studio and assembly documents",
+        "fields": {"include_history": {"type": "boolean", "default": False,
+                                         "description": "Include helper, historical and embedded-source solids with explicit roles"}},
+        "required": [], "examples": [{"op": "part_inventory"}], "x-example-fixture": "plate",
         "doc": DOC_ASSEMBLY},
     "resolve_selector": {
         "summary": "Matched native elements of a selector, with part identity and geometry summaries",
@@ -640,6 +680,26 @@ OPERATIONS = {
         "summary": "Helper groups whose owning studio operation no longer exists",
         "fields": {}, "required": [], "examples": [{"op": "orphan_helpers"}], "x-example-fixture": "plate",
         "doc": DOC_30},
+    "check_clearance": {
+        "summary": "Opt-in exact nominal envelope distances, bounded thread overlaps and directional tip clearance",
+        "fields": {
+            "envelopes": {"type": "array", "maxItems": 128, "items": {"type": "object"},
+                          "description": "Named world-space cylinder, annulus, box or current component envelopes; see the clearance contract"},
+            "components": {"type": "array", "minItems": 1, "uniqueItems": True, "items": {"type": "string"},
+                           "description": "Current solid result IDs to check; omitted checks all; self-pairs are skipped"},
+            "minimum_clearance_mm": {"type": "number", "minimum": 0, "x-unit": "mm",
+                                     "description": "Required separation, zero when omitted"},
+            "allowed_overlaps": {"type": "array", "items": {"type": "object"},
+                                 "description": "Explicit envelope/component pairs with reason thread_envelope, bounded region and max_volume_mm3"},
+            "axis_probe": {"type": "object", "description": "Tip disk swept along axis: tip_mm, axis, radius_mm, max_distance_mm"}},
+        "required": [], "requires_one_of": [["envelopes", "axis_probe"]],
+        "constraints": ["Read-only and opt-in; evaluated against current world-space solid results",
+                        "Thread allowances apply only inside the supplied region and below the volume limit; every other pair remains checked",
+                        "The directional probe reports the first occupied axial station within its finite tested range, not infinite clearance",
+                        "No machine kinematics, cutting loads, tolerance stack or unsupplied motion is implied"],
+        "examples": [{"op": "check_clearance", "envelopes": [{"id": "tool", "kind": "cylinder", "origin_mm": [100, 0, 0],
+                        "axis": [0, 0, 1], "radius_mm": 5, "length_mm": 40}]}],
+        "x-example-fixture": "plate", "doc": "docs/OPERATION_CONTRACT.md#clearance-checks-opt-in"},
 
     # Documents -------------------------------------------------------------
     "new": {
@@ -672,7 +732,16 @@ OPERATIONS = {
         "doc": DOC_HISTORICAL},
     "save": {
         "summary": "Staged native save with a recovery copy of the previous file",
-        "fields": {"path": {"description": "Absolute .FCStd path in a granted project folder", "x-suffixes": [".FCStd"]}},
+        "fields": {"path": {"description": "Absolute .FCStd path in a granted project folder. A destination another program "
+                                           "holds open (or a read-only one) rejects with save_destination_locked, naming the "
+                                           "file and the OS reason; the previous file is kept and the save can be retried",
+                            "x-suffixes": [".FCStd"]},
+                   # Slice A/B U8 (A8): another project's file is never replaced silently.
+                   "overwrite": {"type": "boolean", "default": False,
+                                 "description": "Replace an existing FCStd that holds another project (another document_id, or "
+                                                "no KurtShape project); without it such a destination rejects with "
+                                                "save_destination_other_project. The document's own file and a new path "
+                                                "need no flag"}},
         "required": ["path"], "examples": [{"op": "save", "path": "<project>/plate.FCStd"}],
         "x-example-fixture": "plate", "doc": DOC_30},
     "export": {
@@ -829,7 +898,10 @@ OPERATIONS = {
         "summary": "Extrude (native Pad, or a studio result with operation/merge_scope)",
         "fields": {"id": {"x-default-id": "Pad", "description": "Default Pad (legacy) or Extrude (studio)"},
                    "profile": {}, "face": {"description": "Planar face to extrude (studio path only)"},
-                   "length": {}, "reversed": {"default": False},
+                   "length": {},
+                   "direction": _direction("extrudes along the normal (studio through_all: both ways)"),
+                   "reversed": {"default": False, "description": "Legacy for direction (one release): true extrudes "
+                                                                 "against the profile normal"},
                    "end_type": {"enum": Ref("extrusion_edit", "END_TYPES"), "default": "blind",
                                 "x-default-when": {"absent": ["up_to_face"]},
                                 "description": "through_all needs the studio path; ignored when up_to_face is given"},
@@ -847,7 +919,11 @@ OPERATIONS = {
         "constraints": ["profile and face are mutually exclusive",
                         "up_to_face selects the up-to-face end; end_type is then ignored",
                         "face, end_type through_all and refine need operation or merge_scope (the studio path)",
-                        "A legacy Pad must leave one valid solid in its Body"],
+                        "direction and reversed are mutually exclusive (invalid_argument)",
+                        "A legacy Pad must add material (empty_add, with hint, direction_used and try_direction) and "
+                        "leave one valid solid in its Body",
+                        "A studio Add whose tool touches no part of an auto merge_scope rejects with empty_merge_scope "
+                        "(hint, try_direction, tool_volume_mm3)"],
         "examples": [{"op": "pad", "id": "Boss", "profile": "BossProfile", "length": 10},
                      {"op": "pad", "id": "BossExtrude", "profile": "BossProfile", "length": 15, "operation": "add"},
                      {"op": "pad", "id": "BossPart", "profile": "BossProfile", "length": 15, "merge_scope": ["Body"]}],
@@ -859,8 +935,14 @@ OPERATIONS = {
                    "profile": {}, "face": {"description": "Planar face to cut from (studio path only)"},
                    "length": {"description": "Blind depth (with through_all false)"},
                    "through_all": {"type": "boolean", "default": True, "x-default-when": {"absent": ["up_to_face"]}},
-                   "reversed": {"description": "Omitted: cut against the sketch normal; a legacy Pocket then tries the "
-                                               "other direction when that removes nothing. An explicit value is kept"},
+                   "direction": _direction("cuts against the normal; a legacy Pocket then tries along it when "
+                                           "that removes nothing (an explicit direction is kept); a studio through-all "
+                                           "cut runs both ways"),
+                   "reversed": {"description": "Legacy for direction (one release), with opposite meanings: a legacy "
+                                               "Pocket's true cuts along the profile normal, a studio Remove's false "
+                                               "does. Omitted: cut against the sketch normal; a legacy Pocket then "
+                                               "tries the other direction when that removes nothing. An explicit "
+                                               "value is kept"},
                    "end_type": {"enum": Ref("extrusion_edit", "END_TYPES"),
                                 "description": "up_to_face, or through_all; through_all:true (the default) also cuts through all"},
                    "up_to_face": {"description": "Face that ends the cut; given, it selects the up-to-face end"},
@@ -877,7 +959,11 @@ OPERATIONS = {
         "constraints": ["profile and face are mutually exclusive",
                         "up_to_face selects the up-to-face end; end_type and through_all are then ignored",
                         "face and refine need operation or merge_scope",
-                        "Must remove material (empty_cut) and keep one connected solid"],
+                        "direction and reversed are mutually exclusive (invalid_argument)",
+                        "Must remove material (empty_cut, with hint, direction_used and try_direction) and keep one "
+                        "connected solid",
+                        "A studio Remove whose tool touches no part of an auto merge_scope rejects with "
+                        "empty_merge_scope (hint, try_direction, tool_volume_mm3)"],
         "examples": [{"op": "pocket", "id": "Recess", "profile": "BossProfile", "through_all": False, "length": 3},
                      {"op": "pocket", "id": "BossCut", "profile": "BossProfile", "operation": "remove"},
                      {"op": "pocket", "id": "BossHole", "profile": "BossProfile", "merge_scope": ["Body"]}],
@@ -1107,7 +1193,9 @@ OPERATIONS = {
                    "point_angle": {"anyOf": [_d("angle"), {"const": "flat"}], "default": "118 deg",
                                    "x-default-when": {"not_equal": {"end_type": "through_all"}},
                                    "description": "Included drill-point angle, 1 to 179 deg; 0 or \"flat\" for a flat bottom"},
-                   "reversed": {"default": False, "description": "Drill along the sketch normal instead of against it"},
+                   "direction": _direction("drills against the normal"),
+                   "reversed": {"default": False, "description": "Legacy for direction (one release): true drills along "
+                                                                 "the sketch normal instead of against it"},
                    "counterbore": {"type": "object", "required": ["diameter", "depth"], "additionalProperties": False,
                                    "properties": {"diameter": _d("positive_length"), "depth": _d("positive_length")}},
                    "countersink": {"type": "object", "required": ["diameter"], "additionalProperties": False,
@@ -1119,6 +1207,8 @@ OPERATIONS = {
         "x-cut-args": Ref("hole_tools", "CUT_ARGS", "key_sets"),
         "x-required-when": {"depth": "end_type blind (the default)"},
         "constraints": ["through_all takes no depth or point_angle", "At most one of counterbore or countersink",
+                        "direction and reversed are mutually exclusive (invalid_argument)",
+                        "Must remove material (empty_cut, with hint, direction_used and try_direction)",
                         "A depth beyond the native through-all length rejects with maximum_depth"],
         "examples": [{"op": "hole", "sketch": "BossProfile", "diameter": 3, "depth": 4, "reversed": True}],
         "x-example-fixture": "plate", "doc": DOC_STUDIO},
@@ -1185,7 +1275,8 @@ OPERATIONS = {
     "create_assembly": {
         "summary": "Create the document's native assembly and joint group",
         "fields": {"id": {"$ref": "#/$defs/assembly_id", "x-default-id": "Assembly"},
-                   "name": {"maxLength": 200, "default": "Assembly"}},
+                   "name": {"maxLength": 200, "default": "Assembly"},
+                   "folder": {**_FOLDER, "description": "An empty instance-list folder path to create with the assembly"}},
         "required": [], "constraints": ["One assembly per document"],
         "examples": [{"op": "create_assembly", "id": "Assembly", "name": "Plate assembly"}],
         "x-example-fixture": "plate", "doc": DOC_ASSEMBLY},
@@ -1194,10 +1285,24 @@ OPERATIONS = {
         "fields": {"assembly": {}, "path": {"description": "Absolute FCStd or STEP source", "x-suffixes": [".FCStd", ".step", ".stp"]},
                    "source_id": {"type": "string", "description": "Body or solid ID from assembly_candidates"},
                    "id": {"$ref": "#/$defs/assembly_id", "x-default-id": "Instance"},
-                   "name": {"maxLength": 200, "description": "Label; defaults to the source label"}},
+                   "name": {"maxLength": 200, "description": "Label; defaults to the source label"},
+                   "folder": _FOLDER},
         "required": ["path", "source_id"],
         "checked_by_handler": {"path": "invalid_assembly_source", "source_id": "missing_assembly_source_part"},
         "examples": [{"op": "insert_assembly_part", "path": "<plate_file>", "source_id": "Body", "id": "Extra"}],
+        "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY},
+    "refresh_assembly_part": {
+        "summary": "Refresh an occurrence from a saved source without replacing its identity or placement",
+        "fields": {"assembly": {}, "instance": {},
+                   "path": {"description": "Saved FCStd/STEP source; omitted uses the recorded source path", "x-suffixes": [".FCStd", ".step", ".stp"]},
+                   "source_id": {"type": "string", "description": "Saved native source ID; omitted uses the recorded source object"},
+                   "shared": {"enum": ["instance", "all"], "description": "Required when multiple occurrences share the snapshot: copy-on-write for one, or refresh every user"},
+                   "folder": {**_FOLDER, "description": "Also move the refreshed occurrence into this folder path"}},
+        "required": ["instance"], "checked_by_handler": {"instance": "missing_assembly_instance"},
+        "constraints": ["Native transaction validates before commit and rolls back on failure",
+                        "Preserves occurrence identity, appearance, placement and grounding; changed joint subelements or connector frames reject",
+                        "Changing saved source placement does not move existing occurrences"],
+        "examples": [{"op": "refresh_assembly_part", "instance": "Free", "shared": "instance"}],
         "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY},
     "ground_assembly_instance": {
         "summary": "Make one occurrence the grounded reference and solve",
@@ -1256,6 +1361,32 @@ OPERATIONS = {
         "required": ["feature"], "checked_by_handler": {"feature": "unsupported_assembly_delete"},
         "examples": [{"op": "delete_assembly_object", "feature": "Hinge"}],
         "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY},
+    "set_assembly_folders": {
+        "summary": "Replace the instance-list folder tree (presentation metadata only)",
+        "fields": {"assembly": {},
+                   "folders": {"type": "array", "maxItems": 500,
+                               "items": {"anyOf": [{"type": "object"}, {"type": "string"}]},
+                               "description": "Folder tree [{name, children:[...]}]; a string is a shorthand path "
+                                              "(\"Fasteners/M3\"). Names are non-empty, without '/', distinct among siblings"},
+                   "membership": {"type": "object",
+                                  "description": "Instance id → folder path (null = root). Omitted keeps current "
+                                                 "memberships whose folder still exists"}},
+        "required": ["folders"], "checked_by_handler": {"folders": "invalid_assembly_folders"},
+        "constraints": ["Stored as JSON on the assembly (KurtShapeInstanceFolders); solver, export and occurrence order are unchanged",
+                        "One undoable transaction; instances not in membership show at the root"],
+        "examples": [{"op": "set_assembly_folders", "folders": [{"name": "Fasteners", "children": [{"name": "M3", "children": []}]},
+                                                                 "Frame"], "membership": {"Free": "Fasteners/M3"}}],
+        "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY_FOLDERS},
+    "move_assembly_instances": {
+        "summary": "Move occurrences into an instance-list folder (created when missing) or back to the root",
+        "fields": {"assembly": {},
+                   "instances": {"type": "array", "minItems": 1, "uniqueItems": True, "items": {"type": "string"},
+                                 "description": "Occurrence ids"},
+                   "folder": {**_FOLDER, "description": "Folder path such as \"Fasteners/M3\"; null moves to the root"}},
+        "required": ["instances"], "checked_by_handler": {"instances": "missing_assembly_instance"},
+        "constraints": ["Presentation metadata only; revision-checked and undoable like every assembly mutation"],
+        "examples": [{"op": "move_assembly_instances", "instances": ["Free"], "folder": "Fasteners/M3"}],
+        "x-example-fixture": "assembly", "doc": DOC_ASSEMBLY_FOLDERS},
     "solve_assembly": {
         "summary": "Explicit solve of the current assembly intent",
         "fields": {"assembly": {}}, "required": [], "examples": [{"op": "solve_assembly"}],
@@ -1322,6 +1453,24 @@ EXAMPLE_PLACEHOLDERS = {
     "<step_file>": "the plate fixture exported as STEP",
     "<recovery_manifest>": "a forced checkpoint manifest of the plate fixture in the session's project-recovery folder",
 }
+
+# Slice A/B U6 (B1): every mutating operation (model, assembly, create, save/export/adopt, history,
+# batch) takes ``detail`` for the shape of its response. The reads keep their own argument sets
+# (inspect and list_documents own a ``detail``), the view operations and close_document return no
+# inspection. The exclusion list mirrors Controller.READ_OPS, VIEW_OPS and LIFECYCLE_OPS; it is pinned
+# by CompactResponseTests.test_schema_offers_detail_on_every_mutation_and_batch.
+RESPONSE_DETAIL = {"enum": ["full", "compact"],
+                   "description": "Shape of the response: compact gives the status header (the list_documents row) "
+                                  "with created_feature, batch_report and the request's reports (about 1 KB); full "
+                                  "gives the full inspection with operations and last_failed_attempt; omitted gives "
+                                  "the full inspection without those two blocks"}
+NO_RESPONSE_DETAIL = frozenset({"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics",
+                                "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
+                                "operation_schema", "list_parameters", "render_view", "set_view", "close_document",
+                                "part_inventory", "assembly_instance_source", "measure", "check_clearance"})
+for _op, _entry in OPERATIONS.items():
+    if _op not in NO_RESPONSE_DETAIL:
+        _entry["fields"].setdefault("detail", RESPONSE_DETAIL)
 
 # Import-time tables for the generic pre-check: no build needed.
 REQUIRED = {op: tuple(field for field in entry["required"] if field not in entry.get("checked_by_handler", {}))
@@ -1413,11 +1562,12 @@ def _kind(op, classes):
 def envelope_requirements(op, classes):
     """(document_id required, expected_revision required, request_id tracked) for ``op``.
 
-    Every non-read, non-create operation needs the current revision, plus
-    preview; view operations (render_view, F2) take it optionally.
+    Every non-read, non-create operation needs the current revision; view
+    operations (render_view, F2) and preview (a read, slice A/B U6) take it
+    optionally and check it when given.
     """
     document = op not in classes["create"] and op not in classes["documentless"]
-    revision = op not in classes["read"] | classes["create"] | classes["view"] or op == "preview"
+    revision = op not in classes["read"] | classes["create"] | classes["view"]
     tracked = op not in classes["read"]
     return document, revision, tracked
 
@@ -1434,8 +1584,8 @@ def _envelope(op, classes):
     }
     if not document:
         properties["document_id"]["x-ignored"] = True
-    if op in classes["view"]:
-        # View ops (render_view) are read-only: the revision is optional, but checked when given.
+    if op in classes["view"] or op == "preview":
+        # View ops (render_view) and preview are read-only: the revision is optional, but checked when given.
         properties["expected_revision"] = {"type": "string", "x-mismatch-code": "stale_revision",
                                          "description": "Optional; when given it must equal the current revision "
                                                         "(stale_revision otherwise)"}

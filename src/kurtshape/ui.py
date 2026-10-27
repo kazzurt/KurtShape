@@ -20,10 +20,17 @@ from .shortcuts import ShortcutRouter
 from .general_actions import GeneralActions
 from .viewport_actions import callbacks as viewport_callbacks
 from .section_view import SectionView
+from . import selection_mode
+from .assembly_instance_links import AssemblyInstanceLinks
+from .assembly_tree import AssemblyTree, instance_rows
+from .measure_label import MeasureLabel
+from .assembly_refresh_button import AssemblyRefresh
+from . import assembly_sync
 from .theme import apply_theme, apply_view_theme, COLORS
 from .feature_tools import available_catalog
 from .quantity_field import QuantityField
 from .extrusion_preview import DebouncedExtrusionPreview
+from . import confirm_gate
 from .workspace_preferences import WorkspacePreferences, release_native_overlays
 from .sketch_tools import show_unconsumed_sketch
 from .sketch_references import SketchReferences
@@ -37,6 +44,7 @@ from .bodies import bodies, owner, origin_plane, results as native_results
 from .feature_panel import FeaturePanel, ReferencePicker
 from .presentation_icons import icon_for
 from .toolbar_labels import ToolbarLabels
+from . import feedback
 from .rollback_history import RollbackMarker
 from .history_selection import HistorySelection, ROLLED_BACK_ROLE
 from .history_model import HistoryModel
@@ -130,12 +138,18 @@ class SelectionObserver:
                 QtCore.QTimer.singleShot(0, lambda: p.choose_support(document, object_name, subelement))
         QtCore.QTimer.singleShot(0, p.capture_feature_selection)
         p.history_controller.face_links.schedule(reveal=True)
+        p.assembly_links.schedule()
+        p.measure_label.schedule()
 
     def removeSelection(self, *args):
         self.panel.history_controller.face_links.schedule()
+        self.panel.assembly_links.schedule()
+        self.panel.measure_label.schedule()
 
     def clearSelection(self, *args):
         self.panel.history_controller.face_links.schedule()
+        self.panel.assembly_links.schedule()
+        self.panel.measure_label.schedule()
 
 class Panel(QtGui.QDockWidget):
     MEASURE = False
@@ -184,6 +198,9 @@ class Panel(QtGui.QDockWidget):
         self.placement_document = self.task_document = None
         self.workspace_modes = {}
         self.workspace_documents = {}
+        # The blank part made at launch; opening a file replaces it while it is untouched.
+        self.startup_blank = None
+        self.open_handoff = None  # files from a second launch (open_handoff.py), set by start()
         self.workspace_mode = "part_studio"
         self.rollback_selected = False
         self.studio_dialog = None
@@ -204,6 +221,8 @@ class Panel(QtGui.QDockWidget):
         self.toolbar_labels = ToolbarLabels(self.main)
         # The last rejected operation's error object (contract 3.2 F3b: the parameter adapter reads it).
         self.last_operation_error = None
+        # A Confirm delivered while the preview snapshot pumps Qt: (mode, evaluator) until it commits.
+        self.pending_accept = None
         self.make_history()
         self.make_editor()
         self.model_actions = []
@@ -228,6 +247,15 @@ class Panel(QtGui.QDockWidget):
         self.result_operation.currentIndexChanged.connect(self.result_operation_changed)
         self.merge_scope.currentIndexChanged.connect(self.schedule_preview)
         self.merge_parts.itemChanged.connect(self.schedule_preview)
+        # Assembly UX item 2: occurrence geometry selects its instance rows.
+        self.assembly_links = AssemblyInstanceLinks(self)
+        # Assembly UX item 3: folders in both instance lists and their context menu.
+        self.assembly_tree = AssemblyTree(self)
+        # Assembly UX item 6: live measurement of the selection, right of the status line.
+        self.measure_label = MeasureLabel(self)
+        # Assembly UX item 7: Refresh finds parts changed on disk; the GUI hashes only on request.
+        assembly_sync.INSPECT_HASHES = False
+        self.assembly_refresh = AssemblyRefresh(self)
         self.observer = SelectionObserver(self)
         Gui.Selection.addObserver(self.observer)
         self.general_actions = GeneralActions(self)
@@ -249,11 +277,16 @@ class Panel(QtGui.QDockWidget):
         self.recovery_timer = QtCore.QTimer(self)
         self.recovery_timer.timeout.connect(self.checkpoint_projects)
         self.recovery_timer.start(1000)
+        # A4 (slice A/B U8): every synchronous native save and checkpoint paints its notice first.
+        self._stall_texts = None
+        controller.recovery.stall_status = self.paint_stall
         self.feedback_started = None
         self.feedback_kind = "ordinary"
         self.main.installEventFilter(self)
         QtGui.QApplication.instance().installEventFilter(self)
         self.responsiveness = install_monitor(self)
+        # Assembly UX item 1: a plain click on geometry toggles it in the selection.
+        self.additive_selection = selection_mode.install(self)
         self.feature_model = HistoryModel(self.features)
         self.part_model = HistoryModel(self.parts)
 
@@ -309,6 +342,8 @@ class Panel(QtGui.QDockWidget):
         self.parts.setHeaderHidden(True)
         self.parts.setMinimumHeight(58)
         self.parts.itemClicked.connect(self.part_selection)
+        self.parts.itemDoubleClicked.connect(lambda item, column=0: self.workspace_mode == "assembly"
+                                             and self.assembly_tree.double_click(item))
         self.parts.itemChanged.connect(self.part_visibility_changed)
         self.parts.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.parts.customContextMenuRequested.connect(self.part_menu)
@@ -419,6 +454,8 @@ class Panel(QtGui.QDockWidget):
         self.cancel = self.editor.cancel
         self.editor.accepted.connect(self.accept_task)
         self.editor.rejected.connect(self.reject_editor)
+        # A7 (C-04): Shift+Enter in any field repeats Extrude / Remove; elsewhere it confirms like Enter.
+        self.editor.repeat = lambda: self.accept_repeat() if self.task in {"pad", "pocket"} else self.accept_task()
         self.register_editor_symbols(self.editor)
         self.main.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.editor)
         self.editor.hide()
@@ -437,8 +474,31 @@ class Panel(QtGui.QDockWidget):
     def register_editor_symbols(self, editor):
         editor.confirm.setIcon(icon_for("Finish"))
         editor.cancel.setIcon(icon_for("Cancel"))
-        self.toolbar_labels.register(editor.confirm, "Confirm")
-        self.toolbar_labels.register(editor.cancel, "Cancel")
+        self.toolbar_labels.register(editor.confirm, "Confirm", lambda: self.editor_shortcut(editor, "general.accept"))
+        self.toolbar_labels.register(editor.cancel, "Cancel", lambda: self.editor_shortcut(editor, "general.cancel"))
+
+    def registry_shortcut(self, context=None, action=None, label=None, command=None):
+        """A hover label's key from the live shortcut registry (A-05): a rebinding shows the new key."""
+        router = getattr(self, "router", None)
+        if router is None:
+            return ""
+        context = context if context is not None else self.context()
+        if action is not None:
+            return feedback.registry_shortcut(router, context, action=action)
+        return feedback.tool_shortcut(router, context, label, command)
+
+    def editor_shortcut(self, editor, action):
+        """Enter / Escape on an editor's Confirm / Cancel; none while a sketch is open (Finish and Cancel
+        are its only exits, and Escape keeps it open)."""
+        if editor is self.editor and getattr(self, "editor_mode", None) == "sketch":
+            return ""
+        if editor is self.editor and action == "general.accept" and getattr(self, "editor_mode", None) == "placement":
+            return ""
+        return self.registry_shortcut(action=action)
+
+    def toolbar_context(self, bar):
+        return {id(getattr(self, "model_bar", None)): "part_studio", id(getattr(self, "assembly_bar", None)): "assembly",
+                id(getattr(self, "sketch_bar", None)): "sketch"}.get(id(bar))
 
     def register_reference_symbols(self, picker):
         for button in picker.findChildren(QtGui.QToolButton):
@@ -472,7 +532,9 @@ class Panel(QtGui.QDockWidget):
             button = bar.widgetForAction(action)
             button.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
             button.setAccessibleName(text)
-            self.toolbar_labels.register(button, text, tip.split(" · ")[-1] if " · " in tip and "+" in tip.split(" · ")[-1] else "")
+            # A-05: every key, single keys included, read from the registry when the label shows.
+            self.toolbar_labels.register(button, text, lambda b=bar, t=text, c=command:
+                                         self.registry_shortcut(self.toolbar_context(b), label=t, command=c))
         return action
 
     def tool_menu(self, bar, label, tools, modeling=False):
@@ -620,7 +682,9 @@ class Panel(QtGui.QDockWidget):
             ("Slider", lambda: self.assembly_joint("slider"), "Select two axes; permit translation along their joint axis"),
             ("Move", self.move_assembly_selection, "Select a revolute / slider joint to move its allowed coordinate, or an unjointed instance"),
             ("Edit", self.edit_assembly_selection, "Edit the selected joint or unjointed instance placement"),
-            ("Solve", lambda: self.operation("solve_assembly"), "Recompute and solve the assembly")]:
+            ("Solve", lambda: self.operation("solve_assembly"), "Recompute and solve the assembly"),
+            ("Refresh", lambda: self.assembly_refresh.click(),
+             "Check parts for changes on disk; click again to update the changed ones · F5")]:
             self.assembly_actions.append(self.tool(self.assembly_bar, label, callback, tip))
         self.assembly_bar.addSeparator()
         self.tool(self.assembly_bar, "Joints", self.toggle_assembly_joints, "Show or hide joints · J / H")
@@ -683,17 +747,54 @@ class Panel(QtGui.QDockWidget):
         menu.exec_(label.mapToGlobal(position))
         menu.deleteLater()
 
-    def notify(self, message, *args):
+    def notify(self, message, *args, detail=None):
+        """Status-line feedback. ``notify(text, "error")`` also keeps ``detail`` (else the text) in Messages."""
         error = bool(args and args[0] == "error")
         self.status_timer.stop()
         self.message.setStyleSheet("color:" + COLORS["error"] if error else "")
         self.message.setText(str(message))
         self.message.setToolTip(str(message))
         if error and hasattr(self, "messages"):
-            self.append_message(message)
+            self.append_message(detail or message, severity="error")
         elif not error:
             self.status_timer.start()
         self.feedback_complete()
+
+    def report_error(self, error, prefix="", request=None, select=True):
+        """A rejected operation (C-03, H-02): code, message and failing feature in the status line, the
+        details in Messages and, for the user's own actions (``select``), the failing feature selected
+        in the history and the viewport. A rejected assistant (bridge) change never moves the selection."""
+        names = {row.get("id"): row.get("name") for row in (self.state or {}).get("features", ()) or ()}
+        composed = feedback.compose_error(error, names, prefix, request)
+        self.notify(composed["status"], "error", detail=composed["message"])
+        if select:
+            self.select_failing_feature(composed["candidates"])
+        return composed
+
+    def select_failing_feature(self, candidates):
+        """Select the first named feature that has a history row, without stealing an editor's picks.
+
+        The history row is selected with its signals blocked (no Properties editor opens); the native
+        selection follows only while no editor, task, sketch or picker owns it, so a studio dialog's
+        reference pickers and an open Extrude keep their inputs.
+        """
+        doc = self.document()
+        key = next((name for name in candidates if name in self.items), None)
+        if doc is None or key is None:
+            return None
+        blocked = self.features.blockSignals(True)
+        try:
+            self.select_feature(key)
+        finally:
+            self.features.blockSignals(blocked)
+        self.history_controller.highlight_planes()
+        busy = (self.studio_dialog or self.studio_selection_callback or self.task or self.pending_sketch
+                or self.active_sketch() or self.native_feature_task_active()
+                or self.sketch_plane_editor.picking or self.section_view.picking)
+        obj = doc.getObject(key)
+        if not busy and obj is not None:
+            self.history_controller.sync_native_selection()
+        return key
 
     def restore_status(self):
         """Prior command feedback gives way to the actual edit/document state."""
@@ -717,8 +818,8 @@ class Panel(QtGui.QDockWidget):
         elif self.section_view.status_text():
             text = self.section_view.status_text()
         else:
-            state = self.state or {}
-            text = "Local document · mm · " + state.get("build_status", "ready").replace("_", " ")
+            # A-10: the footer repeats the document status line, so the two never disagree.
+            text = self.status.text() if self.state else "Ready · create or open a part studio"
         if generation != (self._geometry_check_generation, self._step_export_generation):
             return
         self.message.setStyleSheet("")
@@ -731,7 +832,8 @@ class Panel(QtGui.QDockWidget):
         self.message.setText(text)
         self.message.setToolTip(text)
 
-    def append_message(self, message, native=False):
+    def append_message(self, message, native=False, severity="info"):
+        """Keep a line in Messages; only warnings and errors light the dot (A-08)."""
         text = str(message) if native else str(message).strip()
         if not text:
             return
@@ -745,17 +847,49 @@ class Panel(QtGui.QDockWidget):
         else:
             self.messages.appendPlainText(text)
         self.last_message_native = native
-        if text.strip() and not self.messages_dock.isVisible():
-            self.unread_messages += 1
+        counted = bool(text.strip()) and self.unread.add(severity, self.messages_dock.isVisible())
         self.update_messages_button()
+        return counted
 
     def update_messages_button(self, *args):
         visible = self.messages_dock.isVisible()
         if visible:
-            self.unread_messages = 0
+            self.unread.seen()
+        self.unread_messages = self.unread.count
         self.messages_button.setChecked(visible)
-        self.messages_button.setText("Messages" + (" •" if self.unread_messages else ""))
-        self.messages_button.setToolTip("Hide messages" if visible else "Show messages" + (" · " + str(self.unread_messages) + " unread" if self.unread_messages else ""))
+        self.messages_button.setText(self.unread.button_text())
+        self.messages_button.setToolTip(self.unread.tooltip(visible))
+
+    def end_message_startup(self):
+        """Lines after this are new: the startup backlog never lights the Messages dot."""
+        if hasattr(self, "unread"):
+            self.unread.end_startup()
+            self.update_messages_button()
+
+    def classify_native_report(self, document, first, last):
+        """Light the Messages dot for a native warning or error, after the report view has settled.
+
+        FreeCAD's report view colors a line by its kind (its highlighter, under the OutputWindow
+        colors the theme sets); reading those colors happens on the next event-loop pass, never inside
+        the document's contentsChange, while its layout is still being updated.
+        """
+        try:
+            preferences = App.ParamGet("User parameter:BaseApp/Preferences/OutputWindow")
+            def color(name, token):
+                value = preferences.GetUnsigned(name, 0)
+                return "#%06x" % (value >> 8) if value else COLORS[token]
+            colors = set()
+            for number in range(first, min(last, document.blockCount() - 1) + 1):
+                block = document.findBlockByNumber(number)
+                layout = block.layout() if block.isValid() else None
+                for fragment_range in layout.formats() if layout is not None else ():
+                    colors.add(fragment_range.format.foreground().color().name())
+            severity = feedback.native_severity(colors, color("colorError", "error"), color("colorWarning", "warning"))
+            self.unread.escalate(severity, self.messages_dock.isVisible())
+            self.update_messages_button()
+        except Exception:
+            # Never raise here: a traceback would reach the report view and be classified again.
+            return
 
     def toggle_messages(self):
         self.messages_dock.setVisible(not self.messages_dock.isVisible())
@@ -791,6 +925,8 @@ class Panel(QtGui.QDockWidget):
         self.messages_dock.setWidget(container)
         self.main.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.messages_dock)
         self.messages_dock.hide()
+        # A-08: unread lines and the warnings/errors among them; the startup backlog counts as neither.
+        self.unread = feedback.UnreadMessages()
         self.unread_messages = 0
         self.last_message_native = False
         self.messages_button = QtGui.QToolButton(self.main.statusBar())
@@ -812,7 +948,9 @@ class Panel(QtGui.QDockWidget):
                         cursor.setPosition(position)
                         cursor.setPosition(min(position + added, d.characterCount() - 1), QtGui.QTextCursor.KeepAnchor)
                         text = cursor.selectedText().replace("\u2029", "\n").replace("\u2028", "\n")
-                        self.append_message(text, native=True)
+                        if self.append_message(text, native=True):
+                            first, last = d.findBlock(position).blockNumber(), d.findBlock(position + added).blockNumber()
+                            QtCore.QTimer.singleShot(0, lambda d=d, first=first, last=last: self.classify_native_report(d, first, last))
                     document.contentsChange.connect(changed)
                     self.report_connections.append((document, changed))
                     # Include diagnostics emitted before the UI attached, once.
@@ -878,7 +1016,7 @@ class Panel(QtGui.QDockWidget):
             return False
         response = self.core.dispatch({"op": "inspect", "document_id": self.core.identifier(self.document()), "measure": self.MEASURE})
         if not response["ok"]:
-            self.notify(response["error"]["message"], "error")
+            self.report_error(response["error"])
             return False
         self.state = response["result"]
         if require_assembly and not self.assembly_state():
@@ -929,7 +1067,7 @@ class Panel(QtGui.QDockWidget):
             return None
         response = self.core.dispatch({"op": "assembly_candidates", "path": str(path), "measure": self.MEASURE})
         if not response["ok"]:
-            self.notify(response["error"]["message"], "error")
+            self.report_error(response["error"])
             return None
         candidates = response["result"].get("candidates", [])
         if not candidates:
@@ -1027,7 +1165,7 @@ class Panel(QtGui.QDockWidget):
         dialog.setObjectName("KurtShapeAssemblyJointDialog")
         dialog.setWindowTitle("Edit joint" if joint else "Connect joint")
         layout = QtGui.QVBoxLayout(dialog)
-        help_text = QtGui.QLabel("Ctrl-select a reference on each instance before opening this tool, or choose them below. Use EdgeN / FaceN / VertexN references; leave blank to use the instance origin. Revolute and slider align the reference axes. Ground one instance first. Move adjusts the allowed rotation or translation.")
+        help_text = QtGui.QLabel("Click a reference on each instance before opening this tool (clicks add to the selection), or choose them below. Use EdgeN / FaceN / VertexN references; leave blank to use the instance origin. Revolute and slider align the reference axes. Ground one instance first. Move adjusts the allowed rotation or translation.")
         help_text.setWordWrap(True)
         layout.addWidget(help_text)
         form = QtGui.QFormLayout()
@@ -1276,14 +1414,24 @@ class Panel(QtGui.QDockWidget):
             if dequeued:
                 for identifier, failure in self.core.last_failures.items():
                     request = failure.get("request", {})
-                    if failure == failures_before.get(identifier) or not failure.get("rejected") or request.get("op") not in self.core.ASSEMBLY_OPS:
+                    # C-03 / H-02: every rejected bridge mutation (assembly or model) gets the GUI's error details.
+                    if failure == failures_before.get(identifier) or not failure.get("rejected"):
                         continue
                     request_id = request.get("request_id")
                     if not request_id or self.core.ledger.status(request_id)["status"] != "failed":
                         continue
                     document = self.core.documents.get(identifier)
-                    label = document.Label + " · " if document and self.core._is_open(document) else ""
-                    self.notify(label + failure.get("error", {}).get("message", "Assembly command failed"), "error")
+                    is_open = bool(document and self.core._is_open(document))
+                    label = document.Label + " · " if is_open else ""
+                    error = dict(failure.get("error") or {})
+                    error.setdefault("message", ("Assembly command failed" if request.get("op") in self.core.ASSEMBLY_OPS
+                                                 else "Assistant change failed"))
+                    if is_open and self.document() is document:
+                        # Readable names from the panel's state; Kurt's selection is left alone.
+                        self.report_error(error, prefix=label, request=request, select=False)
+                    else:
+                        composed = feedback.compose_error(error, prefix=label, request=request)
+                        self.notify(composed["status"], "error", detail=composed["message"])
         doc = self.document()
         last_op = getattr(self.bridge, "last_op", None)
         quiet = last_op is None or last_op in self.core.QUIET_OPS
@@ -1350,6 +1498,7 @@ class Panel(QtGui.QDockWidget):
             self.parameter.clear()
             self.parameter_section.clear()
             self.status.setText("Create or open a part studio")
+            self.set_status_severity("")
             self.document_name.setText("New part studio")
             self.editor.hide()
             self.sync_edit_ui()
@@ -1394,17 +1543,31 @@ class Panel(QtGui.QDockWidget):
             if not doc or not self.state:
                 self.notify("Create or open a project first.", "error")
                 return None
-            response = self.core.dispatch({"op": "inspect", "document_id": self.core.identifier(doc), "measure": self.MEASURE})
-            if not response["ok"]:
-                self.notify(response["error"]["message"], "error")
-                return None
-            self.state = response["result"]
+            identifier = self.core.identifier(doc)
+            revision = None
+            if self.state.get("document_id") == identifier:
+                # A2 (E-05, slice A/B U6): the panel state is this document's, current to the last tick; settle
+                # native edits and read the revision without an inspection. The mutation's own response is the
+                # action's one inspection (and the tick needs no third, see below).
+                try:
+                    self.core.sync(doc)
+                    revision = self.core._meta(doc).Revision
+                except Exception:
+                    # The inspect below runs the same sync and reports the same error as a response.
+                    revision = None
+            if revision is None:
+                response = self.core.dispatch({"op": "inspect", "document_id": identifier, "measure": self.MEASURE})
+                if not response["ok"]:
+                    self.report_error(response["error"])
+                    return None
+                self.state = response["result"]
+                revision = self.state["revision"]
             if staged_document and staged_document != self.state["document_id"]:
                 message = "Command canceled because its source project is no longer active."
                 self.last_operation_error = {"code": "document_changed", "message": message}
                 self.notify(message, "error")
                 return None
-            args.update(document_id=self.state["document_id"], expected_revision=staged_revision or self.state["revision"])
+            args.update(document_id=self.state["document_id"], expected_revision=staged_revision or revision)
             # Only operations that take a body get one (document-wide parameter ops do not).
             if (op in self.core.MODEL_OPS - {"create_body", "rebuild", "delete_features", "edit_extrusion", "repair_orphan_helpers"}
                     and "body" in self.core.ARGS.get(op, ()) and "body" not in args):
@@ -1423,7 +1586,7 @@ class Panel(QtGui.QDockWidget):
             if self.active_sketch() and self.core.identifier(self.document()) not in self.core.sketch_edits:
                 Gui.activeDocument().resetEdit()
                 self.sync_edit_ui()
-            self.notify(response["error"]["message"], "error")
+            self.report_error(response["error"], request=args)
             if resume_preview:
                 self.begin_preview()
             return None
@@ -1433,6 +1596,14 @@ class Panel(QtGui.QDockWidget):
             App.setActiveDocument(document_owner.Name)
             Gui.ActiveDocument = Gui.getDocument(document_owner.Name)
             self.maximize_document_view()
+        else:
+            document_owner = self.core.documents.get(self.state["document_id"])
+            if document_owner is not None and self.last_document == document_owner.Name:
+                # A2 (E-05): this response is the action's inspection and the refresh below presents it, so
+                # the observer's refresh flag (set by the mutation's own changes) is honoured here, once; the
+                # tick keeps its early return. A changed document still goes through the tick's path.
+                self.last_status = self.state["build_status"]
+                self.core.observer.state(document_owner)["refresh"] = False
         self.refresh()
         if op in self.core.CREATE_OPS | {"adopt"}:
             self.change_body()
@@ -1461,6 +1632,13 @@ class Panel(QtGui.QDockWidget):
             self.sketch_history.enter(self.document().getObject(self.state["active_sketch_edit"]))
             Gui.activeDocument().setEdit(self.state["active_sketch_edit"])
             self.sync_edit_ui()
+        if op == "save" and self.document() is not None and self.document().FileName:
+            users = [label for label in self.assembly_refresh.source_saved(self.document().FileName)
+                     if label != self.document().Label]
+            if users:
+                self.notify("Saved · used in " + ", ".join(users) + " · Refresh there to update")
+        if op in {"open", "import_step", "recover"}:
+            self.close_startup_blank()
         if resume_preview:
             self.begin_preview()
         return self.state
@@ -1485,27 +1663,22 @@ class Panel(QtGui.QDockWidget):
         self._result_failures_shown = key
         for row in rows:
             self.append_message(str(row.get("feature")) + ": result check " + str(row.get("code"))
-                                + (" (stale)" if row.get("stale") else "") + " — " + str(row.get("message")))
+                                + (" (stale)" if row.get("stale") else "") + " — " + str(row.get("message")),
+                                severity="error")
 
     def status_detail(self):
-        status = self.state["build_status"]
-        checks = self.state.get("result_checks") or {}
-        pending = " · checks pending" if checks.get("status") == "pending" else ""
-        if status == "failed":
-            if checks.get("failed"):
-                return "Result check failed — see Messages"
-            return "Invalid geometry — see Messages" if self.state.get("geometry_check") == "invalid" else "Build failed"
-        if status == "needs_rebuild":
-            return "Rebuild required · " + self.rebuild_reason_text(self.state)
-        measured = self.state.get("measurements")
-        if not measured:
-            return "Sketches only · mm" + pending
-        detail = str(measured["solid_count"]) + " solid(s)"
-        if measured.get("volume_mm3") is not None:
-            detail += f" · {measured['volume_mm3']:,.2f} mm³"
-        if self.state.get("geometry_check") == "valid":
-            detail += " · checked"
-        return detail + pending
+        """The document status line (A-10): empty, sketches only, editing a sketch, valid, needs
+        rebuild or failed naming the feature (wording: feedback.status_text, docs/EVERYDAY_UI.md). Its
+        severity colors the status line through the theme's QLabel[severity] rule."""
+        text, severity = feedback.status_text(self.state)
+        self.set_status_severity(severity)
+        return text
+
+    def set_status_severity(self, severity):
+        if (self.status.property("severity") or "") != severity:
+            self.status.setProperty("severity", severity)
+            self.status.style().unpolish(self.status)
+            self.status.style().polish(self.status)
 
     def check_geometry(self):
         self._cancel_step_export()
@@ -1718,11 +1891,12 @@ class Panel(QtGui.QDockWidget):
             if not is_current():
                 return None
             name = names.get(body["id"], body["id"])
-            self.append_message(name + (": geometry valid" if body["valid"] else ": invalid geometry"))
+            self.append_message(name + (": geometry valid" if body["valid"] else ": invalid geometry"),
+                                severity="info" if body["valid"] else "error")
             for issue in body.get("issues", []):
                 if not is_current():
                     return None
-                self.append_message(name + ": " + str(issue))
+                self.append_message(name + ": " + str(issue), severity="error")
         if not is_current():
             return None
         if not report.get("bodies"):
@@ -1829,7 +2003,8 @@ class Panel(QtGui.QDockWidget):
                        "data": {QtCore.Qt.UserRole: entry["id"], QtCore.Qt.UserRole + 1: entry["body"]},
                        "bold": entry["body"] == self.body_choice.currentData()}
                 if body:
-                    row["icon"] = icon_for("Part", native=body.ViewObject.Icon)
+                    row["icon"] = (icon_for("Imported part") if self.state.get("import_source")
+                                   else icon_for("Part", native=body.ViewObject.Icon))
                 row["tooltip"] = entry["id"] + (" · active part for new features" if entry["body"] == self.body_choice.currentData() else "") + " · right-click to rename, color or operate on this part"
                 part_rows.append(row)
                 count += 1
@@ -1840,7 +2015,8 @@ class Panel(QtGui.QDockWidget):
                 continue
             body_name, body_label = body.Name, body.Label
             body_visible = body.ViewObject.Visibility
-            body_icon = icon_for("Part", native=body.ViewObject.Icon)
+            body_icon = (icon_for("Imported part") if self.state.get("import_source")
+                         else icon_for("Part", native=body.ViewObject.Icon))
             body_active = body_name == self.body_choice.currentData()
             for i, solid in enumerate(solids):
                 part_rows.append({"key": body_name + ":" + str(i),
@@ -1892,17 +2068,25 @@ class Panel(QtGui.QDockWidget):
                      "text": label + " (" + str(len(assembly.get(category, []))) + ")",
                      "data": {QtCore.Qt.UserRole: "assembly_group:" + category},
                      "expand_new": True, "children": []}
-            for entry in assembly.get(category, []):
+            def history_row(entry, category=category):
                 suffix = " · grounded" if entry.get("grounded") else (" · " + str(entry.get("joint_type", entry.get("type", "joint"))) if category == "joints" else "")
                 if category == "joints" and entry.get("suppressed"):
                     suffix += " · suppressed"
-                row = {"key": entry["id"], "text": entry["name"] + suffix,
+                outdated, color = self.assembly_refresh.decoration(entry) if category == "instances" else ("", None)
+                suffix += outdated
+                row = {"key": entry["id"], "text": entry["name"] + suffix, "color": color,
                        "data": {QtCore.Qt.UserRole: entry["id"]},
                        "tooltip": entry["id"] + (" · reference fixed in place" if entry.get("grounded") else "")}
                 obj = doc.getObject(entry["id"])
-                if obj:
+                if category == "instances" and (entry.get("source") or {}).get("kind") == "step":
+                    row["icon"] = icon_for("Imported part")  # item 5: STEP-sourced occurrence
+                elif obj:
                     row["icon"] = obj.ViewObject.Icon
-                group["children"].append(row)
+                return row
+            if category == "instances":
+                group["children"] = instance_rows(assembly, history_row, self.assembly_tree.folder_icon())
+            else:
+                group["children"] = [history_row(entry) for entry in assembly.get(category, [])]
             rows.append(group)
         identity = (self.state["document_id"], "assembly")
         self.items = self.feature_model.reconcile(identity, rows)
@@ -1911,18 +2095,22 @@ class Panel(QtGui.QDockWidget):
         self.refreshing = False
         self.features_title.setText(assembly.get("name", "Assembly"))
         self.parts.blockSignals(True)
-        part_rows = []
-        for entry in assembly.get("instances", []):
+        def part_row(entry):
+            outdated, color = self.assembly_refresh.decoration(entry)
             row = {"key": entry["id"],
-                   "text": entry["name"] + (" · grounded" if entry.get("grounded") else ""),
-                   "data": {QtCore.Qt.UserRole: entry["id"]}}
+                   "text": entry["name"] + (" · grounded" if entry.get("grounded") else "") + outdated,
+                   "data": {QtCore.Qt.UserRole: entry["id"]}, "color": color}
             obj = doc.getObject(entry["id"])
-            if obj:
+            if (entry.get("source") or {}).get("kind") == "step":
+                row["icon"] = icon_for("Imported part")  # item 5: STEP-sourced occurrence
+            elif obj:
                 row["icon"] = icon_for("Part", native=obj.ViewObject.Icon)
-            part_rows.append(row)
+            return row
+        part_rows = instance_rows(assembly, part_row, self.assembly_tree.folder_icon())
         self.part_model.reconcile(identity, part_rows)
         self.parts.blockSignals(False)
         self.parts_title.setText("Instances (" + str(len(assembly.get("instances", []))) + ")")
+        self.set_status_severity("")
         if not assembly:
             detail = "Create Assembly to begin. Insert saved FCStd parts, ground a reference, then connect native joints."
         elif self.state["build_status"] in {"failed", "needs_rebuild"}:
@@ -1938,6 +2126,7 @@ class Panel(QtGui.QDockWidget):
         self.editor.hide()
         self.sync_edit_ui()
         self.parameter_section.set_unavailable("Parameters are edited in part studios")
+        self.assembly_refresh.on_refresh()
         self.feedback_complete()
 
     def filter_features(self, *args):
@@ -1945,9 +2134,19 @@ class Panel(QtGui.QDockWidget):
         for i in range(self.features.topLevelItemCount()):
             item = self.features.topLevelItem(i)
             if self.workspace_mode == "assembly":
+                def matches(row):
+                    # Folders stay visible while any instance inside them matches (item 3).
+                    shown = [matches(row.child(j)) for j in range(row.childCount())]
+                    if row.childCount() and str(row.data(0, QtCore.Qt.UserRole) or "").startswith("assembly_folder:"):
+                        hit = any(shown) or not text
+                        if text and any(shown):
+                            row.setExpanded(True)
+                    else:
+                        hit = not text or text in row.text(0).lower()
+                    row.setHidden(not hit)
+                    return hit
                 for j in range(item.childCount()):
-                    child = item.child(j)
-                    child.setHidden(bool(text and text not in child.text(0).lower()))
+                    matches(item.child(j))
                 item.setHidden(bool(text and all(item.child(j).isHidden() for j in range(item.childCount()))))
             else:
                 item.setHidden(bool(text and item.data(0, QtCore.Qt.UserRole) != "origin" and text not in item.text(0).lower()))
@@ -1993,6 +2192,13 @@ class Panel(QtGui.QDockWidget):
         result = self.cancel_task()
         if result is False and self.section_view.cancel():
             return True
+        if result is False and self.active_sketch():
+            # Decision 2 (A7, C-08): Escape ends the tool, never the sketch. A tool KurtShape started
+            # already ended on this Escape (SketchReferences, before the router). The key still goes
+            # to native Sketcher: it ends a handler started any other way, cancels a drag, and with
+            # LeaveSketchWithEscape=false (start()) keeps the sketch open. The hint does not consume it.
+            self.notify("Sketch stays open · Finish or Cancel the sketch to leave it")
+            return False
         return result
 
     def show_parameter_use(self, feature_id, parameter_key):
@@ -2054,6 +2260,9 @@ class Panel(QtGui.QDockWidget):
             self.notify("Roll forward through this feature before editing it.")
             return
         if self.workspace_mode == "assembly":
+            # Item 4: double-click an instance opens its part; folders only expand.
+            if self.assembly_tree.double_click(item):
+                return None
             return self.edit_assembly_selection()
         if key.startswith("plane:"):
             if not self.pending_sketch:
@@ -2094,6 +2303,11 @@ class Panel(QtGui.QDockWidget):
 
     def part_menu(self, position):
         item = self.parts.itemAt(position)
+        if self.workspace_mode == "assembly":
+            menu = self.assembly_tree.menu(self.parts, item)
+            if menu:
+                menu.exec_(self.parts.mapToGlobal(position))
+            return
         if not item or self.workspace_mode != "part_studio":
             return
         self.parts.setCurrentItem(item)
@@ -2835,7 +3049,7 @@ class Panel(QtGui.QDockWidget):
         self.editor.set_accept_enabled(mode == "sketch" and not self.sketch_plane_editor.picking)
         self.confirm.setText("Finish sketch" if mode == "sketch" else "Confirm")
         self.confirm.setAccessibleName(self.confirm.text())
-        self.toolbar_labels.register(self.confirm, self.confirm.text())
+        self.toolbar_labels.register(self.confirm, self.confirm.text(), lambda: self.editor_shortcut(self.editor, "general.accept"))
 
     def complete_editor(self, feature=None):
         """Accepting a feature returns to the canvas without opening properties."""
@@ -2848,6 +3062,11 @@ class Panel(QtGui.QDockWidget):
             finally:
                 self.features.blockSignals(blocked)
             self.history_controller.highlight_planes()
+            if feature in self.items:
+                # The history row and the native selection name the same feature, so the face links'
+                # next sync (which mirrors the native selection into the history) keeps this row
+                # instead of restoring the editor's input. Face→feature highlighting is unchanged.
+                self.history_controller.sync_native_selection()
 
     def parameter_value(self, *args):
         feature = next((f for f in (self.state or {}).get("features", []) if f["id"] == self.selected()), None)
@@ -3016,6 +3235,11 @@ class Panel(QtGui.QDockWidget):
                                     and self.operation("recover", path=p))
         if not records:
             menu.addAction("No recoverable projects").setEnabled(False)
+        # A4 (slice A/B U8): where checkpoints live and how often they run (docs/EVERYDAY_UI.md, Recovery).
+        menu.addSeparator()
+        policy = menu.addAction(f"Checkpoints: changed projects, after 2 s idle, at most every "
+                                f"{self.core.recovery.interval_seconds} s · in {self.core.recovery.directory}")
+        policy.setEnabled(False)
 
     def checkpoint_projects(self):
         try:
@@ -3041,6 +3265,35 @@ class Panel(QtGui.QDockWidget):
                         # Publication may finish while capture starts. Count
                         # native attempts, including failed ones, not futures.
                         break
+
+    def paint_stall(self, text):
+        """``"Saving…"`` / ``"Checkpoint…"`` in the status line and the footer, painted now (A4, slice A/B U8).
+
+        The controller calls this right before a synchronous native save on the GUI thread (``save``,
+        Save As, ``adopt``, a recovery checkpoint) and with ``None`` when the write is done, which puts the
+        previous texts back. ``repaint`` paints the two labels immediately without running the event loop,
+        so no input or timer is processed by it. A label whose text changed meanwhile keeps the new text.
+        """
+        labels = (self.status, self.message)
+        if text:
+            if self._stall_texts is None:
+                self._stall_texts = {"status": self.status.text(), "message": self.message.text(),
+                                     "style": self.message.styleSheet()}
+            self._stall_texts["shown"] = text
+            self.message.setStyleSheet("")
+            for label in labels:
+                label.setText(text)
+            for label in labels:
+                label.repaint()
+            return
+        previous, self._stall_texts = self._stall_texts, None
+        if previous is None:
+            return
+        if self.status.text() == previous["shown"]:
+            self.status.setText(previous["status"])
+        if self.message.text() == previous["shown"]:
+            self.message.setText(previous["message"])
+            self.message.setStyleSheet(previous["style"])
 
     def feedback_complete(self):
         if hasattr(self, "responsiveness"):
@@ -3085,7 +3338,7 @@ class Panel(QtGui.QDockWidget):
             return
         return self.operation("create_body", id=self.unique("Body"), name="Part " + str(len(self.sketch_owners()) + 1))
 
-    def new(self):
+    def new(self, startup=False):
         if not self.parameter_section.flush_pending():
             return None
         self.cancel_placement()
@@ -3093,6 +3346,16 @@ class Panel(QtGui.QDockWidget):
             navigation.reset_new_document_view()
             Gui.activeDocument().activeView().setAxisCross(True)
             self.editor.hide()
+            if startup:
+                self.startup_blank = {"document_id": self.state["document_id"], "revision": self.state["revision"],
+                                      "objects": sorted(obj.Name for obj in self.document().Objects)}
+
+    def close_startup_blank(self):
+        """Close the launch's blank part once another project is open, if it was never touched."""
+        blank, self.startup_blank = self.startup_blank, None
+        if blank and self.state and self.state.get("document_id") != blank["document_id"]:
+            if self.core.close_untouched(blank["document_id"], blank["revision"], blank["objects"]):
+                self.workspace_modes.pop(blank["document_id"], None)
 
     def open(self):
         if not self.parameter_section.flush_pending():
@@ -3148,14 +3411,17 @@ class Panel(QtGui.QDockWidget):
             self.notify("Finish or cancel the current edit before saving the project.")
             return
         path = self.state.get("native_file") if not save_as else None
-        if not path:
+        chosen = not path
+        if chosen:
             self.core.settings.project_directory.mkdir(parents=True, exist_ok=True)
             imported = self.state.get("import_source")
             filename = Path(imported["path"]).stem + ".FCStd" if imported else ("my-assembly.FCStd" if self.assembly_state() else "my-part.FCStd")
             path = QtGui.QFileDialog.getSaveFileName(self, "Save project", self.state.get("native_file") or str(Path(self.core.settings.last_directory) / filename), "FreeCAD project (*.FCStd)")[0]
         if path:
             self.core.settings.grant_destination(path)
-            return self.operation("save", path=path)
+            # A8 (slice A/B U8): the Save dialog has already asked before replacing an existing file, so a
+            # chosen path may replace another project's FCStd; the document's own file needs no flag.
+            return self.operation("save", path=path, overwrite=chosen)
 
     def adopt(self):
         if not self.state:
@@ -3857,6 +4123,7 @@ class Panel(QtGui.QDockWidget):
             self.complete_editor(info["feature"])
         elif self.task_edit is not None:
             self.begin_preview()
+            self.extrusion_preview.reject(preview.proposal, self.last_operation_error)
         return result
 
     def reset_edit_controls(self):
@@ -3920,7 +4187,7 @@ class Panel(QtGui.QDockWidget):
         if self.task not in {"pad", "pocket"}:
             self.preview_hint.clear()
             return
-        self.editor.set_accept_enabled(bool(result and result.valid))
+        self.editor.set_accept_enabled(confirm_gate.accept_enabled(result, provisional=self.provisional_commit_allowed()))
         if result is None and self.task_edit is not None and self.extrusion_preview.evaluator is not None and self.edit_unchanged():
             self.editor.set_accept_enabled(True)
             self.editor.set_status("No changes · Confirm or Cancel closes without changing the model")
@@ -3934,7 +4201,8 @@ class Panel(QtGui.QDockWidget):
             operation = result.proposal.get("operation", "remove" if self.task == "pocket" else "add")
             self.editor.set_status("Preview · removed material" if operation in {"remove", "intersect"} else "Preview · added material", "success")
         elif result.provisional:
-            self.editor.set_status("Provisional preview · checking exact result…")
+            self.editor.set_status("Provisional preview · Confirm commits now; exact check running…"
+                                   if self.provisional_commit_allowed() else "Provisional preview · checking exact result…")
         else:
             text = ("Select an end face for Up to face." if self.end_type.currentIndex() == 2 and not self.up_to_face_reference
                     else result.error["message"])
@@ -3944,7 +4212,40 @@ class Panel(QtGui.QDockWidget):
             self.responsiveness.trace.mark(entry, "preview_provisional" if result.provisional else "preview_ready")
         self.responsiveness.ui_updated(entry)
 
-    def accept_task(self):
+    def provisional_commit_allowed(self):
+        """Confirm commits from a provisional preview only where the operation validates geometry.
+
+        Part Studio Add / Remove / Intersect run result checks (also when the
+        proposal carries operation or merge_scope on a document that is not a
+        Part Studio yet) and a legacy Remove requires removed material; a
+        legacy Extrude has no empty-add check at commit, and an edit has no
+        provisional result, so those keep the exact-only gate
+        (confirm_gate.provisional_allowed).
+        """
+        if self.task not in {"pad", "pocket"} or self.task_edit is not None:
+            return False
+        studio = bool(((self.state or {}).get("studio") or {}).get("enabled"))
+        return confirm_gate.provisional_allowed(self.task, studio, False, self.extrusion_proposal())
+
+    def resume_accept(self):
+        """Commit a Confirm that arrived while the preview snapshot was pumping Qt."""
+        pending, preview = self.pending_accept, self.extrusion_preview
+        if pending is None:
+            return
+        mode, evaluator = pending
+        if self.task not in {"pad", "pocket"} or preview.evaluator is None or preview.evaluator is not evaluator:
+            self.pending_accept = None  # the task ended or restarted; the click does not carry over
+            return
+        if preview.snapshotting is not None:
+            QtCore.QTimer.singleShot(20, self.resume_accept)
+            return
+        self.pending_accept = None
+        if mode == "repeat":
+            self.accept_repeat()
+        else:
+            self.accept_task()
+
+    def accept_task(self, repeat=False):
         if self.studio_dialog:
             self.studio_dialog.accept()
             return True
@@ -3964,11 +4265,27 @@ class Panel(QtGui.QDockWidget):
             if not profile:
                 self.notify("Select a closed sketch profile from the history.")
                 return False
+            if self.extrusion_preview.snapshotting is not None and (self.provisional_commit_allowed() or self.confirm.isEnabled()):
+                # The first exact snapshot (saveCopy) pumps Qt. A Confirm
+                # delivered inside it is not dropped: it commits once the
+                # snapshot releases the document, without clearing the preview.
+                # A task that cannot commit yet falls through to today's path.
+                if self.pending_accept is None:
+                    QtCore.QTimer.singleShot(20, self.resume_accept)
+                self.pending_accept = ("repeat" if repeat else "accept", self.extrusion_preview.evaluator)
+                self.editor.set_status("Confirm queued · committing after the preview snapshot…")
+                return False
             # Re-evaluate the current fields before acceptance, including the
-            # revision guard. The visible preview and committed solid agree.
+            # revision guard. Where the operation validates geometry itself
+            # (provisional_commit_allowed) a valid provisional result commits
+            # immediately and the exact preview is advisory; an exact or commit
+            # rejection remembered for these fields still blocks. The committed
+            # solid uses the same normalized proposal the exact preview
+            # evaluates, so both agree. operation() clears the preview before
+            # dispatch, which discards any in-flight exact evaluation.
             self.extrusion_preview.schedule(self.extrusion_proposal())
-            preview = self.extrusion_preview.flush()
-            if not preview or not preview.valid:
+            preview = self.extrusion_preview.flush(provisional=self.provisional_commit_allowed())
+            if not preview:
                 return False
             args = dict(preview.proposal)
             operation = args.pop("op")
@@ -3984,14 +4301,18 @@ class Panel(QtGui.QDockWidget):
                 self.task = self.task_profile = self.task_document = None
                 self.complete_editor(obj.Name if obj else result.get("created_feature", args["id"]))
             else:
+                # The rejection stays on these fields (error in the status,
+                # Confirm disabled) until they change; begin_preview alone
+                # would offer the same failing commit again.
                 self.begin_preview()
+                self.extrusion_preview.reject(preview.proposal, self.last_operation_error)
             return result
         return False
 
     def accept_repeat(self):
         kind = self.task
         editing = self.task_edit is not None
-        result = self.accept_task() if kind else False
+        result = self.accept_task(repeat=True) if kind else False
         if result and kind in {"pad", "pocket"} and not editing:
             self.extrude(kind == "pocket", choose_new=True)
         return result
@@ -4147,6 +4468,11 @@ class Panel(QtGui.QDockWidget):
 
     def history_menu(self, position):
         item = self.features.itemAt(position)
+        if self.workspace_mode == "assembly":
+            menu = self.assembly_tree.menu(self.features, item)
+            if menu:
+                menu.exec_(self.features.mapToGlobal(position))
+            return
         if not item:
             return
         if not item.isSelected():
@@ -4157,20 +4483,6 @@ class Panel(QtGui.QDockWidget):
             return
         menu = QtGui.QMenu(self)
         menu.addAction("Hide" if obj.ViewObject.Visibility else "Show", lambda: self.set_visibility(obj, not obj.ViewObject.Visibility))
-        if self.workspace_mode == "assembly":
-            Gui.Selection.clearSelection()
-            Gui.Selection.addSelection(obj)
-            instances = {entry["id"] for entry in self.assembly_state().get("instances", [])}
-            if key in instances:
-                menu.addAction("Ground as reference", self.ground_assembly_instance)
-                menu.addAction("Move free instance", self.move_assembly_selection)
-            else:
-                menu.addAction("Edit joint", self.edit_assembly_selection)
-                menu.addAction("Move allowed coordinate", self.move_assembly_selection)
-            menu.addAction("Rename", self.rename_selected)
-            menu.addAction("Remove", self.delete_selected)
-            menu.exec_(self.features.mapToGlobal(position))
-            return
         keys = self.selected_ids()
         if len(keys) > 1:
             menu.clear()
@@ -4341,20 +4653,15 @@ class Panel(QtGui.QDockWidget):
             hide_native_panels()
 
     def measure(self):
-        selections = Gui.Selection.getSelectionEx()
-        shapes = [shape for s in selections for shape in s.SubObjects]
-        if not shapes:
-            shapes = [s.Object.Shape for s in selections if hasattr(s.Object, "Shape")]
-        if len(shapes) >= 2:
-            self.notify(f"Minimum distance: {geometry.distance(shapes[0], shapes[1]):.4f} mm")
-        elif shapes:
-            shape = shapes[0]
-            if shape.ShapeType == "Edge":
-                self.notify(f"Edge length: {geometry.scalar(shape, 'length'):.4f} mm")
-            elif shape.ShapeType == "Face":
-                self.notify(f"Face area: {geometry.scalar(shape, 'area'):.4f} mm²")
-            else:
-                self.notify(f"Volume: {geometry.scalar(shape, 'volume'):.4f} mm³ · area: {geometry.scalar(shape, 'area'):.4f} mm²")
+        from .measure_label import selection_entries
+        from .measure_readout import measure_selection
+        entries = selection_entries(self.document()) if self.document() else []
+        if entries:
+            # Item 6: the same global-frame measurement as the live readout.
+            try:
+                self.notify(measure_selection(entries)["text"] or "Nothing measurable in the selection")
+            except Exception as exc:
+                self.notify("Cannot measure this selection: " + str(exc))
         else:
             doc, body = self.document(), self.active_body()
             if not doc or not body:
@@ -4413,6 +4720,17 @@ class Panel(QtGui.QDockWidget):
             if hasattr(obj.ViewObject, "Transparency"):
                 obj.ViewObject.Transparency = 0 if obj.ViewObject.Transparency else 75
 
+    def take_enter_kept(self):
+        """True once after eventFilter left a Return to an owned editor's open list or completer, and
+        while an owned editor's combo box list is open (its popup window is outside the editor)."""
+        kept, self.enter_kept_by_field = getattr(self, "enter_kept_by_field", False), False
+        return kept or self.owned_list_open()
+
+    def owned_list_open(self):
+        """An owned editor's combo box list is open (its popup window lies outside the editor)."""
+        return any(combo.view().isVisible() for editor in (self.studio_dialog, self.editor)
+                   if editor is not None and editor.isVisible() for combo in editor.findChildren(QtGui.QComboBox))
+
     def shortcut_callbacks(self):
         callbacks = {
             "local.new": self.new, "local.open": self.open, "local.save": self.save,
@@ -4421,8 +4739,9 @@ class Panel(QtGui.QDockWidget):
             "feature.fillet": lambda: self.studio_tool("fillet"),
             "history.rollback_up": lambda: self.move_rollback(-1),
             "history.rollback_down": lambda: self.move_rollback(1),
-            "general.cancel": self.cancel_key, "general.accept": lambda: self.accept_task() if self.task or self.studio_dialog else False,
-            "general.accept_repeat": self.accept_repeat,
+            "general.cancel": self.cancel_key,
+            "general.accept": lambda: False if self.take_enter_kept() else (self.accept_task() if self.task or self.studio_dialog else False),
+            "general.accept_repeat": lambda: False if self.take_enter_kept() else self.accept_repeat(),
             "general.undo": lambda: self.history_move("undo"), "general.redo": lambda: self.history_move("redo"),
             "general.delete": self.delete_selected, "general.delete_backspace": self.delete_selected,
             "general.rename": self.rename_selected, "general.measure": self.measure,
@@ -4444,6 +4763,7 @@ class Panel(QtGui.QDockWidget):
         callbacks.update({"assembly.insert": self.insert_assembly_part,
                           "assembly.fasten": lambda: self.assembly_joint("fixed"),
                           "assembly.mates": self.toggle_assembly_joints,
+                          "assembly.refresh": lambda: self.assembly_refresh.click(),
                           "assembly.show_mates": self.toggle_assembly_joints})
         callbacks.update(viewport_callbacks(self))
         return callbacks
@@ -4477,7 +4797,15 @@ class Panel(QtGui.QDockWidget):
                 or watched in {self.depth.native, self.depth.lineEdit()} and event.type() == QtCore.QEvent.KeyPress
                 and event.key() in {QtCore.Qt.Key_Up, QtCore.Qt.Key_Down, QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown}):
             self.mark_depth_touched()
+        if event.type() == QtCore.QEvent.ShortcutOverride and event.key() in {QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter}:
+            # An open combo box list picks its entry and closes on this Return's shortcut override; the
+            # key press that follows must not confirm the editor as well.
+            self.enter_list_closed_at = time.monotonic() if self.owned_list_open() else None
         if event.type() == QtCore.QEvent.KeyPress and event.key() in {QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter}:
+            self.enter_kept_by_field = False
+            closed_at, self.enter_list_closed_at = getattr(self, "enter_list_closed_at", None), None
+            if closed_at is not None and time.monotonic() - closed_at < 0.5 and not self.owned_list_open():
+                return True
             if watched is self.depth.lineEdit() and self.task:
                 if event.modifiers() & QtCore.Qt.ShiftModifier:
                     self.accept_repeat()
@@ -4493,6 +4821,20 @@ class Panel(QtGui.QDockWidget):
                 else:
                     self.apply_parameter()
                 return True
+            # A7 (C-04): Return in any other field of an owned editor (the Feature settings editor or a
+            # studio dialog) is decided here, at the field it was sent to, before the shortcut router
+            # and before it propagates: it confirms as the header button does (FeaturePanel's gate),
+            # Shift+Enter repeats where the tool has a repeat, and a reference picker keeps it.
+            editor = next((owned for owned in (self.studio_dialog, self.editor)
+                           if owned is not None and owned.isVisible() and isinstance(watched, QtGui.QWidget)
+                           and owned.isAncestorOf(watched)), None)
+            if editor is not None:
+                if editor.enter_pressed(watched, bool(event.modifiers() & QtCore.Qt.ShiftModifier)):
+                    return True
+                # An open combo box list or completer picks its entry; the router's Accept, which sees
+                # this key next, leaves it alone too.
+                self.enter_kept_by_field = True
+                return False
         if watched is self.main and event.type() == QtCore.QEvent.Close and not self.parameter_section.flush_pending():
             event.ignore()
             return True
@@ -4503,6 +4845,11 @@ class Panel(QtGui.QDockWidget):
         return False
 
     def shutdown(self):
+        self.additive_selection.shutdown()
+        self.assembly_links.close()
+        self.measure_label.close()
+        if self.open_handoff:
+            self.open_handoff.close()
         self.parameter_section.close()
         self.section_layout.flush()
         self._step_export_closed = True
@@ -4541,8 +4888,14 @@ def start():
     main = Gui.getMainWindow()
     preferences = App.ParamGet("User parameter:BaseApp/Preferences/Document")
     preferences.SetBool("RecoveryEnabled", True)
-    preferences.SetBool("AutoSaveEnabled", True)
-    preferences.SetInt("AutoSaveTimeout", 1)
+    # Decision 3 (slice A/B U8, A4): KurtShape's recovery checkpoints are the one recovery writer, so
+    # FreeCAD's one-minute autosaver is off unless settings.json keeps it ("keep_freecad_autosave": true).
+    # FreeCAD reads these values when it starts: a change applies from the next start.
+    from .settings import apply_freecad_autosave, load_preference, session_directory
+    apply_freecad_autosave(preferences, load_preference(session_directory(ROOT), "keep_freecad_autosave"))
+    # Decision 2 (A7, C-08): Escape ends the active sketch tool, never the sketch. FreeCAD's
+    # Sketcher reads this for its view provider and its task dialog's Escape button.
+    App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher").SetBool("LeaveSketchWithEscape", False)
     App.saveParameter()
     Gui.activateWorkbench("PartDesignWorkbench")
     release_native_overlays(main)
@@ -4557,15 +4910,23 @@ def start():
     Gui.kurtshape_panel = panel
     main.destroyed.connect(panel.shutdown)
     demo = ROOT / "examples" / "acceptance-plate.FCStd"
-    if demo.exists() and os.environ.get("KURTSHAPE_DEMO"):
+    open_file = os.environ.get("KURTSHAPE_OPEN_FILE")
+    if open_file:
+        panel.open_path(open_file)
+    elif demo.exists() and os.environ.get("KURTSHAPE_DEMO"):
         panel.operation("open", path=str(demo))
         panel.isometric()
         panel.fit()
     else:
-        panel.new()
+        panel.new(startup=True)
     navigation.apply_navigation()
     for area in main.findChildren(QtGui.QMdiArea):
         for sub in area.subWindowList():
             if sub.windowTitle() in {"Start", "Start page"}:
                 sub.close()
+    # Double-clicking an .FCStd while this app runs opens it here, not in a second KurtShape.
+    from .open_handoff import OpenHandoff
+    panel.open_handoff = OpenHandoff(panel, os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime")))
+    # Native report lines queued during startup arrive before this: they are the startup backlog.
+    QtCore.QTimer.singleShot(0, panel.end_message_startup)
     return panel

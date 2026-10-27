@@ -35,7 +35,10 @@ SUITES = {
         "test_sketch_cursor.SketchCursorTests",
         "test_sketch_constraints.SketchConstraintTests",
         "test_review_followup.ReviewFollowupTests", "test_step_import.StepImportTests",
-        "test_assembly.AssemblyWorkflowTests", "test_extrusion_preview.ExtrusionPreviewTests",
+        "test_assembly.AssemblyWorkflowTests", "test_assembly_refresh.AssemblyRefreshTests", "test_assembly_persistence.AssemblyPersistenceTests", "test_extrusion_preview.ExtrusionPreviewTests",
+        "test_delivery_clearance.ClearanceTests", "test_delivery_clearance.DeliveryValidationTests",
+        # 2D drawings (docs/DRAWINGS.md): the module skips itself when ezdxf is not installed (tools/setup-drawing-deps.ps1).
+        "test_drawing.ViewProjectionTests", "test_drawing.SectionTests", "test_drawing.SheetTests",
         "test_extrusion_edit.ExtrusionEditTests", "test_history_lifecycle.HistoryLifecycleTests",
         "test_everyday_modeling.EverydayModelingDirectionTests",
         "test_dress_up_edit.DressUpEditTests", "test_holes.HoleTests",
@@ -76,6 +79,25 @@ SUITES = {
         "test_operation_schemas.OperationSchemaTests",
         "test_section_view.SectionViewGeometryTests", "test_section_view.SectionViewSelectionTests",
         "test_section_view.PolygonFillTests",
+        # Slice A/B wave 1 (docs/slice-ab/RECORD.md): registered ahead of the units so no two of them edit this file.
+        "test_icon_cache.IconCacheTests",
+        "test_operations_doc.OperationsDocTests",
+        "test_session.SessionTests",
+        "test_confirm_gating.ConfirmGatingTests",
+        "test_launcher_pinning.LauncherPinningTests",
+        # GUI recipe harness (2026-10-22): recipe processes run on a private Windows desktop.
+        "test_private_desktop.PrivateDesktopTests",
+        # Slice A/B wave 2: registered ahead of each serial unit by the integrator.
+        "test_finish_recompute.FinishRecomputeTests", "test_compact_responses.CompactResponseTests",
+        "test_feedback_ui.FeedbackUiTests",
+        "test_save_safety.SaveSafetyTests", "test_recovery_policy.RecoveryPolicyTests",
+        "test_fix_hints.FixHintTests", "test_direction.DirectionTests",
+        # Assembly UX program (docs/assembly-ux/STATUS.md).
+        "test_selection_mode.SelectionModeTests", "test_assembly_instance_links.AssemblyInstanceLinkTests",
+        "test_assembly_folders.FolderStructureTests", "test_assembly_folders.AssemblyFolderTests",
+        "test_assembly_instance_source.AssemblyInstanceSourceTests",
+        "test_measure_readout.MeasureReadoutTests", "test_measure_readout.MeasureAssemblyTests",
+        "test_assembly_refresh_flow.AssemblyRefreshFlowTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),

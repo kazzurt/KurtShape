@@ -18,3 +18,6 @@ validation/**/user-data/
 validation/**/SavedPreferencePacks/
 validation/**/*working/
 validation/user-reports/
+
+# Built by tools/build-windows-launcher.ps1 from tools/KurtShapeLauncher.cs; not tracked.
+KurtShape.exe

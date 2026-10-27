@@ -175,6 +175,10 @@ def validate():
         check('Native startup output emitted before Panel attaches is retained exactly once', panel.messages.toPlainText().count(startup_marker) == 1)
         startup_output = report_widget.toPlainText() + (session / 'freecad.log').read_text(encoding='utf-8', errors='replace')
         check('App startup no longer produces the QStatusBar insertPermanentWidget warning', 'QStatusBar::insertPermanentWidget' not in startup_output)
+        # Slice A/B U7 (A-08): the startup backlog is retained but never lights the Messages dot.
+        result['startup_button'] = {'text': panel.messages_button.text(), 'alerts': panel.unread.alerts, 'unread': panel.unread_messages}
+        check('The startup backlog does not light the Messages dot or count as unread',
+              panel.messages_button.text() == 'Messages' and panel.unread.alerts == 0 and panel.unread_messages == 0)
         for key in ('checkWarning', 'checkError', 'checkMessage', 'checkLogging'):
             prefs.SetBool(key, True)
         # Exercise the independent native preference that used to reopen its own
@@ -190,20 +194,109 @@ def validate():
             (App.Console.PrintError, 'messages native error: details retained\n'),
             (App.Console.PrintLog, 'messages log: troubleshooting details\n'),
         ]
+        dots = {}
+        alerts_before = panel.unread.alerts
         for printer, text in sent:
             before_unread = panel.unread_messages
+            before_alerts = panel.unread.alerts
             printer(text)
             wait()
+            dots[text.split(':', 1)[0]] = ('•' in panel.messages_button.text(), panel.unread.alerts - before_alerts)
             check('Native ' + text.split(':', 1)[0] + ' is retained once without opening a dock or interrupting status',
                   panel.messages.toPlainText().count(text.strip()) == 1 and panel.messages_dock.isHidden() and report_dock.isHidden()
                   and panel.message.text() == status and panel.message.styleSheet() == status_style and panel.unread_messages > before_unread)
         check('Unread log entries have a quiet indicator and full count in hover help', panel.unread_messages > 0 and '•' in panel.messages_button.text() and 'unread' in panel.messages_button.toolTip())
+        result['native_dots'] = dots
+        result['alerts_before_native_lines'] = alerts_before
+        check('An informational native line does not light the Messages dot; a warning and an error do (A-08)',
+              dots['messages normal'] == (alerts_before > 0, 0) and dots['messages warning'] == (True, 1)
+              and dots['messages native error'] == (True, 1) and dots['messages log'] == (True, 0))
         rejected = panel.operation('set_parameter', feature='NoSuchFeature', parameter='Length', value='1 mm')
         wait()
         error_text = panel.message.text()
         check('A rejected controller operation shows red readable status and retains its error without opening Messages',
               rejected is None and ui.COLORS['error'] in panel.message.styleSheet() and error_text in panel.messages.toPlainText()
               and panel.messages_dock.isHidden() and not panel.messages_button.isChecked())
+        error = panel.last_operation_error or {}
+        result['rejected_status'] = error_text
+        check('The rejected operation status names its feature and code; Messages keeps its other fields as JSON and the message once (C-03)',
+              error.get('code') and error_text.endswith(' · ' + error['code']) and 'NoSuchFeature' in error_text
+              and ('  details: ' + json.dumps({k: v for k, v in error.items() if k != 'message'}, sort_keys=True, default=str,
+                                              ensure_ascii=False)) in panel.messages.toPlainText()
+              and panel.messages.toPlainText().count(error.get('message', '?')) == 1)
+        # Slice A/B U7 gate (C-03): a Part Studio Remove that removes nothing, sent through the panel's own
+        # operation path, names the failing feature and code in the status line and selects the feature
+        # the request named in the history and the viewport (the rolled-back Remove has no row; its
+        # profile does).
+        for op, args in (('new', {}), ('sketch_rectangle', {'id': 'Plate', 'width': 20, 'height': 12}),
+                         ('pad', {'id': 'Block', 'profile': 'Plate', 'length': 6, 'operation': 'new'}),
+                         ('sketch_circle', {'id': 'Air', 'x': 10, 'y': 6, 'diameter': 4, 'plane': 'XY'})):
+            assert panel.operation(op, **args), op + ': ' + panel.message.text()
+        check('The gate document is a Part Studio', panel.state['studio']['enabled'])
+        # The GUI's operation path (as Confirm uses it): a blind Remove from the sketch, first one way,
+        # then the other, until one removes nothing (a direction that cuts the plate is undone).
+        Gui.Selection.clearSelection()
+        panel.features.clearSelection()
+        unread_before = panel.unread.alerts
+        attempts = []
+        for reversed_ in (True, False):
+            rows = len(panel.state['features'])
+            outcome = panel.operation('pad', id='ExtrudeRemove', profile='Air', length=5, operation='remove', reversed=reversed_)
+            attempts.append({'reversed': reversed_, 'committed': outcome is not None})
+            if outcome is None:
+                break
+            assert panel.operation('undo') and len(panel.state['features']) == rows, 'undo of the cutting Remove'
+            unread_before = panel.unread.alerts
+        wait()
+        error = panel.last_operation_error or {}
+        status_line = panel.message.text()
+        selected = panel.history_controller.selected_ids()
+        native = [entry.ObjectName for entry in Gui.Selection.getSelectionEx()]
+        # The error's own feature, else its trigger's, else the request's new feature (ExtrudeRemove).
+        named = error.get('feature') or (error.get('trigger') or {}).get('feature') or 'ExtrudeRemove'
+        result['remove_nothing'] = {'attempts': attempts, 'error': error, 'status': status_line, 'selected': selected,
+                                    'native_selection': native}
+        check('The rejected Remove names the failing feature and the code in the red status line',
+              error.get('code') and named and status_line.endswith(' · ' + named + ' · ' + error['code'])
+              and status_line.startswith(error.get('message', '?')) and ui.COLORS['error'] in panel.message.styleSheet())
+        check('The rejected Remove selects the feature it names in the history and the viewport (the profile it was made from)',
+              selected == ['Air'] and native == ['Air'])
+        check('Messages keeps the rejection and the dot counts it', status_line in panel.messages.toPlainText()
+              and '"code": "' + error['code'] + '"' in panel.messages.toPlainText() and panel.unread.alerts > unread_before)
+        # Slice A/B U7: with a model object selected (the failing feature above), Ctrl+A / Ctrl+C in the
+        # read-only Messages view copy its text; FreeCAD's Std_Copy (an Object Selection dialog) must not
+        # open. A guard timer closes and records any modal dialog so a regression fails instead of hanging.
+        selection_present = [entry.ObjectName for entry in Gui.Selection.getSelectionEx()]
+        modal_seen = []
+        def close_modal():
+            modal = application.activeModalWidget()
+            if modal is not None:
+                modal_seen.append(modal.metaObject().className() + ': ' + modal.windowTitle())
+                modal.close()
+        guard = QtCore.QTimer()
+        guard.setInterval(200)
+        guard.timeout.connect(close_modal)
+        panel.messages_dock.show()
+        wait()
+        guard.start()
+        try:
+            panel.messages.setFocus(QtCore.Qt.OtherFocusReason)
+            wait()
+            QtTest.QTest.keyClick(panel.messages, QtCore.Qt.Key_A, QtCore.Qt.ControlModifier)
+            QtTest.QTest.keyClick(panel.messages, QtCore.Qt.Key_C, QtCore.Qt.ControlModifier)
+            wait(400)
+        finally:
+            guard.stop()
+        result['copy_with_model_selection'] = {'selection': selection_present, 'modal_seen': modal_seen,
+                                               'clipboard_matches': clipboard.text() == panel.messages.toPlainText()}
+        check('Ctrl+C in Messages with a model object selected copies the text and opens no native dialog',
+              selection_present == ['Air'] and not modal_seen and clipboard.text() == panel.messages.toPlainText())
+        panel.messages_dock.hide()
+        wait()
+        # The clipboard checks below run, as before this gate, with no model selection.
+        Gui.Selection.clearSelection()
+        panel.features.clearSelection()
+        wait()
         click(panel.messages_button)
         check('Actual Messages button opens details and clears unread count', panel.messages_dock.isVisible() and panel.messages_button.isChecked() and panel.unread_messages == 0 and panel.messages_button.text() == 'Messages')
         App.Console.PrintMessage('messages while open: read immediately\n')
@@ -311,6 +404,9 @@ def validate():
                       and panel.message.text() == long_status_text and not model_clipboard_actions)
                 panel.message.setSelection(0, 0)
                 menu_result = message_menu_action(panel.message, 'Copy message')
+                result['copy_message_probe'] = {'menu': menu_result, 'clipboard_matches': clipboard.text() == long_status_text,
+                                                'status_matches': panel.message.text() == long_status_text, 'status': panel.message.text()[:200],
+                                                'model_clipboard_actions': list(model_clipboard_actions)}
                 check('Status context-menu Copy message copies the full clipped Unicode diagnostic',
                       menu_result.get('triggered') == 'Copy message' and clipboard.text() == long_status_text
                       and menu_result.get('actions', {}).get('Copy selection') is False
@@ -347,9 +443,9 @@ def validate():
 
 def timeout():
     if not finished:
-        result['error'] = 'Messages validation exceeded its 25-second bound'
+        result['error'] = 'Messages validation exceeded its 60-second bound'
         finish()
 
 
 QtCore.QTimer.singleShot(100, validate)
-QtCore.QTimer.singleShot(25000, timeout)
+QtCore.QTimer.singleShot(60000, timeout)

@@ -1,0 +1,107 @@
+"""Private offscreen native GUI verification; never run in a user's session."""
+import json
+import os
+from pathlib import Path
+import sys
+import traceback
+
+import FreeCAD as App
+import Part
+from PySide6 import QtCore
+
+ROOT = Path(os.environ["KURTSHAPE_ROOT"])
+RUN = Path(os.environ["KURTSHAPE_SESSION_DIR"])
+if RUN == ROOT / "runtime" or os.environ.get("QT_QPA_PLATFORM") != "offscreen":
+    raise RuntimeError("This probe requires an isolated offscreen session")
+sys.path.insert(0, str(ROOT / "src"))
+from kurtshape.core import Controller
+from kurtshape.assembly_refresh import _appearance
+
+
+def values(value):
+    if isinstance(value, dict):
+        return {key: values(item) for key, item in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [values(item) for item in value]
+    if hasattr(value, "DiffuseColor"):
+        return {key: values(getattr(value, key)) for key in
+                ("AmbientColor", "DiffuseColor", "EmissiveColor", "SpecularColor", "Shininess", "Transparency")}
+    return value
+
+
+def main():
+    report = {"passed": False, "gui_up": bool(App.GuiUp), "checks": []}
+    core = None
+    try:
+        (RUN / "settings.json").write_text(json.dumps({"project_roots": [str(RUN)]}))
+        paths = []
+        for index, width in enumerate((4, 5)):
+            source = App.newDocument("RefreshSource")
+            body = source.addObject("PartDesign::Body", "SourceBody")
+            base = body.newObject("PartDesign::Feature", "Solid")
+            base.Shape = Part.makeBox(width, 6, 8)
+            source.recompute()
+            path = RUN / ("source-%s.FCStd" % index)
+            source.saveAs(str(path))
+            App.closeDocument(source.Name)
+            paths.append(path)
+        core, state = Controller(), {}
+        def call(op, **kwargs):
+            request = {"op": op, **kwargs}
+            if state and op not in core.CREATE_OPS | core.DOCUMENTLESS_OPS:
+                request.update(document_id=state["document_id"], expected_revision=state["revision"])
+            response = core.dispatch(request)
+            if not response["ok"]:
+                raise RuntimeError(json.dumps(response))
+            result = response["result"]
+            if "document_id" in result:
+                state.update(result)
+            return result
+        call("capabilities")
+        call("list_documents")
+        call("new", name="Private refresh GUI regression")
+        call("create_assembly")
+        for name in ("Base", "Copy"):
+            call("insert_assembly_part", path=str(paths[0]), source_id="SourceBody", id=name)
+        doc = core.documents[state["document_id"]]
+        source = doc.Base.LinkedObject
+        source.ViewObject.ShapeColor = (.2, .4, .7)
+        source.ViewObject.Transparency = 35
+        doc.Copy.ViewObject.Visibility = False
+        before_source = values(_appearance(source))
+        before_link = values(_appearance(doc.Copy))
+        report["source_view_properties"] = sorted(before_source)
+        report["link_view_properties"] = sorted(before_link)
+        report["native_source_view_properties"] = source.ViewObject.PropertiesList
+        report["native_link_view_properties"] = doc.Copy.ViewObject.PropertiesList
+        # Native appearance edits require reconciliation before the next mutation.
+        call("inspect")
+        call("refresh_assembly_part", instance="Copy", path=str(paths[1]), shared="instance")
+        report["appearance_differences"] = {kind: {key: [repr(value), repr(after.get(key))]
+            for key, value in before.items() if after.get(key) != value} for kind, before, after in
+            (("source", before_source, values(_appearance(doc.Copy.LinkedObject))), ("link", before_link, values(_appearance(doc.Copy))))}
+        if values(_appearance(doc.Copy.LinkedObject)) != before_source or values(_appearance(doc.Copy)) != before_link:
+            raise AssertionError("Copy-on-write refresh changed source or occurrence appearance")
+        report["checks"].append("copy-on-write source and occurrence appearance preserved")
+        call("refresh_assembly_part", instance="Base", path=str(paths[1]))
+        if values(_appearance(doc.Base.LinkedObject)) != before_source:
+            raise AssertionError("In-place refresh changed source appearance")
+        report["checks"].append("in-place source appearance preserved")
+        call("save", path=str(RUN / "gui-refreshed.FCStd"))
+        call("close_document")
+        reopened = call("open", path=str(RUN / "gui-refreshed.FCStd"))
+        if reopened["build_status"] != "valid":
+            raise AssertionError("GUI refreshed assembly reopened invalid")
+        report["checks"].append("GUI saved refresh reopened valid")
+        call("close_document")
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        if core:
+            core.close()
+        (RUN / "gui-refresh-result.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+        os._exit(0 if report["passed"] else 1)
+
+
+QtCore.QTimer.singleShot(200, main)

@@ -1,0 +1,201 @@
+"""Hidden GUI gate: Escape ends the sketch tool, never the sketch (slice A/B U7, plan A7, decision 2).
+
+Real key events on the native viewport of a separate hidden FreeCAD: Escape with a drawing tool or a
+constraint tool active ends that tool and keeps the sketch open; Escape with no tool keeps the sketch
+open (consumed by the shell, and by native Sketcher itself through LeaveSketchWithEscape=false when
+the shell's router is out of the way); the floating box's Finish and Cancel still close the sketch.
+"""
+import json
+import os
+from pathlib import Path
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path.insert(0, str(root / "tools"))
+sys.dont_write_bytecode = True
+from kurtshape_evidence import evidence_dir
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+from PySide import QtCore, QtGui
+from PySide6 import QtTest, QtWidgets
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+from kurtshape.ui import start
+panel = start()
+output = evidence_dir("escape-sketch")
+output.mkdir(parents=True, exist_ok=True)
+report = {"passed": False, "checks": [], "method": "Separate hidden native GUI; real Escape and tool keys on the viewport, "
+          "real viewport clicks, real Finish / Cancel buttons"}
+
+
+def wait(ms=120):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, condition):
+    assert condition, label + ": " + panel.message.text()
+    report["checks"].append(label)
+
+
+def viewport():
+    area = next(area for area in main.findChildren(QtWidgets.QMdiArea) if area.activeSubWindow())
+    return next(widget for widget in area.activeSubWindow().findChildren(QtWidgets.QWidget)
+                if widget.metaObject().className() == "QOpenGLWidget" and widget.isVisible())
+
+
+def key(code, modifiers=QtCore.Qt.NoModifier):
+    gl = viewport()
+    gl.setFocus()
+    QtTest.QTest.keyClick(gl, code, modifiers)
+    wait()
+
+
+def world_click(vector):
+    gl = viewport()
+    pixel = Gui.activeDocument().activeView().getPointOnViewport(vector)
+    ratio = gl.devicePixelRatioF()
+    point = QtCore.QPoint(int(pixel[0] / ratio), gl.height() - 1 - int(pixel[1] / ratio))
+    move = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point), QtCore.QPointF(gl.mapToGlobal(point)),
+                             QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+    QtGui.QApplication.sendEvent(gl, move)
+    wait(100)
+    QtTest.QTest.mouseClick(gl, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier, point)
+    wait(150)
+
+
+def settle(ms=400):
+    """Several shell ticks: a sketch left natively would be auto-finished here."""
+    deadline = time.perf_counter() + ms / 1000
+    while time.perf_counter() < deadline:
+        wait(50)
+        panel.tick()
+
+
+def in_sketch(sketch):
+    return panel.active_sketch() is sketch and panel.state.get("active_sketch_edit") == sketch.Name
+
+
+def tool():
+    return panel.sketch_references.native_command_for_context()
+
+
+def validate():
+    try:
+        wait(200)
+        preference = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Sketcher")
+        check("The profile sets Sketcher LeaveSketchWithEscape to false", preference.GetBool("LeaveSketchWithEscape", True) is False)
+        check("A sketch opens on Top", bool(panel.begin_sketch(plane="XY")))
+        sketch = panel.active_sketch()
+        from kurtshape.navigation import normal_to_sketch
+        normal_to_sketch(sketch)
+        Gui.activeDocument().activeView().getCameraNode().height.setValue(70)
+        wait(150)
+
+        key(QtCore.Qt.Key_L)
+        check("L starts the native Line tool", tool() == "Sketcher_CreatePolyline")
+        world_click(sketch.getGlobalPlacement().multVec(App.Vector(0, 0, 0)))
+        world_click(sketch.getGlobalPlacement().multVec(App.Vector(12, 4, 0)))
+        key(QtCore.Qt.Key_Escape)
+        settle()
+        report["after_line_escape"] = {"tool": tool(), "geometry": sketch.GeometryCount, "in_sketch": in_sketch(sketch)}
+        check("Escape with the Line tool active ends the tool and keeps the sketch open",
+              tool() is None and in_sketch(sketch) and sketch.GeometryCount >= 1)
+        geometry = sketch.GeometryCount
+        undo_before = sketch.Document.UndoCount
+
+        key(QtCore.Qt.Key_Escape)
+        settle()
+        report["after_idle_escape"] = {"tool": tool(), "geometry": sketch.GeometryCount, "in_sketch": in_sketch(sketch),
+                                       "status": panel.message.text(), "document_status": panel.status.text()}
+        check("Escape with no tool keeps the sketch open, uncommitted, with its geometry",
+              in_sketch(sketch) and sketch.GeometryCount == geometry and sketch.Document.UndoCount == undo_before
+              and panel.sketch_bar.isVisible())
+        check("Escape with no tool says how to leave the sketch", "Finish or Cancel" in panel.message.text())
+        check("The document status says the sketch is being edited, not that a rebuild is required",
+              panel.status.text() == "Editing sketch · mm")
+        key(QtCore.Qt.Key_Escape)
+        settle()
+        check("A second idle Escape keeps the sketch open", in_sketch(sketch))
+
+        key(QtCore.Qt.Key_G)
+        world_click(sketch.getGlobalPlacement().multVec(App.Vector(20, 10, 0)))
+        world_click(sketch.getGlobalPlacement().multVec(App.Vector(34, 20, 0)))
+        key(QtCore.Qt.Key_Escape)
+        settle()
+        check("Escape after a rectangle ends the tool, keeps the rectangle and the sketch",
+              tool() is None and in_sketch(sketch) and sketch.GeometryCount == geometry + 4)
+        geometry = sketch.GeometryCount
+
+        Gui.Selection.clearSelection()
+        key(QtCore.Qt.Key_H)
+        constraint_tool = tool()
+        report["constraint_tool"] = constraint_tool
+        key(QtCore.Qt.Key_Escape)
+        settle()
+        check("Escape with a constraint tool active ends it and keeps the sketch open",
+              constraint_tool == "Sketcher_ConstrainHorizontal" and tool() is None and in_sketch(sketch))
+
+        # A Sketcher handler started outside the shell's tool tracking still ends on Escape: the shell
+        # passes the key to native Sketcher, which ends the handler and keeps the sketch open.
+        geometry = sketch.GeometryCount
+        Gui.runCommand("Sketcher_CreateLine")
+        wait(150)
+        untracked = tool()
+        key(QtCore.Qt.Key_Escape)
+        settle()
+        world_click(sketch.getGlobalPlacement().multVec(App.Vector(-20, -10, 0)))
+        world_click(sketch.getGlobalPlacement().multVec(App.Vector(-30, -18, 0)))
+        settle()
+        report["untracked_handler"] = {"tracked_tool": untracked, "geometry_before": geometry,
+                                       "geometry_after_clicks": sketch.GeometryCount, "in_sketch": in_sketch(sketch)}
+        check("Escape ends a native Line handler the shell did not start: later clicks draw nothing and the sketch stays open",
+              untracked is None and sketch.GeometryCount == geometry and in_sketch(sketch))
+
+        # Native path: with the shell's router out of the way, Sketcher itself keeps the sketch.
+        panel.router.uninstall()
+        try:
+            key(QtCore.Qt.Key_Escape)
+            settle()
+            check("Native Sketcher keeps the sketch on Escape (LeaveSketchWithEscape=false)", in_sketch(sketch))
+        finally:
+            panel.router.install()
+
+        QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+        settle()
+        check("Finish still closes the sketch and keeps its geometry",
+              panel.active_sketch() is None and not panel.state.get("active_sketch_edit") and sketch.GeometryCount == geometry)
+        check("After Finish the status line leaves the editing wording", panel.status.text() != "Editing sketch · mm")
+
+        panel.select_feature(sketch.Name)
+        check("The sketch reopens for editing", bool(panel.edit_sketch()))
+        panel.operation("add_line", sketch=sketch.Name, x1=-5, y1=-5, x2=-2, y2=-8, construction=True)
+        key(QtCore.Qt.Key_Escape)
+        settle()
+        check("Escape in a reopened sketch keeps the edit and its pending change", in_sketch(sketch) and sketch.GeometryCount == geometry + 1)
+        QtTest.QTest.mouseClick(panel.cancel, QtCore.Qt.LeftButton)
+        settle()
+        check("Cancel still closes the sketch and discards the edit",
+              panel.active_sketch() is None and not panel.state.get("active_sketch_edit") and sketch.GeometryCount == geometry)
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        main.grab().save(str(output / "failure.png"))
+    finally:
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

@@ -1,0 +1,501 @@
+"""Hidden GUI gate for immediate Confirm in the Extrude / Remove dialog (slice A/B, U1).
+
+On the native plate fixture (BENCH_HOLES, default 60 = plate60) the real dialog is driven
+through the real Confirm button and keyboard. Provisional acceptance applies only where the
+commit validates geometry (confirm_gate.provisional_allowed): a legacy Remove material, a legacy
+Extrude (its empty-add check, slice A/B U9) and a Part Studio Extrude / Remove. Measured and
+reported for a legacy Remove on plate60:
+
+- shell latency: Confirm click -> the Controller receives the pocket request (first dispatch);
+- total: Confirm click -> the new history row exists in the feature tree;
+- the exact-preview wait that Confirm no longer waits for (measured on a separate exact pass);
+- committed Body volume versus the exact preview's volume_mm3 for the same fields.
+
+Also checked: a legacy Extrude commits from its provisional and one that only fills existing
+material is rejected at commit with empty_add (U9); Enter and Shift+Enter commit once each
+on a provisional result; a Confirm delivered while the preview snapshot pumps Qt commits once;
+a Remove that removes nothing is rejected at commit, the dialog stays open and the rejection is
+remembered on those fields; a Part Studio Extrude commits from its provisional and an Add that
+adds nothing is rejected with empty_add.
+
+Source drift: the whole src tree is hashed before and after by default. Set
+KURTSHAPE_GATE_ALLOW_SOURCE_DRIFT=1 only for concurrent development; the opt-out and every
+changed file are recorded in the report, and the Confirm-path files are still required unchanged.
+"""
+import hashlib
+import json
+import math
+import os
+from pathlib import Path
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+sys.dont_write_bytecode = True
+sys.path[:0] = [str(root / "tools"), str(root / "tools" / "perf"), str(root / "src")]
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+from bench_core import Benchmark
+from kurtshape.core import intent_signature
+from kurtshape.ui import start
+from kurtshape_evidence import evidence_dir
+from preview_validation import wait_for_exact
+
+panel = start()
+output = evidence_dir("confirm-gating")
+output.mkdir(parents=True, exist_ok=True)
+ALLOW_DRIFT = os.environ.get("KURTSHAPE_GATE_ALLOW_SOURCE_DRIFT") == "1"
+report = {"passed": False, "checks": [], "gate": {},
+          "method": "Separate hidden native FreeCAD GUI; real Extrude/Remove dialog, real Confirm button and keys, "
+                    "native plate fixture built in-process",
+          "limits": ["One click per measurement; these are not percentile estimates.",
+                     "The total is kernel-bound: it includes the synchronous native commit and the tree refresh."],
+          "source_drift_opt_out": ALLOW_DRIFT}
+SHELL_LIMIT_MS = 100
+GATE_SOURCES = ("ui.py", "feature_panel.py", "extrusion_preview.py", "confirm_gate.py", "preview_worker.py",
+                "core.py", "bodies.py", "result_checks.py", "studio.py")
+PROVISIONAL_TEXT = "Confirm commits now"
+
+
+def source_hashes():
+    return {str(path.relative_to(root)).replace("\\", "/"): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted((root / "src").rglob("*.py"))}
+
+
+def gate_sources(hashes):
+    return {key: value for key, value in hashes.items() if key.rsplit("/", 1)[-1] in GATE_SOURCES}
+
+
+report["source_before"] = source_hashes()
+
+
+def check(label, condition):
+    assert condition, label + ": " + panel.message.text() + " | " + panel.editor.verdict.text()
+    report["checks"].append(label)
+
+
+def call(op, **args):
+    state = panel.operation(op, **args)
+    assert state, op + ": " + panel.message.text()
+    return state
+
+
+def doc():
+    return App.activeDocument()
+
+
+def volume(document):
+    return sum(obj.Shape.Volume for obj in document.Objects
+               if obj.TypeId == "PartDesign::Body" and hasattr(obj, "Shape") and not obj.Shape.isNull())
+
+
+def model(document):
+    return (intent_signature(document), panel.core._meta(document).Revision, document.UndoCount,
+            document.RedoCount, document.HasPendingTransaction, round(volume(document), 6))
+
+
+def content(document):
+    """model() without RedoCount: after an Undo, any later request opens a native transaction that
+    drops the redo step, also when it is rejected (pre-existing FreeCAD behaviour)."""
+    state = model(document)
+    return state[:3] + state[4:]
+
+
+def type_into(widget, text):
+    widget.setFocus()
+    widget.selectAll()
+    QtTest.QTest.keyClicks(widget, text)
+    QtTest.QTest.qWait(30)
+
+
+def top_face(feature, z):
+    shape = doc().getObject(feature).Shape
+    return "Face" + str(next(index + 1 for index, face in enumerate(shape.Faces)
+                             if abs(face.CenterOfMass.z - z) < 1e-7 and face.normalAt(0, 0).z > 0.999))
+
+
+def start_extrude(profile, cut=False):
+    Gui.Selection.clearSelection()
+    panel.select_feature(profile)
+    panel.extrude(cut)
+    QtTest.QTest.qWait(30)
+    check(("Remove" if cut else "Extrude") + " dialog opens on " + profile,
+          panel.editor.isVisible() and panel.task == ("pocket" if cut else "pad") and panel.task_profile == profile)
+
+
+def blind_remove(profile, depth, reverse):
+    """A legacy Remove: Blind, typed depth, direction set (the provisional path needs a direction)."""
+    start_extrude(profile, cut=True)
+    panel.end_type.setCurrentIndex(0)
+    type_into(panel.depth.lineEdit(), depth)
+    panel.reverse.setChecked(reverse)
+    QtTest.QTest.qWait(30)
+
+
+def wait_until(predicate, timeout_ms):
+    deadline = time.monotonic() + timeout_ms / 1000
+    while time.monotonic() < deadline:
+        if predicate():
+            return True
+        QtTest.QTest.qWait(5)
+    return predicate()
+
+
+class DispatchSpy:
+    """Records the first mutation dispatch time and counts mutations through the real Controller."""
+    def __init__(self):
+        self.original = panel.core.dispatch
+        self.marks = []
+
+    def __enter__(self):
+        self.marks = []
+        panel.core.dispatch = self.spy
+        return self
+
+    def __exit__(self, *args):
+        panel.core.dispatch = self.original
+
+    def spy(self, request):
+        if request.get("op") in {"pad", "pocket"}:
+            self.marks.append((time.perf_counter(), request.get("op")))
+        return self.original(request)
+
+
+def new_row(rows_before):
+    rows = [key for key in panel.items if key not in rows_before]
+    if not rows:
+        wait_until(lambda: any(key not in rows_before for key in panel.items), 5000)
+        rows = [key for key in panel.items if key not in rows_before]
+    return rows
+
+
+def validate():
+    preview = panel.extrusion_preview
+    try:
+        holes = int(os.environ.get("BENCH_HOLES", "60"))
+        scratch = Path(os.environ["KURTSHAPE_SESSION_DIR"]) / "confirm-gating-fixtures"
+        scratch.mkdir(parents=True, exist_ok=True)
+        began = time.perf_counter()
+        fixture = Benchmark(scratch, "plate", holes, 1, panel=panel).build()
+        report["fixture"] = dict(fixture, build_ms=(time.perf_counter() - began) * 1000)
+        report["engine"] = {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}
+        document = doc()
+        grid = math.ceil(math.sqrt(holes))
+        xy = 300 / (grid + 1)
+        # BenchPreviewProfile lies on the XY plane under the plate (z = 0..12): a reversed blind
+        # Remove cuts up into the plate; TopProfile sits on the top face: reversed cuts into air.
+        call("sketch_circle", id="BenchPreviewProfile", x=xy, y=xy, diameter=20)
+        call("sketch_circle", id="TopProfile", x=xy, y=xy, diameter=20, support={"feature": "Pad", "subelement": top_face("Pad", 12)})
+        check("Fixture has the requested native hole history",
+              sum(obj.TypeId == "PartDesign::Pocket" for obj in document.Objects) == holes)
+        check("The plate is a legacy (non-studio) document", not panel.state["studio"]["enabled"])
+        document.Body.ViewObject.Visibility = True
+        for obj in document.Body.Group:
+            if obj.ViewObject and obj.TypeId.startswith(("Sketcher::", "PartDesign::")):
+                obj.ViewObject.Visibility = obj == document.Body.Tip or obj.Name in {"BenchPreviewProfile", "TopProfile"}
+        view = Gui.getDocument(document.Name).activeView()
+        view.viewAxonometric()
+        view.fitAll()
+        panel.refresh()
+        QtTest.QTest.qWait(300)
+        plate_volume = volume(document)
+        baseline = model(document)
+
+        # --- A legacy Extrude commits from its provisional; one that only fills material is rejected (U9). ---
+        # BenchPreviewProfile lies on XY under the plate (z = 0..12, clear of the holes): 25 mm along +Z
+        # adds the part above the plate; 5 mm stays inside the plate and adds nothing.
+        start_extrude("BenchPreviewProfile")
+        type_into(panel.depth.lineEdit(), "25")
+        check("Legacy Extrude shows a provisional result and already enables Confirm",
+              preview.result is not None and preview.result.provisional and panel.confirm.isEnabled()
+              and PROVISIONAL_TEXT in panel.editor.verdict.text())
+        rows_before = set(panel.items)
+        with DispatchSpy() as spy:
+            QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+            QtTest.QTest.qWait(50)
+        rows = new_row(rows_before)
+        check("Legacy Extrude commits once from the provisional and adds material",
+              [op for _, op in spy.marks] == ["pad"] and len(rows) == 1 and panel.task is None
+              and not panel.editor.isVisible() and volume(document) > plate_volume + 1)
+        report["legacy_extrude"] = {"feature": rows[0], "volume_added_mm3": volume(document) - plate_volume}
+        call("undo")
+        check("One Undo removes the committed legacy Extrude", abs(volume(document) - plate_volume) < 1e-6
+              and document.getObject(rows[0]) is None)
+        legacy_baseline = content(document)
+        start_extrude("BenchPreviewProfile")
+        type_into(panel.depth.lineEdit(), "5")
+        check("Legacy Extrude inside the plate shows a provisional result and enables Confirm",
+              preview.result is not None and preview.result.provisional and panel.confirm.isEnabled())
+        with DispatchSpy() as spy:
+            QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+            QtTest.QTest.qWait(50)
+        error = panel.last_operation_error or {}
+        report["rejected_legacy_extrude"] = {"error": error, "verdict": panel.editor.verdict.text(),
+                                             "confirm_enabled": panel.confirm.isEnabled()}
+        check("The legacy Extrude that adds nothing is rejected with empty_add at commit, the dialog stays open "
+              "and the model is unchanged",
+              [op for _, op in spy.marks] == ["pad"] and error.get("code") == "empty_add" and panel.editor.isVisible()
+              and panel.task == "pad" and content(document) == legacy_baseline)
+        check("The empty_add rejection is shown and remembered (Confirm disabled)",
+              error.get("message", "?") in panel.editor.verdict.text() and not panel.confirm.isEnabled()
+              and preview.result is not None and not preview.result.provisional and not preview.result.valid)
+        with DispatchSpy() as spy:
+            QtTest.QTest.keyClick(panel.depth.lineEdit(), QtCore.Qt.Key_Return)
+            QtTest.QTest.qWait(30)
+        check("Enter on the remembered legacy Extrude rejection does not commit again",
+              not spy.marks and panel.task == "pad" and content(document) == legacy_baseline)
+        panel.cancel_task()
+        QtTest.QTest.qWait(30)
+        check("Cancel after the rejected legacy Extrude leaves the model unchanged",
+              content(document) == legacy_baseline and not panel.editor.isVisible())
+        baseline = model(document)  # the later checks compare the full model again
+
+        # --- Exact reference pass (legacy Remove): the wait Confirm used to impose, and the exact volume. ---
+        blind_remove("BenchPreviewProfile", "5", True)
+        typed = time.perf_counter()
+        check("Typing a Remove depth shows a provisional result and already enables Confirm",
+              preview.result is not None and preview.result.provisional and not preview.result.valid
+              and panel.confirm.isEnabled() and PROVISIONAL_TEXT in panel.editor.verdict.text())
+        exact = wait_for_exact(preview, timeout_ms=180000)
+        exact_wait_ms = (time.perf_counter() - typed) * 1000
+        QtTest.QTest.qWait(30)
+        check("Exact preview for the 5 mm Remove is valid and keeps Confirm enabled",
+              exact.valid and exact.proposal["length"] == 5 and exact.proposal.get("reversed") is True
+              and panel.confirm.isEnabled() and panel.editor.verdict.text().startswith("Preview"))
+        exact_volume = exact.measurements["volume_mm3"]
+        check("The exact Remove takes material out of the plate", exact_volume < plate_volume - 1)
+        report["exact_reference"] = {"proposal": exact.proposal, "volume_mm3": exact_volume,
+                                     "worker_milliseconds": exact.milliseconds,
+                                     "wait_from_last_keystroke_ms": exact_wait_ms}
+        panel.cancel_task()
+        QtTest.QTest.qWait(30)
+        check("Cancel after the exact pass leaves the model unchanged", model(document) == baseline
+              and not panel.editor.isVisible() and preview.evaluator is None)
+
+        # --- Gate pass: Confirm on the provisional result while the exact evaluation is in flight. ---
+        blind_remove("BenchPreviewProfile", "5", True)
+        check("Provisional result for the 5 mm Remove is shown immediately",
+              preview.result is not None and preview.result.provisional and preview.result.proposal["length"] == 5
+              and panel.confirm.isEnabled())
+        in_flight = wait_until(lambda: preview.evaluating and preview.worker is not None, 15000)
+        check("Exact evaluation is genuinely in flight and the result is still provisional",
+              in_flight and preview.result is not None and preview.result.provisional and panel.confirm.isEnabled())
+        worker_process = preview.worker.process
+        rows_before = set(panel.items)
+        with DispatchSpy() as spy:
+            clicked = time.perf_counter()
+            QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+            returned = time.perf_counter()
+        check("Confirm click reached the Controller as one pocket request", [op for _, op in spy.marks] == ["pocket"])
+        shell_ms = (spy.marks[0][0] - clicked) * 1000
+        rows = new_row(rows_before)
+        total_ms = (time.perf_counter() - clicked) * 1000
+        check("The new Remove row exists in the feature tree", len(rows) == 1 and document.getObject(rows[0]) is not None)
+        QtTest.QTest.qWait(50)
+        report["after_commit"] = {"editor_visible": panel.editor.isVisible(), "editor_mode": panel.editor_mode,
+                                  "task": panel.task, "message": panel.message.text(),
+                                  "verdict": panel.editor.verdict.text(), "last_operation_error": panel.last_operation_error}
+        check("Confirm ended the Remove task", panel.task is None)
+        check("Confirm closed the dialog", not panel.editor.isVisible())
+        committed_volume = volume(document)
+        check("Committed volume equals the exact preview volume for the same fields (1e-6 mm3)",
+              abs(committed_volume - exact_volume) < 1e-6)
+        # The native undo stack is capped (plate60's build saturates it), so UndoCount
+        # cannot prove one step; a real undo/redo round trip through the app does.
+        call("undo")
+        check("One Undo removes the committed Remove and restores the plate volume",
+              abs(volume(document) - plate_volume) < 1e-6 and document.getObject(rows[0]) is None)
+        call("redo")
+        check("Redo reapplies the committed Remove",
+              abs(volume(document) - committed_volume) < 1e-6 and document.getObject(rows[0]) is not None)
+        check("Shell latency: click to pocket dispatch under %d ms" % SHELL_LIMIT_MS, shell_ms < SHELL_LIMIT_MS)
+        check("The in-flight exact evaluation was discarded on Confirm",
+              preview.worker is None and not preview.evaluating and preview.evaluator is None)
+        check("The discarded exact worker process exited", wait_until(lambda: worker_process.poll() is not None, 10000))
+        QtTest.QTest.qWait(600)
+        check("No late ghost or preview task after the commit",
+              preview.overlay.node is None and preview.evaluator is None and preview.result is None)
+        report["gate"] = {"shell_latency_ms": shell_ms, "shell_limit_ms": SHELL_LIMIT_MS,
+                          "click_to_return_ms": (returned - clicked) * 1000,
+                          "total_click_to_history_row_ms": total_ms,
+                          "exact_wait_skipped_ms": exact_wait_ms,
+                          "exact_volume_mm3": exact_volume, "committed_volume_mm3": committed_volume,
+                          "volume_difference_mm3": committed_volume - exact_volume,
+                          "feature": rows[0], "operation": "pocket (legacy Remove material, reversed, blind 5 mm)"}
+        after_first = model(document)
+
+        # --- Keyboard: Enter commits once on a provisional; Shift+Enter commits once and repeats. ---
+        # The same circle is cut again, so each depth must exceed the previous one (5, 7, 9, 11 of 12 mm).
+        blind_remove("BenchPreviewProfile", "7", True)
+        check("Provisional Remove for Enter is shown with Confirm enabled", preview.result is not None
+              and preview.result.provisional and panel.confirm.isEnabled())
+        rows_before = set(panel.items)
+        with DispatchSpy() as spy:
+            QtTest.QTest.keyClick(panel.depth.lineEdit(), QtCore.Qt.Key_Return)
+            QtTest.QTest.qWait(50)
+        rows = new_row(rows_before)
+        check("Enter in the depth field commits exactly one Remove on the provisional result",
+              [op for _, op in spy.marks] == ["pocket"] and len(rows) == 1 and panel.task is None
+              and not panel.editor.isVisible() and volume(document) < after_first[5] - 1)
+        after_enter = model(document)
+        blind_remove("BenchPreviewProfile", "9", True)
+        rows_before = set(panel.items)
+        with DispatchSpy() as spy:
+            QtTest.QTest.keyClick(panel.depth.lineEdit(), QtCore.Qt.Key_Return, QtCore.Qt.ShiftModifier)
+            QtTest.QTest.qWait(50)
+        rows = new_row(rows_before)
+        check("Shift+Enter commits exactly one Remove on the provisional result and repeats the tool",
+              [op for _, op in spy.marks] == ["pocket"] and len(rows) == 1 and panel.task == "pocket"
+              and panel.task_profile is None and panel.editor.isVisible()
+              and volume(document) < after_enter[5] - 1)
+        after_repeat = volume(document)
+        panel.cancel_task()
+        QtTest.QTest.qWait(30)
+        check("Cancel of the repeated tool leaves the committed model", panel.task is None
+              and not panel.editor.isVisible() and abs(volume(document) - after_repeat) < 1e-6)
+
+        # --- A Confirm delivered while the preview snapshot pumps Qt commits once, after the snapshot. ---
+        before_snapshot = model(document)
+        snapshots = panel.core.snapshots
+        original_acquire = snapshots.try_acquire
+        clicks = []
+
+        def click_during_snapshot(key):
+            # The adapter has set snapshotting; this is where saveCopy would pump input.
+            if not clicks and preview.snapshotting is not None:
+                clicks.append({"snapshotting": True, "task": panel.task})
+                QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+                clicks[-1].update(verdict=panel.editor.verdict.text(), pending=panel.pending_accept is not None,
+                                  result_cleared=preview.result is None)
+            return None  # force the saveCopy path
+        snapshots.try_acquire = click_during_snapshot
+        try:
+            blind_remove("BenchPreviewProfile", "11", True)
+            rows_before = set(panel.items)
+            with DispatchSpy() as spy:
+                committed = wait_until(lambda: panel.task is None and len(spy.marks) >= 1, 60000)
+                QtTest.QTest.qWait(100)
+        finally:
+            snapshots.try_acquire = original_acquire
+        rows = new_row(rows_before)
+        report["snapshot_window_confirm"] = {"clicks": clicks, "dispatches": [op for _, op in spy.marks]}
+        check("A Confirm inside the snapshot window was queued, not dropped, without clearing the preview",
+              len(clicks) == 1 and clicks[0]["pending"] and not clicks[0]["result_cleared"]
+              and "queued" in clicks[0]["verdict"] and "Preview cleared" not in clicks[0]["verdict"])
+        check("The queued Confirm committed exactly once after the snapshot released the document",
+              committed and [op for _, op in spy.marks] == ["pocket"] and len(rows) == 1 and panel.task is None
+              and not panel.editor.isVisible() and volume(document) < before_snapshot[5] - 1
+              and panel.pending_accept is None)
+
+        # --- A provisional Remove that removes nothing: rejected at commit, remembered on its fields. ---
+        baseline = model(document)
+        blind_remove("TopProfile", "5", True)
+        check("A reversed blind Remove into air shows a provisional result and enables Confirm",
+              preview.result is not None and preview.result.provisional and panel.confirm.isEnabled())
+        with DispatchSpy() as spy:
+            QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+            QtTest.QTest.qWait(50)
+        error = panel.last_operation_error or {}
+        report["rejected_remove"] = {"error": error, "verdict": panel.editor.verdict.text(), "message": panel.message.text(),
+                                     "confirm_enabled": panel.confirm.isEnabled()}
+        check("The operation rejects the empty cut and keeps the dialog open with the model unchanged",
+              [op for _, op in spy.marks] == ["pocket"] and error.get("code") == "empty_cut"
+              and panel.editor.isVisible() and panel.task == "pocket" and model(document) == baseline)
+        check("The rejection is shown in the status line and Confirm is disabled",
+              error.get("message", "?") in panel.editor.verdict.text() and not panel.confirm.isEnabled()
+              and preview.result is not None and not preview.result.provisional and not preview.result.valid)
+        with DispatchSpy() as spy:
+            QtTest.QTest.keyClick(panel.depth.lineEdit(), QtCore.Qt.Key_Return)
+            QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+            QtTest.QTest.qWait(30)
+        check("Enter and Confirm on the remembered rejection do not commit again",
+              not spy.marks and panel.task == "pocket" and model(document) == baseline and not panel.confirm.isEnabled())
+        type_into(panel.depth.lineEdit(), "6")
+        check("Changing the fields offers a provisional again", preview.result is not None and preview.result.provisional
+              and panel.confirm.isEnabled())
+        type_into(panel.depth.lineEdit(), "5")
+        check("Returning to the rejected fields recalls the rejection", preview.result is not None
+              and not preview.result.provisional and not preview.result.valid and not panel.confirm.isEnabled())
+        panel.cancel_task()
+        QtTest.QTest.qWait(30)
+        check("Cancel after the rejected Remove leaves the model unchanged", model(document) == baseline and not panel.editor.isVisible())
+
+        # --- Part Studio: Extrude commits from its provisional; an Add inside material is rejected. ---
+        call("new")
+        call("sketch_rectangle", id="StudioProfile", width=20, height=10)
+        call("pad", id="StudioPlate", profile="StudioProfile", length=6, operation="new")
+        call("sketch_circle", id="StudioCircle", x=10, y=5, diameter=4, plane="XY")
+        studio_doc = doc()
+        panel.refresh()
+        QtTest.QTest.qWait(100)
+        check("The second document is a Part Studio", panel.state["studio"]["enabled"])
+        studio_baseline = model(studio_doc)
+        start_extrude("StudioCircle")
+        panel.result_operation.setCurrentIndex(panel.result_operation.findData("add"))
+        type_into(panel.depth.lineEdit(), "2")
+        panel.reverse.setChecked(True)
+        QtTest.QTest.qWait(30)
+        check("Studio Extrude (Add, reversed, below the plate) shows a provisional and enables Confirm",
+              preview.result is not None and preview.result.provisional and panel.confirm.isEnabled()
+              and PROVISIONAL_TEXT in panel.editor.verdict.text())
+        rows_before = set(panel.items)
+        with DispatchSpy() as spy:
+            QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+            QtTest.QTest.qWait(50)
+        rows = new_row(rows_before)
+        check("Studio Extrude commits once from the provisional and adds material",
+              [op for _, op in spy.marks] == ["pad"] and len(rows) == 1 and panel.task is None
+              and volume(studio_doc) > studio_baseline[5] + 1)
+        studio_after = model(studio_doc)
+        start_extrude("StudioCircle")
+        panel.result_operation.setCurrentIndex(panel.result_operation.findData("add"))
+        type_into(panel.depth.lineEdit(), "2")
+        panel.reverse.setChecked(False)
+        QtTest.QTest.qWait(30)
+        check("Studio Add fully inside material shows a provisional and enables Confirm",
+              preview.result is not None and preview.result.provisional and panel.confirm.isEnabled())
+        with DispatchSpy() as spy:
+            QtTest.QTest.mouseClick(panel.confirm, QtCore.Qt.LeftButton)
+            QtTest.QTest.qWait(50)
+        error = panel.last_operation_error or {}
+        report["rejected_studio_add"] = {"error": error, "verdict": panel.editor.verdict.text(),
+                                         "confirm_enabled": panel.confirm.isEnabled()}
+        check("The studio operation rejects the empty Add, keeps the dialog open and remembers it",
+              [op for _, op in spy.marks] == ["pad"] and error.get("code") == "empty_add" and panel.editor.isVisible()
+              and model(studio_doc) == studio_after and not panel.confirm.isEnabled()
+              and error.get("message", "?") in panel.editor.verdict.text())
+        panel.cancel_task()
+        QtTest.QTest.qWait(30)
+        report["controller_timings"] = {key: value for key, value in panel.core.timings.report().items()
+                                        if key.startswith(("command_pad", "command_pocket", "input_to_", "preview_"))}
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    finally:
+        report["source_after"] = source_hashes()
+        report["source_tree_changed_files"] = sorted(key for key in set(report["source_before"]) | set(report["source_after"])
+                                                     if report["source_before"].get(key) != report["source_after"].get(key))
+        gate_unchanged = gate_sources(report["source_before"]) == gate_sources(report["source_after"])
+        report["source_unchanged"] = (gate_unchanged if ALLOW_DRIFT else not report["source_tree_changed_files"])
+        report["passed"] = bool(report["passed"] and report["source_unchanged"])
+        (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+        panel.shutdown()
+        for name in list(App.listDocuments()):
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            App.getDocument(name).abortTransaction()
+            App.closeDocument(name)
+        QtCore.QTimer.singleShot(0, QtGui.QApplication.instance().quit)
+
+
+QtCore.QTimer.singleShot(1500, validate)

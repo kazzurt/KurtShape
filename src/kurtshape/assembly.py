@@ -17,6 +17,8 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 import FreeCAD as App
+from . import assembly_folders
+from . import assembly_sync
 import Part
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -136,6 +138,12 @@ def result_objects(doc):
     return [obj for obj in values[0].Group if obj.TypeId == "App::Link"] if len(values) == 1 else []
 
 
+def is_embedded_source(obj):
+    """Identify an owned snapshot, excluding properties forwarded by App::Link."""
+    return (obj is not None and obj.TypeId == "Part::Feature"
+            and "KurtShapeEmbeddedSource" in obj.PropertiesList and bool(obj.KurtShapeEmbeddedSource))
+
+
 def _instance(asm, identifier):
     value = asm.Document.getObject(identifier) if isinstance(identifier, str) else None
     if value not in result_objects(asm.Document):
@@ -185,14 +193,14 @@ def _preflight_source(path):
             tree = ET.fromstring(data)
             object_data = {obj.get("name"): obj for obj in tree.findall("./ObjectData/Object")}
             metadata_object = object_data.get("KurtShapeProject")
-            def null_proxy(prop):
+            def null_proxy(prop, name="Proxy", allowed=("", "null")):
                 python = prop.find("Python")
-                if prop.get("name") != "Proxy" or python is None or python.get("module") or python.get("class"):
+                if prop.get("name") != name or python is None or python.get("module") or python.get("class"):
                     return False
                 value = python.get("value", "")
                 if python.get("encoded") == "yes":
                     value = base64.b64decode(value, validate=True).decode("utf-8")
-                return value in {"", "null"}
+                return value in allowed
             metadata_safe = metadata_object is not None and all(
                 "Python" not in prop.get("type", "") or null_proxy(prop)
                 for prop in metadata_object.findall("./Properties/Property"))
@@ -210,8 +218,13 @@ def _preflight_source(path):
                 gui = ET.fromstring(archive.read("GuiDocument.xml"))
                 gui_metadata = next((obj for obj in gui.findall(".//ViewProvider") if obj.get("name") == "KurtShapeProject"), None)
                 metadata_properties = [] if gui_metadata is None else gui_metadata.findall(".//Property")
+                # A sketch edited in the GUI keeps Sketcher's TempoVis as a null Python object
+                # (no module, no class, value null): data-free, so it does not make a source unsafe.
+                # A GUI save stores the metadata view provider's proxy as the JSON scalar 1
+                # (data, no module or class): as data-free as null.
                 if any("Python" in prop.get("type", "") and not
-                       (metadata_safe and prop in metadata_properties and null_proxy(prop))
+                       (metadata_safe and prop in metadata_properties and null_proxy(prop, allowed=("", "null", "0", "1")))
+                       and not (prop.get("type") == "App::PropertyPythonObject" and null_proxy(prop, "TempoVis"))
                        for prop in gui.findall(".//Property")):
                     raise _error("unsafe_assembly_source", "Scripted source view providers are outside the safe insertion workflow")
     except (OSError, zipfile.BadZipFile, KeyError, ET.ParseError, ValueError) as exc:
@@ -343,6 +356,8 @@ def _source_document(path):
             yield doc, source, before
             if hashlib.sha256(source.read_bytes()).hexdigest() != before:
                 raise _error("assembly_source_changed", "The source changed during insertion")
+            # Item 7: these bytes were just hashed; the staleness pre-check need not hash them again.
+            assembly_sync.remember(source, before)
     finally:
         # Insertion intentionally modifies the assembly inside the yield.
         # Capture that current GUI state rather than restoring its earlier
@@ -355,10 +370,10 @@ def _source_document(path):
         _restore_source_gui(gui_after)
 
 
-def candidates(path):
+def candidates(path, final_only=False):
+    from .part_inventory import source_candidates
     with _source_document(path) as (doc, source, digest):
-        values = [{"id": obj.Name, "name": obj.Label, "type": obj.TypeId,
-                   "solid_count": len(obj.Shape.Solids)} for obj in _source_results(doc)]
+        values = source_candidates(doc, final_only)
         if not values:
             raise _error("empty_assembly_source", "This source contains no final solid Body or Part result")
         return values
@@ -372,8 +387,9 @@ def _as_saved(shape):
     A source recomputed for insertion can carry such values, so the snapshot
     would no longer match its geometry fingerprint after the assembly is saved
     and reopened. Taking the snapshot through one save/restore cycle makes the
-    stored shape, its fingerprint and every reopen agree; further cycles are
-    exact.
+    stored shape starts in the native persistence domain. Some analytic frames
+    renormalize on every read, so this alone does not stabilize fingerprints;
+    assembly_persistence seals the actual serialized snapshot on every save.
     """
     active = App.ActiveDocument.Name if App.ActiveDocument else None
     with tempfile.TemporaryDirectory(prefix="kurtshape-assembly-snapshot-") as temporary:
@@ -410,7 +426,7 @@ def insert(doc, request):
         label = _name(request.get("name"), selected.Label)
         # One embedded snapshot is shared by repeated occurrences of the same
         # saved source revision. Later source edits require explicit reinsertion.
-        embedded = next((obj for obj in doc.Objects if getattr(obj, "KurtShapeEmbeddedSource", False)
+        embedded = next((obj for obj in doc.Objects if is_embedded_source(obj)
                          and obj.SourceSHA256 == digest and obj.SourceObject == source_id), None)
         if embedded is None:
             shape = selected.Shape.copy()
@@ -649,7 +665,9 @@ def remove(doc, identifier, cascade=False):
         for joint in dependent:
             doc.removeObject(joint.Name)
         source = obj.LinkedObject
+        identity = obj.Name
         doc.removeObject(obj.Name)
+        assembly_folders.forget(asm, identity)
         if not any(value.LinkedObject == source for value in result_objects(doc)):
             doc.removeObject(source.Name)
         remaining = result_objects(doc)
@@ -712,7 +730,7 @@ def present(doc):
             obj.ViewObject.Visibility = True
     for obj in result_objects(doc):
         source = obj.LinkedObject
-        if source is not None and getattr(source, "KurtShapeEmbeddedSource", False) and source.ViewObject:
+        if is_embedded_source(source) and source.ViewObject:
             source.ViewObject.Visibility = False
 
 
@@ -730,13 +748,13 @@ def safe_object(obj):
                 and not any(link.Document != doc for link in value.OutList))
     if obj == asm or obj.TypeId == "Assembly::JointGroup" and obj in asm.Group:
         return ordinary(obj)
-    if obj.TypeId == "Part::Feature" and getattr(obj, "KurtShapeEmbeddedSource", False):
+    if is_embedded_source(obj):
         return (ordinary(obj) and not obj.OutList and all(hasattr(obj, name) for name in
                 ("SourcePath", "SourceSHA256", "SourceObject", "SourcePlacement", "SourceGeometryFingerprint")))
     if obj.TypeId == "App::Link" and obj in asm.Group:
         source = obj.LinkedObject
         return (ordinary(obj) and obj.ElementCount == 0 and source is not None and source.Document == doc
-                and source.TypeId == "Part::Feature" and getattr(source, "KurtShapeEmbeddedSource", False)
+                and is_embedded_source(source)
                 and safe_object(source))
     if obj.TypeId != "App::FeaturePython":
         return False
@@ -985,27 +1003,132 @@ def inspect(doc):
             status = "embedded source geometry changed"
     except Exception:
         status = "unsupported or broken native assembly"
+    folders = assembly_folders.read(asm, [obj.Name for obj in instances])
     return {"id": asm.Name, "name": asm.Label, "supported": True,
+            "folders": folders["folders"],
             "solver_status": status,
             "solver_code": getattr(asm, "SolverCode", None),
             "source_policy": "embedded solid snapshots; no external dependencies or automatic updates",
             "instances": [{"id": obj.Name, "name": obj.Label, "grounded": obj in grounds,
                            "placement": {"base": list(obj.Placement.Base), "rotation": list(obj.Placement.Rotation.Q)},
                            "source": {"path": getattr(obj.LinkedObject, "SourcePath", ""),
+                                      "kind": source_kind(getattr(obj.LinkedObject, "SourcePath", "")),
+                                      # Item 7: changed on disk? (SHA-256, hashed only when mtime/size moved)
+                                      **assembly_sync.source_state(getattr(obj.LinkedObject, "SourcePath", ""),
+                                                                   getattr(obj.LinkedObject, "SourceSHA256", "")),
                                       "sha256": getattr(obj.LinkedObject, "SourceSHA256", ""),
                                       "object": getattr(obj.LinkedObject, "SourceObject", "")},
                            "embedded_source": obj.LinkedObject.Name if obj.LinkedObject else None,
+                           "folder": folders["membership"].get(obj.Name),
                            "connected_to_ground": bool(asm.isPartConnected(obj))} for obj in instances],
             "joints": joints,
             "disconnected_count": sum(not asm.isPartConnected(obj) for obj in instances)}
 
 
+def source_kind(path):
+    """"step" for a .step/.stp source, "fcstd" for a native project, None when unrecorded."""
+    suffix = Path(path).suffix.lower() if path else ""
+    return "step" if suffix in {".step", ".stp"} else "fcstd" if suffix == ".fcstd" else None
+
+
+def open_documents_for(path):
+    """Names of open App documents whose file is ``path``."""
+    try:
+        target = Path(path).resolve()
+    except (OSError, ValueError):
+        return []
+    names = []
+    for name, value in App.listDocuments().items():
+        try:
+            if value.FileName and Path(value.FileName).resolve() == target:
+                names.append(name)
+        except (OSError, ValueError):
+            continue
+    return names
+
+
+def instance_source(doc, request):
+    """Where an occurrence came from: the embedded snapshot's recorded source (item 4)."""
+    asm = get(doc, request.get("assembly"))
+    identifier = request.get("instance")
+    obj = doc.getObject(identifier) if isinstance(identifier, str) else None
+    if obj is None or obj not in result_objects(doc) or asm not in obj.InList:
+        raise _error("missing_assembly_instance", "Choose an existing assembly occurrence", instance=identifier)
+    source = obj.LinkedObject if is_embedded_source(obj.LinkedObject) else None
+    path = getattr(source, "SourcePath", "") if source is not None else ""
+    exists = bool(path) and Path(path).is_file()
+    open_names = open_documents_for(path) if exists else []
+    return {"instance": obj.Name, "name": obj.Label,
+            "embedded_source": source.Name if source is not None else None,
+            "path": path or None, "kind": source_kind(path), "exists": exists,
+            "sha256": getattr(source, "SourceSHA256", "") if source is not None else "",
+            "object": getattr(source, "SourceObject", "") if source is not None else "",
+            "open_documents": open_names,
+            "shared_with": sorted(value.Name for value in result_objects(doc)
+                                  if value is not obj and source is not None and value.LinkedObject == source)}
+
+
+def _folders(doc, request, change):
+    """Apply a folder change to the assembly's presentation metadata (item 3)."""
+    asm = get(doc, request.get("assembly"))
+    ids = [obj.Name for obj in result_objects(doc)]
+    try:
+        data = change(assembly_folders.read(asm, ids), ids)
+    except assembly_folders.FolderError as exc:
+        raise _error("invalid_assembly_folders", str(exc), **exc.details) from None
+    assembly_folders.write(asm, data)
+    return asm
+
+
+def set_folders(doc, request):
+    def change(current, ids):
+        membership = request.get("membership")
+        if membership is None:
+            # Keep existing memberships whose folder survives the new tree.
+            membership = current["membership"]
+            folders = assembly_folders.normalize_tree(request.get("folders"))
+            known = set(assembly_folders.paths(folders))
+            membership = {key: value for key, value in membership.items() if value in known}
+        return assembly_folders.structure(request.get("folders"), membership, ids)
+    return _folders(doc, request, change)
+
+
+def move_to_folder(doc, request, instances=None):
+    instances = request.get("instances") if instances is None else instances
+    if not isinstance(instances, list) or not instances or not all(isinstance(value, str) for value in instances):
+        raise _error("missing_assembly_instance", "instances must be a non-empty list of occurrence ids", fields=["instances"])
+    def change(current, ids):
+        unknown = [value for value in instances if value not in ids]
+        if unknown:
+            raise _error("missing_assembly_instance", "Choose existing occurrences", instances=unknown)
+        return assembly_folders.moved(current, instances, request.get("folder"))
+    return _folders(doc, request, change)
+
+
 def handle(doc, request):
     op = request["op"]
     if op == "create_assembly":
-        return create(doc, request.get("id"), request.get("name")).Name
+        created = create(doc, request.get("id"), request.get("name"))
+        if request.get("folder") is not None:
+            _folders(doc, {"assembly": created.Name}, lambda current, ids: assembly_folders.moved(current, [], request["folder"]))
+        return created.Name
     if op == "insert_assembly_part":
-        return insert(doc, request).Name
+        if request.get("folder") is not None:
+            # Validate the path before the snapshot is embedded.
+            try:
+                assembly_folders.split(request["folder"])
+            except assembly_folders.FolderError as exc:
+                raise _error("invalid_assembly_folders", str(exc), **exc.details) from None
+        instance = insert(doc, request)
+        if request.get("folder") is not None:
+            move_to_folder(doc, request, [instance.Name])
+        return instance.Name
+    if op == "set_assembly_folders":
+        set_folders(doc, request)
+        return None
+    if op == "move_assembly_instances":
+        move_to_folder(doc, request)
+        return None
     if op == "ground_assembly_instance":
         return ground(doc, request.get("instance"), request.get("assembly"))
     if op == "create_assembly_joint":

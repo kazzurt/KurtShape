@@ -1,0 +1,17 @@
+"""Run only in the private offscreen process created by the regression runner."""
+import importlib.util
+import os
+from pathlib import Path
+from PySide import QtCore, QtGui
+path = Path(os.environ["KURTSHAPE_ROOT"]) / "tools" / "validate_fixture_reopen.py"
+spec = importlib.util.spec_from_file_location("assembly_reopen_regression", path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+def validate():
+    try:
+        module.run()
+    finally:
+        QtGui.QApplication.quit()
+
+QtCore.QTimer.singleShot(0, validate)

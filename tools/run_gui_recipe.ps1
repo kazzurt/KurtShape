@@ -1,7 +1,26 @@
+# Run one GUI validation recipe in a private FreeCAD process that cannot reach the user's screen.
+#
+#   powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\run_gui_recipe.ps1 -Recipe <name> [-TimeoutSeconds 900]
+#
+# Each run gets a fresh profile under runtime\ci-gui\<recipe>\run-<guid> (user.cfg, TEMP, APPDATA, evidence), and
+# FreeCAD runs the recipe macro through a bootstrap FCMacro written there. Since 2026-10-22 the process is started
+# by tools\private_desktop.py on a private Windows desktop (CreateDesktopEx, never switched to). Windows keeps one
+# window list per desktop, so the main window and every dialog, task panel, menu, tooltip and message box the
+# recipe opens exist only there: none can appear on, or take the foreground of, the desktop the user works on.
+# Before that, Start-Process -WindowStyle Hidden hid only FreeCAD's first window and every later top-level window
+# appeared on the user's screen (about 170 runs on 2026-10-22). The launcher samples the interactive desktop for
+# windows of the recipe's process tree during the whole run and writes private-desktop-probe.json into the run
+# folder; the run fails when any was visible there, and recipe-result.json records the probe. The Qt platform
+# stays 'windows', so paint, expose, activation and popup behaviour are the ones the recipes measure (the
+# offscreen platform has no OpenGL here and does not activate popups; WA_DontShowOnScreen on every window would
+# change those semantics too, which is why the main window alone carries it, set by each macro). One thing the
+# private desktop does not contain: a console child (git, python.exe) started without CREATE_NO_WINDOW gets a
+# console host whose window is created on the interactive desktop; the probe fails such a run, and the code the
+# recipes run passes creationflags on every subprocess launch (tests/test_private_desktop.py checks it).
 param(
     [ValidateSet('plane-visibility','step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
         'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline','responsiveness-preview',
-        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','face-feature-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view','sketch-floating-controls','sketch-coincident-lines','sketch-midpoint-motion')]
+        'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','face-feature-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view','startup-blank','open-handoff','sketch-floating-controls','sketch-coincident-lines','sketch-midpoint-motion','confirm-gating','inspection-count','escape-sketch','dialog-enter','save-feedback','additive-selection','assembly-instance-links','assembly-folders','assembly-open-part','assembly-icons','measure-readout','assembly-refresh-button')]
     [string]$Recipe = 'interface',
     [ValidateRange(1,7200)][int]$TimeoutSeconds = 900,
     [switch]$WriteEvidence,
@@ -22,6 +41,38 @@ function Convert-GuiRecipeUtc {
     if ($Value -is [DateTime]) { return $Value.ToUniversalTime() }
     if ($Value -isnot [string]) { throw 'Recovery proof timestamp is missing or invalid.' }
     return [DateTimeOffset]::Parse($Value, [Globalization.CultureInfo]::InvariantCulture).UtcDateTime
+}
+function Wait-GuiRecipeLaunchRecord {
+    # The launcher writes the record once freecad.exe exists on the private desktop; a launcher that exits first failed to start it.
+    param([System.Diagnostics.Process]$Launcher, [string]$RecordPath, [string]$Session, [int]$TimeoutSeconds = 60)
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ($true) {
+        if (Test-Path -LiteralPath $RecordPath -PathType Leaf) {
+            try { $record = Get-Content -LiteralPath $RecordPath -Raw | ConvertFrom-Json } catch { $record = $null }
+            if ($record -and $record.pid) { return $record }
+        }
+        if ($Launcher.HasExited) {
+            $detail = ''
+            $errorPath = Join-Path $Session 'private-desktop-launcher-stderr.txt'
+            if (Test-Path -LiteralPath $errorPath -PathType Leaf) { $detail = (Get-Content -LiteralPath $errorPath -Raw).Trim() }
+            throw ('Private-desktop launcher exited ' + $Launcher.ExitCode + ' without starting FreeCAD: ' + $detail)
+        }
+        if ((Get-Date) -gt $deadline) {
+            Stop-Process -Id $Launcher.Id -Force -ErrorAction SilentlyContinue
+            throw ('Private-desktop launcher did not start FreeCAD within ' + $TimeoutSeconds + ' s')
+        }
+        Start-Sleep -Milliseconds 100
+    }
+}
+function Complete-GuiRecipeDesktopProbe {
+    # Once freecad.exe has exited the launcher takes a last sample and writes the probe summary; returns it.
+    param([System.Diagnostics.Process]$Launcher, [string]$ProbePath)
+    if (-not $Launcher.WaitForExit(30000)) {
+        Stop-Process -Id $Launcher.Id -Force -ErrorAction SilentlyContinue
+        throw 'Private-desktop launcher did not finish its window probe within 30 s'
+    }
+    if (-not (Test-Path -LiteralPath $ProbePath -PathType Leaf)) { throw ('Private-desktop probe summary is missing: ' + $ProbePath) }
+    return Get-Content -LiteralPath $ProbePath -Raw | ConvertFrom-Json
 }
 $recipes = @{
     'plane-visibility' = @('plane-visibility-validation.FCMacro', 'plane-visibility\gui-result.json', 0)
@@ -80,9 +131,23 @@ $recipes = @{
     'parameter-panel' = @('parameter-panel-validation.FCMacro', 'parameter-panel\gui-result.json', 0)
     'parameter-panel-reopen' = @('parameter-panel-reopen-validation.FCMacro', 'parameter-panel-reopen\gui-result.json', 0)
     'section-view' = @('section-view-validation.FCMacro', 'section-view\gui-result.json', 0)
+    'startup-blank' = @('startup-blank-validation.FCMacro', 'startup-blank\gui-result.json', 0)
+    'open-handoff' = @('open-handoff-validation.FCMacro', 'open-handoff\gui-result.json', 0)
     'sketch-floating-controls' = @('sketch-floating-controls-validation.FCMacro', 'sketch-floating-controls\gui-result.json', 0)
     'sketch-coincident-lines' = @('sketch-coincident-lines-validation.FCMacro', 'sketch-coincident-lines\gui-result.json', 0)
     'sketch-midpoint-motion' = @('sketch-midpoint-motion-validation.FCMacro', 'sketch-midpoint-motion\gui-result.json', 0)
+    'confirm-gating' = @('confirm-gating-validation.FCMacro', 'confirm-gating\gui-result.json', 0)
+    'inspection-count' = @('inspection-count-validation.FCMacro', 'inspection-count\gui-result.json', 0)
+    'escape-sketch' = @('escape-sketch-validation.FCMacro', 'escape-sketch\gui-result.json', 0)
+    'dialog-enter' = @('dialog-enter-validation.FCMacro', 'dialog-enter\gui-result.json', 0)
+    'save-feedback' = @('save-feedback-validation.FCMacro', 'save-feedback\gui-result.json', 0)
+    'additive-selection' = @('additive-selection-validation.FCMacro', 'additive-selection\gui-result.json', 0)
+    'assembly-refresh-button' = @('assembly-refresh-button-validation.FCMacro', 'assembly-refresh-button\gui-result.json', 0)
+    'measure-readout' = @('measure-readout-validation.FCMacro', 'measure-readout\gui-result.json', 0)
+    'assembly-icons' = @('assembly-icons-validation.FCMacro', 'assembly-icons\gui-result.json', 0)
+    'assembly-open-part' = @('assembly-open-part-validation.FCMacro', 'assembly-open-part\gui-result.json', 0)
+    'assembly-folders' = @('assembly-folders-validation.FCMacro', 'assembly-folders\gui-result.json', 0)
+    'assembly-instance-links' = @('assembly-instance-links-validation.FCMacro', 'assembly-instance-links\gui-result.json', 0)
 }
 $recipeDefinition = $recipes[$Recipe]
 $macroPath = Join-Path $PSScriptRoot $recipeDefinition[0]
@@ -167,6 +232,10 @@ if ($Recipe -eq 'interaction-idle') {
         if (-not (Test-Path -LiteralPath $env:PREVIEW_BENCH_SOURCE -PathType Leaf)) { throw ('Preview source is missing: ' + $env:PREVIEW_BENCH_SOURCE) }
     }
 }
+if ($Recipe -eq 'confirm-gating') {
+    # The macro builds plate60 unless -Holes is given explicitly (slice A/B U1 gate).
+    if ($PSBoundParameters.ContainsKey('Holes')) { $env:BENCH_HOLES = [string]$Holes }
+}
 $logPath = Join-Path $session 'freecad.log'
 $stdoutPath = Join-Path $session 'freecad-stdout.txt'
 $stderrPath = Join-Path $session 'freecad-stderr.txt'
@@ -192,16 +261,37 @@ $result = [ordered]@{
     recipe = $Recipe; passed = $false; session = $session; macro = $macroPath; report = $reportPath
     log = $logPath; stdout = $stdoutPath; stderr = $stderrPath
     started_utc = $started.ToString('o'); exited_utc = $null; pid = $null; exit_code = $null; timed_out = $false
-    method = 'Independent hidden native FreeCAD process; recipe report checked after owned process exit.'
+    method = 'Independent native FreeCAD process on a private Windows desktop (tools\private_desktop.py; never the interactive desktop); the interactive desktop probed for its windows during the whole run; recipe report checked after owned process exit.'
+    desktop_probe = $null
 }
+# The launcher creates the private desktop, starts freecad.exe there with its stdout/stderr in the run folder,
+# writes the launch record as soon as the process exists and probes both desktops until it exits.
+$launcherRecordPath = Join-Path $session 'private-desktop-launch.json'
+$desktopProbePath = Join-Path $session 'private-desktop-probe.json'
+$launcherArguments = @('-B', ('"' + (Join-Path $PSScriptRoot 'private_desktop.py') + '"'),
+    '--record', ('"' + $launcherRecordPath + '"'), '--summary', ('"' + $desktopProbePath + '"'),
+    '--stdout', ('"' + $stdoutPath + '"'), '--stderr', ('"' + $stderrPath + '"'),
+    '--cwd', ('"' + $repositoryRoot + '"'), '--show', 'hidden', '--', ('"' + $executable + '"')) + $arguments
 $process = $null
+$launcher = $null
 try {
-    $process = Start-Process -FilePath $executable -ArgumentList $arguments -WorkingDirectory $repositoryRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+    $launcher = Start-Process -FilePath (Join-Path (Split-Path -Parent $executable) 'pythonw.exe') -ArgumentList $launcherArguments `
+        -WorkingDirectory $repositoryRoot -WindowStyle Hidden -PassThru `
+        -RedirectStandardOutput (Join-Path $session 'private-desktop-launcher-stdout.txt') -RedirectStandardError (Join-Path $session 'private-desktop-launcher-stderr.txt')
+    $null = $launcher.Handle
+    $launch = Wait-GuiRecipeLaunchRecord -Launcher $launcher -RecordPath $launcherRecordPath -Session $session
+    try { $process = Get-Process -Id ([int]$launch.pid) -ErrorAction Stop }
+    catch {
+        $result.desktop_probe = Complete-GuiRecipeDesktopProbe -Launcher $launcher -ProbePath $desktopProbePath
+        throw ('GUI recipe process ' + $launch.pid + ' exited before it could be observed (exit ' + $result.desktop_probe.child_exit_code + '): ' + $Recipe)
+    }
     # Windows PowerShell reports a null ExitCode unless the handle is opened while running.
     $null = $process.Handle
     $result.pid = $process.Id
+    $result.private_desktop = [string]$launch.desktop
+    $result.launcher_pid = $launcher.Id
     Register-KurtShapeValidationProcess -Process $process -Executable $executable -Arguments $arguments
-    Write-Host ('PID: ' + $process.Id + '; report: ' + $reportPath + '; result: ' + $resultPath)
+    Write-Host ('PID: ' + $process.Id + ' on desktop ' + $launch.desktop + '; report: ' + $reportPath + '; result: ' + $resultPath)
     if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
         $result.timed_out = $true
         if (-not $process.HasExited) {
@@ -215,6 +305,15 @@ try {
     $result.exit_code = $process.ExitCode
     $exited = [DateTime]::UtcNow
     $result.exited_utc = $exited.ToString('o')
+    # Self-check: the run fails when any window of the recipe's process tree was visible on the interactive desktop.
+    $desktopProbe = Complete-GuiRecipeDesktopProbe -Launcher $launcher -ProbePath $desktopProbePath
+    $result.desktop_probe = $desktopProbe
+    if ($desktopProbe.passed -isnot [bool] -or -not $desktopProbe.passed -or [int]$desktopProbe.samples -lt 1 -or
+        [int]$desktopProbe.interactive_visible_max -ne 0 -or @($desktopProbe.leaked_windows).Count -ne 0) {
+        throw ('GUI recipe showed a window on the interactive desktop (' + @($desktopProbe.leaked_windows).Count + ' window(s), ' +
+            $desktopProbe.interactive_visible_max + ' visible at once, foreground taken in ' + $desktopProbe.foreground_in_tree_samples +
+            ' of ' + $desktopProbe.samples + ' samples); probe: ' + $desktopProbePath)
+    }
     if ($process.ExitCode -notin @($recipeDefinition[2])) {
         throw ('GUI recipe exited ' + $process.ExitCode + '; expected ' + (@($recipeDefinition[2]) -join ' or ') + ': ' + $Recipe)
     }
@@ -394,9 +493,17 @@ try {
                 $result.exited_utc = [DateTime]::UtcNow.ToString('o')
             }
         }
+        if ($launcher -and -not $result.desktop_probe) {
+            # A timed-out or failed run still records what the window probe saw.
+            try { $result.desktop_probe = Complete-GuiRecipeDesktopProbe -Launcher $launcher -ProbePath $desktopProbePath }
+            catch { $result.desktop_probe_error = $_.Exception.Message }
+        }
         $result.finished_utc = [DateTime]::UtcNow.ToString('o')
         $result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultPath -Encoding utf8
-    } finally { if ($process) { $process.Dispose() } }
+    } finally {
+        if ($process) { $process.Dispose() }
+        if ($launcher) { $launcher.Dispose() }
+    }
 }
 Write-Output ('GUI recipe passed: ' + $Recipe + '; report: ' + $reportPath + '; result: ' + $resultPath)
 } finally {

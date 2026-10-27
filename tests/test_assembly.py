@@ -113,6 +113,71 @@ class AssemblyWorkflowTests(unittest.TestCase):
         for identity in before[4]:
             self.assertPlacementEqual(after[4][identity], before[4][identity])
 
+    def test_embedded_source_identity_does_not_follow_occurrence_properties(self):
+        from kurtshape import assembly, delivery_validation, part_inventory
+
+        self.fixture(count=2)
+        source = self.doc.Base.LinkedObject
+        self.assertTrue(assembly.is_embedded_source(source))
+        for name in ("Base", "Fastened"):
+            instance = self.doc.getObject(name)
+            self.assertTrue(instance.KurtShapeEmbeddedSource)  # FreeCAD forwards linked properties.
+            self.assertNotIn("KurtShapeEmbeddedSource", instance.PropertiesList)
+            self.assertFalse(assembly.is_embedded_source(instance))
+        references = delivery_validation.embedded_references(self.doc)
+        self.assertTrue(references["valid"])
+        self.assertEqual([row["embedded"] for row in references["sources"]], [source.Name])
+        self.assertEqual(set(references["sources"][0]["instances"]), {"Base", "Fastened"})
+        inventory = {row["id"]: row for row in part_inventory.rows(self.doc, include_history=True)}
+        self.assertEqual(inventory[source.Name]["role"], "embedded_source")
+        self.assertTrue(all(inventory[name]["role"] == "final" for name in ("Base", "Fastened")))
+
+    def test_null_embedded_source_remains_inspectable_and_recoverable(self):
+        from kurtshape import assembly
+
+        self.fixture(count=1)
+        self.call("save", path=str(self.folder / "accepted-assembly.FCStd"))
+        embedded = self.doc.Base.LinkedObject
+        source_name, seal = embedded.Name, embedded.SourceGeometryFingerprint
+        embedded.Shape = Part.Shape()
+        self.doc.recompute()
+        self.assertFalse(hasattr(self.doc.Base, "Shape"))
+
+        def assert_failed(state):
+            self.assertEqual(state["build_status"], "failed")
+            self.assertTrue(any(error["feature"] == source_name and
+                                "Embedded source geometry changed" in error["message"]
+                                for error in state["build_errors"]), state["build_errors"])
+
+        inspected = self.call("inspect", measure="full")
+        assert_failed(inspected)
+        self.assertIsNone(inspected["measurements"])
+        occurrence = next(row for row in inspected["bodies"] if row["id"] == "Base")
+        self.assertEqual(occurrence["build_status"], "failed")
+        self.assertIsNone(occurrence["measurements"])
+        self.assertEqual(occurrence["geometry_check"], "not_applicable")
+        assert_failed(self.call("inspect", detail="compact"))
+        self.reject("check_geometry", code="no_solid")
+        self.assertEqual(self.core._geometry_check_targets(self.doc), [])
+
+        checkpoint = self.core.checkpoint(self.doc, force=True)
+        self.assertIsNotNone(checkpoint)
+        closed = self.call("close_document", discard=True)["closed"]
+        self.assertTrue(closed["discarded_unsaved_changes"])
+        self.assertIsNotNone(closed["recovery_manifest"])
+        # Both emergency and mandatory discard archives retain the rejected source
+        # and its original seal. Recovery must not certify or repair the geometry.
+        for index, manifest in enumerate((checkpoint, closed["recovery_manifest"])):
+            archive, record = self.core.recovery.read(manifest)
+            self.assertTrue(archive.is_file())
+            assert_failed(self.call("open", path=str(archive)))
+            restored = self.doc.getObject(source_name)
+            self.assertTrue(restored.Shape.isNull())
+            self.assertEqual(restored.SourceGeometryFingerprint, seal)
+            self.assertNotEqual(assembly._geometry_fingerprint(restored), seal)
+            assert_failed(self.call("save", path=str(self.folder / f"recovered-null-{index}.FCStd")))
+            self.call("close_document", discard=True)
+
     def test_candidates_repeated_embedded_occurrences_and_ground_switch(self):
         multi = self.source_project("two-selectable-bodies.FCStd", multiple=True)
         digest = hashlib.sha256(multi.read_bytes()).hexdigest()

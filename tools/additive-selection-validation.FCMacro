@@ -1,0 +1,250 @@
+"""Additive click selection (assembly UX item 1) in a private native GUI.
+
+Run through tools/run_gui_recipe.ps1 -Recipe additive-selection (private desktop,
+fresh profile). Real Qt mouse events go to the viewer's QOpenGLWidget, so the
+native navigation style and unified selection decide; no screen captures, no
+user documents.
+"""
+import json
+import os
+from pathlib import Path
+import queue
+import sys
+import time
+import traceback
+
+root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
+session = Path(os.environ["KURTSHAPE_SESSION_DIR"]).resolve()
+assert session.is_relative_to(root / "runtime")
+assert Path(os.environ["FREECAD_USER_HOME"]).resolve().is_relative_to(session)
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "tools"))
+sys.path.insert(0, str(root / "src"))
+from kurtshape_evidence import evidence_dir
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore
+from PySide6 import QtGui, QtTest, QtWidgets
+from kurtshape import ui, selection_mode
+
+
+class NoSocketTransport:
+    def __init__(self, *args):
+        self.pending = queue.Queue()
+
+    def tick(self):
+        return False
+
+    def close(self):
+        pass
+
+
+ui.Bridge = NoSocketTransport
+app = QtWidgets.QApplication.instance()
+main = Gui.getMainWindow()
+main.hide()
+main.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+main.resize(1440, 920)
+main.show()
+
+
+class HiddenPopupFilter(QtCore.QObject):
+    def eventFilter(self, watched, event):
+        if event.type() in {QtCore.QEvent.Polish, QtCore.QEvent.Show} and isinstance(watched, QtWidgets.QWidget) and watched.isWindow():
+            watched.setAttribute(QtCore.Qt.WA_DontShowOnScreen, True)
+        return False
+
+
+hidden = HiddenPopupFilter(app)
+app.installEventFilter(hidden)
+output = evidence_dir("additive-selection")
+report = {"passed": False, "checks": [], "log": [],
+          "method": "Production Panel; real QTest mouse events on the active viewer's QOpenGLWidget (hover move, then click) "
+                    "in a fresh private native process; selection read back from Gui.Selection.",
+          "engine": {"FreeCAD": App.Version(), "OCCT": Part.OCC_VERSION}}
+panel = None
+started = time.perf_counter()
+
+
+def save_report():
+    (output / "gui-result.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+
+
+def wait(ms=80):
+    QtTest.QTest.qWait(ms)
+
+
+def check(label, condition, detail=None):
+    if not condition:
+        raise AssertionError(label + (": " + repr(detail) if detail is not None else ""))
+    report["checks"].append(label)
+    save_report()
+
+
+def call(op, **args):
+    result = panel.operation(op, **args)
+    if not result:
+        raise AssertionError(op + ": " + panel.message.text())
+    wait()
+    return result
+
+
+def viewport():
+    active = main.findChild(QtWidgets.QMdiArea).activeSubWindow()
+    return next(w for w in active.findChildren(QtWidgets.QWidget)
+                if selection_mode.is_viewer_surface(w) and w.isVisible() and w.width() > 300)
+
+
+def pixel(world):
+    point = Gui.activeDocument().activeView().getPointOnViewport(App.Vector(*world))
+    gl = viewport()
+    ratio = gl.devicePixelRatioF()
+    return QtCore.QPoint(round(point[0] / ratio), gl.height() - 1 - round(point[1] / ratio))
+
+
+def move(point):
+    gl = viewport()
+    event = QtGui.QMouseEvent(QtCore.QEvent.MouseMove, QtCore.QPointF(point), QtCore.QPointF(gl.mapToGlobal(point)),
+                              QtCore.Qt.NoButton, QtCore.Qt.NoButton, QtCore.Qt.NoModifier)
+    app.sendEvent(gl, event)
+    wait(40)
+
+
+def click(point, modifier=QtCore.Qt.NoModifier):
+    move(point)
+    QtTest.QTest.mouseClick(viewport(), QtCore.Qt.LeftButton, modifier, point)
+    wait(150)
+
+
+def selected():
+    return sorted((entry.ObjectName, sub) for entry in Gui.Selection.getSelectionEx() for sub in entry.SubElementNames)
+
+
+def frame():
+    panel.isometric()
+    panel.fit()
+    wait(300)
+
+
+def exercise(label, first, second, third):
+    """Two plain clicks add, a click on a selected face removes, empty space and Space clear."""
+    Gui.Selection.clearSelection()
+    wait()
+    click(pixel(first))
+    one = selected()
+    check(label + ": a plain click selects one face", len(one) == 1, one)
+    click(pixel(second))
+    two = selected()
+    report["log"].append({label: {"one": one, "two": two}})
+    check(label + ": a second plain click on another face adds it (both selected)", len(two) == 2 and set(one) < set(two), two)
+    click(pixel(first))
+    after = selected()
+    check(label + ": a plain click on an already selected face removes only that face", after == sorted(set(two) - set(one)), after)
+    click(pixel(third), QtCore.Qt.ControlModifier)
+    check(label + ": Ctrl-click still adds (alias of the same toggle)", len(selected()) == 2, selected())
+    click(QtCore.QPoint(8, 8))
+    check(label + ": a click on empty space clears the selection", selected() == [], selected())
+    click(pixel(first))
+    click(pixel(second))
+    check(label + ": selection rebuilt for the Space check", len(selected()) == 2, selected())
+    viewport().setFocus()
+    QtTest.QTest.keyClick(viewport(), QtCore.Qt.Key_Space)
+    wait(150)
+    check(label + ": Space clears the selection", selected() == [], selected())
+
+
+def validate():
+    global panel
+    try:
+        panel = ui.start()
+        panel.recovery_timer.stop()
+        panel.core.settings.roots = {session}
+        check("Additive selection is on by default", selection_mode.enabled())
+        part_path = session / "additive-part.FCStd"
+        source = App.newDocument("AdditivePart")
+        body = source.addObject("PartDesign::Body", "Body")
+        body.newObject("PartDesign::Feature", "BodySolid").Shape = Part.makeBox(20, 12, 8)
+        source.recompute()
+        source.saveAs(str(part_path))
+        App.closeDocument(source.Name)
+        wait(200)
+        assembly_path = session / "additive-assembly.FCStd"
+        call("new", name="Additive selection assembly")
+        call("create_assembly", id="Assembly")
+        call("insert_assembly_part", path=str(part_path), source_id="Body", id="Left")
+        call("insert_assembly_part", path=str(part_path), source_id="Body", id="Right")
+        call("move_assembly_instance", instance="Right", position_mm=[40, 0, 0], rotation_xyzw=[0, 0, 0, 1])
+        call("save", path=str(assembly_path))
+        App.closeDocument(panel.document().Name)
+        panel.tick()
+        wait(300)
+        report["open_after_close"] = list(App.listDocuments())
+        check("Saved part opens", panel.open_path(str(part_path)))
+        frame()
+        # Box 20 x 12 x 8 at the origin: top, front (y=0) and right (x=20) face centres.
+        exercise("Part", (10, 6, 8), (10, 0, 4), (20, 6, 4))
+        filter_ = panel.additive_selection
+        check("The filter rewrote plain clicks on geometry", filter_.rewritten >= 4, filter_.rewritten)
+        selection_mode.set_enabled(False)
+        Gui.Selection.clearSelection()
+        click(pixel((10, 6, 8)))
+        click(pixel((10, 0, 4)))
+        check("With AdditiveSelection off a plain click replaces the selection", len(selected()) == 1, selected())
+        selection_mode.set_enabled(True)
+        check("Saved assembly opens", panel.open_path(str(assembly_path)))
+        frame()
+        check("The assembly tab is active", any(obj.TypeId == "Assembly::AssemblyObject" for obj in panel.document().Objects))
+        # Left occurrence at the origin, Right at x=40: Left top, Right top, Left front.
+        exercise("Assembly", (10, 6, 8), (50, 6, 8), (10, 0, 4))
+        call("new", name="Additive selection sketch")
+        call("sketch_rectangle", id="Outline", width=20, height=12, body="Body")
+        call("pad", id="Extrude", profile="Outline", length=8, body="Body")
+        frame()
+        panel.features.setCurrentItem(panel.items["Outline"])
+        wait()
+        panel.edit_sketch()
+        wait(400)
+        check("Sketch editing is active", bool(panel.active_sketch()))
+        check("The filter leaves sketch editing to native selection", filter_.native_owned())
+        before = filter_.rewritten
+        click(pixel((10, 6, 0)))
+        check("No click is rewritten during sketch editing", filter_.rewritten == before, filter_.rewritten)
+        report["passed"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+        if panel:
+            report["status_text"] = panel.message.text()
+    finally:
+        report["seconds"] = time.perf_counter() - started
+        report["check_count"] = len(report["checks"])
+        save_report()
+        cleanup()
+
+
+def cleanup():
+    try:
+        if panel:
+            panel.shutdown()
+        for name in list(App.listDocuments()):
+            doc = App.getDocument(name)
+            gui_doc = Gui.getDocument(name)
+            if gui_doc and gui_doc.getInEdit():
+                gui_doc.resetEdit()
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            App.closeDocument(name)
+    finally:
+        app.removeEventFilter(hidden)
+        QtCore.QTimer.singleShot(0, app.quit)
+
+
+def timeout():
+    if not report.get("seconds"):
+        report["error"] = "Additive selection validation exceeded 240 seconds"
+        save_report()
+        cleanup()
+
+
+QtCore.QTimer.singleShot(240000, timeout)
+QtCore.QTimer.singleShot(1500, validate)

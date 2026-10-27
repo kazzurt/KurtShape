@@ -39,7 +39,9 @@ NEW_OPERATIONS_32 = frozenset({"operation_schema", "close_document", "render_vie
                                "list_parameters", "create_parameter", "edit_parameter", "rename_parameter",
                                "delete_parameter",  # U5
                                "batch",  # U6
-                               "set_view"})  # GUI view op, 2026-10-20 (OPERATION_CONTRACT "Viewport camera")
+                               "set_view",  # GUI view op, 2026-10-20 (OPERATION_CONTRACT "Viewport camera")
+                               "refresh_assembly_part", "part_inventory", "check_clearance",  # Additive fixture workflow APIs
+                               "measure", "assembly_instance_source", "set_assembly_folders", "move_assembly_instances"})  # assembly UX program, 2026-10-24 (docs/assembly-ux/STATUS.md)
 
 GOLDEN_CHILD = r'''
 import json, sys
@@ -377,7 +379,7 @@ class DispatchPipelineTests(unittest.TestCase):
 
     def test_inspect_equals_the_frozen_3_1_tree_at_every_measure_level(self):
         if not (F31 / "src" / "kurtshape" / "core.py").is_file():
-            self.skipTest("frozen 3.1 tree is not present at runtime/bench/f31")
+            self.skipTest("external fixture: frozen 3.1 tree is not present at runtime/bench/f31")
         self.release_controller()
         script = self.folder / "golden_child.py"
         script.write_text(GOLDEN_CHILD, encoding="utf-8")

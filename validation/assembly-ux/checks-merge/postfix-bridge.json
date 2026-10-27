@@ -1,0 +1,823 @@
+{
+  "passed": true,
+  "method": "Fresh isolated Python subprocess per suite",
+  "suites": [
+    {
+      "name": "bridge",
+      "passed": true,
+      "cases": [
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_a_client_gone_before_the_answer_never_reaches_handle_error_or_stderr",
+          "status": "passed",
+          "seconds": 0.8673275999899488
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_accepts_json_media_type_with_charset",
+          "status": "passed",
+          "seconds": 0.5256156999967061
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_cancelled_request_id_is_not_later_executed",
+          "status": "passed",
+          "seconds": 0.6399114000087138
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_every_reply_write_tolerates_windows_socket_errors",
+          "status": "passed",
+          "seconds": 0.6248111000022618
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_fast_status_reports_actual_queued_cancellation_and_cached_replay",
+          "status": "passed",
+          "seconds": 0.6570847999973921
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_handle_error_writes_the_session_log_and_never_stderr",
+          "status": "passed",
+          "seconds": 0.5189237000013236
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_lookup_refuses_nonplain_inputs_and_configuration_change_during_copy",
+          "status": "passed",
+          "seconds": 0.00048639999295119196
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_malformed_and_non_finite_bodies_return_json_400_before_registration",
+          "status": "passed",
+          "seconds": 0.6098926999984542
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_noncanonical_status_and_invalid_defaults_keep_queued_validation",
+          "status": "passed",
+          "seconds": 0.7395928000041749
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_opted_in_status_needs_no_tick_dispatch_or_timing",
+          "status": "passed",
+          "seconds": 0.5810870000132127
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_queue_full_returns_json_503_with_request_identity",
+          "status": "passed",
+          "seconds": 0.5418704000039725
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_queued_timeout_cancels_before_any_mutation",
+          "status": "passed",
+          "seconds": 0.5356006999936653
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_rejects_missing_token_wrong_path_origin_header_non_json_and_oversize",
+          "status": "passed",
+          "seconds": 0.5636788999981945
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_session_file_lists_read_operations_and_build",
+          "status": "passed",
+          "seconds": 1.0310460000036983
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_session_file_reports_shared_contract_constant",
+          "status": "passed",
+          "seconds": 0.5304203999985475
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_started_timeout_lookup_replay_and_different_payload_reuse",
+          "status": "passed",
+          "seconds": 0.7365969999955269
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_started_timeout_marks_untracked_reads",
+          "status": "passed",
+          "seconds": 0.527821199997561
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_started_timeout_reports_unknown_and_does_not_claim_cancellation",
+          "status": "passed",
+          "seconds": 0.5298407000082079
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_status_bypasses_full_32_item_owner_queue",
+          "status": "passed",
+          "seconds": 0.5351165000029141
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_status_copies_nested_results_without_changing_cached_replay",
+          "status": "passed",
+          "seconds": 0.5494350000080885
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_status_lookup_authentication_and_json_guards_precede_lookup",
+          "status": "passed",
+          "seconds": 0.6416912999993656
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_status_preserves_failed_expired_and_capacity_semantics",
+          "status": "passed",
+          "seconds": 0.6116489999985788
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_status_requires_exact_explicit_capability_and_matching_live_ledger",
+          "status": "passed",
+          "seconds": 2.5675304000033066
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_status_runs_while_owner_mutation_is_blocked_and_after_unknown_outcome",
+          "status": "passed",
+          "seconds": 1.563363000008394
+        },
+        {
+          "id": "test_bridge.BridgeTimeoutTests.test_tick_records_dispatched_operation_only",
+          "status": "passed",
+          "seconds": 0.5422719999914989
+        },
+        {
+          "id": "test_bridge.BridgeDeferredTests.test_a_non_dict_from_dispatch_is_not_parked",
+          "status": "passed",
+          "seconds": 2.0489053999917815
+        },
+        {
+          "id": "test_bridge.BridgeDeferredTests.test_close_cancels_deferred",
+          "status": "passed",
+          "seconds": 0.5280770999961533
+        },
+        {
+          "id": "test_bridge.BridgeDeferredTests.test_close_replies_with_an_already_completed_response",
+          "status": "passed",
+          "seconds": 0.53428829999757
+        },
+        {
+          "id": "test_bridge.BridgeDeferredTests.test_deferred_outcome_unknown_then_request_status_returns_stored_response",
+          "status": "passed",
+          "seconds": 0.8671884999930626
+        },
+        {
+          "id": "test_bridge.BridgeDeferredTests.test_deferred_reply_after_poll_without_blocking_tick",
+          "status": "passed",
+          "seconds": 0.5333814999903552
+        },
+        {
+          "id": "test_bridge.BridgeDeferredTests.test_ledger_unchanged_for_other_ops",
+          "status": "passed",
+          "seconds": 0.5438004000025103
+        },
+        {
+          "id": "test_bridge.BridgeDeferredTests.test_only_view_ops_route_to_begin",
+          "status": "passed",
+          "seconds": 0.548520099997404
+        },
+        {
+          "id": "test_bridge.BridgeDeferredTests.test_poll_exception_completes_waiter_and_ledger",
+          "status": "passed",
+          "seconds": 0.5397129999910248
+        },
+        {
+          "id": "test_batch.BatchBridgeTests.test_slow_batch_outcome_unknown_reconciles_without_reexecution",
+          "status": "passed",
+          "seconds": 1.9475000000093132
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_a_short_budget_gives_the_first_post_time_to_answer",
+          "status": "passed",
+          "seconds": 5.964730000006966
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_app_crash_reports_unreachable_unknown_before_deadline",
+          "status": "passed",
+          "seconds": 5.024475099999108
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_cli_build_check_verdicts",
+          "status": "passed",
+          "seconds": 1.1733088999899337
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_cli_exit_codes_request_id_replay_and_reconcile_by_id",
+          "status": "passed",
+          "seconds": 0.6104907999979332
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_discovery_is_explicit_token_free_and_does_not_guess_old_visibility",
+          "status": "passed",
+          "seconds": 0.5213301999901887
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_expired_status_and_request_expired_reply_are_unknown",
+          "status": "passed",
+          "seconds": 0.5327728999982355
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_failed_outcome_reports_failed",
+          "status": "passed",
+          "seconds": 0.9649374000000535
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_invalid_request_and_oversize_are_rejected_without_polls",
+          "status": "passed",
+          "seconds": 0.5347084999957588
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_lost_post_resends_identical_request_once_same_session",
+          "status": "passed",
+          "seconds": 2.35941270001058
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_open_and_fit_requires_selection_pins_identity_and_reuses_document",
+          "status": "passed",
+          "seconds": 0.519692900008522
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_open_requires_nonblank_session_before_reading_credentials",
+          "status": "passed",
+          "seconds": 0.5323119000095176
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_open_unknown_is_not_retried_or_followed_by_view",
+          "status": "passed",
+          "seconds": 0.5320512000034796
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_outcome_unknown_polls_until_completed_and_returns_stored_response",
+          "status": "passed",
+          "seconds": 1.4753287000057753
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_pending_past_deadline_reports_pending",
+          "status": "passed",
+          "seconds": 3.4962803999951575
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_poll_403_reports_session_ended",
+          "status": "passed",
+          "seconds": 0.9614409000059823
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_queue_full_503_reports_not_executed",
+          "status": "passed",
+          "seconds": 0.5329905999969924
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_queued_timeout_reports_not_executed_and_never_resends",
+          "status": "passed",
+          "seconds": 0.5299219000007724
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_read_transport_failure_is_retry_safe",
+          "status": "passed",
+          "seconds": 0.5336826000129804
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_reconcile_resends_only_into_the_verified_session",
+          "status": "passed",
+          "seconds": 4.127871399992728
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_refused_initial_connect_is_not_executed",
+          "status": "passed",
+          "seconds": 2.5609846000006655
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_session_file_rewrite_does_not_disturb_reconciliation",
+          "status": "passed",
+          "seconds": 1.4802356000000145
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_status_polls_use_canonical_queue_bypassing_shape",
+          "status": "passed",
+          "seconds": 1.8398427999927662
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_status_session_id_mismatch_reports_unknown",
+          "status": "passed",
+          "seconds": 0.7207125999993877
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_transport_failures_never_raise",
+          "status": "passed",
+          "seconds": 0.5369123999989824
+        },
+        {
+          "id": "test_assistant_client.AssistantClientReconciliationTests.test_unrecorded_render_view_is_retry_safe",
+          "status": "passed",
+          "seconds": 2.3165515000000596
+        },
+        {
+          "id": "test_bridge_native.NativeBridgeStatusTests.test_canonical_http_status_and_replay_preserve_real_controller_state_without_tick",
+          "status": "passed",
+          "seconds": 0.8306496999866795
+        },
+        {
+          "id": "test_bridge_native.NativeBridgeStatusTests.test_controller_construction_starts_no_git_probe",
+          "status": "passed",
+          "seconds": 0.6836247000028379
+        },
+        {
+          "id": "test_bridge_native.NativeBridgeStatusTests.test_noncanonical_http_status_keeps_owner_validation_and_default_measure_semantics",
+          "status": "passed",
+          "seconds": 1.197879200000898
+        },
+        {
+          "id": "test_bridge_native.NativeBridgeStatusTests.test_session_file_and_capabilities_share_build_identity",
+          "status": "passed",
+          "seconds": 0.6972307999967597
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_capture_failure_is_reported_not_raised",
+          "status": "passed",
+          "seconds": 0.0408750000060536
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_checkout_digest_differs_from_loaded_tree",
+          "status": "passed",
+          "seconds": 3.524236400000518
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_git_comparison_uses_loaded_blobs_against_head_at_load",
+          "status": "passed",
+          "seconds": 2.0334054000122705
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_git_timeout_kills_the_launcher_and_its_child",
+          "status": "passed",
+          "seconds": 4.194951799989212
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_git_unavailable_is_reported_not_raised",
+          "status": "passed",
+          "seconds": 1.5880526999972062
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_git_worktree_gitdir_file_resolves_head",
+          "status": "passed",
+          "seconds": 1.4618500000069616
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_identity_never_blocks_on_git",
+          "status": "passed",
+          "seconds": 0.06099579999863636
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_live_package_identity_matches_recomputation",
+          "status": "passed",
+          "seconds": 0.13078370000584982
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_module_is_stdlib_only",
+          "status": "passed",
+          "seconds": 0.011036099996999837
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_on_disk_reports_changed_added_removed_without_reload",
+          "status": "passed",
+          "seconds": 1.262652800010983
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_provenance_is_constant_across_git_completion_and_disk_edits",
+          "status": "passed",
+          "seconds": 0.06058459999621846
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_sha256_repository_is_reported_unavailable_not_dirty",
+          "status": "passed",
+          "seconds": 0.9165530000027502
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_snapshot_digest_is_line_ending_independent",
+          "status": "passed",
+          "seconds": 0.05586419999599457
+        },
+        {
+          "id": "test_build_identity.BuildIdentityTests.test_worker_marker_skips_capture",
+          "status": "passed",
+          "seconds": 0.32255059998715296
+        }
+      ],
+      "engine": {},
+      "network": "Loopback available for bridge transport regression",
+      "skips": [],
+      "seconds": 86.20255170000019,
+      "counts": {
+        "tests": 77,
+        "passed": 77,
+        "skipped": 0,
+        "failures": 0,
+        "errors": 0,
+        "expected_failures": 0
+      },
+      "source_sha256": {
+        "src/kurtshape/__init__.py": "d1c2218eff95a6160d497cee76330d599e32231b47cd9680a05a752429c16682",
+        "src/kurtshape/assembly.py": "15137ca37c1a0fb04a47842d3434c36279f5ac5e6099105694eca949421cd50b",
+        "src/kurtshape/assembly_folders.py": "fa19d8ac306ac6eb305f09d8043be4aec6672e8631015d89c79f0d1938e16a52",
+        "src/kurtshape/assembly_instance_links.py": "2bc21c561382b01535419e01174705f4f1cead6cf0d9981c320729593be8a141",
+        "src/kurtshape/assembly_persistence.py": "5e4baa88d5f4fdd6ef0ee85a391e38d63ebc08154cafea7a670ab9c2cf59f43a",
+        "src/kurtshape/assembly_refresh.py": "8b6baafffc1428554001da84ac086e0e64e5ac56ba020c3b977957c2685ff693",
+        "src/kurtshape/assembly_refresh_button.py": "419b52e75349b9c7503bfd3ec8df56886b3eab3c941b10da93d6edc8a242e149",
+        "src/kurtshape/assembly_sync.py": "387ea3af69be3f45240e63206be14812ac33de561c9b64e6795e4dab5116aff9",
+        "src/kurtshape/assembly_tree.py": "47fec12784b52fdced3d526b84ca0bcf2dabe3356fce037dff9b65bcc6b8482d",
+        "src/kurtshape/batch.py": "f2075238da619e501d75c8d703f6d65e75eab48890062eae01adbfc39c6833db",
+        "src/kurtshape/bodies.py": "3720161d25e235f631052eaf486ce21a1687f125e304780fd048ca84a8447dc4",
+        "src/kurtshape/bridge.py": "0bb3532d3fc1be8f4c0bf81bb2ca6ca7cacbeeb03e273e11074931dc7cbf97f4",
+        "src/kurtshape/build_identity.py": "46b0ffa48de00e29755d6d089b87f91edb671f039c005f7639291bf8831870f8",
+        "src/kurtshape/clearance.py": "54d05035d02af490eeb68d840645395a63be635aa6dda1c36d31714ffbf6892c",
+        "src/kurtshape/confirm_gate.py": "b9755febfccc042f9fa9ab1b1c7396ed198a34beffbf3810573d6ace9600cb1e",
+        "src/kurtshape/contract.py": "334fb2a9de28158553b7f7614cb078a232ad5fff75ca2e1da38d8fe4c864667d",
+        "src/kurtshape/core.py": "54d2db64ac0173c205835f03ba24b2b8c1c0d703f91863980e594d7c22101301",
+        "src/kurtshape/delivery_validation.py": "144bc517656d9e81089b4678a634fcc89a70bfecff6c846550482f7a7f035608",
+        "src/kurtshape/document_index.py": "5a5312e79349e12203480ca657df97e07bf2dd00d98580dfef9c8f774e981e0d",
+        "src/kurtshape/document_state.py": "c082f15c26178e334f9b5cd2ce27af9cf7922ff6624a05a1313f51c3cb73c4f5",
+        "src/kurtshape/drawing/__init__.py": "0176e045022f51f4d98b72f2fcd357c49e24895ac5e76d26f0bb448ca9c2555c",
+        "src/kurtshape/drawing/sheet.py": "a4890a001dd0e61fb563f36c8dd63f111b51f547e3bfaf6086121207997661af",
+        "src/kurtshape/drawing/views.py": "4093c485a9388c6bea4ebd9851d58b4dbd2716057f87ad852b0513d44f0cf8ed",
+        "src/kurtshape/edge_picking.py": "5a8c76553cb6ecb407d755abcc29c423451aa1743db6b7732d278a5454373d88",
+        "src/kurtshape/extrusion_edit.py": "c2d44b1c3ab6cb22dc00a40d559675960ea9bc136235b5e847e7da36824f7e72",
+        "src/kurtshape/extrusion_preview.py": "17e09a8f1220f30f8dc739dd65c043af3d6a843f9f4a1272c4056adb5bc630d9",
+        "src/kurtshape/face_history_links.py": "b638065bf4907fa81ff1c27003bd00fb039bcd50aa0a127952d5d23a8e55b672",
+        "src/kurtshape/face_provenance.py": "778286b34b7bfa0ed9add448d88ebb8a6477c004eb426011c955b66ad660e773",
+        "src/kurtshape/feature_panel.py": "ddc4036e8be18d7414afe9bc34b999cb19b64e3d1ba41471c2318de4593d7f3c",
+        "src/kurtshape/feature_tools.py": "247594f084054a7baa00dea8facce39f4417889dad8e68cda265d2a72169c17f",
+        "src/kurtshape/feedback.py": "4aebc38a0eb8c2e94a68775e812260f4c377797cd24d023859437a27f520377f",
+        "src/kurtshape/general_actions.py": "b2b14a3fa73ade579edad2772ccd8cb3fdf2c6c78d36df6c58a30bcc13f74682",
+        "src/kurtshape/geometry.py": "e9cda88d7942b0870ca7080c2918c22e26f5fe965e05e460517716728342bc57",
+        "src/kurtshape/geometry_check_worker.py": "ef7c15ab63dfb45eac8f47db56801722ad28166839bf58cbd83f98196d0c82c4",
+        "src/kurtshape/gui_view.py": "637e95c4eb27a973ba6fb70a7e4a3750315aaeb667a19d987d6fffe686da9abf",
+        "src/kurtshape/history_model.py": "dc43fb4785e1606ef14d3b2d823596832e7b274b0a053bef2b247a1644f59244",
+        "src/kurtshape/history_selection.py": "8f6b0c1432db4c207f1fb9a5b5e57d11750ceffad2e52e9a86e6d3659fbd8173",
+        "src/kurtshape/hole_tools.py": "331fa095d5e69cd80f0a0c80ff2ffdce015b4fd0f59d044578d757f3218e089e",
+        "src/kurtshape/hover_outline.py": "0ac527587d4ea784d2ceb4b63190c6f6371a2d4d65c7b4a1e094948b4c167a68",
+        "src/kurtshape/incremental_intent.py": "777b5e695e4526c8297b034b466c1ceb59f5590c95524b9d0a2c83a8a577d01c",
+        "src/kurtshape/inspection_cache.py": "92ceded56bffe81691b80199d21730dd73b8cf955ce3de32c57da0bb3002ceed",
+        "src/kurtshape/measure_label.py": "1b3526815f55fb47cb05e81c5c52794ba81f8e6b09229762ec73f103820dc761",
+        "src/kurtshape/measure_readout.py": "ec9ab5ebd7837c2a2788c708082d44e3467324ab26e2428127f0bd1b47ac7aba",
+        "src/kurtshape/model_render.py": "bf9936726f7f986fa2116a8139ec3b036da54877bf356149cc78bf12da43c5ea",
+        "src/kurtshape/modeling_geometry.py": "40c91262bb94aca16929dded7d6ed168566cfbe3481b313d06933c0c1cef8af3",
+        "src/kurtshape/native_content.py": "13e2b64bdd8aa7a9bb095959a20964bb786dd56bbba6ca5da92cd435e7926796",
+        "src/kurtshape/navigation.py": "13b08a1add72e771abb64aa603a74775aed3bae9502c9534fd9cd7a4cad3ec65",
+        "src/kurtshape/onshape.py": "bd9a6f1c9eeb36b05cf8d7c5f48918b5a4bd2cbdc80484c0642d28803127fdb0",
+        "src/kurtshape/open_handoff.py": "bfca40d94d22733c3caa58ceb1336d921f8d6a91e6010150e38610e3d7aecee7",
+        "src/kurtshape/operation_schemas.py": "a8beeba721fa40c4e6f71b4cdb9deb54bc8ef52d6f95bf72f671c1edd8978994",
+        "src/kurtshape/parameter_panel.py": "67b0912778ebdda4a87b464a457151dc31e98c5966ba22396ae9b2f418e09900",
+        "src/kurtshape/parameters.py": "77ca9016a904a0b5ce17aea274e12c3b64c4adc4524cd621142d72edfc1da6eb",
+        "src/kurtshape/part_inventory.py": "bb83d5bf030f854cca18fdd719de31edb1a221400300662ce0c7cc7d9952236a",
+        "src/kurtshape/polygon_fill.py": "d4c57e53111b1ff14e16bf663b18061f2578fc1a5a9dd5c65a2bb6f91edee5e7",
+        "src/kurtshape/presentation_icons.py": "20f32b0dcb97a90bf14c669f71df5b64bc126c25ce50994a085e0cbd5614d2f0",
+        "src/kurtshape/preview_worker.py": "95f8875c19468906a6737ad2f71e000ebc1d51624d268e7fa231bcc44295a104",
+        "src/kurtshape/quantity_field.py": "6f68c24ae5543890ad98bca1c48fc50ffea435a9ffd59e5a27dc2243c702e2c8",
+        "src/kurtshape/recovery.py": "95c5d1fb5a185bf1a25bc3d28b019aa86612dcf0927f101c75f79952650f603b",
+        "src/kurtshape/reference_tools.py": "4313536e334c93aee50a9b93944b5a05bff97396ea635dff2053ee046aac5437",
+        "src/kurtshape/render_jobs.py": "32b793cdeb140c24569ceb94a127877abae7796a4ed79cea642262290e9fb23e",
+        "src/kurtshape/render_worker.py": "c6a27829d2d048622aeaaebb38e4f9dd0d0472d4d97ef29134b6dacd92ed8963",
+        "src/kurtshape/request_ledger.py": "ec3ef65e5b47e3835044b0612176f420cb1cb1a84ee254c880cd28ff700a52e6",
+        "src/kurtshape/responsiveness.py": "274e76ccdbef885a8c523efaee47c87f5cf035fa2bdc3b024f9fdd40d54ceee2",
+        "src/kurtshape/result_checks.py": "4ba841b0c6446556229d96e674cbf782cb37897ad2115650c3b70248c5a551f4",
+        "src/kurtshape/rollback_history.py": "69b3915a360a0a804cc397cb501c3d9c6ef934ca53fa7784217f8e400d527f3e",
+        "src/kurtshape/section_view.py": "fb3a4f1e2b70129f7f75347532f9f454c8876d9218b46a090b50714d811cfc69",
+        "src/kurtshape/selection_mode.py": "1c44804449125a6b24b9d21501665e7a8075e8afe5f94d0bedfdeddbaeb2c90c",
+        "src/kurtshape/selectors.py": "313f4f429af966bb6a10ff6d909dd1c61fde28f04fba24a6923a54a667ebc4d0",
+        "src/kurtshape/session.py": "58a8ac404c46c22b0ca11809b3abb0a9db4b3b4987a7a346db2c8291c19ab182",
+        "src/kurtshape/settings.py": "330cf245d770d69c8f52ae4c8ad33a7de864bd7fe0b2a9d3de3b60849cdc0079",
+        "src/kurtshape/shortcuts.py": "04fe1a8dfa6cfafefe9b2888c0acb4aadf23be57ad3f110c8f5348506c68ee4c",
+        "src/kurtshape/sketch_colors.py": "69ce7f5416f0496f8b2e4b4770efb03410b452b09431085399e01cf62419feb9",
+        "src/kurtshape/sketch_constraints.py": "aa3db2a4bacae31dac6048a27723e6cd9a23bdb9eab68b6d05a84e0da5e4e0bc",
+        "src/kurtshape/sketch_cursor.py": "71dffd82d344a5027b74812e13efa9038c62d86ef539bc23b16a27678de8ee97",
+        "src/kurtshape/sketch_edit_panel.py": "82712d5edc744f4973ce7e7db717b7df06112de6d5faef53fc2bd657c22b5dee",
+        "src/kurtshape/sketch_history.py": "c2f8c08d39fb2213b0545192b54c1ce4bc5e23aa9cb5ada58dc161ad48458209",
+        "src/kurtshape/sketch_references.py": "a13434bd1710d012a13671a87485a7995249cdba1869272e0e49ad87dcd6ac68",
+        "src/kurtshape/sketch_regions.py": "0a195c2e46bb89ef4537e7286149a019f720a4374f46cdc523f6a7ce5c75f948",
+        "src/kurtshape/sketch_snapping.py": "50697fea870399086d1f01629ac08790492c1f056d23050a070af0958d83c0f4",
+        "src/kurtshape/sketch_tools.py": "37f057299853be17f328f868caf149f946e87cf69537c19ab60ab3830e0a1347",
+        "src/kurtshape/snapshots.py": "d19911780497bfd6f2269265b08381b93e925459e18aab3d3ec481ddddba246c",
+        "src/kurtshape/startup.py": "eb28253c2b2451dc5630680391fff65a1909f745f0e4e4e262b086ca4eba5489",
+        "src/kurtshape/step_capture.py": "6e6caf5a93d459f6cd757638b0b5a5c488c1c6f76e124dc186c3484504a018a2",
+        "src/kurtshape/step_export_worker.py": "1fa18a595af182e9a185940c42ffaea19ef4955768d19e8e4c83dee2ee0c49c9",
+        "src/kurtshape/studio.py": "7deef3f359e85fe98871a1e2b7257dc1dae8ec9dce04445255d100decf11ce64",
+        "src/kurtshape/theme.py": "cf31a10028bd78b6a36e0ddcdc777ea68f9d033e585eabfe75b69ac34f99b095",
+        "src/kurtshape/timing.py": "28f32811de2a5c035af1e8ccd5d93b1910b21f9d7b5b23da3b2db2197e6d646d",
+        "src/kurtshape/tool_search.py": "dd83a98d63c236013358ce07a298a6db5001d50b2bedc7bf008735da4e629165",
+        "src/kurtshape/tool_session.py": "22c5fe5a4211d78eba54b5201c34686f54e325bed36a057524c85befae3db755",
+        "src/kurtshape/toolbar_labels.py": "ec98d7409fe3edb59d61783ad8100ea539706cbaa5d3f9d6af4214621492e26a",
+        "src/kurtshape/ui.py": "832a5049a72c88001405b2fcd1d1bb1b8e53ddf58a4058e5ad972d2174096418",
+        "src/kurtshape/viewport_actions.py": "23339c606483ef00a31e79c63264b415d951f408b2586481e21e62acba0f5a29",
+        "src/kurtshape/workspace_preferences.py": "30e9bb83a292fa1680356d90d4cbebf30a6d94c045e209c904099d8549f365a3",
+        "tests/perf_fixture.py": "39b215e2f5cf633df69711a0684e9b36af9baca49caf9c616d03a4b073beaeb9",
+        "tests/support.py": "55f27db65821d2e1744bb092cc7ce7cecefab2d75304d68fe2dd1687a8ced7c1",
+        "tests/test_assembly.py": "f7b5dc13fb3c36791d6a38488e085977c6e41178f0ed8558c3869e4c2ef61751",
+        "tests/test_assembly_folders.py": "dcc016aa366b9d812f188ab3f08ea014867526dc012f0d6e984edec6b9c1f354",
+        "tests/test_assembly_instance_links.py": "521c47dc43a363aec450c21c889f2c1549fcdd5ddf72dc42f9f34bb1d65c1283",
+        "tests/test_assembly_instance_source.py": "aa2c11b1ce865efe28f00fe30f2f1fcf65a6752e935ecc85906e56c22009a663",
+        "tests/test_assembly_persistence.py": "c0de598d0687927a0612e37c0183ebb505a515d2765d05a55a339c5cebfa65ca",
+        "tests/test_assembly_refresh.py": "a983c19426cf648e16b85d70792cf91571994a7cf89cee73a7d1afcc98aed984",
+        "tests/test_assembly_refresh_flow.py": "a7546a6bfe57d41f6d4f846dd7f6f54f23970fba1e5a6a98a7ccf94eeac104ee",
+        "tests/test_assistant_client.py": "6672ec00017d3bedc82ce27b73d529803b0a1dc824b20ba314c68aa0139bbf52",
+        "tests/test_batch.py": "8a928b49f4dea755389333f032951ca3c7b4cc22ac05ae217588f5888507fe02",
+        "tests/test_borrowed_preview.py": "27ddca6eefe985c98a901b6446fa3d500a5f5ea614055787935e37aee3ac61e8",
+        "tests/test_bridge.py": "c49ed6651cf56388f142a44b196f362ad8278e0ef66c0920db63e6d6391c94a5",
+        "tests/test_bridge_native.py": "97bfb8ca19123efc85a6daf56a2769745bfe870b372dad5d7611c0ec57e4fa2d",
+        "tests/test_build_identity.py": "26200ba48de78470e932abba9870fd8f5d2543d496652e15be2fa10cf436c6c9",
+        "tests/test_build_status.py": "10d614acfccddf89fb291488b6be06c2293a14dd7f6174d2883271f5dd18f1b6",
+        "tests/test_compact_inspection.py": "78fa1f8b7d3088fdddb73bf848ef4f7e13a7be72e628cd19834d36d7ebd1161f",
+        "tests/test_compact_responses.py": "12b0bd273dfb2c6f5be60eac46b1943456c4a910058eed17a06f73f72fe6693d",
+        "tests/test_confirm_gating.py": "fd4b3c8fd27b00d6043a836d2662cf41c500d77ea6c8eccc2351f1d079180e64",
+        "tests/test_contract32_conventions.py": "ad906e1752e6984f19edea552609780be073eebc83424047c55dabea1ebe29b5",
+        "tests/test_core.py": "720fd2f1d516377170865aa58122374283593b41061d95ef7bddd7b2647a5cbe",
+        "tests/test_core_safety.py": "4c45b2f0f5919165416ed68b25ab4773ff83c835ddc276a025727d4379c3027d",
+        "tests/test_datum_planes.py": "83447f232e0dd49f127787c9645782838dce7296e5d2d1970d8a835bfa98a04e",
+        "tests/test_delivery_clearance.py": "616d3884b52938da54c84e0bfeadcfe10b0a546d86c9603c627aca68dde4be45",
+        "tests/test_direction.py": "996d0414d86b02b48b1389740df24b89e49f7861e68c66a855c951706146a360",
+        "tests/test_dispatch_pipeline.py": "caa926237c08bee8fcab6e456497ee02e05d30b48aaf8817f26a6aca6bb17c77",
+        "tests/test_document_lifecycle.py": "81ab97600b7e1180205aed3da2f6d26e9ac393786c7164d3bdfd6d6f037685ad",
+        "tests/test_drawing.py": "6e2556b01817d65f32165f9fd5929f50c240fd84b8a896f822534bb652edd6f9",
+        "tests/test_dress_up_edit.py": "07129f8a21334f8c644089eb0a8c5fee8884cc02b823293e38fdb0d535dec963",
+        "tests/test_everyday_modeling.py": "9c854122935f17db653ce7017b38e40c25012a2ec628b8b02f44b9104f39bb7f",
+        "tests/test_extrusion_edit.py": "57cbb9ee2083fc20c5ec8ab927bfc97e8819d585b8e41886f26a8e8aacf18734",
+        "tests/test_extrusion_preview.py": "de5aaf8d71979b7cd2596ad83a61a4cab3ad51b60d69607b6198e11897f04df2",
+        "tests/test_face_provenance.py": "4eadf0d0dcb398528d1c7ee0a5701e3e681ca93e63ba95874325e78157d2b720",
+        "tests/test_feedback_ui.py": "7420e66ffdf928b5a0d282ad5800c85abc746be111b3bc212626e6760a4a18d2",
+        "tests/test_finish_recompute.py": "e38c78c769e27ffb703c2225086fedbf36790289faa51a18e30cbd687145e781",
+        "tests/test_fix_hints.py": "50d270dbb0f2498e864a0bff5383a31776d84d991bfffb078d27b2c614cfc970",
+        "tests/test_geometry_check_jobs.py": "5781230dde4aa4bb7f2c30a6bb8f27e69727135b8c256024d51105f315c0cebe",
+        "tests/test_geometry_queries.py": "ffdbbce0bee0073a5848c82e8b044182f05a8307aa744ef36ac7488e3a7dc1f8",
+        "tests/test_gui_view.py": "386efdaeb90845dba6d902aaaf58ce0007c1979c85936ff7b5818cc7c54c78bc",
+        "tests/test_history_lifecycle.py": "64d73af889c5c40898e8cd342a1c9e6dfe13abee285b71005fd95b5074857c3c",
+        "tests/test_holes.py": "f6cdc73090ce1d4b101e19bdafc2f228e65616e205e6e3590581371e28b787c9",
+        "tests/test_icon_cache.py": "11292f1435a41e3729c67e82ce1c68a2539dd5c9eb2b5bfd001e521262b79943",
+        "tests/test_incremental_state.py": "4433859592b504371988a5b8f58f98e8023f9f6f3a0a29171c93fd183610bbc9",
+        "tests/test_launcher_pinning.py": "dc7f9f742db8030f88cd4aaaf236628f92cc530dd8bd3791dcf1d10b44e4c1a2",
+        "tests/test_measure_readout.py": "43037a25a0237e5813ab8ee0f7403b0d23ddc8a8aac77026ed47affc29cb662e",
+        "tests/test_model_render.py": "f88fc1319cf0ffbff8ade1c338ee2f3c657cd27b21d408393d02ccc9d29b9047",
+        "tests/test_multi_edge_references.py": "f9fdb8a4f379c6b3934bcaa225b79b8bdd3179b8ef512afb264a824ed1e829a2",
+        "tests/test_native_files.py": "6672fbe62ae206b4f93332a4c0e02578e5bbc1a5742d0276a6fad5c2816f339a",
+        "tests/test_native_validation_snapshot.py": "a1e332775c217c49bc9fa062b3a587909ff26ec85dafd1c7591f384507e15e06",
+        "tests/test_navigation.py": "c322f414737b85c3111c9b9e3f7e6383e016604bff7ad3eb65bae79a00c214d4",
+        "tests/test_onshape.py": "1b8801fde62089602fbefd495398fbb1568ed324a281042e50b8ac2180396fce",
+        "tests/test_operation_schemas.py": "bed546fb33b996af4ba0eb81405a4e1f11887dcffbd90cba1940902a335fbac1",
+        "tests/test_operations_doc.py": "8d740531f29807698dbe411d798e32f56bbc45d1930f232bc3bfc0010b0cf77c",
+        "tests/test_parameter_panel.py": "4ce5fa2b2df6a0c8b2d16679427ea268fd6d6b1c8c23945e80494a770517fdd2",
+        "tests/test_parameters.py": "b6c07dd11052a1521513121faa4a7326a0c52ebb57bc0c6749b16aa3e0a2244b",
+        "tests/test_part_studio.py": "6c149782c0bdbeacb731067ee79fb46103e7e76431293a54d8d6df897fceae35",
+        "tests/test_pattern_tools.py": "b0f3fd9aa0e806f58ffa38ed188e3fd58c66e781bad06b375f461bf996432abe",
+        "tests/test_preview_worker_leases.py": "3d8cbd3131412e8e4671a045ab59de13a9a10ce24810af105806082c51d72ea2",
+        "tests/test_private_desktop.py": "2090cb13b5e0749ec0d6d0f8d7753fe357bf092636133b86ac37404921216c98",
+        "tests/test_recovery_policy.py": "d4e281ffa240cc4033db85f41d084d2bd6156b8016b05babb824db9198b78b21",
+        "tests/test_reference_tools.py": "37e9976e4f9e5ce4d0e6432b6db1a1a7b94bbdec524d6ba286127eeac1fbb5f9",
+        "tests/test_render_jobs.py": "acacf1481d9fa3c9ac5dd4d90541ed96194c3b2d27540d82342e5f3a62cd44b2",
+        "tests/test_responsiveness.py": "97ac7982d32f8936afddc88eaf8d9510a5ac61ede9669b54addad8f70e477e1e",
+        "tests/test_result_checks.py": "8ef17ce7aafaeb9b8be7bec8c1d9e3ff10cd4ec963becdd0af727e4f54e320cd",
+        "tests/test_result_validation.py": "5d9495fca15f042470d2e0c013b616f2a02be40174295241971eaabb261d9599",
+        "tests/test_review_followup.py": "84dad05f51db72e04b1928f21ef497dfab81c89849cae784da4a718881fa9853",
+        "tests/test_runtime_layout.py": "1bd1075391b0602b51c0c41748c277970d6884481bf5828ffb039c71b8e39835",
+        "tests/test_save_safety.py": "be636643623fc95d02cc4de3c8201a13f4f89df1a6cffeedfaa93cc90b3aabe6",
+        "tests/test_scope_membership.py": "2d3b4e45090e5d5d2aa59049fe7d8955b06322e81521e714073e88fe18161531",
+        "tests/test_section_view.py": "0ac177009579f4c5303d1795065b506f7c7742e5249cf87fc613f81dee905ffd",
+        "tests/test_selection_mode.py": "eea9c68a602ddd2f80c59900f4b58af65a39a7ec9e11f2977cf70412a6486919",
+        "tests/test_selector_consumers.py": "af9f3856db56455486d599038dccbc8a4f0af29596ae9a398b472e1b15828aae",
+        "tests/test_selector_parameters.py": "e116e215ae8122d5a66d123700b48b8604915ad22042911e3985ea76bf4d8458",
+        "tests/test_selector_preparation.py": "5476f87fb4563e6273135febf2b22d58f6cd1d173b82f16e216107e777b81f76",
+        "tests/test_selectors.py": "bb813f2cab9c1a302deb3ad8a7eb8d108bf1fdb625568495ae2f66d45531454d",
+        "tests/test_session.py": "3f0e72b1281c4c9ad8a14240879df53755cc6eaafd3ee88acaaf81efc011683e",
+        "tests/test_settings.py": "25eae0883949c99f87b011283c439bc9f271d24aaa0d8e99c1c12bb3e7fe890f",
+        "tests/test_shortcuts.py": "1423b3f20229fc1b309a1f78d1761335d79d62bfcc156a4c3297b77e3a662c7d",
+        "tests/test_sketch_arcs.py": "38ef1960dd8abfdac341a0e71bd01330ba9a1cf29640e18b52966f059721d446",
+        "tests/test_sketch_constraints.py": "0a392f7e0ff6380678828da1cdd89ff7e5beaeaed016536d36b1cdf9c1faa2de",
+        "tests/test_sketch_cursor.py": "8d3a9d2863fb89bb98b46acdf04e271a2a9b1b3bf7d5789e0c0dcb7596cab736",
+        "tests/test_sketch_planes.py": "e9d168d3fd881dd804229ca25f44cad8779d72b163ccf46106f96622eeba1779",
+        "tests/test_sketch_polylines.py": "1b9c03132c8546ad85fca8d2c7e4229d4bdda13090dde4e56ee93ae7fd935c10",
+        "tests/test_sketch_snapping.py": "7d4046e928e639cfd73b8719bca7ea8bd053f3c3639072a73f41906978b51e91",
+        "tests/test_snapshot_transport.py": "1efdd9ef11a50ad820a22ff70fbb0dddb5423e45238645e7606ac527027c833a",
+        "tests/test_snapshots.py": "c90103ebf6989bbdc03fe20f492f343397105c5121c7aea4edad9dee6b574a74",
+        "tests/test_step_capture.py": "31bdbde0bdde9cc98adb615b82a6d6a6f11c74727989d72c13933af401721d0b",
+        "tests/test_step_export_jobs.py": "4e3291fd03913788a5c12902df759704bf1db7644439ab9a2c9eee1a717f1ec8",
+        "tests/test_step_import.py": "921b0fd570eee661f85c66bf05a2f4d75ca30f2faab282cd1443ff4e15c3dcb8",
+        "tests/test_tool_search.py": "451d1111f634448f2421d2917d908a5463b80e62ef8be036386579b53631846e",
+        "tests/test_tool_session.py": "403cd4d534f10ad53ef4597350890f65d4d703cc5aab61fd8bbc03c399f91c73",
+        "tests/test_validation_tooling.py": "abb660f40e24bb9775498c5f9a349f8dd8774d07e55980b306e9b99588e88308",
+        "tools/run_native_tests.py": "99a805564c090b8bb73a15b369e1dfee643c23f12fdfad34e090a1c54ce32018",
+        "tools/validate_offline.py": "3ad6ca71abb5f52278a9452ead50284487e481004602bb7ba51774dbbdba77ca",
+        "tools/kurtshape_evidence.py": "3add296d1068e605a1d06c623531b0aee6a78e360224f254345deab6e7276124",
+        "tools/native_validation_snapshot.py": "13697d147eb8c127f17c3a4a2ddb89252e4f069a5216ab811ec81410864cb58d",
+        "tools/perf/bench_core.py": "e6f6b62001b74308c137f54449da193dda07d5e344db3529ea8686428dd69a15",
+        "tools/perf/report.py": "3c086c482655d82f3ed4f28501b813012d28bed882605f449a3e440ca06b14af",
+        "tools/perf/budgets.json": "b02761fd33830e73bdb1f2704e0f2c73f3ee1d08a2fca11c7c33fa0e527f74d6",
+        "tools/perf/compare_ab.py": "d5dd8f89f0757f4af6a27684a9f1fde06b65a3a21c938d350483007307069db4",
+        "tools/perf/run_ab.py": "58f375d90780e5f43cdb5ac7e323a3a1482c12e8558fab2bd207c1341dbb095e",
+        "tools/perf/interaction_probe.py": "cdf69857e2c94a63ff47432d0eca18fee5793b2c3b7eb1e272ba4aed14730ce9"
+      },
+      "source_unchanged": true,
+      "exit_code": 0,
+      "pid": 25144,
+      "timed_out": false,
+      "rejected_skips": []
+    }
+  ],
+  "unassigned_test_cases": [],
+  "run_dir": "C:\\Users\\Kurtz\\Documents\\KURT\\CADkz\\Codex\\kurtshape\\runtime\\test-tmp\\regression-run-20261024-212215-41316-7a11ddb4",
+  "kurtshape_build_sha256": "0e2c73ff444de7a5626374f0aa2c940b26a1f587c83c3b14b211e7d409ae5a58",
+  "limits": "Headless native and Qt regressions; no GUI acceptance or native C++ networking interception",
+  "seconds": 86.20920719999413,
+  "source_sha256": {
+    "src/kurtshape/__init__.py": "d1c2218eff95a6160d497cee76330d599e32231b47cd9680a05a752429c16682",
+    "src/kurtshape/assembly.py": "15137ca37c1a0fb04a47842d3434c36279f5ac5e6099105694eca949421cd50b",
+    "src/kurtshape/assembly_folders.py": "fa19d8ac306ac6eb305f09d8043be4aec6672e8631015d89c79f0d1938e16a52",
+    "src/kurtshape/assembly_instance_links.py": "2bc21c561382b01535419e01174705f4f1cead6cf0d9981c320729593be8a141",
+    "src/kurtshape/assembly_persistence.py": "5e4baa88d5f4fdd6ef0ee85a391e38d63ebc08154cafea7a670ab9c2cf59f43a",
+    "src/kurtshape/assembly_refresh.py": "8b6baafffc1428554001da84ac086e0e64e5ac56ba020c3b977957c2685ff693",
+    "src/kurtshape/assembly_refresh_button.py": "419b52e75349b9c7503bfd3ec8df56886b3eab3c941b10da93d6edc8a242e149",
+    "src/kurtshape/assembly_sync.py": "387ea3af69be3f45240e63206be14812ac33de561c9b64e6795e4dab5116aff9",
+    "src/kurtshape/assembly_tree.py": "47fec12784b52fdced3d526b84ca0bcf2dabe3356fce037dff9b65bcc6b8482d",
+    "src/kurtshape/batch.py": "f2075238da619e501d75c8d703f6d65e75eab48890062eae01adbfc39c6833db",
+    "src/kurtshape/bodies.py": "3720161d25e235f631052eaf486ce21a1687f125e304780fd048ca84a8447dc4",
+    "src/kurtshape/bridge.py": "0bb3532d3fc1be8f4c0bf81bb2ca6ca7cacbeeb03e273e11074931dc7cbf97f4",
+    "src/kurtshape/build_identity.py": "46b0ffa48de00e29755d6d089b87f91edb671f039c005f7639291bf8831870f8",
+    "src/kurtshape/clearance.py": "54d05035d02af490eeb68d840645395a63be635aa6dda1c36d31714ffbf6892c",
+    "src/kurtshape/confirm_gate.py": "b9755febfccc042f9fa9ab1b1c7396ed198a34beffbf3810573d6ace9600cb1e",
+    "src/kurtshape/contract.py": "334fb2a9de28158553b7f7614cb078a232ad5fff75ca2e1da38d8fe4c864667d",
+    "src/kurtshape/core.py": "54d2db64ac0173c205835f03ba24b2b8c1c0d703f91863980e594d7c22101301",
+    "src/kurtshape/delivery_validation.py": "144bc517656d9e81089b4678a634fcc89a70bfecff6c846550482f7a7f035608",
+    "src/kurtshape/document_index.py": "5a5312e79349e12203480ca657df97e07bf2dd00d98580dfef9c8f774e981e0d",
+    "src/kurtshape/document_state.py": "c082f15c26178e334f9b5cd2ce27af9cf7922ff6624a05a1313f51c3cb73c4f5",
+    "src/kurtshape/drawing/__init__.py": "0176e045022f51f4d98b72f2fcd357c49e24895ac5e76d26f0bb448ca9c2555c",
+    "src/kurtshape/drawing/sheet.py": "a4890a001dd0e61fb563f36c8dd63f111b51f547e3bfaf6086121207997661af",
+    "src/kurtshape/drawing/views.py": "4093c485a9388c6bea4ebd9851d58b4dbd2716057f87ad852b0513d44f0cf8ed",
+    "src/kurtshape/edge_picking.py": "5a8c76553cb6ecb407d755abcc29c423451aa1743db6b7732d278a5454373d88",
+    "src/kurtshape/extrusion_edit.py": "c2d44b1c3ab6cb22dc00a40d559675960ea9bc136235b5e847e7da36824f7e72",
+    "src/kurtshape/extrusion_preview.py": "17e09a8f1220f30f8dc739dd65c043af3d6a843f9f4a1272c4056adb5bc630d9",
+    "src/kurtshape/face_history_links.py": "b638065bf4907fa81ff1c27003bd00fb039bcd50aa0a127952d5d23a8e55b672",
+    "src/kurtshape/face_provenance.py": "778286b34b7bfa0ed9add448d88ebb8a6477c004eb426011c955b66ad660e773",
+    "src/kurtshape/feature_panel.py": "ddc4036e8be18d7414afe9bc34b999cb19b64e3d1ba41471c2318de4593d7f3c",
+    "src/kurtshape/feature_tools.py": "247594f084054a7baa00dea8facce39f4417889dad8e68cda265d2a72169c17f",
+    "src/kurtshape/feedback.py": "4aebc38a0eb8c2e94a68775e812260f4c377797cd24d023859437a27f520377f",
+    "src/kurtshape/general_actions.py": "b2b14a3fa73ade579edad2772ccd8cb3fdf2c6c78d36df6c58a30bcc13f74682",
+    "src/kurtshape/geometry.py": "e9cda88d7942b0870ca7080c2918c22e26f5fe965e05e460517716728342bc57",
+    "src/kurtshape/geometry_check_worker.py": "ef7c15ab63dfb45eac8f47db56801722ad28166839bf58cbd83f98196d0c82c4",
+    "src/kurtshape/gui_view.py": "637e95c4eb27a973ba6fb70a7e4a3750315aaeb667a19d987d6fffe686da9abf",
+    "src/kurtshape/history_model.py": "dc43fb4785e1606ef14d3b2d823596832e7b274b0a053bef2b247a1644f59244",
+    "src/kurtshape/history_selection.py": "8f6b0c1432db4c207f1fb9a5b5e57d11750ceffad2e52e9a86e6d3659fbd8173",
+    "src/kurtshape/hole_tools.py": "331fa095d5e69cd80f0a0c80ff2ffdce015b4fd0f59d044578d757f3218e089e",
+    "src/kurtshape/hover_outline.py": "0ac527587d4ea784d2ceb4b63190c6f6371a2d4d65c7b4a1e094948b4c167a68",
+    "src/kurtshape/incremental_intent.py": "777b5e695e4526c8297b034b466c1ceb59f5590c95524b9d0a2c83a8a577d01c",
+    "src/kurtshape/inspection_cache.py": "92ceded56bffe81691b80199d21730dd73b8cf955ce3de32c57da0bb3002ceed",
+    "src/kurtshape/measure_label.py": "1b3526815f55fb47cb05e81c5c52794ba81f8e6b09229762ec73f103820dc761",
+    "src/kurtshape/measure_readout.py": "ec9ab5ebd7837c2a2788c708082d44e3467324ab26e2428127f0bd1b47ac7aba",
+    "src/kurtshape/model_render.py": "bf9936726f7f986fa2116a8139ec3b036da54877bf356149cc78bf12da43c5ea",
+    "src/kurtshape/modeling_geometry.py": "40c91262bb94aca16929dded7d6ed168566cfbe3481b313d06933c0c1cef8af3",
+    "src/kurtshape/native_content.py": "13e2b64bdd8aa7a9bb095959a20964bb786dd56bbba6ca5da92cd435e7926796",
+    "src/kurtshape/navigation.py": "13b08a1add72e771abb64aa603a74775aed3bae9502c9534fd9cd7a4cad3ec65",
+    "src/kurtshape/onshape.py": "bd9a6f1c9eeb36b05cf8d7c5f48918b5a4bd2cbdc80484c0642d28803127fdb0",
+    "src/kurtshape/open_handoff.py": "bfca40d94d22733c3caa58ceb1336d921f8d6a91e6010150e38610e3d7aecee7",
+    "src/kurtshape/operation_schemas.py": "a8beeba721fa40c4e6f71b4cdb9deb54bc8ef52d6f95bf72f671c1edd8978994",
+    "src/kurtshape/parameter_panel.py": "67b0912778ebdda4a87b464a457151dc31e98c5966ba22396ae9b2f418e09900",
+    "src/kurtshape/parameters.py": "77ca9016a904a0b5ce17aea274e12c3b64c4adc4524cd621142d72edfc1da6eb",
+    "src/kurtshape/part_inventory.py": "bb83d5bf030f854cca18fdd719de31edb1a221400300662ce0c7cc7d9952236a",
+    "src/kurtshape/polygon_fill.py": "d4c57e53111b1ff14e16bf663b18061f2578fc1a5a9dd5c65a2bb6f91edee5e7",
+    "src/kurtshape/presentation_icons.py": "20f32b0dcb97a90bf14c669f71df5b64bc126c25ce50994a085e0cbd5614d2f0",
+    "src/kurtshape/preview_worker.py": "95f8875c19468906a6737ad2f71e000ebc1d51624d268e7fa231bcc44295a104",
+    "src/kurtshape/quantity_field.py": "6f68c24ae5543890ad98bca1c48fc50ffea435a9ffd59e5a27dc2243c702e2c8",
+    "src/kurtshape/recovery.py": "95c5d1fb5a185bf1a25bc3d28b019aa86612dcf0927f101c75f79952650f603b",
+    "src/kurtshape/reference_tools.py": "4313536e334c93aee50a9b93944b5a05bff97396ea635dff2053ee046aac5437",
+    "src/kurtshape/render_jobs.py": "32b793cdeb140c24569ceb94a127877abae7796a4ed79cea642262290e9fb23e",
+    "src/kurtshape/render_worker.py": "c6a27829d2d048622aeaaebb38e4f9dd0d0472d4d97ef29134b6dacd92ed8963",
+    "src/kurtshape/request_ledger.py": "ec3ef65e5b47e3835044b0612176f420cb1cb1a84ee254c880cd28ff700a52e6",
+    "src/kurtshape/responsiveness.py": "274e76ccdbef885a8c523efaee47c87f5cf035fa2bdc3b024f9fdd40d54ceee2",
+    "src/kurtshape/result_checks.py": "4ba841b0c6446556229d96e674cbf782cb37897ad2115650c3b70248c5a551f4",
+    "src/kurtshape/rollback_history.py": "69b3915a360a0a804cc397cb501c3d9c6ef934ca53fa7784217f8e400d527f3e",
+    "src/kurtshape/section_view.py": "fb3a4f1e2b70129f7f75347532f9f454c8876d9218b46a090b50714d811cfc69",
+    "src/kurtshape/selection_mode.py": "1c44804449125a6b24b9d21501665e7a8075e8afe5f94d0bedfdeddbaeb2c90c",
+    "src/kurtshape/selectors.py": "313f4f429af966bb6a10ff6d909dd1c61fde28f04fba24a6923a54a667ebc4d0",
+    "src/kurtshape/session.py": "58a8ac404c46c22b0ca11809b3abb0a9db4b3b4987a7a346db2c8291c19ab182",
+    "src/kurtshape/settings.py": "330cf245d770d69c8f52ae4c8ad33a7de864bd7fe0b2a9d3de3b60849cdc0079",
+    "src/kurtshape/shortcuts.py": "04fe1a8dfa6cfafefe9b2888c0acb4aadf23be57ad3f110c8f5348506c68ee4c",
+    "src/kurtshape/sketch_colors.py": "69ce7f5416f0496f8b2e4b4770efb03410b452b09431085399e01cf62419feb9",
+    "src/kurtshape/sketch_constraints.py": "aa3db2a4bacae31dac6048a27723e6cd9a23bdb9eab68b6d05a84e0da5e4e0bc",
+    "src/kurtshape/sketch_cursor.py": "71dffd82d344a5027b74812e13efa9038c62d86ef539bc23b16a27678de8ee97",
+    "src/kurtshape/sketch_edit_panel.py": "82712d5edc744f4973ce7e7db717b7df06112de6d5faef53fc2bd657c22b5dee",
+    "src/kurtshape/sketch_history.py": "c2f8c08d39fb2213b0545192b54c1ce4bc5e23aa9cb5ada58dc161ad48458209",
+    "src/kurtshape/sketch_references.py": "a13434bd1710d012a13671a87485a7995249cdba1869272e0e49ad87dcd6ac68",
+    "src/kurtshape/sketch_regions.py": "0a195c2e46bb89ef4537e7286149a019f720a4374f46cdc523f6a7ce5c75f948",
+    "src/kurtshape/sketch_snapping.py": "50697fea870399086d1f01629ac08790492c1f056d23050a070af0958d83c0f4",
+    "src/kurtshape/sketch_tools.py": "37f057299853be17f328f868caf149f946e87cf69537c19ab60ab3830e0a1347",
+    "src/kurtshape/snapshots.py": "d19911780497bfd6f2269265b08381b93e925459e18aab3d3ec481ddddba246c",
+    "src/kurtshape/startup.py": "eb28253c2b2451dc5630680391fff65a1909f745f0e4e4e262b086ca4eba5489",
+    "src/kurtshape/step_capture.py": "6e6caf5a93d459f6cd757638b0b5a5c488c1c6f76e124dc186c3484504a018a2",
+    "src/kurtshape/step_export_worker.py": "1fa18a595af182e9a185940c42ffaea19ef4955768d19e8e4c83dee2ee0c49c9",
+    "src/kurtshape/studio.py": "7deef3f359e85fe98871a1e2b7257dc1dae8ec9dce04445255d100decf11ce64",
+    "src/kurtshape/theme.py": "cf31a10028bd78b6a36e0ddcdc777ea68f9d033e585eabfe75b69ac34f99b095",
+    "src/kurtshape/timing.py": "28f32811de2a5c035af1e8ccd5d93b1910b21f9d7b5b23da3b2db2197e6d646d",
+    "src/kurtshape/tool_search.py": "dd83a98d63c236013358ce07a298a6db5001d50b2bedc7bf008735da4e629165",
+    "src/kurtshape/tool_session.py": "22c5fe5a4211d78eba54b5201c34686f54e325bed36a057524c85befae3db755",
+    "src/kurtshape/toolbar_labels.py": "ec98d7409fe3edb59d61783ad8100ea539706cbaa5d3f9d6af4214621492e26a",
+    "src/kurtshape/ui.py": "832a5049a72c88001405b2fcd1d1bb1b8e53ddf58a4058e5ad972d2174096418",
+    "src/kurtshape/viewport_actions.py": "23339c606483ef00a31e79c63264b415d951f408b2586481e21e62acba0f5a29",
+    "src/kurtshape/workspace_preferences.py": "30e9bb83a292fa1680356d90d4cbebf30a6d94c045e209c904099d8549f365a3",
+    "tests/perf_fixture.py": "39b215e2f5cf633df69711a0684e9b36af9baca49caf9c616d03a4b073beaeb9",
+    "tests/support.py": "55f27db65821d2e1744bb092cc7ce7cecefab2d75304d68fe2dd1687a8ced7c1",
+    "tests/test_assembly.py": "f7b5dc13fb3c36791d6a38488e085977c6e41178f0ed8558c3869e4c2ef61751",
+    "tests/test_assembly_folders.py": "dcc016aa366b9d812f188ab3f08ea014867526dc012f0d6e984edec6b9c1f354",
+    "tests/test_assembly_instance_links.py": "521c47dc43a363aec450c21c889f2c1549fcdd5ddf72dc42f9f34bb1d65c1283",
+    "tests/test_assembly_instance_source.py": "aa2c11b1ce865efe28f00fe30f2f1fcf65a6752e935ecc85906e56c22009a663",
+    "tests/test_assembly_persistence.py": "c0de598d0687927a0612e37c0183ebb505a515d2765d05a55a339c5cebfa65ca",
+    "tests/test_assembly_refresh.py": "a983c19426cf648e16b85d70792cf91571994a7cf89cee73a7d1afcc98aed984",
+    "tests/test_assembly_refresh_flow.py": "a7546a6bfe57d41f6d4f846dd7f6f54f23970fba1e5a6a98a7ccf94eeac104ee",
+    "tests/test_assistant_client.py": "6672ec00017d3bedc82ce27b73d529803b0a1dc824b20ba314c68aa0139bbf52",
+    "tests/test_batch.py": "8a928b49f4dea755389333f032951ca3c7b4cc22ac05ae217588f5888507fe02",
+    "tests/test_borrowed_preview.py": "27ddca6eefe985c98a901b6446fa3d500a5f5ea614055787935e37aee3ac61e8",
+    "tests/test_bridge.py": "c49ed6651cf56388f142a44b196f362ad8278e0ef66c0920db63e6d6391c94a5",
+    "tests/test_bridge_native.py": "97bfb8ca19123efc85a6daf56a2769745bfe870b372dad5d7611c0ec57e4fa2d",
+    "tests/test_build_identity.py": "26200ba48de78470e932abba9870fd8f5d2543d496652e15be2fa10cf436c6c9",
+    "tests/test_build_status.py": "10d614acfccddf89fb291488b6be06c2293a14dd7f6174d2883271f5dd18f1b6",
+    "tests/test_compact_inspection.py": "78fa1f8b7d3088fdddb73bf848ef4f7e13a7be72e628cd19834d36d7ebd1161f",
+    "tests/test_compact_responses.py": "12b0bd273dfb2c6f5be60eac46b1943456c4a910058eed17a06f73f72fe6693d",
+    "tests/test_confirm_gating.py": "fd4b3c8fd27b00d6043a836d2662cf41c500d77ea6c8eccc2351f1d079180e64",
+    "tests/test_contract32_conventions.py": "ad906e1752e6984f19edea552609780be073eebc83424047c55dabea1ebe29b5",
+    "tests/test_core.py": "720fd2f1d516377170865aa58122374283593b41061d95ef7bddd7b2647a5cbe",
+    "tests/test_core_safety.py": "4c45b2f0f5919165416ed68b25ab4773ff83c835ddc276a025727d4379c3027d",
+    "tests/test_datum_planes.py": "83447f232e0dd49f127787c9645782838dce7296e5d2d1970d8a835bfa98a04e",
+    "tests/test_delivery_clearance.py": "616d3884b52938da54c84e0bfeadcfe10b0a546d86c9603c627aca68dde4be45",
+    "tests/test_direction.py": "996d0414d86b02b48b1389740df24b89e49f7861e68c66a855c951706146a360",
+    "tests/test_dispatch_pipeline.py": "caa926237c08bee8fcab6e456497ee02e05d30b48aaf8817f26a6aca6bb17c77",
+    "tests/test_document_lifecycle.py": "81ab97600b7e1180205aed3da2f6d26e9ac393786c7164d3bdfd6d6f037685ad",
+    "tests/test_drawing.py": "6e2556b01817d65f32165f9fd5929f50c240fd84b8a896f822534bb652edd6f9",
+    "tests/test_dress_up_edit.py": "07129f8a21334f8c644089eb0a8c5fee8884cc02b823293e38fdb0d535dec963",
+    "tests/test_everyday_modeling.py": "9c854122935f17db653ce7017b38e40c25012a2ec628b8b02f44b9104f39bb7f",
+    "tests/test_extrusion_edit.py": "57cbb9ee2083fc20c5ec8ab927bfc97e8819d585b8e41886f26a8e8aacf18734",
+    "tests/test_extrusion_preview.py": "de5aaf8d71979b7cd2596ad83a61a4cab3ad51b60d69607b6198e11897f04df2",
+    "tests/test_face_provenance.py": "4eadf0d0dcb398528d1c7ee0a5701e3e681ca93e63ba95874325e78157d2b720",
+    "tests/test_feedback_ui.py": "7420e66ffdf928b5a0d282ad5800c85abc746be111b3bc212626e6760a4a18d2",
+    "tests/test_finish_recompute.py": "e38c78c769e27ffb703c2225086fedbf36790289faa51a18e30cbd687145e781",
+    "tests/test_fix_hints.py": "50d270dbb0f2498e864a0bff5383a31776d84d991bfffb078d27b2c614cfc970",
+    "tests/test_geometry_check_jobs.py": "5781230dde4aa4bb7f2c30a6bb8f27e69727135b8c256024d51105f315c0cebe",
+    "tests/test_geometry_queries.py": "ffdbbce0bee0073a5848c82e8b044182f05a8307aa744ef36ac7488e3a7dc1f8",
+    "tests/test_gui_view.py": "386efdaeb90845dba6d902aaaf58ce0007c1979c85936ff7b5818cc7c54c78bc",
+    "tests/test_history_lifecycle.py": "64d73af889c5c40898e8cd342a1c9e6dfe13abee285b71005fd95b5074857c3c",
+    "tests/test_holes.py": "f6cdc73090ce1d4b101e19bdafc2f228e65616e205e6e3590581371e28b787c9",
+    "tests/test_icon_cache.py": "11292f1435a41e3729c67e82ce1c68a2539dd5c9eb2b5bfd001e521262b79943",
+    "tests/test_incremental_state.py": "4433859592b504371988a5b8f58f98e8023f9f6f3a0a29171c93fd183610bbc9",
+    "tests/test_launcher_pinning.py": "dc7f9f742db8030f88cd4aaaf236628f92cc530dd8bd3791dcf1d10b44e4c1a2",
+    "tests/test_measure_readout.py": "43037a25a0237e5813ab8ee0f7403b0d23ddc8a8aac77026ed47affc29cb662e",
+    "tests/test_model_render.py": "f88fc1319cf0ffbff8ade1c338ee2f3c657cd27b21d408393d02ccc9d29b9047",
+    "tests/test_multi_edge_references.py": "f9fdb8a4f379c6b3934bcaa225b79b8bdd3179b8ef512afb264a824ed1e829a2",
+    "tests/test_native_files.py": "6672fbe62ae206b4f93332a4c0e02578e5bbc1a5742d0276a6fad5c2816f339a",
+    "tests/test_native_validation_snapshot.py": "a1e332775c217c49bc9fa062b3a587909ff26ec85dafd1c7591f384507e15e06",
+    "tests/test_navigation.py": "c322f414737b85c3111c9b9e3f7e6383e016604bff7ad3eb65bae79a00c214d4",
+    "tests/test_onshape.py": "1b8801fde62089602fbefd495398fbb1568ed324a281042e50b8ac2180396fce",
+    "tests/test_operation_schemas.py": "bed546fb33b996af4ba0eb81405a4e1f11887dcffbd90cba1940902a335fbac1",
+    "tests/test_operations_doc.py": "8d740531f29807698dbe411d798e32f56bbc45d1930f232bc3bfc0010b0cf77c",
+    "tests/test_parameter_panel.py": "4ce5fa2b2df6a0c8b2d16679427ea268fd6d6b1c8c23945e80494a770517fdd2",
+    "tests/test_parameters.py": "b6c07dd11052a1521513121faa4a7326a0c52ebb57bc0c6749b16aa3e0a2244b",
+    "tests/test_part_studio.py": "6c149782c0bdbeacb731067ee79fb46103e7e76431293a54d8d6df897fceae35",
+    "tests/test_pattern_tools.py": "b0f3fd9aa0e806f58ffa38ed188e3fd58c66e781bad06b375f461bf996432abe",
+    "tests/test_preview_worker_leases.py": "3d8cbd3131412e8e4671a045ab59de13a9a10ce24810af105806082c51d72ea2",
+    "tests/test_private_desktop.py": "2090cb13b5e0749ec0d6d0f8d7753fe357bf092636133b86ac37404921216c98",
+    "tests/test_recovery_policy.py": "d4e281ffa240cc4033db85f41d084d2bd6156b8016b05babb824db9198b78b21",
+    "tests/test_reference_tools.py": "37e9976e4f9e5ce4d0e6432b6db1a1a7b94bbdec524d6ba286127eeac1fbb5f9",
+    "tests/test_render_jobs.py": "acacf1481d9fa3c9ac5dd4d90541ed96194c3b2d27540d82342e5f3a62cd44b2",
+    "tests/test_responsiveness.py": "97ac7982d32f8936afddc88eaf8d9510a5ac61ede9669b54addad8f70e477e1e",
+    "tests/test_result_checks.py": "8ef17ce7aafaeb9b8be7bec8c1d9e3ff10cd4ec963becdd0af727e4f54e320cd",
+    "tests/test_result_validation.py": "5d9495fca15f042470d2e0c013b616f2a02be40174295241971eaabb261d9599",
+    "tests/test_review_followup.py": "84dad05f51db72e04b1928f21ef497dfab81c89849cae784da4a718881fa9853",
+    "tests/test_runtime_layout.py": "1bd1075391b0602b51c0c41748c277970d6884481bf5828ffb039c71b8e39835",
+    "tests/test_save_safety.py": "be636643623fc95d02cc4de3c8201a13f4f89df1a6cffeedfaa93cc90b3aabe6",
+    "tests/test_scope_membership.py": "2d3b4e45090e5d5d2aa59049fe7d8955b06322e81521e714073e88fe18161531",
+    "tests/test_section_view.py": "0ac177009579f4c5303d1795065b506f7c7742e5249cf87fc613f81dee905ffd",
+    "tests/test_selection_mode.py": "eea9c68a602ddd2f80c59900f4b58af65a39a7ec9e11f2977cf70412a6486919",
+    "tests/test_selector_consumers.py": "af9f3856db56455486d599038dccbc8a4f0af29596ae9a398b472e1b15828aae",
+    "tests/test_selector_parameters.py": "e116e215ae8122d5a66d123700b48b8604915ad22042911e3985ea76bf4d8458",
+    "tests/test_selector_preparation.py": "5476f87fb4563e6273135febf2b22d58f6cd1d173b82f16e216107e777b81f76",
+    "tests/test_selectors.py": "bb813f2cab9c1a302deb3ad8a7eb8d108bf1fdb625568495ae2f66d45531454d",
+    "tests/test_session.py": "3f0e72b1281c4c9ad8a14240879df53755cc6eaafd3ee88acaaf81efc011683e",
+    "tests/test_settings.py": "25eae0883949c99f87b011283c439bc9f271d24aaa0d8e99c1c12bb3e7fe890f",
+    "tests/test_shortcuts.py": "1423b3f20229fc1b309a1f78d1761335d79d62bfcc156a4c3297b77e3a662c7d",
+    "tests/test_sketch_arcs.py": "38ef1960dd8abfdac341a0e71bd01330ba9a1cf29640e18b52966f059721d446",
+    "tests/test_sketch_constraints.py": "0a392f7e0ff6380678828da1cdd89ff7e5beaeaed016536d36b1cdf9c1faa2de",
+    "tests/test_sketch_cursor.py": "8d3a9d2863fb89bb98b46acdf04e271a2a9b1b3bf7d5789e0c0dcb7596cab736",
+    "tests/test_sketch_planes.py": "e9d168d3fd881dd804229ca25f44cad8779d72b163ccf46106f96622eeba1779",
+    "tests/test_sketch_polylines.py": "1b9c03132c8546ad85fca8d2c7e4229d4bdda13090dde4e56ee93ae7fd935c10",
+    "tests/test_sketch_snapping.py": "7d4046e928e639cfd73b8719bca7ea8bd053f3c3639072a73f41906978b51e91",
+    "tests/test_snapshot_transport.py": "1efdd9ef11a50ad820a22ff70fbb0dddb5423e45238645e7606ac527027c833a",
+    "tests/test_snapshots.py": "c90103ebf6989bbdc03fe20f492f343397105c5121c7aea4edad9dee6b574a74",
+    "tests/test_step_capture.py": "31bdbde0bdde9cc98adb615b82a6d6a6f11c74727989d72c13933af401721d0b",
+    "tests/test_step_export_jobs.py": "4e3291fd03913788a5c12902df759704bf1db7644439ab9a2c9eee1a717f1ec8",
+    "tests/test_step_import.py": "921b0fd570eee661f85c66bf05a2f4d75ca30f2faab282cd1443ff4e15c3dcb8",
+    "tests/test_tool_search.py": "451d1111f634448f2421d2917d908a5463b80e62ef8be036386579b53631846e",
+    "tests/test_tool_session.py": "403cd4d534f10ad53ef4597350890f65d4d703cc5aab61fd8bbc03c399f91c73",
+    "tests/test_validation_tooling.py": "abb660f40e24bb9775498c5f9a349f8dd8774d07e55980b306e9b99588e88308",
+    "tools/run_native_tests.py": "99a805564c090b8bb73a15b369e1dfee643c23f12fdfad34e090a1c54ce32018",
+    "tools/validate_offline.py": "3ad6ca71abb5f52278a9452ead50284487e481004602bb7ba51774dbbdba77ca",
+    "tools/kurtshape_evidence.py": "3add296d1068e605a1d06c623531b0aee6a78e360224f254345deab6e7276124",
+    "tools/native_validation_snapshot.py": "13697d147eb8c127f17c3a4a2ddb89252e4f069a5216ab811ec81410864cb58d",
+    "tools/perf/bench_core.py": "e6f6b62001b74308c137f54449da193dda07d5e344db3529ea8686428dd69a15",
+    "tools/perf/report.py": "3c086c482655d82f3ed4f28501b813012d28bed882605f449a3e440ca06b14af",
+    "tools/perf/budgets.json": "b02761fd33830e73bdb1f2704e0f2c73f3ee1d08a2fca11c7c33fa0e527f74d6",
+    "tools/perf/compare_ab.py": "d5dd8f89f0757f4af6a27684a9f1fde06b65a3a21c938d350483007307069db4",
+    "tools/perf/run_ab.py": "58f375d90780e5f43cdb5ac7e323a3a1482c12e8558fab2bd207c1341dbb095e",
+    "tools/perf/interaction_probe.py": "cdf69857e2c94a63ff47432d0eca18fee5793b2c3b7eb1e272ba4aed14730ce9"
+  },
+  "source_unchanged": true,
+  "counts": {
+    "tests": 77,
+    "passed": 77,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "expected_failures": 0
+  },
+  "engine": {}
+}
