@@ -11,7 +11,6 @@ reuse fails loudly here instead of silently in production.
 """
 from contextlib import contextmanager
 import json
-import math
 from pathlib import Path
 import sys
 import unittest

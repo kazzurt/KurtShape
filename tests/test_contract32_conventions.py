@@ -11,8 +11,6 @@ import re
 import sys
 import unittest
 
-import support
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App

@@ -15,8 +15,7 @@ import support
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 import FreeCAD as App
-import Part
-from kurtshape.core import Controller, METADATA, OperationError
+from kurtshape.core import Controller, OperationError
 
 
 class DocumentLifecycleTests(unittest.TestCase):
@@ -83,7 +82,7 @@ class DocumentLifecycleTests(unittest.TestCase):
     def native_file(self, name):
         """A plain FreeCAD file (no KurtShape metadata) in the granted folder."""
         doc = App.newDocument(name)
-        body = doc.addObject("PartDesign::Body", "Body")
+        doc.addObject("PartDesign::Body", "Body")
         box = doc.addObject("Part::Box", "Box")
         box.Length = box.Width = box.Height = 5
         doc.recompute()

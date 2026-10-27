@@ -3081,6 +3081,10 @@ class Controller:
         joins = {pos: self._anchor(anchors, point) for pos, point in points.items()}
         if joins[1] is not None and joins[1] == joins[2]:
             raise OperationError("invalid_argument", "Line endpoints must be distinct")
+        # A joined endpoint starts at the anchor's exact location, as in add_polyline.
+        # A sub-tolerance offset (e.g. 0 vs an arc's 8*cos(-pi/2)) lets each native
+        # solve keep either value, so a later solve could rewrite the line by ~1e-15.
+        points = {pos: point if joins[pos] is None else sk.getPoint(*joins[pos]) for pos, point in points.items()}
         before = self._solver_report(sk) if any(join is not None for join in joins.values()) else None
         i = sk.addGeometry(Part.LineSegment(points[1], points[2]), construction)
         for pos, x, y, names in ((1, x1, y1, ("StartX", "StartY")), (2, x2, y2, ("EndX", "EndY"))):

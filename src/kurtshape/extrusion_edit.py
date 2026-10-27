@@ -8,7 +8,6 @@ properties in place, so feature identity and downstream references survive.
 from __future__ import annotations
 
 import json
-import re
 
 from . import parameters
 
