@@ -1,5 +1,87 @@
 # Shared operation contract
 
+### Clearance checks (opt-in)
+
+`check_clearance` is a read operation requiring `document_id`. It creates no
+document objects and does not change placement, revision or undo history. A
+current valid build is required. Calculations use nominal world-space BReps;
+they are not machine-specific CAM or proof of safe cutting loads. Expensive
+Boolean/distance work runs only when this operation is explicitly requested.
+Selected targets, component envelopes and nonempty Boolean results undergo
+explicit BRep validity checks; invalid or nonpositive-volume solids reject with
+`invalid_clearance_geometry`, even when native object state says up to date.
+Nested native container placements are composed into world coordinates exactly
+once, including rotated or translated legacy Bodies inside `App::Part`.
+
+Supply `envelopes` (up to 128) and/or `axis_probe`. `components` optionally names
+distinct current solid result IDs (assembly occurrence IDs for assemblies);
+omitting it checks all. Helpers and embedded snapshots are not separate results.
+`minimum_clearance_mm` defaults to zero. Each envelope has a unique string `id`:
+
+| `kind` | Required geometry fields | Meaning |
+|---|---|---|
+| `cylinder` | `origin_mm`, `axis`, `radius_mm`, `length_mm` | Tool, holder or straight key envelope from its starting cap along the axis |
+| `annulus` | `origin_mm`, `axis`, `inner_radius_mm`, `outer_radius_mm`, `length_mm` | Complete continuous 360-degree coaxial envelope; not angle sampling |
+| `box` | `origin_mm`, `size_mm` | Spanner or other conservative rectangular envelope from its corner; optional unit `rotation_xyzw` rotates about that corner |
+| `component` | `component` | Detached copy of a current result at its world placement; its self-pair is skipped |
+
+Vectors have three finite numbers, axes are nonzero (normalized internally),
+dimensions are positive. Every pair reports `distance_mm`, `overlap_mm3`, closest
+points, component ID/label and `status`. Positive-volume intersections are tested
+even for solid containment, where a boundary-distance query alone can mislead.
+`limiting` identifies a closest component for each envelope. `passed` requires
+every evaluated pair to be clear or a valid intended thread overlap.
+
+An intentional overlap must be declared for one exact pair in
+`allowed_overlaps:[{envelope,component,reason:"thread_envelope",region,max_volume_mm3}]`.
+`region` is one of the geometry specifications above without an `id`. The entire
+intersection must be inside that region and its volume below the explicit bound
+(numerical volume allowance 1e-7 mm³). Only that pair is classified
+`intended_thread_overlap`; a collision elsewhere, outside the region or over the
+limit still fails. There is no global collision-ignore flag.
+
+`axis_probe:{tip_mm,axis,radius_mm,max_distance_mm}` sweeps a tip disk through a
+finite cylinder and reports the first occupied axial station, its limiting
+component, all stops and the tested range. This checks pin ends or screw tips
+against selected receiving components. A zero gap is reported as zero. With no
+stop, `distance_mm` is null, never infinity; the result is `range_insufficient`
+if the tested range is shorter than the requested minimum. This is directional
+end clearance, not usable thread depth or insertion-path feasibility. Other
+parts of the pin/screw need their own envelope check.
+
+```json
+{"op":"check_clearance","document_id":"<id>","components":["Socket"],
+ "axis_probe":{"tip_mm":[0,0,8],"axis":[0,0,1],"radius_mm":3,"max_distance_mm":5},
+ "minimum_clearance_mm":1}
+```
+
+The Dodec fixture examples, delivery verifier and regression evidence are
+described in [delivery and clearance workflow](DELIVERY_VALIDATION.md).
+
+## Scripted iteration and explicit session selection (fixture regression)
+
+The Python `Session` SDK accepts opt-in `batch_helpers=True` in both constructors.
+`sketch` becomes one two-step batch; `polygon` one four-step batch; `circle` one three-step
+batch using the existing typed `sketch_circle` operation to avoid recomputing an empty
+sketch. Feature ids, constraints, result validation and revision tracking remain unchanged;
+transaction grouping changes to one undo step per helper. The compatibility default is
+`False`. `Session.batch(steps, label=None, preview=False)` sends an atomic batch, with no
+automatic splitting. When preview is requested it returns a rejected preview without a
+mutation, or commits identical steps against the accepted preview's explicit base revision.
+A concurrent writer then produces `stale_revision`, not an unreviewed automatic rebase.
+Every request retains its mutation id and reconciliation policy. The SDK ledger records
+`response_bytes` (UTF-8 compact JSON size of the decoded response) alongside elapsed time.
+
+Bridge session files now include non-secret launch metadata: GUI flag, Qt display backend,
+visibility (`visible`, `offscreen`, `headless`), profile and session directory. This describes
+the launch mode, not whether a window is currently minimized. The client `--discover` checks
+session liveness and identity, returns no credentials, and never chooses a target. It searches
+the checkout runtime and explicitly supplied `--search-root` folders; old files have unknown
+visibility and folder-derived benchmark/isolated labels are only purpose hints. `--open`
+requires an explicit `--session`, optionally pins `--session-id`, reuses a matching open
+document, then fits that document with `set_view`. It neither starts nor restarts an app,
+closes another document nor saves. See [connection workflow](AGENT_QUICKSTART.md#discover-and-explicitly-select-a-delivery-session).
+
 Per-operation arguments, defaults and runnable examples, generated from `src/kurtshape/operation_schemas.py`: [OPERATIONS.md](OPERATIONS.md).
 
 The authoritative document is native FreeCAD FCStd. A feature object's `Name` is its stable ID; native Sketcher constraints are parameters and native expressions are dependencies. `KurtShapeProject` stores project UUID, opaque revision, build status and source mapping, without duplicating editable geometry or dimensions. Studio operations additionally persist an ordered native feature list and logical part identities. Body resolution uses explicit `body`, the target/support's owning Body, or the sole current part. Several eligible parts without a target or explicit ID reject with `ambiguous_body`; assistants never inherit GUI focus. Historical and auxiliary Bodies are native dependencies and are excluded from current results.
@@ -48,6 +130,8 @@ Every request accepts optional `measure`, exactly JSON `false`, `true` or the st
 `bbox_mm` is the exact (tight) box of the geometry since 3.1, not FreeCAD's control-point box; see [tight boxes](#contract-31--fail-fast-studio-results-typed-helices-and-tight-boxes). `measurements.valid` is independently null until an explicit or export geometry check is cached, then reflects that verdict at any level. Aggregate and per-result `geometry_check` are `not_checked`, `valid`, `invalid` or `not_applicable` when there is no solid. Failed or unrecomputed intent has `measurements:null` and separately labeled `retained_geometry_measurements` at the requested level. `build_status:"valid"` means the native build/status checks succeeded; it does not imply BRepCheck ran.
 
 `check_geometry` is read-only and requires `document_id`, with optional `body` identifying a current result or logical part. It checks selected/all current solids, returns inspection plus `geometry_check_report:{status,revision,engine,bodies,ms}`, and reports each body's `id`, `valid`, `issues` and `check_ms`. No solid rejects with `no_solid`. It reuses a source-shape verdict without changing revision, geometry or native history. Export first requires a current build, then performs/reuses valid geometry checks before staging output/provenance; an invalid verdict rejects with `invalid_geometry`.
+
+GUI geometry-check workers require an exact detached source BRep round trip before capture. Shared occurrence sources are admitted once. Native serialization that changes analytic direction coefficients retains the synchronous validated check; no coefficients are rounded and every worker archive/fingerprint comparison remains enforced. `geometry_check_roundtrip_admission` records the synchronous eligibility cost. Geometry validity never clears an embedded-source integrity failure.
 
 The GUI sends `measure:false` on ordinary inspection/dispatch and displays solid count. **Check geometry** runs explicitly with a wait cursor and per-part Messages; **[ / Measure** measures selected geometry or requests full active-part mass properties without replacing the lightweight panel state. Measurement requests alone never run BRepCheck.
 
@@ -494,11 +578,17 @@ The token-authenticated loopback adapter sends the same dispatch requests to the
 
 ## Assembly increment — October 2
 
-All assembly mutations require the existing current document UUID/revision and bridge request ID. GUI dialogs retain their starting revision so an intervening edit rejects instead of applying to a changed assembly. A project contains one single-level native assembly. Sources are embedded shape snapshots with same-document native link occurrences; external source changes never silently update accepted parts. A snapshot is taken through one native save/restore cycle, because FreeCAD stores shapes as fixed-decimal BREP text that rounds very small values; its geometry fingerprint therefore still matches after the assembly is saved and reopened (a source recomputed at full precision used to reopen as `Embedded source geometry changed`). Opening in the GUI an assembly saved without the GUI (a headless build) gives its native joints their bundled view providers before validation; FreeCAD restores them with a placeholder view proxy that the joint safety check otherwise rejects (`Choose exactly one grounded occurrence`). When the file has no GUI view data at all, the assembly, its joints and every occurrence are also shown (FreeCAD restores them hidden, leaving an empty viewport) and embedded sources stay hidden; a GUI-saved file keeps its own visibility. [Policy, workflow and verification](assembly-workflow/WORKFLOW.md).
+All assembly mutations require the existing current document UUID/revision and bridge request ID. GUI dialogs retain their starting revision so an intervening edit rejects instead of applying to a changed assembly. A project contains one single-level native assembly. Sources are embedded shape snapshots with same-document native link occurrences; external source changes never silently update accepted parts. Native save/restore rounds coordinates and can repeatedly renormalize analytic curve frames; one preliminary roundtrip does **not** guarantee fingerprint stability. Managed save, recovery, preview and worker snapshots verify each live embedded seal before serialization, then compute its exact restored BREP fingerprint and update only that seal in the staged archive metadata. BREP geometry bytes and the live document remain unchanged. A source whose live seal mismatches is never resealed, including in recovery. No numeric quantization or geometric tolerance is used to accept a seal. Older invalid files remain failed until an explicit refresh from the saved source; there is no silent migration. Direct unmanaged FreeCAD `saveAs/saveCopy` calls do not provide this managed persistence guarantee. See [regression and investigation](assembly-workflow/FIXTURE_REGRESSION.md). Opening in the GUI an assembly saved without the GUI gives its native joints their bundled view providers before validation. When no GUI view data exists, the assembly, its joints and occurrences are shown while embedded sources stay hidden; a GUI-saved file keeps its own visibility. [Policy, workflow and verification](assembly-workflow/WORKFLOW.md).
+
+Embedded snapshot identity uses an actual `Part::Feature` with its own `KurtShapeEmbeddedSource` marker. An `App::Link` forwards its source's properties but remains an occurrence, never a separate embedded source. Insertion after a single-instance shared-source refresh reuses the replacement snapshot directly; it must not create a link to the earlier occurrence. Delivery source rows enumerate each actual snapshot once with all its occurrence IDs.
+
+A null embedded shape remains an integrity failure even when its occurrence no longer exposes a native `Shape` attribute. Full and compact inspection return `build_status:failed`; solid checking returns `no_solid` when no solid result remains. Managed save, forced recovery and the mandatory `close_document(discard:true)` checkpoint preserve the failed document and original rejected seal. Reopening those archives remains failed; recovery does not certify or silently replace the source.
 
 | Operation | Additional arguments | Behavior |
 |---|---|---|
-| `assembly_candidates` | Absolute existing FCStd `path`; read-only, no document/revision | Return selectable final Body/solid IDs/names/counts; unsafe sources reject without publishing/opening a user document |
+| `assembly_candidates` | Absolute existing FCStd/STEP `path`; optional `final_only:false`; read-only, no document/revision | Preserve legacy candidate membership, with explicit final/helper/history roles; `final_only:true` selects current final solids; unsafe sources reject without publishing/opening a user document |
+| `part_inventory` | Optional `include_history:false`; read-only document operation | Consistent current solid results for legacy/STEP, studio and assembly documents; opt-in helper/history rows and logical/native IDs |
+| `refresh_assembly_part` | `instance`; optional `path`, `source_id`, `assembly`; `shared:"instance"/"all"` required for shared snapshots | Explicit saved-source refresh in one transaction, preserving occurrence identity/placement/appearance/grounding and unchanged joint references; validates source, native solve and integrity before commit; rollback on failure. See [component refresh contract](assembly-workflow/COMPONENT_REFRESH.md) |
 | `create_assembly` | Optional `id`, `name` | Create native Assembly and joint group in this document; one assembly only |
 | `insert_assembly_part` | FCStd `path`, `source_id`; optional `assembly`, `id`, `name` | Embed selected source geometry and create one independent native link occurrence; first insertion grounds automatically |
 | `ground_assembly_instance` | `instance`; optional `assembly` | Change the sole grounded reference and solve |

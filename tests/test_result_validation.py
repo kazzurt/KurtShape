@@ -15,7 +15,7 @@ import math
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import support
 
@@ -601,12 +601,29 @@ class ResultValidationTests(ResultValidationBase, unittest.TestCase):
     def test_prepare_jobs_validate_pending_then_capture(self):
         self.kurt_model()
         self.native_length(14)
+        # The fresh boolean's plane frames acquire signed zero components on
+        # native restore. A saved/reopened model has stable exact transport,
+        # while its pending result operations still need validation.
+        path = self.folder / "pending-saved-model.FCStd"
+        self.call("save", path=str(path))
+        self.call("close_document")
+        response = self.core.dispatch({"op": "open", "path": str(path), "measure": False})
+        self.assertTrue(response["ok"], response)
+        self.state = response["result"]
         self.assertEqual(self.checks()["status"], "pending")
         key = self.core.snapshot_key(self.doc)
-        with counting() as counts:
+        from kurtshape.geometry_check_worker import source_roundtrip_stable
+        admission = []
+        def admit(doc, targets):
+            stable = source_roundtrip_stable(doc, targets)
+            admission.append((counts["check_operation"], stable))
+            return stable
+        with counting() as counts, patch("kurtshape.geometry_check_worker.source_roundtrip_stable", side_effect=admit):
             bundle = self.core.prepare_geometry_check(self.doc)
         self.assertIsNotNone(bundle, "a pending model validates synchronously, then captures")
         bundle["worker"].close()
+        self.assertTrue(bundle["worker"].cleanup_complete.wait(15))
+        self.assertEqual(admission, [(2, True)], "validation precedes real exact-transport admission")
         self.assertEqual(counts["check_operation"], 2, counts)
         self.assertEqual(self.core.snapshot_key(self.doc), key, "the verdict table write leaves the snapshot key alone")
         self.assertEqual(self.checks()["status"], "valid")
@@ -618,6 +635,33 @@ class ResultValidationTests(ResultValidationBase, unittest.TestCase):
         self.state = self.inspect()
         response = self.request("export", path=str(self.folder / "blocked.step"))
         self.assertEqual(response["error"]["code"], "build_failed", response)
+
+    def test_prepare_jobs_validates_pending_before_inexact_archive_fallback(self):
+        from kurtshape.geometry_check_worker import source_roundtrip_stable, target_fingerprints
+        self.kurt_model()
+        self.native_length(14)
+        self.assertEqual(self.checks()["status"], "pending")
+        key = self.core.snapshot_key(self.doc)
+        targets = [obj.Name for obj in self.core._geometry_check_targets(self.doc)]
+        before = target_fingerprints(self.doc, targets)
+        admission = []
+        def admit(doc, names):
+            stable = source_roundtrip_stable(doc, names)
+            admission.append((counts["check_operation"], stable))
+            return stable
+        factory = Mock(side_effect=AssertionError("An inexact archive must use synchronous checking"))
+        with counting() as counts, patch("kurtshape.geometry_check_worker.source_roundtrip_stable", side_effect=admit):
+            bundle = self.core.prepare_geometry_check(self.doc, worker_factory=factory)
+        self.assertIsNone(bundle)
+        factory.assert_not_called()
+        self.assertEqual(admission, [(2, False)], "pending validation runs even when transport is ineligible")
+        self.assertEqual(counts["check_operation"], 2, counts)
+        self.assertEqual(self.core.snapshot_key(self.doc), key)
+        self.assertEqual(self.checks()["status"], "valid")
+        state = self.call("check_geometry")
+        self.assertEqual(state["geometry_check"], "valid")
+        self.assertEqual(state["build_status"], "valid")
+        self.assertEqual(target_fingerprints(self.doc, targets), before)
 
     # --- Contract 3.2 U5: parameters reach the result-check keys (C17) -------------------------
     def test_parameter_edit_emptying_add_rejects_empty_add_and_keeps_accepted(self):

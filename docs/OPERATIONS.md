@@ -4,7 +4,7 @@
 > `runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe -B tools\generate_operations_doc.py > runtime\test-tmp\operations-doc.log 2>&1`.
 > `tests/test_operations_doc.py` fails when this file and the schema disagree.
 
-One entry per operation of this build (90 operations, schema version 1, schema digest `635fd5c632167f3e`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
+One entry per operation of this build (91 operations, schema version 1, schema digest `be3942a56446b28e`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
 
 ## Reading an entry
 
@@ -78,7 +78,7 @@ Bridge and client outcomes (`invalid_request`, `queue_full`, `outcome_unknown`, 
 
 ## Index
 
-- **Reads:** [assembly_candidates](#assembly_candidates), [assembly_instance_source](#assembly_instance_source), [capabilities](#capabilities), [check_geometry](#check_geometry), [diagnostics](#diagnostics), [inspect](#inspect), [list_documents](#list_documents), [list_parameters](#list_parameters), [measure](#measure), [operation_schema](#operation_schema), [orphan_helpers](#orphan_helpers), [part_inventory](#part_inventory), [preview](#preview), [request_status](#request_status), [resolve_selector](#resolve_selector)
+- **Reads:** [assembly_candidates](#assembly_candidates), [assembly_instance_source](#assembly_instance_source), [capabilities](#capabilities), [check_clearance](#check_clearance), [check_geometry](#check_geometry), [diagnostics](#diagnostics), [inspect](#inspect), [list_documents](#list_documents), [list_parameters](#list_parameters), [measure](#measure), [operation_schema](#operation_schema), [orphan_helpers](#orphan_helpers), [part_inventory](#part_inventory), [preview](#preview), [request_status](#request_status), [resolve_selector](#resolve_selector)
 - **View:** [render_view](#render_view), [set_view](#set_view)
 - **Open or create a document:** [import_step](#import_step), [new](#new), [open](#open), [recover](#recover)
 - **Modeling:** [add_arc](#add_arc), [add_circle](#add_circle), [add_line](#add_line), [add_polyline](#add_polyline), [add_rectangle](#add_rectangle), [boolean_parts](#boolean_parts), [chamfer](#chamfer), [circular_pattern_parts](#circular_pattern_parts), [create_body](#create_body), [create_helix](#create_helix), [create_parameter](#create_parameter), [create_plane](#create_plane), [create_sketch](#create_sketch), [delete_feature](#delete_feature), [delete_features](#delete_features), [delete_parameter](#delete_parameter), [delete_part](#delete_part), [duplicate_feature](#duplicate_feature), [edit_dress_up](#edit_dress_up), [edit_extrusion](#edit_extrusion), [edit_parameter](#edit_parameter), [extrude_face](#extrude_face), [fillet](#fillet), [hole](#hole), [linear_pattern_parts](#linear_pattern_parts), [loft](#loft), [mirror_parts](#mirror_parts), [move_face](#move_face), [pad](#pad), [pierce](#pierce), [pocket](#pocket), [project_geometry](#project_geometry), [rebuild](#rebuild), [rename_feature](#rename_feature), [rename_parameter](#rename_parameter), [repair_orphan_helpers](#repair_orphan_helpers), [revolve](#revolve), [rollback](#rollback), [set_expression](#set_expression), [set_parameter](#set_parameter), [set_part_appearance](#set_part_appearance), [set_sketch_support](#set_sketch_support), [shell](#shell), [sketch_circle](#sketch_circle), [sketch_rectangle](#sketch_rectangle), [split_part](#split_part), [sweep](#sweep), [transform_part](#transform_part)
@@ -120,6 +120,18 @@ Contract identity, supported operations, measurement levels and limits. [Contrac
 - No arguments.
 
 Example (fixture `none`): `{"op": "capabilities"}`
+
+### check_clearance
+
+Opt-in exact nominal envelope distances, bounded thread overlaps and directional tip clearance. [Contract][contract-1].
+
+- `allowed_overlaps`: array of object
+- `axis_probe`: object; **one of** this or `envelopes`
+- `components`: array of string
+- `envelopes`: array of object; **one of** this or `axis_probe`
+- `minimum_clearance_mm`: number
+
+Example (fixture `plate`): `{"op": "check_clearance", "document_id": "<document_id>", "envelopes": [{"axis": [0, 0, 1], "id": "tool", "kind": "cylinder", "length_mm": 40, "origin_mm": [100, 0, 0], "radius_mm": 5}]}`
 
 ### check_geometry
 
@@ -1407,6 +1419,7 @@ Run 1-32 modeling steps as one native transaction: one undo step and one revisio
 
 Example (fixture `plate`): `{"op": "batch", "document_id": "<document_id>", "expected_revision": "<revision>", "label": "plate width", "steps": [{"op": "create_parameter", "name": "plate_width", "type": "length", "value": 62}, {"op": "set_expression", "expression": "plate_width", "feature": "PlateProfile", "parameter": "Width"}, {"op": "sketch_circle", "as": "spot", "diameter": 4, "id": "BatchSpot", "x": 10, "y": 10}, {"op": "add_circle", "diameter": 4, "sketch": {"$ref": "spot"}, "x": 20, "y": 10}]}`
 
+[contract-1]: OPERATION_CONTRACT.md#clearance-checks-opt-in
 [contract-30]: OPERATION_CONTRACT.md#contract-30--q03-lightweight-status-and-explicit-checks
 [contract-31]: OPERATION_CONTRACT.md#contract-31--fail-fast-studio-results-typed-helices-and-tight-boxes
 [contract-32-batch]: OPERATION_CONTRACT.md#324-atomic-batches-and-preview-accepted

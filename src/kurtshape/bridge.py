@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import queue
 import secrets
+import sys
 import threading
 import time
 import traceback
@@ -161,11 +162,16 @@ class Bridge:
         self.server.log_path=Path(runtime)/"kurtshape.log"
         self.path=Path(runtime)/"assistant-session.json"
         read_operations=sorted(getattr(controller, "READ_OPS", ()))
+        gui = bool(getattr(sys.modules.get("FreeCAD"), "GuiUp", False))
+        display = os.environ.get("QT_QPA_PLATFORM", "native").split(":", 1)[0]
+        launch = {"gui": gui, "display": display,
+                  "visibility": ("offscreen" if display in {"offscreen", "minimal"} else "visible") if gui else "headless",
+                  "profile": os.environ.get("FREECAD_USER_HOME"), "session_dir": str(Path(runtime).resolve())}
         self.path.write_text(json.dumps({"url":f"http://127.0.0.1:{self.server.server_port}/operation","token":self.token,"pid":os.getpid(),
                                          "contract":CONTRACT_VERSION,"contract_revision":CONTRACT_REVISION,"session_id":self.ledger.session_id,
                                          "build":build_identity.summary(),"read_operations":read_operations,
                                          "non_mutating_operations":sorted(getattr(controller, "NON_MUTATING_OPS", read_operations)),
-                                         "request_size_limit":REQUEST_SIZE_LIMIT},indent=2))
+                                         "request_size_limit":REQUEST_SIZE_LIMIT,"launch":launch},indent=2))
         self.thread=threading.Thread(target=self.server.serve_forever,daemon=True)
         self.thread.start()
 

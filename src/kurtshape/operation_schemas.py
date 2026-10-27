@@ -680,6 +680,26 @@ OPERATIONS = {
         "summary": "Helper groups whose owning studio operation no longer exists",
         "fields": {}, "required": [], "examples": [{"op": "orphan_helpers"}], "x-example-fixture": "plate",
         "doc": DOC_30},
+    "check_clearance": {
+        "summary": "Opt-in exact nominal envelope distances, bounded thread overlaps and directional tip clearance",
+        "fields": {
+            "envelopes": {"type": "array", "maxItems": 128, "items": {"type": "object"},
+                          "description": "Named world-space cylinder, annulus, box or current component envelopes; see the clearance contract"},
+            "components": {"type": "array", "minItems": 1, "uniqueItems": True, "items": {"type": "string"},
+                           "description": "Current solid result IDs to check; omitted checks all; self-pairs are skipped"},
+            "minimum_clearance_mm": {"type": "number", "minimum": 0, "x-unit": "mm",
+                                     "description": "Required separation, zero when omitted"},
+            "allowed_overlaps": {"type": "array", "items": {"type": "object"},
+                                 "description": "Explicit envelope/component pairs with reason thread_envelope, bounded region and max_volume_mm3"},
+            "axis_probe": {"type": "object", "description": "Tip disk swept along axis: tip_mm, axis, radius_mm, max_distance_mm"}},
+        "required": [], "requires_one_of": [["envelopes", "axis_probe"]],
+        "constraints": ["Read-only and opt-in; evaluated against current world-space solid results",
+                        "Thread allowances apply only inside the supplied region and below the volume limit; every other pair remains checked",
+                        "The directional probe reports the first occupied axial station within its finite tested range, not infinite clearance",
+                        "No machine kinematics, cutting loads, tolerance stack or unsupplied motion is implied"],
+        "examples": [{"op": "check_clearance", "envelopes": [{"id": "tool", "kind": "cylinder", "origin_mm": [100, 0, 0],
+                        "axis": [0, 0, 1], "radius_mm": 5, "length_mm": 40}]}],
+        "x-example-fixture": "plate", "doc": "docs/OPERATION_CONTRACT.md#clearance-checks-opt-in"},
 
     # Documents -------------------------------------------------------------
     "new": {
@@ -1447,7 +1467,7 @@ RESPONSE_DETAIL = {"enum": ["full", "compact"],
 NO_RESPONSE_DETAIL = frozenset({"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics",
                                 "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
                                 "operation_schema", "list_parameters", "render_view", "set_view", "close_document",
-                                "part_inventory", "assembly_instance_source", "measure"})
+                                "part_inventory", "assembly_instance_source", "measure", "check_clearance"})
 for _op, _entry in OPERATIONS.items():
     if _op not in NO_RESPONSE_DETAIL:
         _entry["fields"].setdefault("detail", RESPONSE_DETAIL)

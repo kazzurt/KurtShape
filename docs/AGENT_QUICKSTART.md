@@ -58,6 +58,34 @@ By default the client honors `KURTSHAPE_SESSION_DIR`, otherwise it uses this
 checkout's `runtime/assistant-session.json`. It connects only to local loopback
 with proxies disabled. Do not copy the token into a prompt or log.
 
+### Discover and explicitly select a delivery session
+
+`tools/assistant_client.py --discover` reads session files under this checkout's `runtime`
+and verifies each bridge with `capabilities`; `--search-root <folder>` adds another known
+profile location, such as the folder holding a separate fixture viewer. The token-free
+inventory includes session file/id, PID, loaded build, compact document rows, and launch
+visibility (`visible`, `offscreen`, or `headless`). Older session files report `unknown`;
+folder names only supply `purpose_hint` (`benchmark`, `isolated`, or `unspecified`), never
+proof that a GUI is visible. Discovery selects nothing and launches nothing.
+
+After choosing the intended session, open and fit with an explicit target:
+
+```powershell
+# Run these with the bundled pythonw.exe and redirect stdout/stderr to files.
+# Add --search-root for a viewer outside this checkout's runtime folder.
+pythonw.exe -B tools/assistant_client.py --discover --search-root C:\path\to\fixture-viewer
+pythonw.exe -B tools/assistant_client.py --session C:\path\to\fixture-viewer\assistant-session.json --session-id <id-from-inventory> --open C:\path\to\fixture.FCStd
+```
+
+`--open` refuses an omitted `--session`; `--session-id` refuses a replaced session before
+sending. It reuses an already open matching native file and otherwise sends one tracked
+`open`, then `set_view` (`view:iso`, `frame:model`) to the returned document id. It never
+targets the active document by guess, retries an unknown open with a new id, restarts an app,
+closes a document, or saves. Python callers can use `discover_sessions(search_roots=[...])`
+and `open_in_session(path, session_path, expected_session_id=...)` from `assistant_client`.
+Check the returned document's build status as well as `ok`; opening a file successfully
+does not establish geometry validity. Use the delivery-validation workflow before handoff.
+
 ## Modeling rules
 
 Read [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md) and the running app's

@@ -358,7 +358,7 @@ def _render_jobs():
 
 class Controller:
     READ_OPS = {"inspect", "list_documents", "capabilities", "request_status", "preview", "diagnostics", "assembly_candidates", "resolve_selector", "check_geometry", "orphan_helpers",
-                "operation_schema", "list_parameters", "part_inventory", "assembly_instance_source", "measure"}
+                "operation_schema", "list_parameters", "part_inventory", "assembly_instance_source", "measure", "check_clearance"}
     ASSEMBLY_OPS = {"create_assembly", "insert_assembly_part", "ground_assembly_instance", "create_assembly_joint",
                     "edit_assembly_joint", "move_assembly_joint", "move_assembly_instance", "delete_assembly_object", "solve_assembly", "refresh_assembly_part",
                     "set_assembly_folders", "move_assembly_instances"}
@@ -427,6 +427,7 @@ class Controller:
     ARGS["close_document"] = set(operation_schemas.arg_names("close_document"))
     ARGS["render_view"] = set(operation_schemas.arg_names("render_view"))
     ARGS["set_view"] = set(operation_schemas.arg_names("set_view"))
+    ARGS["check_clearance"] = set(operation_schemas.arg_names("check_clearance"))
     ARGS["batch"] = set(operation_schemas.arg_names("batch"))
     for _op in parameters.OPS | parameters.READ_OPS:
         ARGS[_op] = set(operation_schemas.arg_names(_op))
@@ -513,7 +514,7 @@ class Controller:
             if target is None:
                 raise OperationError("missing_body", "body must identify a current solid result")
             targets = [target]
-        return [obj for obj in targets if not obj.Shape.isNull() and obj.Shape.Solids]
+        return [obj for obj in targets if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
 
     def prepare_geometry_check(self, doc, body=None, *, worker_factory=None):
         """Capture one accepted UI check; None retains synchronous behavior.
@@ -523,7 +524,7 @@ class Controller:
         """
         from dataclasses import asdict
         from . import document_index
-        from .geometry_check_worker import NativeGeometryCheckWorker, target_fingerprints
+        from .geometry_check_worker import NativeGeometryCheckWorker, target_fingerprints, source_roundtrip_stable
         from .preview_worker import _snapshot_file_identity
         if self.busy or not self._is_open(doc) or not self.is_managed(doc):
             return None
@@ -543,6 +544,9 @@ class Controller:
             return None
         targets = self._geometry_check_targets(doc, body)
         if not targets or all(self.geometry.check(obj) is not None for obj in targets):
+            return None
+        if not self.timings.measure("geometry_check_roundtrip_admission", source_roundtrip_stable,
+                                    doc, (obj.Name for obj in targets)):
             return None
         executable = Path(App.getHomePath()) / "bin" / ("python.exe" if os.name == "nt" else "python")
         worker = (worker_factory or NativeGeometryCheckWorker)(executable, ROOT / "runtime")
@@ -1148,7 +1152,7 @@ class Controller:
 
     def _geometry(self, doc, objects=None, measure=None):
         objects = native_results(doc) if objects is None else objects
-        solid_objects = [obj for obj in objects if not obj.Shape.isNull() and obj.Shape.Solids]
+        solid_objects = [obj for obj in objects if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
         if not solid_objects:
             return None
         fields = geometry.LEVELS[self._measure_level(measure)]
@@ -1540,7 +1544,7 @@ class Controller:
         meta.RebuildReason = ""
 
     def _check_status(self, objects):
-        targets = [obj for obj in objects if not obj.Shape.isNull() and obj.Shape.Solids]
+        targets = [obj for obj in objects if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
         if not targets:
             return "not_applicable"
         checks = [self.geometry.check(obj) for obj in targets]
@@ -1569,7 +1573,7 @@ class Controller:
             if hasattr(obj, "Shape") and self._expects_shape(obj) and obj.Shape.isNull():
                 missing.append(obj.Name)
         included = native_results(doc) if included is None else included
-        solids = [obj for obj in included if not obj.Shape.isNull() and obj.Shape.Solids]
+        solids = [obj for obj in included if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
         solid = bool(solids)
         for obj in solids:
             check = self.geometry.check(obj)
@@ -2102,10 +2106,19 @@ class Controller:
                     return {"ok": True, "result": {"parts": rows(doc, request.get("include_history", False))}}
                 if op == "orphan_helpers":
                     return {"ok": True, "result": {"groups": studio.orphan_groups(doc)}}
+                if op == "part_inventory":
+                    from .part_inventory import rows
+                    return {"ok": True, "result": {"parts": rows(doc, request.get("include_history", False))}}
                 if op == "list_parameters":
                     return {"ok": True, "result": parameters.list_result(self, doc, request)}
                 if op == "resolve_selector":
                     return {"ok": True, "result": {"matches": native_selectors.resolve(doc, request.get("selector"), detail=True)}}
+                if op == "check_clearance":
+                    from . import clearance
+                    errors = self._build_status(doc)
+                    if errors or self._meta(doc).BuildStatus != "valid":
+                        raise OperationError("build_failed", "Repair the model before checking clearance", errors=errors)
+                    return {"ok": True, "result": clearance.check(doc, request)}
                 if op == "render_view":
                     # Read-only view op (F2): a cache hit or refusal as a dict, else a Deferred job.
                     return self.renders.request(doc, request)
@@ -2158,7 +2171,7 @@ class Controller:
                         if target is None:
                             raise OperationError("missing_body", "body must identify a current solid result")
                         targets = [target]
-                    targets = [obj for obj in targets if not obj.Shape.isNull() and obj.Shape.Solids]
+                    targets = [obj for obj in targets if hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Solids]
                     if not targets:
                         raise OperationError("no_solid", "No solid result is available to check")
                     # Contract 3.2 F1: pending result operations are validated first (read-only check mode).

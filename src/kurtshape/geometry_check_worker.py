@@ -56,6 +56,42 @@ def target_fingerprints(document, target_ids):
     return _json_copy(rows)
 
 
+def source_roundtrip_stable(document, target_ids):
+    """Admit only exact detached source BRep round trips.
+
+    Native normalization can change analytic direction coefficients when a
+    snapshot is restored. Such shapes retain the synchronous geometry check;
+    this predicate never substitutes for any worker fingerprint comparison.
+    Shared occurrence sources are checked once, without loading a document or
+    retaining detached geometry after admission.
+    """
+    try:
+        import Part
+        from kurtshape.assembly import canonical_brep
+        from kurtshape.geometry import source_of
+        checked = set()
+        for name in target_ids:
+            target = document.getObject(name)
+            if target is None or target.Document != document:
+                return False
+            source = source_of(target)
+            if source.Document != document:
+                return False
+            if source.Name in checked:
+                continue
+            original = source.Shape.copy().exportBrepToString()
+            restored = Part.Shape()
+            restored.importBrepFromString(original)
+            if canonical_brep(original) != canonical_brep(restored.exportBrepToString()):
+                return False
+            checked.add(source.Name)
+        return True
+    except Exception:
+        # Failure to establish exact transport eligibility leaves validation
+        # with the existing synchronous path; it never produces a verdict.
+        return False
+
+
 def _validate_envelope(envelope):
     envelope = _json_copy(envelope)
     if not isinstance(envelope, dict) or set(envelope) != {

@@ -40,6 +40,7 @@ NEW_OPERATIONS_32 = frozenset({"operation_schema", "close_document", "render_vie
                                "delete_parameter",  # U5
                                "batch",  # U6
                                "set_view",  # GUI view op, 2026-10-20 (OPERATION_CONTRACT "Viewport camera")
+                               "refresh_assembly_part", "part_inventory", "check_clearance",  # Additive fixture workflow APIs
                                "measure", "assembly_instance_source", "set_assembly_folders", "move_assembly_instances"})  # assembly UX program, 2026-10-24 (docs/assembly-ux/STATUS.md)
 
 GOLDEN_CHILD = r'''
