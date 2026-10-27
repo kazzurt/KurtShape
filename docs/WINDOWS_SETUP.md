@@ -81,7 +81,7 @@ resolve the update. Do not reset or clean the checkout to force an update.
 | Setup check fails | Read the printed report and process logs. The failure does not affect an already-open app or your CAD files. |
 | Bridge connection refused | Launch this checkout and retry `tools/assistant.ps1`. A stale session file is not proof the app is running. |
 | Bridge authentication fails / wrong document list | Confirm you selected the correct checkout/session; do not print the token or connect to a different instance by guessing. |
-| Black or broken viewport | Close the app after saving; test launching from a terminal with `$env:QT_OPENGL='software'`. This is a diagnostic fallback; performance can be lower. |
+| Black or broken viewport | Close the app after saving and update the graphics driver; FreeCAD needs OpenGL 2.0 or later and logs `OpenGL version is` at startup. `QT_OPENGL=software` has no effect: FreeCAD 1.1.4 forces desktop OpenGL before Qt reads it. |
 | Old behavior after updating | Save, close and relaunch. A running app cannot hot-reload the new checkout. |
 
 For an existing engine at another location, use `setup.ps1 -RuntimeRoot <folder>`
