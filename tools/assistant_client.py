@@ -21,6 +21,7 @@ with a new request_id, after inspecting); 64 usage error (nothing was sent). ``-
 0 current, 1 otherwise, 3 no session.
 """
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import http.client
 import importlib.util
 import json
@@ -30,6 +31,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import urllib.parse
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,6 +49,93 @@ USAGE = 64
 
 def default_session_path():
     return Path(os.environ.get("KURTSHAPE_SESSION_DIR", str(ROOT / "runtime"))) / "assistant-session.json"
+
+
+def discover_sessions(search_roots=(), *, wait=2.0, include_documents=True):
+    """Read-only, token-free inventory. Search this checkout's runtime plus explicit roots.
+
+    A file is only a candidate: ``live`` requires a capabilities response from its session id.
+    Older session files have unknown visibility; path hints never become visibility claims.
+    No session is selected, launched, restarted or opened by discovery.
+    """
+    paths = {default_session_path().resolve()}
+    for root in (ROOT / "runtime", *search_roots):
+        root = Path(root).resolve()
+        if root.is_file():
+            paths.add(root)
+        elif root.is_dir():
+            paths.update(path.resolve() for path in root.rglob("assistant-session.json"))
+
+    def inspect_session(path):
+        row = {"session_file": str(path), "live": False, "visibility": "unknown"}
+        segments = {part.lower() for part in path.parts}
+        row["purpose_hint"] = ("benchmark" if segments & {"bench", "benchmark", "benchmarks"}
+                               else "isolated" if segments & {"private", "test-tmp"} else "unspecified")
+        try:
+            _, session = _session(path)
+            url = urllib.parse.urlsplit(session["url"])
+            if url.scheme != "http" or url.hostname not in {"127.0.0.1", "localhost", "::1"}:
+                row["error"] = "Session endpoint is not loopback HTTP"
+                return row
+            row.update(session_id=session.get("session_id"), pid=session.get("pid"),
+                       visibility=(session.get("launch") or {}).get("visibility", "unknown"),
+                       launch=session.get("launch"), build=session.get("build"))
+            response = send({"op": "capabilities"}, path, wait=wait, _session_data=session)
+            result = response.get("result") or {}
+            if not response.get("ok") or result.get("session_id") != session.get("session_id"):
+                row["error"] = (response.get("error") or {}).get("code", "session_identity_mismatch")
+                return row
+            row["live"] = True
+            row["build"] = result.get("build")
+            if include_documents:
+                documents = send({"op": "list_documents", "detail": "compact", "measure": False},
+                                 path, wait=wait, _session_data=session)
+                if documents.get("ok"):
+                    row["documents"] = (documents.get("result") or {}).get("documents", [])
+                else:
+                    row["documents_error"] = (documents.get("error") or {}).get("code")
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            row["error"] = type(exc).__name__ + ": " + str(exc)
+        return row
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        return list(pool.map(inspect_session, sorted(paths, key=str)))
+
+
+def open_in_session(path, session_path, *, expected_session_id=None, view="iso", wait=300.0):
+    """Open (or reuse the existing document) and fit its view in one explicitly selected session.
+
+    Reads the session credentials once and pins every request to that endpoint. A supplied id
+    must match before any request. Failed/unknown open outcomes are returned without a second
+    open, and no app is ever launched, closed or restarted here.
+    """
+    if not session_path or (isinstance(session_path, str) and not session_path.strip()):
+        raise ValueError("open_in_session requires an explicit session_path")
+    selected, session = _session(session_path)
+    if expected_session_id is not None and session.get("session_id") != expected_session_id:
+        return {"ok": False, "error": {"code": "session_changed", "message": "Selected session has changed; discover again"}}
+    listing = send({"op": "list_documents", "detail": "compact", "measure": False},
+                   selected, wait=wait, _session_data=session)
+    if not listing.get("ok"):
+        return listing
+    target = Path(path).resolve()
+    existing = next((row for row in listing["result"].get("documents", [])
+                     if row.get("native_file") and Path(row["native_file"]).resolve() == target), None)
+    opened = {"ok": True, "result": existing} if existing else send(
+        {"op": "open", "path": str(target), "measure": False, "request_id": str(uuid.uuid4())},
+        selected, wait=wait, _session_data=session)
+    if not opened.get("ok"):
+        return opened
+    document = opened["result"]
+    fitted = send({"op": "set_view", "document_id": document["document_id"], "view": view,
+                   "frame": "model", "request_id": str(uuid.uuid4())}, selected, wait=wait, _session_data=session)
+    result = {"ok": bool(fitted.get("ok")), "session_file": str(selected.resolve()),
+              "session_id": session.get("session_id"), "reused_document": existing is not None,
+              "document": document, "view": fitted}
+    for key in ("error", "reconciliation"):
+        if key in fitted:
+            result[key] = fitted[key]
+    return result
 
 
 def _post(url, token, body, timeout):
@@ -288,6 +377,10 @@ def main(argv=None):
     choice.add_argument("--request-file", type=Path)
     choice.add_argument("--status", metavar="ID")
     choice.add_argument("--build-check", action="store_true")
+    choice.add_argument("--discover", action="store_true", help="Read-only live session inventory; selects nothing")
+    choice.add_argument("--open", type=Path, metavar="FCSTD", help="Open and fit in the explicit --session")
+    parser.add_argument("--search-root", action="append", type=Path, default=[],
+                        help="Additional session inventory root; repeatable; no whole-user-folder scan by default")
     parser.add_argument("--session", type=Path, help="Session file for an explicitly selected application instance")
     parser.add_argument("--request-id")
     parser.add_argument("--wait", type=float, default=CLI_WAIT, help="Total budget in seconds (default 75)")
@@ -296,6 +389,18 @@ def main(argv=None):
     parser.add_argument("--session-id", help="With --reconcile: the session the request was first sent to (printed on "
                                              "stderr when it was sent); needed before a body is re-sent")
     args = parser.parse_args(argv)
+    if args.discover:
+        print(json.dumps({"sessions": discover_sessions(args.search_root, wait=min(args.wait, 5.0))}, indent=2))
+        return 0
+    if args.open:
+        if args.session is None:
+            parser.error("--open requires --session; discovery never selects a session")
+        try:
+            result = open_in_session(args.open, args.session, expected_session_id=args.session_id, wait=args.wait)
+        except (OSError, ValueError, KeyError) as exc:
+            parser.error("cannot open in the selected session: " + str(exc))
+        print(json.dumps(result, indent=2))
+        return exit_code(result)
     session_path = args.session or default_session_path()
     try:
         session = _session(session_path)[1] if Path(session_path).is_file() else None

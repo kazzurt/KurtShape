@@ -28,7 +28,7 @@ transport never imports them (it runs in any plain Python 3).
 
 Constructors
 ------------
-``Session.headless(root, project_roots=())``
+``Session.headless(root, project_roots=(), *, batch_helpers=False)``
     A private in-process ``Controller`` under ``root``. ``root`` gets ``session/`` (with
     ``settings.json``: ``workspace_layout: "portable"`` and ``project_roots`` = ``root`` plus
     ``project_roots``; KurtShape saves and exports only inside these), ``user-data``,
@@ -48,7 +48,7 @@ Constructors
     not enforce the 104-character TEMP limit; an inherited TEMP longer than that is recorded in
     ``s.isolation["warnings"]``. The live ``runtime`` folder, ``runtime\\user-data`` and anything
     inside it are refused as ``root`` in both modes.
-``Session.bridge(session_path=None, *, root=None, wait=300.0, close_documents=False, send=None)``
+``Session.bridge(session_path=None, *, root=None, wait=300.0, close_documents=False, send=None, batch_helpers=False)``
     Requests go through ``tools/assistant_client.py`` ``send(request, session_path, wait=...)``
     (loaded by file path from this checkout, not copied). ``session_path`` defaults to the
     client's own default (``KURTSHAPE_SESSION_DIR`` or ``runtime``) ``assistant-session.json``.
@@ -134,6 +134,18 @@ tracked revision moved past it.
 
 Modelling helpers (the Rev B fixture harness, same requests, so its recipes replay)
 ----------------------------------------------------------------------------------
+``batch(steps, *, label=None, preview=False)``
+    One atomic typed batch. With ``preview=True``, returns a rejected preview without a
+    mutation; an accepted preview commits identical steps with its explicit ``base_revision``
+    and a fresh mutation id. A concurrent edit therefore rejects; it is never silently rebased.
+    The helper does not split a batch or retry an unknown outcome.
+``batch_helpers=True`` (constructor option, also an instance setting)
+    Opts sketch/circle/polygon into small batches, preserving ids, constraints and geometry.
+    Sketch uses two steps; polygon four; circle uses the existing ``sketch_circle`` shortcut
+    and three steps (no redundant empty-sketch recompute). The helper becomes one undo step
+    and returns one inspection. The default remains the individual operations for compatibility.
+    Helpers commit directly through all existing validation gates; use ``batch(..., preview=True)``
+    for risky proposals requiring a disposable preview first.
 ``sketch(stem, origin=(0,0,0), normal=(0,0,1), x_direction=(1,0,0), body="Body")``
     ``create_plane`` id ``stem+"Plane"`` then ``create_sketch`` id ``stem+"Sketch"`` on it;
     returns the sketch id.
@@ -155,7 +167,7 @@ Ledger and lifecycle
 ``s.ledger_path`` (``root/requests.jsonl``): per attempt, a ``{"event": "sent", seq,
 request, ...}`` line before the request goes out (so a crash still shows what was in
 flight) and a ``{"event": "done", seq, request_id, op, ok, error_code, error_message,
-document_id, revision, created_feature, elapsed_ms, attempt, retry_of, reconciliation}``
+document_id, revision, created_feature, elapsed_ms, response_bytes, attempt, retry_of, reconciliation}``
 line after. ``s.log_path`` (``root/build.log``): one readable line per attempt. Both are
 appended, so several sessions can share a root; ``sdk_session`` tells them apart.
 
@@ -339,7 +351,7 @@ class Session:
     """A tracked KurtShape session; build one with ``Session.headless`` or ``Session.bridge``."""
 
     def __init__(self, transport, send, root, *, controller=None, isolation=None, restore=None,
-                 close_documents=False):
+                 close_documents=False, batch_helpers=False):
         self.transport = transport
         self._send = send
         self.root = Path(root)
@@ -348,6 +360,7 @@ class Session:
         self.isolation = isolation or {}
         self._restore = restore or {}
         self._close_documents = close_documents
+        self.batch_helpers = bool(batch_helpers)
         self.session_path = None
         self.ledger_path = self.root / "requests.jsonl"
         self.log_path = self.root / "build.log"
@@ -368,7 +381,7 @@ class Session:
     # -- constructors -------------------------------------------------------------------------
 
     @classmethod
-    def headless(cls, root, project_roots=()):
+    def headless(cls, root, project_roots=(), *, batch_helpers=False):
         """An isolated in-process Controller under ``root`` (see the module docstring)."""
         root, isolation, restore = _prepare_headless(root, project_roots)
         from .core import Controller
@@ -378,7 +391,8 @@ class Session:
             # JSON copies, as the bridge returns: identical shapes, and no aliasing of Controller-owned objects.
             return json.loads(json.dumps(controller.dispatch(request)))
         try:
-            return cls("headless", transport, root, controller=controller, isolation=isolation, restore=restore)
+            return cls("headless", transport, root, controller=controller, isolation=isolation, restore=restore,
+                       batch_helpers=batch_helpers)
         except BaseException:
             controller.close()
             for name, value in restore.items():
@@ -386,7 +400,8 @@ class Session:
             raise
 
     @classmethod
-    def bridge(cls, session_path=None, *, root=None, wait=300.0, close_documents=False, send=None):
+    def bridge(cls, session_path=None, *, root=None, wait=300.0, close_documents=False, send=None,
+               batch_helpers=False):
         """Requests through ``tools/assistant_client.py`` ``send`` (see the module docstring)."""
         if send is None:
             client = _load_assistant_client()
@@ -401,7 +416,7 @@ class Session:
 
         def transport(request):
             return send(request, session_path, wait=wait)
-        session = cls("bridge", transport, root, close_documents=close_documents)
+        session = cls("bridge", transport, root, close_documents=close_documents, batch_helpers=batch_helpers)
         session.session_path = session_path
         return session
 
@@ -503,6 +518,7 @@ class Session:
                    "document_id": result.get("document_id", request.get("document_id")),
                    "revision": result.get("revision"), "created_feature": result.get("created_feature"),
                    "elapsed_ms": elapsed, "attempt": attempt, "retry_of": retry_of,
+                   "response_bytes": len(json.dumps(response, separators=(",", ":"), default=str).encode("utf-8")),
                    "reconciliation": (reconciliation or {}).get("outcome")}
         closed = result.get("closed")
         if request.get("op") == "close_document" and isinstance(closed, dict):
@@ -627,8 +643,36 @@ class Session:
 
     # -- modelling helpers (Rev B fixture harness semantics) ----------------------------------
 
+    def batch(self, steps, *, label=None, preview=False):
+        """Run one atomic batch; optionally preview and commit the identical steps at its base revision.
+
+        A rejected preview is returned without committing (``accepted: false``). The committed
+        request carries an explicit revision, so a concurrent edit rejects instead of silently
+        replaying a proposal that was previewed against different geometry. No automatic splitting.
+        """
+        proposal = {"op": "batch", "steps": json.loads(json.dumps(steps, default=_json_default))}
+        if label is not None:
+            proposal["label"] = label
+        args = {key: value for key, value in proposal.items() if key != "op"}
+        if preview:
+            checked = self.call("preview", proposal=proposal)
+            if not checked.get("accepted"):
+                return checked
+            args["expected_revision"] = checked["base_revision"]
+        return self.call("batch", **args)
+
+    @staticmethod
+    def _sketch_steps(stem, origin, normal, x_direction, body):
+        return [{"op": "create_plane", "id": stem + "Plane", "body": body,
+                 "origin": list(origin), "normal": list(normal), "x_direction": list(x_direction)},
+                {"op": "create_sketch", "id": stem + "Sketch", "body": body,
+                 "support": {"feature": stem + "Plane"}}]
+
     def sketch(self, stem, origin=(0, 0, 0), normal=(0, 0, 1), x_direction=(1, 0, 0), body="Body"):
         """``create_plane`` ``stem+"Plane"`` and ``create_sketch`` ``stem+"Sketch"`` on it; returns the sketch id."""
+        if self.batch_helpers:
+            self.batch(self._sketch_steps(stem, origin, normal, x_direction, body), label=stem)
+            return stem + "Sketch"
         self.call("create_plane", id=stem + "Plane", body=body, origin=list(origin), normal=list(normal),
                   x_direction=list(x_direction))
         self.call("create_sketch", id=stem + "Sketch", body=body, support={"feature": stem + "Plane"})
@@ -645,15 +689,45 @@ class Session:
 
     def circle(self, stem, origin, diameter, length, operation="new", part=None, name=None, body="Body"):
         """Pad a circle of ``diameter`` centred at ``origin`` by ``length``; returns the part id."""
+        if self.batch_helpers:
+            return self._profile_pad_batch(stem, origin, {"op": "add_circle", "x": 0, "y": 0,
+                                                          "diameter": diameter},
+                                           length, operation, part, name, body)
         sketch = self.sketch(stem, origin, body=body)
         self.call("add_circle", sketch=sketch, body=body, x=0, y=0, diameter=diameter)
         return self._pad(stem, sketch, length, operation, part, name, body)
 
     def polygon(self, stem, points, z, length, operation="new", part=None, name=None, body="Body"):
         """Pad a closed polyline through ``points`` on a plane at height ``z``; returns the part id."""
+        if self.batch_helpers:
+            return self._profile_pad_batch(stem, (0, 0, z), {"op": "add_polyline", "points": points,
+                                                             "closed": True},
+                                           length, operation, part, name, body)
         sketch = self.sketch(stem, (0, 0, z), body=body)
         self.call("add_polyline", sketch=sketch, body=body, points=points, closed=True)
         return self._pad(stem, sketch, length, operation, part, name, body)
+
+    def _profile_pad_batch(self, stem, origin, profile, length, operation, part, name, body):
+        steps = self._sketch_steps(stem, origin, (0, 0, 1), (1, 0, 0), body)
+        if profile["op"] == "add_circle":
+            # The existing typed shortcut creates and constrains the same native sketch in
+            # one step; there is no reason to recompute the empty sketch first.
+            steps[-1] = dict(steps[-1], op="sketch_circle", x=profile["x"], y=profile["y"],
+                             diameter=profile["diameter"])
+        else:
+            steps.append(dict(profile, sketch=stem + "Sketch", body=body))
+        pad = {"op": "pad", "id": stem, "profile": stem + "Sketch", "length": length,
+               "operation": operation, "body": body}
+        if part:
+            pad["merge_scope"] = [part]
+        if name:
+            pad["name"] = name
+        steps.append(pad)
+        result = self.batch(steps, label=stem)
+        if operation != "new":
+            return part
+        produced = result["batch_report"]["steps"][-1]["parts"]
+        return produced[0] if len(produced) == 1 else self.part_named(name)
 
     def finish(self, part, folder, stem, name, color):
         """Appearance, geometry check, FCStd, STEP and inspection JSON in ``folder``; returns the manifest row."""

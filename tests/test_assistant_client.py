@@ -349,6 +349,73 @@ class AssistantClientReconciliationTests(unittest.TestCase):
         self.controller.build = None
         self.assertEqual(client.build_check(self.session)["verdict"], "unknown")
 
+    def test_discovery_is_explicit_token_free_and_does_not_guess_old_visibility(self):
+        session = json.loads(self.session.read_text())
+        session.pop("launch", None)
+        self.session.write_text(json.dumps(session))
+        calls = []
+        def fake(request, session_path=None, **kwargs):
+            calls.append(request)
+            if request["op"] == "capabilities":
+                return {"ok": True, "result": {"session_id": session["session_id"], "build": {"id": "test"}}}
+            return {"ok": True, "result": {"documents": [{"document_id": "D", "native_file": "fixture.FCStd"}]}}
+        with patch.object(client, "ROOT", self.folder), patch.object(client, "default_session_path", return_value=self.session), patch.object(client, "send", side_effect=fake):
+            rows = client.discover_sessions([self.folder])
+        row = next(row for row in rows if row["session_file"] == str(self.session.resolve()))
+        self.assertTrue(row["live"])
+        self.assertEqual(row["visibility"], "unknown")
+        self.assertNotIn(session["token"], json.dumps(rows))
+        self.assertEqual({request["op"] for request in calls}, {"capabilities", "list_documents"})
+
+    def test_open_requires_nonblank_session_before_reading_credentials(self):
+        target = self.folder / "fixture.FCStd"
+        with patch.object(client, "_session") as read_session, patch.object(client, "send") as send:
+            for invalid in (None, "", " ", "\t\r\n", False):
+                with self.subTest(session_path=invalid), self.assertRaisesRegex(ValueError, "explicit session_path"):
+                    client.open_in_session(target, invalid)
+            read_session.assert_not_called()
+            send.assert_not_called()
+
+    def test_open_and_fit_requires_selection_pins_identity_and_reuses_document(self):
+        session = json.loads(self.session.read_text())
+        target = self.folder / "fixture.FCStd"
+        calls = []
+        def fake(request, session_path=None, **kwargs):
+            calls.append(request)
+            if request["op"] == "list_documents":
+                return {"ok": True, "result": {"documents": [{"document_id": "D", "revision": "r", "native_file": str(target)}]}}
+            return {"ok": True, "result": {"applied": True}}
+        with self.assertRaises(ValueError):
+            client.open_in_session(target, None)
+        with patch.object(client, "send", side_effect=fake):
+            changed = client.open_in_session(target, self.session, expected_session_id="different")
+            self.assertEqual(changed["error"]["code"], "session_changed")
+            self.assertEqual(calls, [])
+            result = client.open_in_session(target, self.session, expected_session_id=session["session_id"])
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["reused_document"])
+        self.assertEqual([request["op"] for request in calls], ["list_documents", "set_view"])
+        self.assertEqual(calls[-1]["document_id"], "D")
+        self.assertEqual(calls[-1]["frame"], "model")
+        with patch("sys.stderr"), patch("sys.stdout"):
+            with self.assertRaises(SystemExit) as raised:
+                client.main(["--open", str(target)])
+            self.assertEqual(raised.exception.code, client.USAGE)
+
+    def test_open_unknown_is_not_retried_or_followed_by_view(self):
+        calls = []
+        def fake(request, session_path=None, **kwargs):
+            calls.append(request)
+            if request["op"] == "list_documents":
+                return {"ok": True, "result": {"documents": []}}
+            return {"ok": False, "error": {"code": "outcome_unknown"},
+                    "reconciliation": {"outcome": "unknown", "request_id": request["request_id"]}}
+        with patch.object(client, "send", side_effect=fake):
+            result = client.open_in_session(self.folder / "fixture.FCStd", self.session)
+        self.assertEqual(client.exit_code(result), 3)
+        self.assertEqual([request["op"] for request in calls], ["list_documents", "open"])
+        self.assertEqual(result["reconciliation"]["request_id"], calls[-1]["request_id"])
+
 
 if __name__ == "__main__":
     unittest.main()

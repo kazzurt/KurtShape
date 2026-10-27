@@ -281,6 +281,64 @@ class SessionTests(unittest.TestCase):
 
     # -- envelope, state, stale recovery, preview --------------------------------------------
 
+    def test_batched_profile_helpers_keep_geometry_and_use_one_envelope(self):
+        s = self.headless(batch_helpers=True)
+        s.call("new", name="Batched fixture hardware")
+        start = len(done(s))
+        part = s.polygon("HexHead", [(0, 0), (12, 0), (12, 10), (0, 10)], 0, 5, name="Screw")
+        self.assertEqual(len(done(s)) - start, 1)
+        self.assertEqual(s.part_named("Screw"), part)
+        s.circle("Shank", (6, 5, 5), 6, 25, operation="add", part=part)
+        self.assertEqual(len(sent(s, "batch")), 2)
+        self.assertEqual(len(sent(s, "inspect")), 0)
+        check = s.call("check_geometry")
+        self.assertEqual(check["geometry_check_report"]["status"], "valid")
+        batched = s.call("inspect", measure="full")
+        s.call("new", name="Separate fixture hardware")
+        s.batch_helpers = False
+        other = s.polygon("HexHead", [(0, 0), (12, 0), (12, 10), (0, 10)], 0, 5, name="Screw")
+        s.circle("Shank", (6, 5, 5), 6, 25, operation="add", part=other)
+        self.assertEqual(s.call("check_geometry")["geometry_check_report"]["status"], "valid")
+        separate = s.call("inspect", measure="full")
+        # Every final part's measured geometry is equal despite different transaction grouping.
+        batched_body = batched["studio"]["parts"][0]["body"]
+        separate_body = separate["studio"]["parts"][0]["body"]
+        self.assertEqual(next(row["measurements"] for row in batched["bodies"] if row["id"] == batched_body),
+                         next(row["measurements"] for row in separate["bodies"] if row["id"] == separate_body))
+        self.assertTrue(all(row["response_bytes"] > 0 for row in done(s)))
+
+    def test_batch_preview_rejection_never_commits_and_acceptance_pins_revision(self):
+        s = self.headless()
+        self.pin(s)
+        old = s.revision
+        rejected = s.batch([{"op": "create_plane", "id": "Bad", "normal": [0, 0, 0]}], preview=True)
+        self.assertFalse(rejected["accepted"])
+        self.assertEqual(s.revision, old)
+        self.assertEqual(sent(s, "batch"), [])
+        steps = [{"op": "create_body", "id": "Spare"}]
+        result = s.batch(steps, label="Spare body", preview=True)
+        self.assertIn("batch_report", result)
+        preview = sent(s, "preview")[-1]
+        commit = sent(s, "batch")[-1]
+        self.assertEqual(preview["proposal"]["steps"], commit["steps"])
+        self.assertEqual(commit["expected_revision"], old)
+        self.assertNotEqual(preview["request_id"], commit["request_id"])
+
+    def test_previewed_batch_does_not_rebase_after_concurrent_edit(self):
+        s = self.headless()
+        self.pin(s)
+        send = s._send
+        def concurrent(request):
+            if request["op"] == "batch":
+                self.out_of_band_change(s, "OtherWriter")
+            return send(request)
+        s._send = concurrent
+        with self.assertRaises(OperationFailed) as caught:
+            s.batch([{"op": "create_body", "id": "Spare"}], preview=True)
+        self.assertEqual(caught.exception.code, "stale_revision")
+        self.assertEqual(caught.exception.attempts, 1)
+        self.assertEqual(len(sent(s, "batch")), 1)
+
     def test_envelope_stamping_follows_the_operation_schema(self):
         s = self.headless()
         part = self.pin(s)
