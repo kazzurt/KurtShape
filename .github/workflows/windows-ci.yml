@@ -172,6 +172,18 @@ jobs:
         run: |
           $bin = 'runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin'
           Copy-Item -LiteralPath (Join-Path $bin 'opengl32sw.dll') -Destination (Join-Path $bin 'opengl32.dll')
+      - name: Generate public STEP fixtures
+        if: matrix.recipe == 'step-import' || matrix.recipe == 'assembly-step'
+        run: |
+          . ./tools/validation-session.ps1
+          $root = (Get-Location).Path
+          $session = Join-Path $root 'runtime/ci-local/step-fixture-generation'
+          Initialize-KurtShapeValidationEnvironment -Root $root -Session $session
+          $fixtures = Join-Path $session 'public-step-fixtures'
+          $python = Join-Path $root 'runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin/python.exe'
+          Invoke-KurtShapeValidationPython -Executable $python -Arguments @('-B','tools/ci/generate-step-fixtures.py',$fixtures) -Name 'generate-step-fixtures' -TimeoutSeconds 120
+          "KURTSHAPE_ONSHAPE_EXAMPLES=$fixtures" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          'KURTSHAPE_STEP_FIXTURE_KIND=generated-public-primitives' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Run blocking hidden recipe
         run: ./tools/run_gui_recipe.ps1 -Recipe '${{ matrix.recipe }}'
       - name: Report the OpenGL renderer FreeCAD used

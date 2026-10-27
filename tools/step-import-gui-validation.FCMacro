@@ -29,6 +29,7 @@ output = evidence_dir("step-import")
 working = output / "step-import-projects-working"
 working.mkdir(parents=True, exist_ok=True)
 report = {"passed": False, "checks": [], "method": "Separate hidden FreeCAD GUI; actual Qt Open/Save/Cancel dialogs, real STEP sources and native body selection"}
+report["fixture_kind"] = os.environ.get("KURTSHAPE_STEP_FIXTURE_KIND", "external-originals")
 
 def check(label, condition):
     if not condition:
