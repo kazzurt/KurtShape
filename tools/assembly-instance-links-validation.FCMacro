@@ -10,7 +10,6 @@ _root = Path(os.environ["KURTSHAPE_ROOT"]).resolve()
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(_root / "tools"))
 sys.path.insert(0, str(_root / "src"))
-import FreeCAD as App
 import FreeCADGui as Gui
 import Part
 from PySide import QtCore

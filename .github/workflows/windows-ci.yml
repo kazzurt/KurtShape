@@ -56,6 +56,8 @@ jobs:
         run: ./install-runtime.ps1
       - name: Verify runtime layout
         run: ./tools/ci/check-runtime-layout.ps1
+      - name: Install pinned drawing dependencies
+        run: ./tools/setup-drawing-deps.ps1
       - name: Run isolated suites
         run: |
           . ./tools/validation-session.ps1
@@ -65,7 +67,7 @@ jobs:
           $env:KURTSHAPE_TEST_TMP = Join-Path $root 'runtime/test-tmp'
           $env:KURTSHAPE_TEST_OUTSIDE = '${{ runner.temp }}'
           $python = Join-Path $root 'runtime/freecad-1.1.4/FreeCAD_1.1.4-Windows-x86_64-py311/bin/python.exe'
-          Invoke-KurtShapeValidationPython -Executable $python -Arguments @('-B','tools/run_native_tests.py','--require-native','--report',(Join-Path $session 'evidence/native.json'),'--junit',(Join-Path $session 'evidence/junit.xml')) -Name 'github-native-tests' -TimeoutSeconds 7500
+          Invoke-KurtShapeValidationPython -Executable $python -Arguments @('-B','tools/run_native_tests.py','--require-native','--timeout','3600','--report',(Join-Path $session 'evidence/native.json'),'--junit',(Join-Path $session 'evidence/junit.xml')) -Name 'github-native-tests' -TimeoutSeconds 7500
       - name: Verify newcomer setup
         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./setup.ps1
       - name: Repository stays clean
