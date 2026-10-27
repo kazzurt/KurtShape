@@ -1,0 +1,51 @@
+{
+  "_about": "Field map for Kurt's Onshape template 'Drawing template aerial hedra mm.dxf' (ANSI B, mm, modelspace 1:1). Fields are MTEXT placeholders filled by handle. Measured 2026-10-23 (survey-template). PDF x = DXF x - 0.635.",
+  "sheet_box": [0.635, 0.0, 432.435, 279.4],
+  "frame_box": [13.335, 12.7, 419.735, 266.7],
+  "title_block_box": [216.522, 12.7, 419.735, 63.5],
+  "revision_table_box": [265.363, 242.113, 419.735, 266.7],
+  "logo_box": [397.0219, 30.3081, 416.3397, 62.8595],
+  "notes_label": {"handle": "161", "insert": [15.306, 262.564]},
+  "fields": {
+    "TITLE": {"handle": "F5", "ch": 3.4, "width": 74.0},
+    "DWG_NO": {"handle": "102", "ch": 3.86},
+    "REV": {"handle": "108", "ch": 3.6},
+    "SIZE": {"handle": "FB", "ch": 4.877},
+    "SCALE": {"handle": "10F", "ch": 2.6},
+    "WEIGHT": {"handle": "115", "ch": 2.6},
+    "SHEET": {"handle": "11B", "ch": 2.6},
+    "MATERIAL": {"handle": "E4", "ch": 2.0, "width": 29.0},
+    "FINISH": {"handle": "EA", "ch": 2.0, "width": 29.0},
+    "DRAWN_NAME": {"handle": "CE", "ch": 1.366},
+    "DRAWN_DATE": {"handle": "D5", "ch": 1.366},
+    "EMAIL_VALUE": {"handle": "127", "ch": 1.626},
+    "EMAIL_NAME_spare": {"handle": "DB", "ch": 1.366},
+    "EMAIL_DATE": {"handle": "DC", "ch": 1.366},
+    "SPARE1_LABEL": {"handle": "DD", "ch": 1.6},
+    "SPARE1_NAME": {"handle": "DE", "ch": 1.366},
+    "SPARE1_DATE": {"handle": "DF", "ch": 1.366},
+    "SPARE2_LABEL": {"handle": "E0", "ch": 1.6},
+    "SPARE2_NAME": {"handle": "E1", "ch": 1.366},
+    "SPARE2_DATE": {"handle": "E2", "ch": 1.366}
+  },
+  "fixed_texts": {
+    "tolerance_lines": {"note": "'.X = ±.25 / .XX = ±.125' MTEXT near (217.753, 52.403)", "find_contains": ".XX"},
+    "angular": {"note": "'ANGULAR = ± °.3' near (235.204, 54.824)", "find_contains": "ANGULAR"},
+    "roughness_value": {"note": "'5 micron Ra' near (242.358, 42.378)", "find_contains": "micron"}
+  },
+  "revision_table": {
+    "insert_handle": "129", "block": "*T2", "insert": [265.363, 266.7], "row_height": 8.128,
+    "columns_x": {"REV": [265.363, 285.572], "DESCRIPTION": [285.572, 361.242], "APPROVED": [361.242, 419.735]},
+    "first_row_y": [242.113, 250.241],
+    "row_A_handles_in_block": {"REV": "147", "DESCRIPTION": "148"},
+    "data_ch": 3.048
+  },
+  "usable": {
+    "views": [15.0, 66.0, 415.0, 239.5],
+    "upper_band": [142.0, 198.0, 262.5, 264.5],
+    "notes": [15.0, 66.0, 140.0, 258.0],
+    "left_of_title_block": [15.0, 15.0, 214.0, 63.5]
+  },
+  "lineweights": {"BORDER_FRAME": 18, "BORDER_ZONES": 18, "TITLE_BLOCK": 18, "SKETCHED_GEOMETRY": 18, "TABLES": 25},
+  "projection_symbol_handles": ["B1", "B2", "B9", "BA", "BB", "BC"]
+}
