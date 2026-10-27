@@ -353,10 +353,15 @@ class SheetTests(unittest.TestCase):
 
     def test_missing_glyphs_fail_the_save(self):
         sh = self.sheet()
-        sh.text((50.0, 50.0), "HARDENED ≥45 HRC", h=3.0)        # Noto Sans has no '≥'
-        self.assertTrue(any(ch == "≥" for ch, _, _ in sh.missing_glyphs()))
+        # A reserved Unicode noncharacter avoids assuming which real symbols
+        # the machine's Noto Sans (or resolved fallback font) supports.
+        missing = "\U0010FFFF"
+        sh.text((50.0, 50.0), "MISSING " + missing, h=3.0)
+        self.assertTrue(any(ch == missing for ch, _, _ in sh.missing_glyphs()))
+        destination = self.dir / "tofu.dxf"
         with self.assertRaises(SH.DrawingError):
-            sh.save(self.dir / "tofu.dxf")
+            sh.save(destination)
+        self.assertFalse(destination.exists())
         ok = self.sheet()
         ok.text((50.0, 50.0), "Ø11.00 ±0.03 40° µm – ×", h=3.0)
         self.assertEqual(ok.missing_glyphs(), [])
