@@ -6,10 +6,11 @@ Paste this into your agent on the Windows machine:
 > folder I own. Read the repository's AGENTS.md and docs/WINDOWS_SETUP.md. Check
 > Git and 7-Zip, run setup.ps1 with Windows PowerShell, and require its installation
 > check to pass. Use the pinned bundled runtime, not a global FreeCAD or Python.
-> Do not launch the KurtShape window yourself: choose the app by the AGENTS.md
+> Do not launch the KurtShape window to work in: choose the app by the AGENTS.md
 > section "Launching: which app an agent uses" (headless by default, a hidden app
 > when you need the bridge, my running app only when I ask to watch), and ask
-> before restarting an existing instance. Read capabilities and list_documents from
+> before restarting an existing instance. When a modelling assignment is finished,
+> open the result in KurtShape for my review, as that section describes. Read capabilities and list_documents from
 > the one you use. Tell me the installed commit, check result, and where my CAD
 > files will go. Model through KurtShape's operations, not by taking over my
 > screen. Wait for my modeling request before changing a document.

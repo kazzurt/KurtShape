@@ -178,9 +178,17 @@ def project(shape, x_axis, y_axis, name="view", hidden=False, smooth=True):
     return view
 
 
-def section(shape, x_axis, y_axis, offset=0.0, name="section", hidden=False, smooth=True, big=1000.0):
+def section(shape, x_axis, y_axis, offset=0.0, name="section", hidden=False, smooth=True, big=1000.0,
+            snap=0.0):
     """Section view: the material on the viewer's side of the plane (normal x_axis x y_axis,
-    through ``offset`` along it) is removed; the rest is projected and its cut faces hatched."""
+    through ``offset`` along it) is removed; the rest is projected and its cut faces hatched.
+
+    ``snap`` (mm, at most 0.002): close endpoint gaps up to this size between consecutive edges
+    of a cut-face loop, as imported STEP solids leave (micron-level roundoff; the aluminum
+    prototype pipe has one of 0.0016 mm). Each snapped gap is
+    listed in ``view.meta['snaps']``; the loop's area check still applies. 0 refuses any gap."""
+    if not 0.0 <= snap <= 0.002:
+        raise ValueError("snap heals micron-level roundoff only (0 to 0.002 mm)")
     s = to_view_frame(shape, x_axis, y_axis)
     box = Part.makeBox(2 * big, 2 * big, big, V(-big, -big, offset))
     kept = s.cut(box)
@@ -203,7 +211,8 @@ def section(shape, x_axis, y_axis, offset=0.0, name="section", hidden=False, smo
         # A cut face lies in the plane. Vertices alone are not enough: a half-annulus end face of
         # a revolved part also has all its vertices on the cut line but stands across the plane.
         if abs(abs(srf.Axis.z) - 1.0) < 1e-9 and abs(srf.Position.z - offset) < 1e-6:
-            loops = [_wire_loop(w) for w in f.Wires]
+            snaps = view.meta.setdefault("snaps", [])
+            loops = [_wire_loop(w, snap, snaps) for w in f.Wires]
             # outer minus inner loops must give the face's own area (catches a mis-ordered loop)
             areas = sorted((abs(_area(lp)) for lp in loops), reverse=True)
             net = areas[0] - sum(areas[1:])
@@ -215,8 +224,10 @@ def section(shape, x_axis, y_axis, offset=0.0, name="section", hidden=False, smo
     return view
 
 
-def _wire_loop(w):
-    """Closed 2D point loop of a wire in its own edge order (no closing duplicate)."""
+def _wire_loop(w, snap=0.0, snaps=None):
+    """Closed 2D point loop of a wire in its own edge order (no closing duplicate). Gaps up to
+    ``snap`` mm between consecutive edges are closed and appended to ``snaps``."""
+    tol = max(1e-6, snap)
     edges = Part.__sortEdges__(w.Edges)
     loop = []
     for k, e in enumerate(edges):
@@ -231,10 +242,17 @@ def _wire_loop(w):
         elif loop and math.hypot(loop[-1][0] - seq[0][0], loop[-1][1] - seq[0][1]) > \
                 math.hypot(loop[-1][0] - seq[-1][0], loop[-1][1] - seq[-1][1]):
             seq.reverse()
-        if loop and math.hypot(loop[-1][0] - seq[0][0], loop[-1][1] - seq[0][1]) > 1e-6:
-            raise RuntimeError(f"cut-face loop has a gap of {math.hypot(loop[-1][0] - seq[0][0], loop[-1][1] - seq[0][1]):.2e} mm")
+        if loop:
+            gap = math.hypot(loop[-1][0] - seq[0][0], loop[-1][1] - seq[0][1])
+            if gap > tol:
+                raise RuntimeError(f"cut-face loop has a gap of {gap:.2e} mm")
+            if gap > 1e-6 and snaps is not None:
+                snaps.append(gap)
         loop.extend(seq if not loop else seq[1:])
-    if len(loop) > 2 and math.hypot(loop[0][0] - loop[-1][0], loop[0][1] - loop[-1][1]) < 1e-6:
+    closing = math.hypot(loop[0][0] - loop[-1][0], loop[0][1] - loop[-1][1]) if len(loop) > 2 else None
+    if closing is not None and closing <= tol:
+        if closing > 1e-6 and snaps is not None:
+            snaps.append(closing)
         loop.pop()
     elif len(loop) > 2:
         raise RuntimeError("cut-face loop does not close")

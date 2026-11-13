@@ -4,7 +4,7 @@
 > `runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe -B tools\generate_operations_doc.py > runtime\test-tmp\operations-doc.log 2>&1`.
 > `tests/test_operations_doc.py` fails when this file and the schema disagree.
 
-One entry per operation of this build (91 operations, schema version 1, schema digest `be3942a56446b28e`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
+One entry per operation of this build (91 operations, schema version 1, schema digest `2b33ca497d569a0c`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
 
 ## Reading an entry
 
@@ -1346,6 +1346,7 @@ Export current solid results with provenance; requires a current build and valid
 
 - `body`: body
 - `detail`: full / compact
+- `named_parts`: boolean; default `false`
 - `path`: absolute_path; **required**
 
 Example (fixture `plate`): `{"op": "export", "document_id": "<document_id>", "expected_revision": "<revision>", "path": "<project>/plate.step"}`

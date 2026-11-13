@@ -404,7 +404,7 @@ class Controller:
         "set_expression": {"feature", "parameter", "expression"},
         "duplicate_feature": {"feature", "fingerprint"},
         "pierce": {"sketch", "geometry", "point", "target", "subelement"},
-        "save": {"path", "overwrite"}, "export": {"path", "body"},
+        "save": {"path", "overwrite"}, "export": {"path", "body", "named_parts"},
         "capabilities": set(), "request_status": {"request_id"}, "preview": {"proposal"}, "diagnostics": set(),
         "assembly_candidates": {"path", "final_only"}, "create_assembly": {"id", "name", "folder"},
         "part_inventory": {"include_history"},
@@ -710,6 +710,7 @@ class Controller:
                 "included_part_ids": [getattr(obj, "KurtShapePartId", obj.Name) for obj in targets],
                 "kurtshape_build": build_identity.provenance(),
                 "result_checks": self.result_checks.provenance(doc),
+                "named_parts": None,  # GUI STEP jobs write the plain compound (export named_parts: sync path only)
                 "settings": {"writer": "FreeCAD Part/OCCT"}}
 
     def prepare_step_export(self, doc, raw, body=None, *, worker_factory=None, is_current=None):
@@ -2359,7 +2360,7 @@ class Controller:
                 elif op == "save":
                     self._save(doc, request["path"], request.get("overwrite"))
                 elif op == "export":
-                    self._export(doc, request["path"], request.get("body"))
+                    self._export(doc, request["path"], request.get("body"), request.get("named_parts"))
             if detail == "compact":
                 # B1: the status header (the list_documents row) plus the request's own additions below.
                 result = self.timings.measure("inspection_compact", self.inspect_compact, doc, None, None, None, True)
@@ -3870,8 +3871,13 @@ class Controller:
                              f"{path.name} holds another project's file{project}; save elsewhere, or pass overwrite:true to replace it",
                              path=str(path), existing_document_id=existing, existing_project=label)
 
-    def _export(self, doc, raw, body_id=None):
+    def _export(self, doc, raw, body_id=None, named_parts=None):
+        if named_parts is not None and not isinstance(named_parts, bool):
+            raise OperationError("invalid_argument", "named_parts must be true or false", fields=["named_parts"])
         path=write_path(raw,{".step",".stp",".stl"}, self.settings.roots, self.settings.path)
+        if named_parts and path.suffix.lower()==".stl":
+            raise OperationError("invalid_argument", "named_parts applies to STEP export (.step/.stp) only",
+                                 fields=["named_parts"])
         # Contract 3.2 F1: pending result operations are validated before the status gate.
         self._validate_results(doc, "export")
         if self._meta(doc).BuildStatus!="valid":
@@ -3892,11 +3898,16 @@ class Controller:
                                            for name, check in verdicts.items() if not check["valid"]])
         # Native writers may change shared TShape serialization flags. Export
         # detached world shapes so source geometry and cached verdicts stay exact.
-        shape = Part.makeCompound([native_assembly.global_shape(obj).copy() for obj in included])
+        copies = [native_assembly.global_shape(obj).copy() for obj in included]
+        shape = Part.makeCompound(copies)
+        named, root_product = None, None
         if path.suffix.lower()==".stl":
             import MeshPart
             mesh=MeshPart.meshFromShape(Shape=shape,LinearDeflection=0.05,AngularDeflection=0.1,Relative=False)
             mesh.write(str(stage))
+        elif named_parts:
+            # Named-part STEP (2026-11-01): one named product per included result, same detached copies.
+            named, root_product = self._write_named_step(doc, included, copies, stage)
         else:
             # Write each current transformed result exactly once. Internal source
             # storage and the Assembly aggregate must never join this list.
@@ -3912,11 +3923,51 @@ class Controller:
                     "included_part_ids":[getattr(obj,"KurtShapePartId",obj.Name) for obj in included],
                     "kurtshape_build":build_identity.provenance(),
                     "result_checks":self.result_checks.provenance(doc),
-                    "settings":{"linear_deflection_mm":0.05,"angular_deflection_rad":0.1} if path.suffix.lower()==".stl" else {"writer":"FreeCAD Part/OCCT"}}
+                    "named_parts":named,
+                    "settings":{"linear_deflection_mm":0.05,"angular_deflection_rad":0.1} if path.suffix.lower()==".stl"
+                               else {"writer":"FreeCAD Import.export (named products)","root_product":root_product} if named_parts
+                               else {"writer":"FreeCAD Part/OCCT"}}
         sidecar=path.with_suffix(path.suffix+".json")
         temp=sidecar.with_suffix(sidecar.suffix+".saving")
         temp.write_text(json.dumps(provenance,indent=2),encoding="utf-8")
         self._replace_export_pair([(stage,path),(temp,sidecar)])
+
+    def _write_named_step(self, doc, included, shapes, stage):
+        """Write ``shapes`` to ``stage`` as one STEP with one named product per included result.
+
+        A temporary hidden document holds one Part::Feature per result (Label = the part name, Shape =
+        its detached world copy) and Import.export writes it with explicit options, so preferences
+        cannot drop a single part's placement (keepPlacement) or skip parts. The source document is
+        never touched or recomputed. Returns (sidecar rows, root product name or None for one part).
+        """
+        import re
+        import Import
+        active = App.activeDocument()
+        root = re.sub(r"[^0-9A-Za-z_]+", "_", str(doc.Label)).strip("_")[:60] or "KurtShapeExport"
+        temporary = App.newDocument(root, hidden=True, temp=True)
+        try:
+            rows, objects = [], []
+            for index, (obj, shape) in enumerate(zip(included, shapes), 1):
+                feature = temporary.addObject("Part::Feature", "KurtShapeNamedPart" + str(index))
+                feature.Label = str(getattr(obj, "KurtShapePartName", "") or obj.Label)
+                feature.Shape = shape
+                objects.append(feature)
+                # Labels stay unique (a repeated name gets a 001 suffix): record the name the file holds.
+                rows.append({"part_id": getattr(obj, "KurtShapePartId", obj.Name), "name": feature.Label,
+                             "solid_count": len(shape.Solids), "volume_mm3": shape.Volume})
+            try:
+                Import.export(objects, str(stage), legacy=False, exportHidden=True, keepPlacement=True)
+            except Exception as exc:
+                stage.unlink(missing_ok=True)
+                raise OperationError("export_failed", f"Named-part STEP export failed: {exc}") from exc
+            if not stage.is_file() or not stage.stat().st_size:
+                raise OperationError("export_failed", "Named-part STEP export wrote no file")
+            # Several products sit under one root product named after the temporary document.
+            return rows, (temporary.Name if len(objects) > 1 else None)
+        finally:
+            App.closeDocument(temporary.Name)
+            if active is not None and self._is_open(active):
+                App.setActiveDocument(active.Name)
 
     def _replace_export_pair(self, pairs, guard=None, rollback_guard=None):
         """Stage both outputs first; rollback successful replaces if its partner fails.

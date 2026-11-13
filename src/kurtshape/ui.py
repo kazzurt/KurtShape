@@ -9,6 +9,7 @@ import FreeCAD as App
 import FreeCADGui as Gui
 from PySide import QtCore, QtGui
 from .core import Controller, ROOT, METADATA, OperationError, number
+from . import branding
 from . import extrusion_edit
 from . import reference_tools
 from . import tool_search
@@ -2036,7 +2037,7 @@ class Panel(QtGui.QDockWidget):
         if not self.state.get("managed", True):
             self.status.setText("Reference file · inspect or adopt a copy · " + detail)
         self.update_document_identity()
-        self.main.setWindowTitle(self.state["name"] + " — KurtShape")
+        branding.set_document_title(self.main, self.state["name"])
         if not self.task and not self.active_sketch():
             self.parameters()
         self.parameter_section.refresh()
@@ -2121,7 +2122,7 @@ class Panel(QtGui.QDockWidget):
                 detail += " · " + str(assembly["disconnected_count"]) + " unconnected"
         self.status.setText(detail)
         self.update_document_identity()
-        self.main.setWindowTitle(self.state["name"] + " — KurtShape")
+        branding.set_document_title(self.main, self.state["name"])
         self.filter_features()
         self.editor.hide()
         self.sync_edit_ui()
@@ -4886,6 +4887,8 @@ class Panel(QtGui.QDockWidget):
 
 def start():
     main = Gui.getMainWindow()
+    # Also applied before the window is first shown when FreeCAD loads the branding module (launch-kurtshape.ps1).
+    branding.apply_window_branding(main)
     preferences = App.ParamGet("User parameter:BaseApp/Preferences/Document")
     preferences.SetBool("RecoveryEnabled", True)
     # Decision 3 (slice A/B U8, A4): KurtShape's recovery checkpoints are the one recovery writer, so

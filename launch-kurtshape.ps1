@@ -55,6 +55,8 @@ $macroPath = Join-Path $kurtshapeRoot $(if ($Validation) {'tools\gui-validation.
 $userConfigPath = Join-Path $runtimePath 'user-data\user.cfg'
 $systemConfigPath = Join-Path $runtimePath 'user-data\system.cfg'
 $launchArguments = @('-u', ('"'+$userConfigPath+'"'), '-s', ('"'+$systemConfigPath+'"'), '--log-file', ('"'+(Join-Path $runtimePath 'freecad-launch.log')+'"'))
+# FreeCAD loads this module while it starts: KurtShape's icon, title and loading screen (src\kurtshape\branding.py).
+$launchArguments += @('--module-path', ('"'+(Join-Path $kurtshapeRoot 'resources\freecad\KurtShapeBranding')+'"'))
 $launchArguments += ('"'+$macroPath+'"')
 $launchWindowStyle = if ($Validation) { 'Hidden' } else { 'Normal' }
 $launchEnvironment = [ordered]@{

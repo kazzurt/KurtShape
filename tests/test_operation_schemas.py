@@ -335,6 +335,10 @@ DEFAULT_PROBES = {
         # Slice A/B U8: the destination holds another project's FCStd, so without overwrite the save is refused.
         "fixture": "plate", "setup": [], "request": {"op": "save", "path": "<other_project_file>"},
         "fields": ["overwrite"]},
+    "export_named_stl": {
+        # 2026-11-01: named products are STEP only, so an STL export with named_parts:true is refused.
+        "fixture": "plate", "setup": [], "request": {"op": "export", "path": "<project>/plate.stl"},
+        "fields": ["named_parts"]},
 }
 
 # Application-level transactions an example leaves open after its document is

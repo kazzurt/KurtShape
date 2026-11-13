@@ -5,6 +5,35 @@ template: DXF for the supplier's CAD, a vector PDF to send, and a PNG preview. I
 in the bundled FreeCAD 1.1.4 interpreter. The first drawing made with it is the Dodec bolt
 D021 Rev B, in English and Chinese (`projects/dodec-bolt-5-16-18-t40/drawing_d021.py`).
 
+## The drawing standard comes first
+
+Kurt's engineering drawing standard of 11 November 2026 binds every drawing:
+`C:\Users\Kurtz\Documents\Dodec\Drawing Template\Engineering Drawing Standard.md`. Read it before
+writing a spec. `Sheet` enforces the rules a program can test: `lint()` reports each finding with
+its rule number (kinds in `STANDARD_KINDS`) and `save()` refuses a sheet that has any.
+
+| Rule | What the spec does | What fails |
+|---|---|---|
+| 1, 2 Notes | `notes()` on sheet 1 only; never bare `text()` | notes on a continuation sheet; loose text; a note repeating the material, finish, edge break or "do not scale", or naming a sheet |
+| 3 Callouts | `callout(qty=, thread=, dia=, tol=, thru=, depth=, depth_qual=, cbore=, csink=)` builds the lines; `{cbore}`, `{csink}`, `{depth}` print as the ASME symbols | a thread without its class; a hole or internal thread without THRU or a depth; a thread designation in a note; "RIGHT HAND" |
+| 4 Holes | `hole_callout(pv, centre, r, text_pos, lines)` draws the centre mark and a radial leader to the near side; `centre_mark()` alone for other circles | a leader ending on a circle that is not radial, or whose circle has no centre mark |
+| 5 Leaders | route them clear; `allow("leader-extension", at, reason)` for an extension line that cannot be avoided | leader over leader or over a dimension line; an unwaived leader over an extension line; a waiver that waives nothing |
+| 6 Labels | `view_label(pv, pos, name)`; the scale prints only when it differs from the sheet's | `label()` (free text); a view name over four words; an unlabelled section, detail or off-scale view |
+| 7 Sections, details | `place(..., letter="A")` with `cutting_plane(..., "A", ...)`; `place(..., clip=, letter="B")` with `detail_circle(..., "B", ...)`; an auxiliary view `place(view, ..., letter="C")` with `view_arrow(parent, tip, toward, "C")` on its sheet, labelled VIEW C (state `rotated=` when turned); across sheets `parent_sheet=` / `view_sheet=` and `check_set(sheets)` | a section without its cutting-plane line, a detail without its circle, a lettered view without its arrow, and the reverse |
+| 8 Scale | `fill({"SCALE": "2:1"})`; views at that scale; `place(..., scale_reason=)` for another | "AS SHOWN"; a scale outside `SCALE_SERIES`; a main view off the sheet scale without a reason |
+| 10 Weight | `set_weight(volume_mm3, density_g_cm3)` | a blank weight, the wrong unit, "REF" |
+| 11 Keep-out | lay out inside the map's `usable` areas | anything in the title block or revision table, or outside the frame |
+
+`standard_report()` returns the sheet's scale, weight, views, letters and waivers for the check
+record. `Sheet(..., standard=False)`, or `sheet.standard = False` right after a shared helper
+opens the sheet, switches the standard off; it is for the script of a drawing released before
+11 November 2026, until that drawing is next revised, and never for a new one. Scripts written
+before the standard stop with a message saying so when they are rerun.
+
+Worked example: `examples/drawing_standard_example.py` (one inch sheet with a top view, a
+section, a thread callout and a counterbore callout; its comments name the rule each call
+serves). Its PDF is filed beside the standard as `Engineering Drawing Standard - example sheet.pdf`.
+
 ## Why this stack
 
 Surveyed and tested on the bolt and the template on 2026-10-23, before building:
@@ -60,13 +89,27 @@ A drawing is a short Python spec run with the bundled `pythonw.exe` (output redi
      polylines.
 3. **Lay out the sheet** (`kurtshape.drawing.sheet.Sheet(template, template_map, lang)`):
    - `place(view, origin, scale)` puts a view on the sheet. `clip=(centre, r)` makes a detail view.
-   - Dimensions: `dim_linear`, `dim_radius`, `dim_angle`. They are real DIMENSION entities with
-     DIMLFAC = 1/scale, so they read true size in any CAD program. Tolerances are given as
+     A section or detail takes its `letter`; `view_label(pv, pos, name)` labels a view.
+   - Dimensions: `dim_linear`, `dim_radius`, `dim_diameter`, `dim_angle`. They are real DIMENSION
+     entities with DIMLFAC = 1/scale (inches on an inch sheet, radii and diameters included), so
+     they read true size in any CAD program. ezdxf writes the R and Ø prefixes itself: a radius
+     takes `text="3X <>"`, not `"R<>"`. `dim_diameter(..., pattern=3)` dimensions a bolt circle
+     through that many hole centres and draws its centre-line circle.
+   - STEP files often carry an oblique hole edge or a fillet as a B-spline, which projects as a
+     polyline, not a circle or arc. `hole_callout`, `dim_diameter` and `dim_radius` take
+     `fit_tol=` (at most 0.02 mm): such a polyline then counts as the circle or arc when every
+     point lies that close to it, the deviation goes in the checks, and a hole accepted this way
+     locates dimensions by its centre and is linted like any circle.
+   - `views.section(..., snap=)` (at most 0.002 mm) closes the micron-level endpoint gaps that
+     imported STEP cut faces leave, records each in `view.meta['snaps']`, and keeps the loop
+     area check. Tolerances are given as
      `("sym", 0.05)`, `("dev", upper, lower)` or `("limits", hi, lo)`. Pass `expect="Ø11.00±0.03"`
      so the printed text is checked. `text_pos` moves the value outside a short dimension, and
      the dimension line is carried on to it. `mask=True` blanks the lines behind the value.
    - Notes and symbols:
-     - `leader`;
+     - `leader` (a string, or the lines `callout` returns);
+     - `callout` and `hole_callout` (complete hole and thread callouts with centre mark, radial
+       leader and the counterbore, countersink and depth symbols), `centre_mark`;
      - `fcf` (feature control frames, with a WIPEOUT mask);
      - `datum`;
      - `roughness` (ISO 1302 symbol, value under the bar, upright or read from the right);
@@ -74,7 +117,8 @@ A drawing is a short Python spec run with the bundled `pythonw.exe` (output redi
      - `cutting_plane`, `detail_circle`, `centerline`;
      - `notes`, which wrap with the real font to a width that can change down the sheet
        (`width_at(y)`). `layout_notes` is a dry run, for choosing the largest text height that fits.
-   - Title block: `fill(fields)`, `set_text` (fixed template texts), `revision_row`.
+   - Title block: `fill(fields)`, `set_weight(volume_mm3, density_g_cm3)`, `set_text` (fixed
+     template texts), `revision_row`.
 4. **Check and save:**
    - `lint()` returns layout clashes. A spec should refuse to ship with any (D021 does).
    - `save(dxf)` writes R2018 UTF-8 and audits it. It also refuses CJK in a non-CJK style and any
@@ -87,8 +131,9 @@ A drawing is a short Python spec run with the bundled `pythonw.exe` (output redi
 A drawing that fails any of these stops with `DrawingError` (or a lint record):
 
 - **Dimensions measure real geometry.**
-  - Each definition point and leader target lies within 0.01 mm of the projected geometry. Points
-    in a detail view must also lie inside its circle.
+  - Each definition point and leader target lies within 0.01 mm of the projected geometry, or at
+    the centre of one of the view's circles or arcs (a hole is located by its centre). Points in
+    a detail view must also lie inside its circle.
   - A radius needs a real arc of that radius and centre.
   - An angle checks a point on each leg (`leg_check`).
 - **Printed values are the intended ones.** Every dimension's rendered text is compared with
@@ -97,7 +142,8 @@ A drawing that fails any of these stops with `DrawingError` (or a lint record):
 - **Arrows fit.** Two arrowheads must fit between the extension lines.
 - **No layout clashes** (`lint`):
   - text against text, view lines, leaders, its own dimension and extension lines, frames,
-    hatching and the template's own texts. Title-block texts the drawing rewrote are measured by
+    hatching and the template's own texts. Text turned off the sheet axes (an aligned
+    dimension's value) is tested by its own rectangle, not its axis-aligned box. Title-block texts the drawing rewrote are measured by
     their ink and must not overlap other template text. Brackets and ascenders count as ink
     (0.15 × text height), so a "(" cannot sit on a line;
   - roughness, datum and frame strokes against view and dimension lines;
@@ -111,6 +157,8 @@ A drawing that fails any of these stops with `DrawingError` (or a lint record):
 - **The preview is clean.** The PNG has no coloured pixels and no solid black blocks.
 - **The DXF is clean.** It passes the `ezdxf` audit after saving.
 - **Views are not mirrored.** View axes follow the stated frame, and the tests check handedness.
+- **The drawing standard holds.** The findings in the table at the top of this document; `save`
+  raises on any of them.
 
 ## ezdxf rendering traps handled in `render`
 
@@ -142,16 +190,34 @@ Keep each language's texts in the spec, side by side, so the two sheets cannot d
 
 ## Templates
 
-`templates/aerial_hedra_b_mm.json` maps Kurt's B-size mm Onshape template
-(`Documents/Dodec/Drawing template aerial hedra mm.dxf`). It records:
+**Aerial Hedra templates (since 2026-10-28):** `Documents/Dodec/Drawing Template/` holds four
+ANSI B sheets written by `tools/make_drawing_templates.py`, each DXF with its field map beside
+it: `AH-B-mm-sheet1`, `AH-B-mm-sheetN` (continuation), `AH-B-in-sheet1`, `AH-B-in-sheetN`. The
+README there lists the field and fixed-text names and the design. Open one with
+`Sheet(dxf, template_map=<absolute path of the .json>)`. What the pipeline reads from a map:
 
-- the MTEXT handles of the title-block fields;
-- the sheet and logo boxes;
-- the revision-table grid;
-- lineweights.
+- `fields`: MTEXT handles (with `ch`, `width`, `attach`) for `fill`; a bold placeholder keeps
+  its bold style when filled;
+- `fixed_texts`: named handles for `set_fixed` (units line, tolerance rows, roughness, edge
+  break, projection label, address lines);
+- `revision_table`: `columns_x` (REV, DESCRIPTION, DATE, APPROVED), `row_height`,
+  `next_row_top` (the table ships empty; `revision_row(index, ..., date=...)` adds rows under
+  the header and lines every column boundary), `text_inset`; `null` on continuation sheets;
+- `units`: `"in"` makes dimensions print as inches to three decimals, ASME style without a
+  leading zero (`.394`, `1.000±.005`), through DIMLFAC = 1/(25.4·scale), DIMDEC 3 and DIMZIN 4;
+  the paper stays in millimetres and the spec gives tolerances in inches. `dec=` still overrides;
+- `placeholders` for `blank_placeholders`, `notes_label`, `logo_box` (the vector lockup; no
+  OLE logo to pull out), `sheet_box`, `frame_box`, `title_block_box`, `usable` areas.
 
-To add another template, export it from Onshape as DXF and list its field handles (dump the
-MTEXT entities with ezdxf). `template_map` also accepts an absolute path.
+The generator renders each template and a filled example through `Sheet.render`, runs `lint`
+and the render check, and exits 1 on any finding, so a template change cannot ship a clash.
+
+**Onshape template (2024, superseded):** `templates/aerial_hedra_b_mm.json` maps Kurt's B-size
+mm Onshape export, now at `Documents/Dodec/Drawing Template/Drawing template aerial hedra mm.dxf`
+(D021 Rev B was drawn on it). It records the MTEXT handles of the title-block fields, the sheet
+and logo boxes (an OLE2FRAME bitmap, pulled out with olefile), the revision-table grid (row A is
+part of the template; added rows go under it) and lineweights. To map another exported template,
+list its field handles (dump the MTEXT entities with ezdxf).
 
 ## Limits
 
@@ -168,7 +234,17 @@ cd tests
 ..\runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe -B -m unittest test_drawing > ..\runtime\test_drawing.txt 2>&1
 ```
 
-`tests/test_drawing.py` has 27 tests. They cover:
+`tests/test_drawing.py` has 57 tests (39 for the pipeline, written against `standard=False`, and
+18 in `StandardTests` for the drawing standard). The eight added on 2026-11-11 for the aluminum
+prototype second pass cover inch radii, `section(snap=)`, lint of turned text, a turned value's
+carried dimension line, B-spline fillet radii, diameters and bolt circles, B-spline hole loops,
+and auxiliary views with `view_arrow()`. One added on 2026-11-12 (the sleeve, ALP-006) covers a
+radial hole in a tube, whose edge projects as two open B-spline halves: with `fit_tol` the pieces
+count as the hole only when together they cover the whole circle. Another, also 2026-11-12, covers a
+diameter called out from outside (`dim_diameter(location=)`): one radial leader to the near side,
+arrow pointing in, no line across the circle (Kurt's rule). An inch unilateral tolerance is written
+inline in ASME Y14.5 inch form (`text="<> +.00/-.02"`): ezdxf prints a nil deviation as a bare `0`,
+the millimetre form. They cover:
 
 - **Views and sections:** handedness, hidden lines, distance, section volume and hatch loops.
 - **Dimensions:** true-size dimensions; refusal of off-geometry points; text expectations;
@@ -178,5 +254,10 @@ cd tests
   and bracket ink against a line.
 - **Output:** the DXF audit, B-size MediaBox, PDF line widths, Ø counters printing white, the
   render check, and detail clipping including a bridged clip.
+- **Templates:** inch sheets printing `.394±.005` from model millimetres, revision rows with a
+  DATE column under an empty header (`next_row_top`), and fixed texts rewritten by name.
+- **Standard:** every finding kind in the table at the top, a sheet that follows the standard
+  saving clean, the waiver, hole-centre dimensions, callout texts and symbols, the legacy switch,
+  and `check_set` across two sheets.
 
-It is not yet listed in `tools/run_native_tests.py`.
+All four drawing test classes, including `StandardTests`, are registered in `tools/run_native_tests.py` and run by `run-checks.ps1`.

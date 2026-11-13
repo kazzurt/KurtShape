@@ -747,10 +747,17 @@ OPERATIONS = {
     "export": {
         "summary": "Export current solid results with provenance; requires a current build and valid geometry checks",
         "fields": {"path": {"description": "Absolute path in a granted project folder", "x-suffixes": [".step", ".stp", ".stl"]},
-                   "body": {"description": "Export only this current result or part (not for assemblies)"}},
+                   "body": {"description": "Export only this current result or part (not for assemblies)"},
+                   # 2026-11-01: named-part STEP (docs/OPERATION_CONTRACT.md "Named-part STEP export").
+                   "named_parts": {"type": "boolean", "default": False,
+                                   "description": "STEP only: write one named product per included result (the part "
+                                                  "name, else the result's label) instead of one unnamed compound; same "
+                                                  "world geometry, units mm, no colours. The sidecar lists the parts under "
+                                                  "named_parts. With .stl, or a non-boolean value, rejects invalid_argument"}},
         "required": ["path"],
         "examples": [{"op": "export", "path": "<project>/plate.step"},
-                     {"op": "export", "path": "<project>/plate.stl", "body": "Body"}],
+                     {"op": "export", "path": "<project>/plate.stl", "body": "Body"},
+                     {"op": "export", "path": "<project>/plate-parts.step", "named_parts": True}],
         "x-example-fixture": "plate", "doc": DOC_30},
 
     # History ---------------------------------------------------------------

@@ -54,7 +54,15 @@ This is the one launch rule; other documents link here instead of restating it.
    `-ProjectRoot <folder>` lets it save there. It loads this checkout's code when it
    starts. Stop it with `tools/assistant.ps1 -Hidden -Stop -HiddenSession <name>`.
 3. **The user's running app: only when the user asks to watch, or the document to
-   change is open there.** An agent never launches it (`KurtShape.cmd`,
-   `KurtShape.exe`, `launch-kurtshape.ps1` or a shortcut); if it is not running, ask
-   the user. Confirm the code it loaded with `--build-check` (above) and ask before
-   restarting it.
+   change is open there.** While working, an agent never launches it to model in
+   (`KurtShape.cmd`, `KurtShape.exe`, `launch-kurtshape.ps1` or a shortcut); it works
+   headless or in the hidden app, and if the user wants to watch but the app is not
+   running, it asks the user. Confirm the code it loaded with `--build-check` (above)
+   and ask before restarting it.
+4. **Review at the end of an assignment: open the result for the user.** When the
+   modelling work is finished and saved, open the finished native file in the user's
+   app so they can review it:
+   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File <checkout>\launch-kurtshape.ps1 -FilePath <project.FCStd>`
+   starts the app with that file, or hands it to the KurtShape already running.
+   Open it only after the agent's own sessions have saved and closed it. Make no
+   further changes to a file the user now has open; ask first if more edits are needed.

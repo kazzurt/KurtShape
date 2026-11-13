@@ -38,7 +38,7 @@ SUITES = {
         "test_assembly.AssemblyWorkflowTests", "test_assembly_refresh.AssemblyRefreshTests", "test_assembly_persistence.AssemblyPersistenceTests", "test_extrusion_preview.ExtrusionPreviewTests",
         "test_delivery_clearance.ClearanceTests", "test_delivery_clearance.DeliveryValidationTests",
         # 2D drawings (docs/DRAWINGS.md): the module skips itself when ezdxf is not installed (tools/setup-drawing-deps.ps1).
-        "test_drawing.ViewProjectionTests", "test_drawing.SectionTests", "test_drawing.SheetTests",
+        "test_drawing.ViewProjectionTests", "test_drawing.SectionTests", "test_drawing.SheetTests", "test_drawing.StandardTests",
         "test_extrusion_edit.ExtrusionEditTests", "test_history_lifecycle.HistoryLifecycleTests",
         "test_everyday_modeling.EverydayModelingDirectionTests",
         "test_dress_up_edit.DressUpEditTests", "test_holes.HoleTests",
@@ -98,6 +98,10 @@ SUITES = {
         "test_assembly_instance_source.AssemblyInstanceSourceTests",
         "test_measure_readout.MeasureReadoutTests", "test_measure_readout.MeasureAssemblyTests",
         "test_assembly_refresh_flow.AssemblyRefreshFlowTests",
+        # Named-part STEP export (export named_parts, 2026-11-01; docs/OPERATION_CONTRACT.md).
+        "test_named_step_export.NamedStepExportTests",
+        # KurtShape's own icon, title bar and loading screen (2026-11-09; src/kurtshape/branding.py).
+        "test_branding.BrandingTests",
     ),
     "bridge": ("test_bridge.BridgeTimeoutTests", "test_bridge.BridgeDeferredTests", "test_batch.BatchBridgeTests", "test_assistant_client.AssistantClientReconciliationTests", "test_bridge_native.NativeBridgeStatusTests",
                "test_build_identity.BuildIdentityTests"),

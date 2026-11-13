@@ -169,7 +169,7 @@ Stored managed Part Studios already using `UseHasher=false` open without native 
 | `rebuild` | None | Touch native modeling features and recompute |
 | `undo` / `redo` | None | Native document history outside editing; native sketch snapshots within its managed lease; fresh revision |
 | `save` | Absolute `path` in a granted project folder, `.FCStd` | Native staging file, checked ZIP, atomic replacement and recovery copy of prior file |
-| `export` | Absolute `path`, optional `body`, `.step`/`.stp`/`.stl` | All final solid results by default, or selected Body; included IDs, engine/settings/revision/units/SHA256 provenance; replacement failure restores the prior pair when possible |
+| `export` | Absolute `path`, optional `body`, `.step`/`.stp`/`.stl`; optional `named_parts` (STEP, below) | All final solid results by default, or selected Body; included IDs, engine/settings/revision/units/SHA256 provenance; replacement failure restores the prior pair when possible |
 
 Entity coordinates are sketch-local millimeters. Supported dimensional constraints are Distance, DistanceX, DistanceY, Diameter, Radius and Angle; angles use radians. Unnamed dimensions use keys such as `Constraints[17]`. Numeric values must be finite and satisfy native dimensional/solver validation. Source-created features may carry optional request fields `source_feature_id`/`source_feature_name`, stored in native source properties and metadata mapping.
 
@@ -178,6 +178,15 @@ The GUI starts a lease before native `setEdit`. Stop active drawing tools, call 
 Managed legacy documents retain `KurtShapeFeatureOrder` as native chronological links without enabling multi-part behavior. Native Undo may recreate deleted features in a different allocation order; the feature history and rollback sequence continue to use the accepted chronological links. `Controller.delete_features_plan(doc, features, body=None)` is a read-only GUI helper returning ordered `selected`, unselected `dependents` and total `removed` IDs, with the same target/dependency validation as deletion.
 
 Standalone modeling failures abort their transaction and retain accepted geometry/revision. A failed managed command restores its pre-command draft; failed Finish retains the full current draft/lease and advances the revision. The GUI reopens Sketcher and shows the error in Messages. Only explicit Cancel discards the lease. Native failed builds report explicit errors; unrecomputed touched features report `needs_rebuild`, `measurements:null` and separate `retained_geometry_measurements`. Export rejects failed or unrecomputed builds. Retained geometry is not a successful evaluation of new intent.
+
+### Named-part STEP export (2026-11-01)
+
+`export` takes an optional boolean `named_parts` (default `false`). With `named_parts:true` and a `.step`/`.stp` path it writes one STEP file in which every included current result (all final results, every assembly occurrence, or the selected `body`) is its own product, named after its part: the part name (`KurtShapePartName`, shown by `inspect` as `parts[].name`), else the result's label. The geometry is the same detached world copy the default export writes, in millimetres. Several parts sit under one root product named after the document label made an identifier (`Studio fixture` → `Studio_fixture`); a single part is the root product itself.
+
+- **Writer.** A temporary hidden document holds one `Part::Feature` per part and `Import.export` writes it with explicit options (`legacy=False`, `exportHidden=True`, `keepPlacement=True`; FreeCAD's default `keepPlacement=False` drops a single part's placement). The temporary document is closed in every case and the previously active document restored; the source document is neither modified nor recomputed (revision and modified flag unchanged).
+- **Names, not colours.** Colours are not written (verified headless; the running app's writer is unverified). FreeCAD keeps labels unique, so two parts with the same name are written as `name` and `name001`; the sidecar records the names the file holds. Names are written as UTF-8 bytes that some readers, FreeCAD included, do not decode: keep them ASCII for portable files.
+- **Sidecar.** `named_parts: [{part_id, name, solid_count, volume_mm3}]` and `settings: {writer: "FreeCAD Import.export (named products)", root_product}` (`root_product` is `null` for one part). Without the flag `named_parts` is `null` and the export is unchanged: one compound written by `Shape.exportStep` with `writer: "FreeCAD Part/OCCT"`. GUI STEP export jobs always write that compound.
+- **Unchanged.** The result validation, geometry gate, staged write and sidecar pair replacement are those of every export. `named_parts:true` with `.stl`, or a non-boolean value, rejects `invalid_argument` with `fields:["named_parts"]`. Evidence: `tests/test_named_step_export.py` (`NamedStepExportTests`).
 
 ## Contract 3.1 — fail-fast studio results, typed helices and tight boxes
 

@@ -99,6 +99,18 @@ already running with the same profile, the launcher hands the file to it
 (`tools/open-in-running-app.ps1`): it opens in that window, or switches to its
 tab if it is already open, instead of starting a second KurtShape.
 
+**KurtShape's own icon, title and loading screen.** `launch-kurtshape.ps1` starts
+the engine with `--module-path resources\freecad\KurtShapeBranding`. That module
+(`src/kurtshape/branding.py`) gives the window and its taskbar button the
+dodecahedron icon, keeps the title bar reading `<document> — KurtShape <version>`
+(the version is the assistant contract, `3.2` today) and replaces FreeCAD's loading
+screen with one drawn by `src/kurtshape/splash.py` into `<session>\branding` on the
+first start (and again when the version changes). The hidden agent app
+(`tools/private-session.ps1`) does not pass the module, so it shows FreeCAD's loading
+screen offscreen; its icon and title are still set when the interface starts. A
+taskbar pin made from the running window still points at `freecad.exe`: pin a
+shortcut to `KurtShape.exe` instead.
+
 **Performance cores (hybrid Intel CPUs).** `launch-kurtshape.ps1`,
 `tools/private-session.ps1` and `tools/assistant.ps1 -Hidden` accept
 `-PinPerformanceCores` (or `-NoPinPerformanceCores`). The switch restricts the
