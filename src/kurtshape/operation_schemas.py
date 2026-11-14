@@ -1120,7 +1120,10 @@ OPERATIONS = {
     "linear_pattern_parts": {
         "summary": "Linear copies of parts, optionally combined with a merge scope",
         "fields": {**_PATTERN, "id": {"x-default-id": "StudioFeature"}, "count": {"default": 2},
-                   "direction": {"default": [1, 0, 0]}, "spacing": {}},
+                   "direction": {"anyOf": [_d("direction3"), _d("reference")], "default": [1, 0, 0],
+                                 "description": "World direction, or one straight edge or sketch line reference that the "
+                                                "copies follow (also on another part)"},
+                   "spacing": {}, "reversed": {"default": False, "description": "Pattern against the direction"}},
         "required": ["parts", "spacing"],
         "checked_by_handler": {"parts": "invalid_argument", "spacing": "invalid_argument"},
         "examples": [{"op": "linear_pattern_parts", "id": "Row", "parts": ["Tool"], "direction": [0, 1, 0], "spacing": 40}],
@@ -1128,9 +1131,12 @@ OPERATIONS = {
     "circular_pattern_parts": {
         "summary": "Rotated copies of parts about an axis",
         "fields": {**_PATTERN, "id": {"x-default-id": "StudioFeature"}, "count": {"default": 2},
-                   "axis": {"default": _DEFAULT_AXIS},
+                   "axis": {"anyOf": [_d("axis"), _d("reference")], "default": _DEFAULT_AXIS,
+                            "description": "World {origin, direction}, or one straight edge, line, circle or arc "
+                                           "reference (a circle or arc turns about its centre and normal)"},
                    "angle": {"$ref": "#/$defs/positive_angle", "default": "360 deg",
-                             "description": "Total angle; a full turn excludes the coincident last instance"}},
+                             "description": "Total angle; a full turn excludes the coincident last instance"},
+                   "reversed": {"default": False, "description": "Turn the other way about the axis"}},
         "required": ["parts"], "checked_by_handler": {"parts": "invalid_argument"},
         "examples": [{"op": "circular_pattern_parts", "id": "Around", "parts": ["Tool"], "count": 3}],
         "x-example-fixture": "studio", "doc": DOC_PATTERNS},

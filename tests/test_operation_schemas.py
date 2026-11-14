@@ -290,13 +290,13 @@ DEFAULT_PROBES = {
         "fixture": "studio", "setup": [],
         "request": {"op": "linear_pattern_parts", "id": "RowProbe", "parts": ["Tool"], "direction": [0, -1, 0],
                     "spacing": 10, "operation": "add"},
-        "fields": ["operation", "merge_scope", "include_source"]},
+        "fields": ["operation", "merge_scope", "include_source", "reversed"]},
     "circular_add": {
         "fixture": "studio", "setup": [],
         "request": {"op": "circular_pattern_parts", "id": "AroundProbe", "parts": ["Tool"],
                     "axis": {"origin": [45, 10, 0], "direction": [0, 0, 1]}, "angle": "90 deg", "count": 2,
                     "operation": "add"},
-        "fields": ["operation", "merge_scope", "include_source"]},
+        "fields": ["operation", "merge_scope", "include_source", "reversed"]},
     "mirror_add": {
         "fixture": "studio", "setup": [],
         "request": {"op": "mirror_parts", "id": "MirrorProbe", "parts": ["Tool"], "origin": [0, 10, 0],

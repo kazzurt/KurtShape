@@ -28,10 +28,11 @@ Setup verifies the official runtime download and runs a disposable modeling chec
 - **Edit:** double-click a sketch, Extrude, Fillet or Chamfer history row. Fillet/Chamfer let you change edges and value. Ctrl+Z / Ctrl+Y undo and redo.
 - **Find a face's feature:** select a face to highlight its feature in the history tree while keeping the face selected. The highlight follows selection and clears with it. Trimmed faces point to the operation that trimmed them.
 - **Navigate:** middle-drag orbits, Ctrl+middle pans, Shift+middle zooms. Alt+C searches all tools; Shift+/ shows shortcuts.
+- **Patterns and Mirror:** a linear pattern can follow a picked straight edge or sketch line, and a circular pattern can turn about a picked edge, line, circle or arc, on any part; Reverse flips either. Mirror accepts another part's planar face. Moving or editing the referenced part updates the copies.
 - **Section View:** select a face or plane and press Shift+X (or Shift+X, then click one). Round faces cut through their centre on Top, Front or Right, whichever faces you; drag the orange arrow to move the cut; Shift+X or Esc leaves. View only, never saved.
 - **Files:** Ctrl+S saves native FCStd. Open accepts FCStd and STEP; the blank part shown at launch closes when you open one, unless you changed it. Export produces STEP/STL. Messages retains error details for troubleshooting.
 
-[Part Studio walkthrough](docs/U2_WALKTHROUGH.md) · [Extrude editing](docs/EXTRUSION_EDIT.md) · [Fillet/Chamfer editing](docs/FILLET_CHAMFER_EDIT.md) · [Assembly workflow](docs/assembly-workflow/WORKFLOW.md)
+[Part Studio walkthrough](docs/U2_WALKTHROUGH.md) · [Extrude editing](docs/EXTRUSION_EDIT.md) · [Fillet/Chamfer editing](docs/FILLET_CHAMFER_EDIT.md) · [Pattern references and Mirror](docs/PATTERN_MIRROR_REFERENCES.md) · [Assembly workflow](docs/assembly-workflow/WORKFLOW.md)
 
 ## Agents and developers
 

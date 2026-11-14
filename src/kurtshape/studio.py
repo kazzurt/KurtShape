@@ -31,9 +31,9 @@ ARGS = {
     "transform_part": {"id", "name", "part", "translation", "rotation", "coordinate_system", "copy"},
     "delete_part": {"id", "name", "part"},
     "linear_pattern_parts": {"id", "name", "parts", "direction", "spacing", "count", "operation", "merge_scope",
-                             "include_source"},
+                             "include_source", "reversed"},
     "circular_pattern_parts": {"id", "name", "parts", "axis", "angle", "count", "operation", "merge_scope",
-                               "include_source"},
+                               "include_source", "reversed"},
     "mirror_parts": {"id", "name", "parts", "plane", "origin", "normal", "operation", "merge_scope", "include_source"},
     "rollback": {"index"},
     "set_part_appearance": {"part", "name", "visible", "color"},
@@ -240,6 +240,8 @@ def migrate_link_scopes(doc):
                 output = getattr(obj, "KurtShapeOutputGeneration", False) and source.TypeId == "PartDesign::Pad"
                 changed = (_set_boolean_body_input(obj, source) if parent or output else _set_body_input(obj, source)) or changed
     from .modeling_geometry import migrate_axis_scopes
+    from .modeling_geometry import migrate_mirror_scopes
+    changed = migrate_mirror_scopes(doc) or changed
     return migrate_axis_scopes(doc) or changed
 
 
@@ -493,6 +495,18 @@ def is_active(obj):
     if obj.TypeId == "PartDesign::Body" and not getattr(obj, "KurtShapeInternal", False):
         return any(entry[0] == obj for entry in _state(doc, _cutoff(doc)).values())
     return True
+
+
+def reference_available(obj):
+    """True when obj is current at the rollback bar (never future geometry)."""
+    if not is_active(obj):
+        return False
+    doc = obj.Document
+    container = _body_owner(obj)
+    if not enabled(doc) or container is None or obj.TypeId == "Sketcher::SketchObject":
+        return True
+    tips = [entry[1] for entry in _state(doc, _cutoff(doc)).values() if entry[1] is not None]
+    return any(obj == tip or obj in tip.OutListRecursive for tip in tips)
 
 
 def _set_body_input(body, source):
@@ -1324,6 +1338,24 @@ def _boolean_tool(doc, result, tool, name):
     return private
 
 
+def _pattern_driver(doc, spec, name, operation, straight):
+    """Native world-frame line following a selected edge, line, circle or arc."""
+    from . import modeling_geometry
+    source, element, mode, kind = modeling_geometry.edge_reference(doc, spec)
+    if straight and kind != "line":
+        raise _error("unsupported_reference", "A linear pattern direction needs a straight edge or sketch line")
+    driver, _ = modeling_geometry.reference_driver(doc, "line", source, element, mode, name, operation, spec)
+    return driver
+
+
+def _claim_driver(driver, representative):
+    """Tag a pattern's reference driver and datum with the recorded operation."""
+    if driver is not None:
+        for obj in (driver, driver.KurtShapeReferenceDatum):
+            _prop(obj, "App::PropertyString", "KurtShapeOperationOwner", representative)
+    return representative
+
+
 def _axis(req):
     axis = req.get("axis", {})
     if not isinstance(axis, dict) or set(axis) - {"origin", "direction"}:
@@ -2147,15 +2179,29 @@ def handle(controller, doc, req):
             raise _error("invalid_argument", "Pattern count must be between two and one hundred")
         placements = []
         mirror = None
+        driver = steps = None
+        sign = -1 if op != "mirror_parts" and _bool(req, "reversed", False) else 1
+        from . import modeling_geometry
         if op == "linear_pattern_parts":
-            direction = _vector(req.get("direction"), "direction", [1, 0, 0], True)
             spacing = _number(req.get("spacing"), "spacing", True)
-            placements = [App.Placement(direction * spacing * i, App.Rotation()) for i in range(1, count)]
+            if modeling_geometry.is_reference(req.get("direction")):
+                driver = _pattern_driver(doc, req["direction"], name + "Direction", name, straight=True)
+                steps = ["placement(vector(0; 0; %r); rotation(vector(0; 0; 1); 0))" % (sign * spacing * i)
+                         for i in range(1, count)]
+            else:
+                direction = _vector(req.get("direction"), "direction", [1, 0, 0], True) * sign
+                placements = [App.Placement(direction * spacing * i, App.Rotation()) for i in range(1, count)]
         elif op == "circular_pattern_parts":
-            origin, axis = _axis(req)
             angle = _number(req.get("angle", "360 deg"), "angle", True, "rad")
             step = angle / count if abs(angle - 2 * math.pi) < 1e-8 else angle / (count - 1)
-            placements = [App.Placement(App.Vector(), App.Rotation(axis, math.degrees(step * i)), origin) for i in range(1, count)]
+            if modeling_geometry.is_reference(req.get("axis")):
+                driver = _pattern_driver(doc, req["axis"], name + "Axis", name, straight=False)
+                steps = ["placement(vector(0; 0; 0); rotation(vector(0; 0; 1); %r))" % (sign * math.degrees(step * i))
+                         for i in range(1, count)]
+            else:
+                origin, axis = _axis(req)
+                axis = axis * sign
+                placements = [App.Placement(App.Vector(), App.Rotation(axis, math.degrees(step * i)), origin) for i in range(1, count)]
         else:
             if "plane" in req:
                 if "origin" in req or "normal" in req:
@@ -2167,8 +2213,15 @@ def handle(controller, doc, req):
             placements = [App.Placement()]
         outputs, reps = [], []
         for key, source in snapshots:
-            for placement in placements:
-                output, rep = _copy_result(doc, source, placement, name if not reps else name + "Instance", mirror=mirror)
+            for placement in steps or placements:
+                output, rep = _copy_result(doc, source, App.Placement() if steps else placement,
+                                           name if not reps else name + "Instance", mirror=mirror)
+                if steps:
+                    # Each copy = driver frame · step · inverse driver frame ·
+                    # source, by native expression: it follows the referenced
+                    # axis's direction and position and its Body placement.
+                    rep.Links[0].setExpression("Placement", "%s.Placement * %s * minvert(%s.Placement) * %s.Placement"
+                                               % (driver.Name, placement, driver.Name, source.Name))
                 source_part = current_part(doc, key)
                 output.Label = getattr(source_part, "KurtShapePartName", source_part.Label) + " pattern"
                 outputs.append(output)
@@ -2243,6 +2296,6 @@ def handle(controller, doc, req):
             if include_source:
                 _prop(reps[0], "App::PropertyStringList", "KurtShapePatternSourceParts", source_ids)
                 consumed += source_ids
-            return _record(doc, reps[0], req, outputs, consumed, snapshots)
-        return _record(doc, reps[0], req, outputs, snapshots=snapshots)
+            return _claim_driver(driver, _record(doc, reps[0], req, outputs, consumed, snapshots))
+        return _claim_driver(driver, _record(doc, reps[0], req, outputs, snapshots=snapshots))
     raise _error("unsupported_operation", "Unsupported studio operation")

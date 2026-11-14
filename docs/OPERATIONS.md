@@ -4,7 +4,7 @@
 > `runtime\freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\pythonw.exe -B tools\generate_operations_doc.py > runtime\test-tmp\operations-doc.log 2>&1`.
 > `tests/test_operations_doc.py` fails when this file and the schema disagree.
 
-One entry per operation of this build (91 operations, schema version 1, schema digest `2b33ca497d569a0c`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
+One entry per operation of this build (91 operations, schema version 1, schema digest `72c1629fddd6298e`): summary, envelope, arguments, one runnable example and the error codes the schema names. Behaviour, response shapes and history are in [OPERATION_CONTRACT.md](OPERATION_CONTRACT.md); worked modeling recipes in [COOKBOOK.md](COOKBOOK.md). A running build answers `{"op": "operation_schema"}` with the full JSON schema this page summarises (argument descriptions, constraints, every example).
 
 ## Reading an entry
 
@@ -449,7 +449,7 @@ Schema-named errors: `ambiguous_body`, `ambiguous_reference`, `duplicate_feature
 Rotated copies of parts about an axis. [Contract][contract-patterns].
 
 - `angle`: positive_angle; default `"360 deg"`
-- `axis`: axis; default `{"direction": [0, 0, 1], "origin": [0, 0, 0]}`
+- `axis`: axis or reference; default `{"direction": [0, 0, 1], "origin": [0, 0, 0]}`
 - `body`: body
 - `count`: integer 2..100; default `2`
 - `detail`: full / compact
@@ -459,12 +459,13 @@ Rotated copies of parts about an axis. [Contract][contract-patterns].
 - `name`: string
 - `operation`: result_operation; default `"new"`
 - `parts`: array of part; **required** (missing: `invalid_argument`)
+- `reversed`: boolean; default `false`
 - `source_feature_id`: string
 - `source_feature_name`: string
 
 Example (fixture `studio`): `{"op": "circular_pattern_parts", "document_id": "<document_id>", "expected_revision": "<revision>", "count": 3, "id": "Around", "parts": ["Tool"]}`
 
-Schema-named errors: `ambiguous_body`, `duplicate_feature`.
+Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
 
 ### create_body
 
@@ -739,20 +740,21 @@ Linear copies of parts, optionally combined with a merge scope. [Contract][contr
 - `body`: body
 - `count`: integer 2..100; default `2`
 - `detail`: full / compact
-- `direction`: direction3; default `[1, 0, 0]`
+- `direction`: direction3 or reference; default `[1, 0, 0]`
 - `id`: new_id; id `StudioFeature` when omitted
 - `include_source`: boolean; default `false`
 - `merge_scope`: merge_scope; default `"auto"`
 - `name`: string
 - `operation`: result_operation; default `"new"`
 - `parts`: array of part; **required** (missing: `invalid_argument`)
+- `reversed`: boolean; default `false`
 - `source_feature_id`: string
 - `source_feature_name`: string
 - `spacing`: positive_length; **required** (missing: `invalid_argument`)
 
 Example (fixture `studio`): `{"op": "linear_pattern_parts", "document_id": "<document_id>", "expected_revision": "<revision>", "direction": [0, 1, 0], "id": "Row", "parts": ["Tool"], "spacing": 40}`
 
-Schema-named errors: `ambiguous_body`, `duplicate_feature`.
+Schema-named errors: `ambiguous_body`, `duplicate_feature`, `invalid_selector`.
 
 ### loft
 
