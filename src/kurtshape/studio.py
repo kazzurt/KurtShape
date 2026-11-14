@@ -1538,6 +1538,55 @@ def _negligible(before, tool):
     return max(1e-7, min(1e-6 * abs(before), 1e-5 * abs(tool)))
 
 
+def _volume_range(operation, before, tool):
+    """``(low, high)`` volume a Boolean of that kind can leave, from the input volumes and the tool volume."""
+    if operation == "remove":
+        return sum(before) - tool, sum(before)
+    if operation == "intersect":
+        return 0.0, min(sum(before), tool)
+    return max(max(before), tool), sum(before) + tool
+
+
+def _volume_possible(operation, before, tool, after):
+    low, high = _volume_range(operation, before, tool)
+    slack = max(1e-7, 1e-6 * (sum(abs(value) for value in before) + abs(tool)))
+    return low - slack <= after <= high + slack
+
+
+def _shared_point_volumes(shapes):
+    """Volumes of ``shapes`` measured about one shared reference point.
+
+    OCCT 7.8 integrates a solid's volume about the mean of its vertices, and on
+    faces bounded by approximated (BSpline) intersection curves the integral
+    carries an error that moves with that point: (1/3) E . P, where E, the
+    computed vector area of the closed shell, should be 0 but measures up to
+    1.8e-6 of the shell's area on the pinned runtime. A Boolean's input, tool
+    and result share most faces but not their vertices, so measured one by one
+    they are integrated about different points and the error of the shared
+    faces no longer cancels: four Ø1.7 pilot holes in a 27.8 cm3 printed sled
+    "removed" 0.037 mm3 more than the tool, and moving the point across that
+    part shifts its volume by up to 3.6 mm3. Each shape is measured here in a
+    compound with the face wires of the others; wires add no volume, and every
+    compound has the same vertices and so the same point.
+    """
+    wires = [[wire for face in shape.Faces for wire in face.Wires] for shape in shapes]
+    return [geometry.scalar(Part.Compound([shape] + [wire for other, group in enumerate(wires) if other != index
+                                                     for wire in group]), "volume")
+            for index, shape in enumerate(shapes)]
+
+
+def _reference_band(before, tool):
+    """Own-point volume changes smaller than this are re-measured about one point before they count.
+
+    The empty-Remove/empty-Add checks judge changes near zero, where the
+    reference-point term of `_shared_point_volumes` can pose as material: a
+    Remove that only split the faces it touched "removed" 0.0073 mm3 of a
+    4580 mm3 part, 13x the negligible limit. 1e-4 of the volumes is the largest
+    term measured (moving the point across the whole printed sled).
+    """
+    return 1e-4 * (sum(abs(value) for value in before) + abs(tool))
+
+
 def _union_box(boxes):
     low = [min(box["min"][axis] for box in boxes) for axis in range(3)]
     high = [max(box["max"][axis] for box in boxes) for axis in range(3)]
@@ -1584,6 +1633,11 @@ def _check_result(doc, name, operation, tool_body, snapshots, outputs, kernel=Tr
     A failed OCCT Boolean can pass BRepCheck: a refined helical cut that
     removed its whole tool volume (cutting a solid inside out) did. Every
     rejection names the operation as `feature` and the affected `part`.
+    The volume checks first compare the parts' own (cached) volumes; a part
+    they would reject, or whose change is too small to tell from the
+    reference-point term (`_reference_band`), is measured again with tool and
+    inputs about one shared reference point (`_shared_point_volumes`), and
+    that comparison decides.
     """
     began = time.perf_counter()
     if recompute:
@@ -1617,19 +1671,26 @@ def _check_result(doc, name, operation, tool_body, snapshots, outputs, kernel=Tr
     if tool_volume <= 1e-7:
         raise _error("invalid_geometry", f"The {name} tool solid has no positive volume (empty or inside out)",
                      feature=name, check="tool", tool_volume_mm3=tool_volume)
+    shared = {}
+
+    def about_one_point(key, sources, shape):
+        """``(inputs, tool, result)`` volumes of one part about one reference point, measured once on demand."""
+        if key not in shared:
+            *inputs, tool, result = _shared_point_volumes([source.Shape for source in sources]
+                                                          + [tool_body.Shape, shape])
+            shared[key] = inputs, tool, result
+        return shared[key]
+
     for key, sources, (body, shape, own), before, after in facts:
-        slack = max(1e-7, 1e-6 * (sum(abs(value) for value in before) + abs(tool_volume)))
-        if operation == "remove":
-            low, high = sum(before) - tool_volume, sum(before)
-        elif operation == "intersect":
-            low, high = 0.0, min(sum(before), tool_volume)
-        else:
-            low, high = max(max(before), tool_volume), sum(before) + tool_volume
-        if not low - slack <= after <= high + slack:
+        if not _volume_possible(operation, before, tool_volume, after) and \
+                not _volume_possible(operation, *about_one_point(key, sources, shape)):
+            low, high = _volume_range(operation, before, tool_volume)
+            inputs, tool, result = shared[key]
             raise _error("invalid_geometry", f"{name} left part {key} with {after:.6g} mm3, outside the "
                          f"{low:.6g}..{high:.6g} mm3 a {operation} with a {tool_volume:.6g} mm3 tool can give",
                          feature=name, part=key, check="volume", volume_before_mm3=sum(before),
-                         volume_after_mm3=after, tool_volume_mm3=tool_volume)
+                         volume_after_mm3=after, tool_volume_mm3=tool_volume,
+                         shared_point_volumes_mm3={"before": sum(inputs), "after": result, "tool": tool})
     if kernel:
         tool_box = _measure(cache, tool_body, tool_body.Shape, "bbox") if operation != "remove" else None
         for key, sources, (body, shape, own), before, after in facts:
@@ -1647,7 +1708,14 @@ def _check_result(doc, name, operation, tool_body, snapshots, outputs, kernel=Tr
               "volume_delta_mm3": after - sum(before), **({"merged_parts": [row[0] for row in snapshots]}
                                                          if operation == "add" else {})}
              for key, sources, (body, shape, own), before, after in facts]
-    if operation == "remove" and not any(sum(before) - after > _negligible(sum(before), tool_volume)
+
+    def removed(key, sources, shape, before, after):
+        limit = _negligible(sum(before), tool_volume)
+        if sum(before) - after > max(limit, _reference_band(before, tool_volume)):
+            return True
+        inputs, _, result = about_one_point(key, sources, shape)
+        return sum(inputs) - result > limit
+    if operation == "remove" and not any(removed(key, sources, shape, before, after)
                                          for key, sources, (body, shape, own), before, after in facts):
         raise _error("empty_cut", f"{name} removed no material from the selected scope", feature=name, parts=parts,
                      tool_volume_mm3=tool_volume)
@@ -1655,9 +1723,12 @@ def _check_result(doc, name, operation, tool_body, snapshots, outputs, kernel=Tr
     # acceptance rejects it.
     if operation == "add" and len(snapshots) == 1 and kernel:
         key, sources, (body, shape, own), before, after = facts[0]
-        if after - before[0] <= _negligible(before[0], tool_volume):
-            raise _error("empty_add", f"{name} added no material to part {key}", feature=name, parts=parts,
-                         tool_volume_mm3=tool_volume)
+        limit = _negligible(before[0], tool_volume)
+        if after - before[0] <= max(limit, _reference_band(before, tool_volume)):
+            inputs, _, result = about_one_point(key, sources, shape)
+            if result - inputs[0] <= limit:
+                raise _error("empty_add", f"{name} added no material to part {key}", feature=name, parts=parts,
+                             tool_volume_mm3=tool_volume)
     return {"feature": name, "operation": operation, "tool_volume_mm3": tool_volume,
             "volume_delta_mm3": sum(row["volume_delta_mm3"] for row in parts), "parts": parts,
             "geometry_check": "valid" if kernel else "not_checked", "check_ms": (time.perf_counter() - began) * 1000}

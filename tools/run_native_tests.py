@@ -61,6 +61,8 @@ SUITES = {
         "test_scope_membership.ScopeMembershipTests",
         "test_part_studio.PartStudioTests", "test_pattern_tools.PatternToolTests",
         "test_result_checks.ResultCheckTests",
+        # Result volume checks about one shared reference point (2026-11-13; docs/OPERATION_CONTRACT.md 3.1 item 4).
+        "test_volume_reference.VolumeReferencePointTests",
         "test_result_validation.ResultValidationTests", "test_result_validation.ResultValidationPerfTests",
         "test_selector_consumers.SelectorConsumerTests",
         "test_multi_edge_references.MultiEdgeReferenceTests",
