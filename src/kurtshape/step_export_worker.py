@@ -21,7 +21,7 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from kurtshape.geometry_check_worker import NativeGeometryCheckWorker, _local_dependencies
-from kurtshape.preview_worker import NativePreviewWorker, _validate_transport_snapshot
+from kurtshape.preview_worker import CHILD_PYTHON_FLAGS, NativePreviewWorker, _validate_transport_snapshot
 
 MAX_JSON_BYTES = 8 * 1024 * 1024
 ARTIFACT_NAME = "export.step"
@@ -190,7 +190,7 @@ class NativeStepExportWorker(NativeGeometryCheckWorker):
         environment.update(PYTHONDONTWRITEBYTECODE="1", QT_QPA_PLATFORM="offscreen", KURTSHAPE_WORKER="1")
         self.log = (self.folder / "native-worker.log").open("wb")
         self.process = subprocess.Popen(
-            [self.executable, "-B", str(Path(__file__).resolve()), str(self.folder), self.token,
+            [self.executable, *CHILD_PYTHON_FLAGS, str(Path(__file__).resolve()), str(self.folder), self.token,
              str(self.snapshot), json.dumps(self._snapshot_identity)],
             stdin=subprocess.PIPE, stdout=self.log, stderr=subprocess.STDOUT,
             env=environment, cwd=self.folder, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))

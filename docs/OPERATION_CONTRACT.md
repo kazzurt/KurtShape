@@ -231,7 +231,7 @@ Success adds `result_report` to the response: `feature`, `operation`, `tool_volu
 
 ## Contract 3.2 — validated edits, model images, parameters, batches and bridge basics
 
-Contract 3.2 publishes `contract_revision:2` (`contract:3`). It is being delivered unit by unit (integration plan `runtime/contract-3.2/specs/integration.md`); each subsection names the unit that owns it, and §3.2.0 lists every intentional change to earlier behaviour with the test that pins the new contract. Until the "in progress" marks below are gone, the running app may offer only part of this section: read `capabilities` first.
+Contract 3.2 publishes `contract_revision:2` (`contract:3`). It was delivered unit by unit; each subsection names the unit that owns it, and §3.2.0 lists every intentional change to earlier behaviour with the test that pins the new contract. Every subsection describes shipped behaviour, and §3.2.7 records where it stops short. The unit specs cited as `runtime/contract-3.2/specs/…` were working files and are not in the repository: this section, not those specs, is the contract. Read `capabilities` for what a running app offers.
 
 ### 3.2.0 Compatibility changes
 
@@ -390,7 +390,7 @@ A sheet has one image whose `tiles` hold `{view, box_px, camera, highlights}` (c
 
 The renderer (N2): each part is meshed once per job by OCCT with a linear tolerance of 0.6 × the finest mm/px (rounded down to a power of two, clamped to 1e-4–2e-3 × the scene diagonal, doubled for draft) and an angular deflection of 0.25 rad. Above 1.5 M triangles the mesh is coarsened (tolerance and angle doubled, the angle up to 0.5 rad) at most three times, stopping when a step removes less than 10 %; above 2.5 M triangles, section caps and highlight faces included, or past the job's 18 s budget, the render is refused with `render_too_large`. A face several highlights match is drawn in the colour of the highlight with fewer faces. Images narrower than 320 px shorten the banners ("RETAINED · FAILED") and drop the scale bar and axis triad before the caption.
 
-The worker (N3): each render runs in a private one-shot child process (below normal priority, single-thread BLAS, 1536 MiB commit cap in a Windows Job Object, 25 s limit) that is killed when KurtShape exits. Its inputs are BREP captures checked against their sha256 before any native module loads, and every PNG is checked again (type, size, sha256) before it is published.
+The worker (N3): each render runs in a private one-shot child process (below normal priority, single-thread BLAS, 1536 MiB commit cap in a Windows Job Object, 25 s limit) that is killed when KurtShape exits. Its inputs are BREP captures checked against their sha256 before any native module loads, and every PNG is checked again (type, size, sha256) before it is published. Since 2026-11-13 every private worker child (exact preview, geometry check, STEP export, render) starts with `-B -P`, so the worker's own folder `src/kurtshape` is not on `sys.path` and `kurtshape/selectors.py` cannot replace the standard-library `selectors` module (`test_worker_launch_flags.WorkerLaunchFlagTests`).
 
 **Limits.** Prescreen (owner, before any export): at most 5000 faces and 20000 edges over the drawn parts, then a running 48 MiB BREP cap (`render_too_large` with `reason` `faces`, `edges` or `brep_bytes`). Highlights: 256 matches per item, 1024 in total (`too_many_highlight_matches`).
 

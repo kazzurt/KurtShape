@@ -94,7 +94,7 @@ import weakref
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from kurtshape.preview_worker import NativePreviewWorker
+from kurtshape.preview_worker import CHILD_PYTHON_FLAGS, NativePreviewWorker
 
 JOB_TIMEOUT_SECONDS = 25
 MEMORY_LIMIT_BYTES = 1536 * 2**20
@@ -637,7 +637,7 @@ class NativeRenderWorker(NativePreviewWorker):
         self.log = (self.folder / "native-worker.log").open("wb")
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | (BELOW_NORMAL_PRIORITY_CLASS if os.name == "nt" else 0)
         self.process = subprocess.Popen(
-            [self.executable, "-B", str(Path(__file__).resolve()), str(self.folder), self.token, self.renderer],
+            [self.executable, *CHILD_PYTHON_FLAGS, str(Path(__file__).resolve()), str(self.folder), self.token, self.renderer],
             stdin=subprocess.PIPE, stdout=self.log, stderr=subprocess.STDOUT,
             env=environment, cwd=self.folder, creationflags=flags)
         if job is not None:

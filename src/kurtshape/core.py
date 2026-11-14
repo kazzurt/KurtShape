@@ -2107,9 +2107,6 @@ class Controller:
                     return {"ok": True, "result": {"parts": rows(doc, request.get("include_history", False))}}
                 if op == "orphan_helpers":
                     return {"ok": True, "result": {"groups": studio.orphan_groups(doc)}}
-                if op == "part_inventory":
-                    from .part_inventory import rows
-                    return {"ok": True, "result": {"parts": rows(doc, request.get("include_history", False))}}
                 if op == "list_parameters":
                     return {"ok": True, "result": parameters.list_result(self, doc, request)}
                 if op == "resolve_selector":

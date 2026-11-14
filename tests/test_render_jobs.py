@@ -853,9 +853,9 @@ class RenderWorkerLifetimeTests(unittest.TestCase):
             worker.submit(1, envelope)
         self.assertEqual(events, [("create", 300 * 2**20), "popen", "assign", "wake"])
         command, environment = launched["command"], launched["env"]
-        self.assertEqual(command[:2], [str(EXECUTABLE), "-B"])
-        self.assertEqual(Path(command[2]), Path(render_worker.__file__).resolve())
-        self.assertEqual(command[3:], [str(worker.folder), worker.token, str(self.fixture) + ":ok"])
+        self.assertEqual(command[:3], [str(EXECUTABLE), "-B", "-P"])
+        self.assertEqual(Path(command[3]), Path(render_worker.__file__).resolve())
+        self.assertEqual(command[4:], [str(worker.folder), worker.token, str(self.fixture) + ":ok"])
         self.assertEqual(launched["cwd"], worker.folder)
         if os.name == "nt":
             self.assertEqual(launched["creationflags"], subprocess.CREATE_NO_WINDOW | 0x00004000)

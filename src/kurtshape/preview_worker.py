@@ -15,6 +15,13 @@ import threading
 import time
 import uuid
 
+# Interpreter flags of every private worker child. A worker runs its own file
+# as a script, so Python would put src/kurtshape first on sys.path, where
+# kurtshape/selectors.py replaces the standard-library selectors module that
+# socketserver, asyncio and http.server import. -P keeps that folder off
+# sys.path; each worker adds src itself and imports the package by name.
+CHILD_PYTHON_FLAGS = ("-B", "-P")
+
 
 def _snapshot_file_identity(path):
     path = Path(path)
@@ -81,7 +88,7 @@ class NativePreviewWorker:
         self.log = (self.folder / "native-worker.log").open("wb")
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         self.process = subprocess.Popen(
-            [self.executable, "-B", str(Path(__file__).resolve()), str(self.folder), self.token,
+            [self.executable, *CHILD_PYTHON_FLAGS, str(Path(__file__).resolve()), str(self.folder), self.token,
              str(self.snapshot), json.dumps(identity)],
             stdin=subprocess.PIPE, stdout=self.log, stderr=subprocess.STDOUT,
             env=environment, cwd=self.folder, creationflags=flags)
