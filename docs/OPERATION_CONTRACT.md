@@ -474,6 +474,13 @@ Batchable operations are `MODEL_OPS` minus `capabilities.batch.excluded` (with r
 
 **Transport.** The bridge keeps its guards in this order: token, path and Origin (403), media type (403), body size (413, `request_size_limit` of the session file), then the body. A body that is not one JSON object, has a bad `Content-Length` or contains a non-finite number answers HTTP 400 with `{"ok":false,"error":{"code":"invalid_request","message":…}}` and registers nothing. A full owner queue answers HTTP 503 with `Retry-After: 1` and `{"code":"queue_full","request_id","session_id"}`; a tracked request is recorded as `cancelled` and was never started; the ledger now replays that answer for the id, so retry it with a new `request_id`. A read that was started and timed out answers `outcome_unknown` with `tracked:false`: it is not in the ledger, `request_status` cannot settle it and resending is safe. The session file lists `build`, `read_operations`, `non_mutating_operations` and `request_size_limit` beside the contract identity. Quiet reads (`QUIET_OPS`: `capabilities`, `operation_schema`, `diagnostics`, `request_status`, `list_documents`, `inspect`, `resolve_selector`, `orphan_helpers`) leave the GUI alone: after one of them (or after a request cancelled in its queue) the panel runs no trailing inspect and no refresh unless the document's revision, build status or refresh flag moved, and it reads only its own managed document for that decision; `check_geometry`, `preview` and `assembly_candidates` still refresh.
 
+Early header refusals (403, 413 or a bad `Content-Length` 400) send the response
+before closing the connection. To avoid Windows resetting a socket with unread
+input and hiding that response, the bridge half-closes its write side and drains
+buffered input for at most 250 ms or 65,537 bytes. No rejected input is registered
+or dispatched. Streams beyond either cleanup bound may still be reset on close;
+valid requests and refusals after a body was consumed do not enter this drain.
+
 **Missing fields.** Before any document lookup, a request missing a generic-required field (absent or `null`) rejects with `invalid_argument`, `fields`, `reason:"missing_required"` and, for an empty `requires_one_of` group, `one_of:true`. A field the handler needs only in one mode surfaces after rollback as `invalid_argument` with `reason:"missing_conditional"`. Envelope requirements are documentation: a missing `expected_revision` still gives `stale_revision`, a missing `request_id` is still allowed headless, `request_status` without an id still answers `not_recorded`, and `set_expression` without `expression` still clears the formula.
 
 ### 3.2.6 Error codes

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import queue
 import secrets
+import socket
 import sys
 import threading
 import time
@@ -76,29 +77,66 @@ class Bridge:
                 self.send_json({"ok":False,"error":{"code":"invalid_request","message":message}}, 400)
 
             def do_POST(self):
+                self._unread_rejection=False
                 try:
                     self.answer()
                 except OSError:
                     # The client is gone or too slow (WinError 10053/10054, a broken pipe, a write
                     # timeout): a tracked request's outcome stays in the ledger for request_status.
                     self.close_connection=True
+                else:
+                    if self._unread_rejection:
+                        self.finish_rejection()
+
+            def finish_rejection(self):
+                """Deliver an early refusal before closing with unread input on Windows.
+
+                Closing a socket with an unread body can reset it and hide the 400/403/413 from
+                the client. Half-close the completed response, then drain buffered input for at
+                most 250 ms / 65,537 bytes. No rejected request is registered or dispatched.
+                Hostile streams exceeding either bound may still be reset when we close.
+                """
+                self.close_connection=True
+                try:
+                    self.wfile.flush()
+                    self.connection.shutdown(socket.SHUT_WR)
+                    deadline=time.monotonic()+0.25
+                    remaining=REQUEST_SIZE_LIMIT+1
+                    while remaining>0:
+                        timeout=deadline-time.monotonic()
+                        if timeout<=0:
+                            break
+                        self.connection.settimeout(timeout)
+                        # read1 includes bytes buffered with the headers and makes at most one
+                        # socket read, unlike read(n), which a trickle could keep alive forever.
+                        chunk=self.rfile.read1(min(8192,remaining))
+                        if not chunk:
+                            break
+                        remaining-=len(chunk)
+                except OSError:
+                    # A dead/slow client cannot turn cleanup into a handler-thread traceback.
+                    pass
 
             def answer(self):
                 if self.path!="/operation" or self.headers.get("Authorization")!="Bearer "+bridge.token:
+                    self._unread_rejection=True
                     self.send_error(403)
                     return
                 # Prevent web pages from silently reaching the native local adapter.
                 media_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
                 if self.headers.get("Origin") is not None or media_type != "application/json":
+                    self._unread_rejection=True
                     self.send_error(403)
                     return
                 try:
                     try:
                         size=int(self.headers.get("Content-Length","0"))
                     except ValueError:
+                        self._unread_rejection=True
                         self.invalid_request("Request body must be one JSON object")
                         return
                     if size<=0 or size>REQUEST_SIZE_LIMIT:
+                        self._unread_rejection=True
                         self.send_error(413)
                         return
                     body=self.rfile.read(size)

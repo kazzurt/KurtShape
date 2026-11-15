@@ -208,6 +208,8 @@ def validate():
         check('Unread log entries have a quiet indicator and full count in hover help', panel.unread_messages > 0 and '•' in panel.messages_button.text() and 'unread' in panel.messages_button.toolTip())
         result['native_dots'] = dots
         result['alerts_before_native_lines'] = alerts_before
+        check('Branding preserves the native modified-title placeholder without adding warning alerts',
+              '[*]' in main.windowTitle() and 'QWidget::setWindowModified' not in panel.messages.toPlainText())
         check('An informational native line does not light the Messages dot; a warning and an error do (A-08)',
               dots['messages normal'] == (alerts_before > 0, 0) and dots['messages warning'] == (True, 1)
               and dots['messages native error'] == (True, 1) and dots['messages log'] == (True, 0))

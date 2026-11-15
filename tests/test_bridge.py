@@ -152,6 +152,156 @@ class BridgeTimeoutTests(unittest.TestCase):
         with opener.open(req, timeout=3) as response:
             return response.read()
 
+    def test_early_rejection_half_closes_then_drains_buffered_input_with_bounds(self):
+        bridge, _ = self.create()
+        handler = object.__new__(bridge.server.RequestHandlerClass)
+        events = []
+        handler.wfile = Mock()
+        handler.wfile.flush.side_effect = lambda: events.append("flush")
+        handler.connection = Mock()
+        handler.connection.shutdown.side_effect = lambda how: events.append(("shutdown", how))
+        handler.rfile = Mock()
+        chunks = iter((b"{}", b""))
+
+        def read(size):
+            events.append(("read1", size))
+            return next(chunks)
+
+        handler.rfile.read1.side_effect = read
+        handler.finish_rejection()
+        self.assertEqual(events[:2], ["flush", ("shutdown", socket.SHUT_WR)])
+        self.assertEqual([event[0] for event in events[2:]], ["read1", "read1"])
+        self.assertTrue(handler.close_connection)
+        handler.connection.recv.assert_not_called()  # buffered bytes must not be skipped
+        handler.rfile.read.assert_not_called()  # read(n) can outlive the absolute deadline
+        self.assertTrue(all(0 < call.args[0] <= 0.25 for call in handler.connection.settimeout.call_args_list))
+        # A continuously readable body still has a byte cap.
+        handler.rfile.read1.reset_mock(side_effect=True)
+        handler.rfile.read1.side_effect = lambda size: b"x" * size
+        with patch("kurtshape.bridge.time.monotonic", return_value=10):
+            handler.finish_rejection()
+        self.assertEqual(sum(call.args[0] for call in handler.rfile.read1.call_args_list),
+                         contract.REQUEST_SIZE_LIMIT + 1)
+        # A trickle cannot restart the deadline on each successful read.
+        handler.rfile.read1.reset_mock(side_effect=True)
+        handler.rfile.read1.return_value = b"x"
+        with patch("kurtshape.bridge.time.monotonic", side_effect=[10, 10.05, 10.20, 10.30]):
+            handler.finish_rejection()
+        self.assertEqual(handler.rfile.read1.call_count, 2)
+
+    def test_early_rejection_cleanup_tolerates_dead_or_slow_peers(self):
+        bridge, _ = self.create()
+        for failed in ("flush", "shutdown", "settimeout", "read1"):
+            with self.subTest(failed=failed):
+                handler = object.__new__(bridge.server.RequestHandlerClass)
+                handler.wfile = Mock()
+                handler.connection = Mock()
+                handler.rfile = Mock()
+                handler.rfile.read1.return_value = b""
+                owner = handler.wfile if failed == "flush" else handler.rfile if failed == "read1" else handler.connection
+                getattr(owner, failed).side_effect = OSError("peer is gone")
+                handler.finish_rejection()
+                self.assertTrue(handler.close_connection)
+
+    def test_complete_or_consumed_requests_do_not_drain_rejected_input(self):
+        bridge, _ = self.create()
+        handler = bridge.server.RequestHandlerClass
+        with patch.object(handler, "finish_rejection", side_effect=AssertionError("unneeded drain")) as cleanup:
+            self.assertTrue(self.answered(bridge)["ok"])
+            request = urllib.request.Request(f"http://127.0.0.1:{bridge.server.server_port}/operation", data=b"[]",
+                                             headers={"Content-Type": "application/json",
+                                                      "Authorization": "Bearer " + bridge.token}, method="POST")
+            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+            with self.assertRaises(urllib.error.HTTPError) as rejected:
+                opener.open(request, timeout=3)
+            self.assertEqual(rejected.exception.code, 400)
+            rejected.exception.close()
+            cleanup.assert_not_called()
+
+    def test_rejection_cleanup_requires_successfully_sent_early_refusal(self):
+        bridge, _ = self.create()
+        handler = object.__new__(bridge.server.RequestHandlerClass)
+        handler.answer = Mock()
+        handler.finish_rejection = Mock()
+        handler.do_POST()
+        handler.finish_rejection.assert_not_called()
+        handler.answer.side_effect = lambda: setattr(handler, "_unread_rejection", True)
+        handler.do_POST()
+        handler.finish_rejection.assert_called_once_with()
+        handler.finish_rejection.reset_mock()
+        handler.answer.side_effect = ConnectionResetError("response could not be sent")
+        handler.do_POST()
+        handler.finish_rejection.assert_not_called()
+        self.assertTrue(handler.close_connection)
+
+    def test_bad_length_response_arrives_before_a_delayed_body_and_cleanup_is_bounded(self):
+        bridge, controller = self.create(retry=True, lookup=True)
+        errors = self.record_handler_errors(bridge)
+        handler = bridge.server.RequestHandlerClass
+        finish = handler.finish_rejection
+        cleaned = threading.Event()
+
+        def record_finish(instance):
+            try:
+                finish(instance)
+            finally:
+                cleaned.set()
+
+        with patch.object(handler, "finish_rejection", record_finish):
+            for send_body in (True, False):
+                with self.subTest(send_body=send_body), socket.create_connection(
+                        ("127.0.0.1", bridge.server.server_port), timeout=3) as raw:
+                    cleaned.clear()
+                    raw.sendall(b"POST /operation HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\n"
+                                b"Authorization: Bearer " + bridge.token.encode() + b"\r\nContent-Length: two\r\n\r\n")
+                    response = http.client.HTTPResponse(raw)
+                    response.begin()
+                    self.assertEqual(response.status, 400)
+                    self.assertEqual(response.getheader("Content-Type"), "application/json")
+                    self.assertEqual(json.loads(response.read())["error"]["code"], "invalid_request")
+                    response.close()
+                    if send_body:
+                        raw.sendall(b"{}")  # body arrives only after the complete refusal
+                        raw.shutdown(socket.SHUT_WR)
+                    self.assertTrue(cleaned.wait(2), "a peer holding its write side open cannot hold the handler")
+        self.assertEqual(errors, [])
+        self.assertTrue(bridge.pending.empty())
+        self.assertEqual(controller.calls, 0)
+
+    def test_early_header_refusals_with_bodies_repeat_without_reset_or_registration(self):
+        bridge, controller = self.create(retry=True, lookup=True)
+        errors = self.record_handler_errors(bridge)
+        base = {"Content-Type": "application/json", "Authorization": "Bearer " + bridge.token}
+        cases = [("/operation", dict(base, **{"Content-Length": "two"}), 400),
+                 ("/operation", dict(base, **{"Content-Length": "0"}), 413),
+                 ("/operation", dict(base, **{"Content-Length": "-1"}), 413),
+                 ("/operation", dict(base, **{"Content-Length": str(contract.REQUEST_SIZE_LIMIT + 1)}), 413),
+                 ("/other", base, 403),
+                 ("/operation", dict(base, Authorization="Bearer invalid"), 403),
+                 ("/operation", dict(base, Origin="https://example.invalid"), 403),
+                 ("/operation", dict(base, **{"Content-Type": "text/plain"}), 403)]
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with patch.object(bridge.ledger, "register", side_effect=AssertionError("rejection registered")), \
+                patch.object(RequestStatusLookup, "lookup", side_effect=AssertionError("rejection looked up")):
+            for repeat in range(10):
+                for path, headers, status in cases:
+                    with self.subTest(repeat=repeat, path=path, headers=headers):
+                        request = urllib.request.Request(f"http://127.0.0.1:{bridge.server.server_port}" + path,
+                                                         data=b"{}", headers=headers, method="POST")
+                        with self.assertRaises(urllib.error.HTTPError) as rejected:
+                            opener.open(request, timeout=3)
+                        error = rejected.exception
+                        try:
+                            self.assertEqual(error.code, status)
+                            body = error.read()
+                            if status == 400:
+                                self.assertEqual(json.loads(body)["error"]["code"], "invalid_request")
+                        finally:
+                            error.close()
+        self.assertEqual(errors, [])
+        self.assertTrue(bridge.pending.empty())
+        self.assertEqual(controller.calls, 0)
+
     def test_handle_error_writes_the_session_log_and_never_stderr(self):
         bridge, _ = self.create()
         with patch("sys.stderr", new_callable=io.StringIO) as stderr:
@@ -243,8 +393,12 @@ class BridgeTimeoutTests(unittest.TestCase):
                                                   "Content-Length": "two"}, method="POST")
         with self.assertRaises(urllib.error.HTTPError) as rejected:
             opener.open(request, timeout=3)
-        rejected.exception.close()
-        self.assertEqual(rejected.exception.code, 400)
+        try:
+            self.assertEqual(rejected.exception.code, 400)
+            self.assertEqual(rejected.exception.headers.get("Content-Type"), "application/json")
+            self.assertEqual(json.loads(rejected.exception.read())["error"]["code"], "invalid_request")
+        finally:
+            rejected.exception.close()
 
     def test_tick_records_dispatched_operation_only(self):
         bridge, controller = self.create(retry=True, lookup=True, request_timeout=0.08)

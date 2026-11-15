@@ -54,10 +54,10 @@ class BrandingTests(unittest.TestCase):
     def test_title_names_the_document_then_kurtshape_and_its_version(self):
         version = str(CONTRACT_VERSION) + "." + str(CONTRACT_REVISION)
         self.assertEqual(branding.VERSION, version)
-        self.assertEqual(branding.window_title(), "KurtShape " + version)
-        self.assertEqual(branding.window_title("  "), "KurtShape " + version)
+        self.assertEqual(branding.window_title(), "KurtShape " + version + "[*]")
+        self.assertEqual(branding.window_title("  "), "KurtShape " + version + "[*]")
         self.assertEqual(branding.window_title("femur-tracking-array"),
-                         "femur-tracking-array — KurtShape " + version)
+                         "femur-tracking-array[*] — KurtShape " + version)
         self.assertNotIn("FreeCAD", branding.window_title("part"))
 
     def test_icon_assets_exist(self):
@@ -189,24 +189,50 @@ class BrandingTests(unittest.TestCase):
         main.setWindowTitle("FreeCAD 1.1.4")
         keeper = branding.apply_window_branding(main)
         version = branding.VERSION
-        self.assertEqual(main.windowTitle(), "KurtShape " + version)
+        self.assertEqual(main.windowTitle(), "KurtShape " + version + "[*]")
         self.assertFalse(main.windowIcon().isNull())
         self.assertEqual(main.windowIcon().pixmap(32, 32).toImage(),
                          QtGui.QIcon(str(branding.ICON)).pixmap(32, 32).toImage())
         self.assertIs(branding.apply_window_branding(main), keeper)
         branding.set_document_title(main, "bracket")
-        self.assertEqual(main.windowTitle(), "bracket — KurtShape " + version)
+        self.assertEqual(main.windowTitle(), "bracket[*] — KurtShape " + version)
         # What FreeCAD's main window does when the active view changes.
         main.setWindowTitle("[*] bracket - FreeCAD 1.1.4")
-        self.assertEqual(main.windowTitle(), "bracket — KurtShape " + version)
+        self.assertEqual(main.windowTitle(), "bracket[*] — KurtShape " + version)
         branding.set_document_title(main, "housing")
         main.setWindowTitle("FreeCAD 1.1.4")
-        self.assertEqual(main.windowTitle(), "housing — KurtShape " + version)
+        self.assertEqual(main.windowTitle(), "housing[*] — KurtShape " + version)
         # A different main window gets its own keeper.
         other = QtGui.QMainWindow()
         self.addCleanup(other.deleteLater)
         self.assertIsNot(branding.apply_window_branding(other), keeper)
-        self.assertEqual(other.windowTitle(), "KurtShape " + version)
+        self.assertEqual(other.windowTitle(), "KurtShape " + version + "[*]")
+
+    def test_title_keeps_qt_modified_placeholder_without_native_warnings(self):
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        import FreeCAD  # noqa: F401
+        from PySide import QtCore, QtGui
+        app = QtGui.QApplication.instance() or QtGui.QApplication([])
+        self.addCleanup(setattr, branding, "_title_keeper", branding._title_keeper)
+        main = QtGui.QMainWindow()
+        self.addCleanup(main.deleteLater)
+        messages = []
+        previous_handler = QtCore.qInstallMessageHandler(lambda kind, context, text: messages.append(text))
+        try:
+            branding.apply_window_branding(main)
+            for name in ("bracket", "", "housing"):
+                branding.set_document_title(main, name)
+                self.assertIn("[*]", main.windowTitle())
+                for modified in (True, False, True):
+                    main.setWindowModified(modified)
+                    main.setWindowTitle("[*] native title - FreeCAD 1.1.4")
+                    app.processEvents()
+                    self.assertIn("[*]", main.windowTitle())
+                    self.assertEqual(main.isWindowModified(), modified)
+                    self.assertIn("KurtShape " + branding.VERSION, main.windowTitle())
+            self.assertFalse([text for text in messages if "QWidget::setWindowModified" in text], messages)
+        finally:
+            QtCore.qInstallMessageHandler(previous_handler)
 
 
 if __name__ == "__main__":

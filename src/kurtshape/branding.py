@@ -34,10 +34,10 @@ _title_keeper = None
 
 
 def window_title(document_name=None):
-    """Title bar text: the open document, then the application and its version."""
+    """Qt title: retain its [*] modified marker (hidden by Qt while unmodified)."""
     application = APP_NAME + " " + VERSION
     name = str(document_name or "").strip()
-    return name + " — " + application if name else application
+    return name + "[*] — " + application if name else application + "[*]"
 
 
 def configure_startup(app, session_directory):
@@ -88,7 +88,7 @@ def _keeper_class():
 
         FreeCAD's main window writes "<view> - FreeCAD <version>" each time the active view changes.
         Setting the title from Python reaches QWidget.setWindowTitle directly, so the text set here
-        is shown as written.
+        retains Qt's [*] placeholder so FreeCAD can setWindowModified without a native warning.
         """
 
         def __init__(self, window):
