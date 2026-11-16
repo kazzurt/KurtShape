@@ -23,7 +23,7 @@ from .viewport_actions import callbacks as viewport_callbacks
 from .section_view import SectionView
 from . import selection_mode
 from .assembly_instance_links import AssemblyInstanceLinks
-from .assembly_tree import AssemblyTree, instance_rows
+from .assembly_tree import AssemblyTree, instance_rows, instance_visibility
 from .measure_label import MeasureLabel
 from .assembly_refresh_button import AssemblyRefresh
 from . import assembly_sync
@@ -2083,7 +2083,7 @@ class Panel(QtGui.QDockWidget):
                     row["icon"] = icon_for("Imported part")  # item 5: STEP-sourced occurrence
                 elif obj:
                     row["icon"] = obj.ViewObject.Icon
-                return row
+                return instance_visibility(row, obj) if category == "instances" else row
             if category == "instances":
                 group["children"] = instance_rows(assembly, history_row, self.assembly_tree.folder_icon())
             else:
@@ -2106,7 +2106,7 @@ class Panel(QtGui.QDockWidget):
                 row["icon"] = icon_for("Imported part")  # item 5: STEP-sourced occurrence
             elif obj:
                 row["icon"] = icon_for("Part", native=obj.ViewObject.Icon)
-            return row
+            return instance_visibility(row, obj)
         part_rows = instance_rows(assembly, part_row, self.assembly_tree.folder_icon())
         self.part_model.reconcile(identity, part_rows)
         self.parts.blockSignals(False)
@@ -4467,12 +4467,7 @@ class Panel(QtGui.QDockWidget):
 
     def show_hidden(self):
         if self.document() and self.workspace_mode == "assembly":
-            for entry in self.assembly_state().get("instances", []):
-                obj = self.document().getObject(entry["id"])
-                if obj:
-                    obj.ViewObject.Visibility = True
-            self.refresh()
-            return
+            return self.assembly_tree.show_hidden()
         if self.document():
             for obj in self.document().Objects:
                 if obj.TypeId == "Sketcher::SketchObject" or any(obj == body.Tip or obj == body for body in bodies(self.document())):

@@ -16,6 +16,8 @@ from __future__ import annotations
 from PySide import QtCore, QtGui
 
 from . import assembly_folders
+from .assembly_instance_links import instance_owners
+from .presentation_icons import hidden_icon
 
 FOLDER_PREFIX = "assembly_folder:"
 PATH_ROLE = QtCore.Qt.UserRole + 5
@@ -57,6 +59,30 @@ def instance_rows(assembly, row_for, folder_icon=None):
             rows.append(row)
         return rows
     return build(data["folders"], "") + by_folder.get(None, [])
+
+
+def instance_visibility(row, obj):
+    """Decorate the occurrence, never its deliberately hidden embedded source."""
+    if obj is not None and obj.ViewObject is not None and not obj.ViewObject.Visibility:
+        row["icon"] = hidden_icon(row.get("icon"))
+        row["italic"] = True
+        row["tooltip"] = (row.get("tooltip", "") + " · Hidden").strip(" ·")
+    return row
+
+
+def visibility_targets(instance_ids, selection, assembly_names=(), tree_selection=None):
+    """Show selected occurrences; only an empty selection means show all.
+
+    A focused tree owns its selection (including keyboard-only selection and
+    structural rows). Otherwise native picks are authoritative; stale mirrored
+    tree highlights must not turn a cleared viewport selection into a subset.
+    """
+    if tree_selection:
+        available = set(instance_ids)
+        return list(dict.fromkeys(key for key in tree_selection if key in available))
+    if selection:
+        return instance_owners(selection, instance_ids, assembly_names)
+    return list(instance_ids)
 
 
 def unique_name(nodes, base="New folder"):
@@ -130,6 +156,24 @@ class AssemblyTree:
 
     def instance_ids(self):
         return [entry["id"] for entry in self.assembly().get("instances", [])]
+
+    def show_hidden(self):
+        import FreeCADGui as Gui
+        p = self.panel
+        doc = p.document()
+        selection = [(entry.ObjectName, tuple(entry.SubElementNames))
+                     for entry in Gui.Selection.getSelectionEx(doc.Name)]
+        focus = QtGui.QApplication.focusWidget()
+        tree_selection = None
+        for tree in (p.features, p.parts):
+            if focus is tree or (focus is not None and tree.isAncestorOf(focus)):
+                tree_selection = [row.data(0, QtCore.Qt.UserRole) for row in tree.selectedItems()]
+                break
+        names = visibility_targets(self.instance_ids(), selection,
+                                   {obj.Name for obj in doc.Objects if obj.TypeId == "Assembly::AssemblyObject"},
+                                   tree_selection)
+        if names:
+            p.set_visibilities([doc.getObject(name) for name in names], True)
 
     def selected_instances(self, tree, item):
         ids = set(self.instance_ids())

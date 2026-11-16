@@ -1,0 +1,151 @@
+"""Occurrence visibility through real Qt shortcuts and both production trees."""
+import hashlib
+import os
+from pathlib import Path
+import shutil
+import sys
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(root / "tools"))
+sys.path.insert(0, str(root / "src"))
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from PySide import QtCore, QtGui
+from PySide6 import QtTest
+from assembly_ux_probe import Probe, SESSION
+from kurtshape.presentation_icons import hidden_icon, icon_for, icon_signature
+
+
+def body(probe):
+    p = probe.panel
+    source = probe.source_part("visibility-block", Part.makeBox(10, 6, 4))
+    probe.call("new", name="Visibility regression")
+    probe.call("create_assembly", id="Assembly")
+    for name in ("Left", "Right", "Other"):
+        probe.call("insert_assembly_part", path=str(source), source_id="Body", id=name, folder="Frame")
+    doc = p.document()
+    objects = [doc.getObject(name) for name in ("Left", "Right", "Other")]
+    sources = {obj.LinkedObject for obj in objects}
+    gl = probe.viewport()
+
+    def press(widget, shifted=True):
+        probe.wait(100)
+        widget.setFocus()
+        probe.check("Shortcut target has focus", widget.hasFocus(), {"target": str(widget), "focus": str(probe.app.focusWidget()), "visible": widget.isVisible(), "enabled": widget.isEnabled(), "size": str(widget.size()), "policy": str(widget.focusPolicy())})
+        QtTest.QTest.keyClick(widget, QtCore.Qt.Key_Y, QtCore.Qt.ShiftModifier if shifted else QtCore.Qt.NoModifier)
+        probe.wait(100)
+
+    def shown():
+        return [obj.Name for obj in objects if obj.ViewObject.Visibility]
+
+    def style(name, hidden):
+        for model, label in ((p.feature_model, "history"), (p.part_model, "instances")):
+            item = model.items[name]
+            probe.check(label + " italic follows visibility: " + name, item.font(0).italic() == hidden)
+            obj = p.document().getObject(name)
+            entry = next(entry for entry in p.assembly_state()["instances"] if entry["id"] == name)
+            native = (icon_for("Imported part") if entry["source"]["kind"] == "step" else
+                      obj.ViewObject.Icon if model is p.feature_model else icon_for("Part", native=obj.ViewObject.Icon))
+            expected = hidden_icon(native) if hidden else native
+            probe.check(label + " icon follows visibility: " + name, icon_signature(item.icon(0)) == icon_signature(expected))
+            if hidden:
+                probe.check(label + " hidden icon differs from shown: " + name, icon_signature(item.icon(0)) != icon_signature(native))
+                normal = item.icon(0).pixmap(QtCore.QSize(20, 20), QtGui.QIcon.Normal).toImage()
+                selected = item.icon(0).pixmap(QtCore.QSize(20, 20), QtGui.QIcon.Selected).toImage()
+                probe.check(label + " hidden icon remains muted when selected: " + name, normal == selected)
+            probe.check(label + " hidden row stays selectable: " + name,
+                        bool(item.flags() & QtCore.Qt.ItemIsEnabled) and bool(item.flags() & QtCore.Qt.ItemIsSelectable))
+
+    def tree_pick(tree, name):
+        Gui.Selection.clearSelection()
+        probe.wait()
+        items = p.items if tree is p.features else p.part_model.items
+        tree.setCurrentItem(items[name], 0, QtCore.QItemSelectionModel.ClearAndSelect)
+        if tree is p.features:
+            p.history_click(items[name])
+        else:
+            p.part_selection(items[name])
+        probe.wait()
+
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(objects[0])
+    probe.wait()
+    press(gl, shifted=False)
+    probe.check("Y hides only selected occurrence", shown() == ["Right", "Other"])
+    style("Left", True)
+    p.set_visibility(objects[1], False)
+    tree_pick(p.features, "Left")
+    press(p.features)
+    probe.check("Shift+Y in history shows only selected hidden occurrence", shown() == ["Left", "Other"])
+    style("Left", False)
+    style("Right", True)
+    press(p.features)
+    probe.check("Selected visible occurrence does not reveal other hidden occurrences", shown() == ["Left", "Other"])
+    tree_pick(p.parts, "Right")
+    press(p.parts)
+    probe.check("Shift+Y in lower list shows its selected occurrence", shown() == ["Left", "Right", "Other"])
+    style("Right", False)
+
+    p.set_visibilities(objects, False)
+    Gui.Selection.clearSelection()
+    probe.wait()
+    p.features.setCurrentItem(p.items["Left"], 0, QtCore.QItemSelectionModel.ClearAndSelect)
+    p.items["Right"].setSelected(True)
+    # No native selection: exercise keyboard/tree-only multi-selection.
+    press(p.features)
+    probe.check("Tree multi-selection shows exactly its two occurrences", shown() == ["Left", "Right"])
+    p.set_visibilities(objects, False)
+    Gui.Selection.addSelection(doc.getObject("Assembly"), "Right.Face1")
+    probe.wait()
+    press(gl)
+    probe.check("Assembly face path shows only its owning occurrence", shown() == ["Right"])
+
+    p.set_visibilities(objects, False)
+    Gui.Selection.clearSelection()
+    probe.wait()
+    p.features.setCurrentItem(p.items["assembly_folder:Frame"], 0, QtCore.QItemSelectionModel.ClearAndSelect)
+    press(p.features)
+    probe.check("Selected folder does not show all", shown() == [])
+    p.features.setCurrentItem(p.items["assembly_group:joints"], 0, QtCore.QItemSelectionModel.ClearAndSelect)
+    press(p.features)
+    probe.check("Selected structural group does not show all", shown() == [])
+    Gui.Selection.clearSelection()
+    probe.wait()
+    press(gl)
+    probe.check("Nothing selected shows every occurrence", shown() == ["Left", "Right", "Other"])
+    probe.check("Embedded source geometry stays hidden", all(not obj.ViewObject.Visibility for obj in sources))
+
+    # Saved appearance must produce the same styling when a document is reopened.
+    p.set_visibility(objects[1], False)
+    saved = SESSION / "hidden-occurrence.FCStd"
+    probe.call("save", path=str(saved))
+    probe.close_active()
+    probe.call("open", path=str(saved))
+    style("Right", True)
+    probe.check("Hidden occurrence survives save/reopen", not p.document().getObject("Right").ViewObject.Visibility)
+
+    original = os.environ.get("KURTSHAPE_VISIBILITY_FIXTURE")
+    if original:
+        original = Path(original)
+        before = hashlib.sha256(original.read_bytes()).hexdigest()
+        copy = SESSION / "packing-review-copy.FCStd"
+        shutil.copy2(original, copy)
+        probe.close_active()
+        probe.call("open", path=str(copy))
+        ids = p.assembly_tree.instance_ids()
+        probe.check("Packing assembly copy exposes 41 instances", len(ids) == 41)
+        doc = p.document()
+        first, second = [doc.getObject(name) for name in ids[:2]]
+        p.set_visibilities([first, second], False)
+        style(first.Name, True)
+        tree_pick(p.features, first.Name)
+        press(p.features)
+        probe.check("Packing assembly shows only selected hidden instance",
+                    first.ViewObject.Visibility and not second.ViewObject.Visibility)
+        probe.check("Original packing archive unchanged", hashlib.sha256(original.read_bytes()).hexdigest() == before)
+        probe.report["fixture"] = {"path": str(original), "sha256": before, "instances": len(ids)}
+
+
+Probe("assembly-visibility", "Production Panel on private Windows desktop: actual Y/Shift+Y key events, native occurrence selection, both Qt trees, save/reopen, optional copied assembly; no screenshots.").run(body, seconds=600)

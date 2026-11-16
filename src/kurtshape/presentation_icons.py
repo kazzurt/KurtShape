@@ -91,6 +91,7 @@ COMMAND_ICONS = {
 
 _original_cache = {}
 _native_cache = OrderedDict()
+_hidden_cache = OrderedDict()
 
 
 def original_icon_name(label, command=None):
@@ -167,6 +168,43 @@ def grayscale_icon(native):
     return QtGui.QIcon(result)
 
 
+def hidden_icon(native):
+    """Muted occurrence icon with the same silhouette/alpha in every UI state.
+
+    Supplying Selected/Active explicitly prevents the style from recoloring the
+    hidden cue on selection/hover. Cache by pixels, since ViewObject.Icon is a
+    fresh QIcon on every read, and retain shading beneath the neutral gray wash.
+    """
+    if native is None or native.isNull():
+        return QtGui.QIcon()
+    key = icon_signature(native)
+    cached = _hidden_cache.get(key)
+    if cached is not None:
+        _hidden_cache.move_to_end(key)
+        return QtGui.QIcon(cached)
+    result = QtGui.QIcon()
+    for size in RASTER_SIZES:
+        source = native.pixmap(QtCore.QSize(size, size), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        if source.isNull():
+            continue
+        muted = _gray_image(source.toImage())
+        painter = QtGui.QPainter(muted)
+        try:
+            painter.setCompositionMode(QtGui.QPainter.CompositionMode_SourceAtop)
+            painter.setOpacity(0.75)
+            painter.fillRect(muted.rect(), QtGui.QColor("#a0a0a0"))
+        finally:
+            painter.end()
+        pixmap = QtGui.QPixmap.fromImage(muted)
+        for mode in ICON_MODES:
+            for state in (QtGui.QIcon.Off, QtGui.QIcon.On):
+                result.addPixmap(pixmap, mode, state)
+    _hidden_cache[key] = result
+    while len(_hidden_cache) > NATIVE_CACHE_LIMIT:
+        _hidden_cache.popitem(last=False)
+    return QtGui.QIcon(result)
+
+
 def _command_native(command):
     if not command:
         return None
@@ -203,3 +241,4 @@ def clear_cache():
     """Release cached QIcon assets when rebuilding the presentation shell."""
     _original_cache.clear()
     _native_cache.clear()
+    _hidden_cache.clear()

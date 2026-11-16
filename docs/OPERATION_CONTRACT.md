@@ -635,6 +635,22 @@ Folders group occurrences in the two instance lists; they are presentation metad
 
 Both are revision-checked, one undo step each. `inspect.assembly.folders` returns the tree and each `instances[*].folder` the instance's path (null at the root). Deleting an occurrence drops its membership; a membership naming a missing instance or folder is ignored on read; a damaged property shows everything at the root rather than failing. **Agents building assemblies organise occurrences by function or sub-assembly (`Frame`, `Fasteners/M3`, `Electronics`) and leave no more than about 12 at the root.**
 
+### Hidden assembly instances (2026-11-16)
+
+Hidden occurrences have a muted gray icon and italic name in both instance lists and remain selectable.
+Their source-status text (outdated/missing/unsaved) remains present; showing an occurrence
+restores its original icon and normal font. The muted icon persists during selection
+and hover without relying on text colors overridden by the theme. Styling reads the occurrence's
+ViewObject.Visibility, never the hidden embedded source.
+
+In an assembly, Shift+Y shows only selected occurrences, including multiple selections
+and face/edge/vertex selections resolved to their owning occurrence. A focused tree's
+selection takes precedence, including keyboard selection. With nothing selected it
+shows every occurrence in the active assembly. A selected folder, group, joint or
+unresolved object is not an empty selection and never triggers show-all. Embedded
+sources and joints are excluded from show-all. Y and context-menu Hide/Show retain
+their existing behavior. This is GUI presentation only; bridge schemas are unchanged.
+
 ### Source status and Refresh (assembly UX, 2026-10-24)
 
 `inspect.assembly.instances[*].source` adds `status` and `current_sha256`: `current` (the file's SHA-256 equals the recorded `sha256`), `changed` (it differs; `current_sha256` is the file's), `missing`, `unrecorded`, or `unchecked`. The SHA-256 is cached per path and computed again only when the file's modification time or size moved; the bridge's `inspect` hashes lazily, the GUI's frequent inspections never hash (`unchecked` until its **Refresh** button checks). Update changed occurrences with `refresh_assembly_part {instance, shared:"all"}`; the GUI's second Refresh does exactly that for each changed source and reports `assembly_refresh_reference_changed` rejections per instance with the joint's name. Insert and refresh accept a GUI-saved KurtShape project: the GUI writes the project metadata's view proxy as the JSON scalar `1` and Sketcher a null `TempoVis` on edited sketches; both are data without module or class and no longer reject with `unsafe_assembly_source` (any other Python value still does).

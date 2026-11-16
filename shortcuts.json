@@ -79,7 +79,7 @@
     {"id":"view.rotate_down_15","key":"Down","contexts":["view"],"label":"Rotate down 15 degrees","status":"callback"},
     {"id":"view.section","key":"Shift+X","contexts":["view"],"label":"Section View","status":"callback","note":"Select a face or plane, then Shift+X (or Shift+X, then click one). Round faces cut through their centre on the origin plane facing you; flat faces and planes cut on themselves. Drag the arrow to move the cut; Shift+X or Escape leaves. View only: no feature, undo step or revision change."},
     {"id":"view.select_through","key":"Alt+Click","contexts":["view"],"label":"Select through transparent","status":"pass_through","note":"Exact Onshape transparent select-through gesture is not implemented."},
-    {"id":"view.show_hidden","key":"Shift+Y","contexts":["view"],"label":"Show hidden parts","status":"callback"},
+    {"id":"view.show_hidden","key":"Shift+Y","contexts":["view"],"label":"Show hidden parts","status":"callback","note":"In assemblies, show selected parts; with nothing selected, show all parts. Selecting a folder or joint does not show unrelated parts."},
     {"id":"view.top","key":"Shift+5","contexts":["view"],"label":"Top view","status":"native","native_command":"Std_ViewTop"},
     {"id":"view.high_quality","key":"Shift+R","contexts":["view"],"label":"High-quality view","status":"callback"},
     {"id":"view.normal","key":"N","contexts":["view"],"label":"Normal to selected plane or face","status":"callback"},

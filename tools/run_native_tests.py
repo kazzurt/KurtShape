@@ -97,7 +97,7 @@ SUITES = {
         "test_save_safety.SaveSafetyTests", "test_recovery_policy.RecoveryPolicyTests",
         "test_fix_hints.FixHintTests", "test_direction.DirectionTests",
         # Assembly UX program (docs/assembly-ux/STATUS.md).
-        "test_selection_mode.SelectionModeTests", "test_assembly_instance_links.AssemblyInstanceLinkTests",
+        "test_selection_mode.SelectionModeTests", "test_assembly_instance_links.AssemblyInstanceLinkTests", "test_assembly_visibility.AssemblyVisibilityTests",
         "test_assembly_folders.FolderStructureTests", "test_assembly_folders.AssemblyFolderTests",
         "test_assembly_instance_source.AssemblyInstanceSourceTests",
         "test_measure_readout.MeasureReadoutTests", "test_measure_readout.MeasureAssemblyTests",
