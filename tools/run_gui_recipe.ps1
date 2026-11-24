@@ -18,7 +18,7 @@
 # console host whose window is created on the interactive desktop; the probe fails such a run, and the code the
 # recipes run passes creationflags on every subprocess launch (tests/test_private_desktop.py checks it).
 param(
-    [ValidateSet('plane-visibility','step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
+    [ValidateSet('cylinder-seams','plane-visibility','step-export','parts-refresh','geometry-check-timing','geometry-check-lifecycle','geometry-check','interface','ui-refinement','extrusion-preview','refinement-preview','sketch-behavior',
         'review-interaction','review-lifecycle','review-copy','review-recovery','review-startup','review-baseline','responsiveness-preview',
         'messages','assembly','step-import','assembly-step','carrier-spike','part-studio','bench-gui','onshape-workflows','view-interaction','design-surface','theme-startup','sketch-references','rollback-history','sketch-edit-state','history-selection','face-feature-selection','sketch-plane-editor','sketch-dimension-point-colors','sketch-regions','unused-sketch-visibility','presentation-scheduling','startup-view','sketch-origin-snap','sketch-drag','surface-snap','extrusion-edit','history-lifecycle','everyday-ui','dress-up-edit','headless-open','interaction-idle','document-lifecycle','result-validation','render-view','batch-undo','parameter-panel','parameter-panel-reopen','section-view','startup-blank','open-handoff','sketch-floating-controls','sketch-coincident-lines','sketch-midpoint-motion','confirm-gating','inspection-count','escape-sketch','dialog-enter','save-feedback','additive-selection','assembly-visibility','assembly-instance-links','assembly-folders','assembly-open-part','assembly-icons','measure-readout','assembly-refresh-button','pattern-mirror')]
     [string]$Recipe = 'interface',
@@ -75,6 +75,7 @@ function Complete-GuiRecipeDesktopProbe {
     return Get-Content -LiteralPath $ProbePath -Raw | ConvertFrom-Json
 }
 $recipes = @{
+    'cylinder-seams' = @('cylinder-seams-validation.FCMacro', 'cylinder-seams\gui-result.json', 0)
     'assembly-visibility' = @('assembly-visibility-validation.FCMacro', 'assembly-visibility\gui-result.json', 0)
     'plane-visibility' = @('plane-visibility-validation.FCMacro', 'plane-visibility\gui-result.json', 0)
     'step-export' = @('step-export-validation.FCMacro', 'step-export\gui-result.json', 0)

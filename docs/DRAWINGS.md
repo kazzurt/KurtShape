@@ -219,6 +219,52 @@ and logo boxes (an OLE2FRAME bitmap, pulled out with olefile), the revision-tabl
 part of the template; added rows go under it) and lineweights. To map another exported template,
 list its field handles (dump the MTEXT entities with ezdxf).
 
+## Fillable sign-off (16 November 2026)
+
+The current first-sheet Aerial Hedra templates have DRAWN and CHECKED in the title
+block. Approval is recorded once, in the revision table. The removed title-block
+`APPROVED_NAME` / `APPROVED_DATE` keys should be removed from specs using the new maps.
+Empty legacy values are ignored; a nonempty value raises a message to use the revision row.
+
+`Sheet.render` automatically adds printable PDF text fields for CHECKED name/date
+and the DATE/APPROVED cells of revision rows whose `approved` argument is blank.
+Already-approved historical rows remain ordinary drawing text. Leave current
+approval dates blank until Kurt fills them; fields accept YYYY-MM-DD. No name or
+date is inserted on Kurt's behalf. The DXF remains an ordinary CAD drawing.
+
+Template maps own field rectangles in paper millimetres (`pdf_form_fields` and
+`revision_table.pdf_approval_fields`); old maps keep their previous behavior.
+This uses pypdf 6.21.4, installed by `tools/setup-drawing-deps.ps1`. PDF fields have
+print flags and saved appearance streams. Names shrink to fit narrow cells while
+short values stay at the requested lettering height. Typed names are not digital signatures.
+
+When joining sheets or several drawings into one PDF, use the merge helper:
+
+```python
+from kurtshape.drawing.pdf_forms import merge_drawing_pdfs
+
+merge_drawing_pdfs(["part-a.pdf", "part-a-sheet2.pdf", "part-b.pdf"], "drawing-set.pdf")
+```
+
+It preserves the AcroForm tree, entered values and saved appearances, and groups
+each input's fields under its input position: `drawing_1.CHECKED_NAME`,
+`drawing_3.CHECKED_NAME`, etc. Source PDFs remain untouched. Standalone drawings
+keep their existing field names. This also handles older PDFs and repeated inputs.
+Direct `PdfWriter.append` preserves fields but does not separate identical names
+across drawings; copying page content alone can lose the fields entirely.
+Reopen the result and verify its qualified field names and values with
+`PdfReader.get_fields()`. Typed sign-offs are retained; cryptographic signatures
+are not preserved by merging. A PDF filled by Kurt is the signed-off PDF; re-rendering
+from the CAD recipe creates a fresh blank sign-off and does not read back PDF edits.
+The PNG exported directly by matplotlib shows the CAD text; inspect the final PDF
+render when verifying field values and appearances.
+
+`tests/test_drawing_pdf_forms.py` covers blank/filled/cleared fields, printable
+appearances, longer names in narrow cells, historical approvals, independent edits after merging first sheets,
+continuations, repeated inputs, nested packets and source-file preservation. It
+is registered in the native regression runner. The 23 November 2026 publication
+review found the duplicate-name issue; the merge helper and these checks resolve it.
+
 ## Limits
 
 - Tangent ("smooth") edges are drawn thin. Leave them out with `styles=("visible", "section")`.

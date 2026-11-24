@@ -90,9 +90,9 @@ COL_C = (COL_B[1], TB_X1)                              # company, title, numbers
 ROW_C = (TB_Y1, TB_Y1 - 17.5, TB_Y1 - 32.0, TB_Y1 - 42.5, TB_Y0)   # 63.5 46.0 31.5 21.0 12.7
 XS_NUMBER = (COL_C[0], COL_C[0] + 12.7, COL_C[1] - 15.2, COL_C[1])   # SIZE | DWG NO. | REV
 XS_SCALE = (COL_C[0], COL_C[0] + 27.9, COL_C[1] - 30.1, COL_C[1])    # SCALE | WEIGHT | SHEET
-ROW_B = (TB_Y1, TB_Y1 - 7.0, TB_Y1 - 14.0, TB_Y1 - 21.0)             # DRAWN / CHECKED / APPROVED
+ROW_B = (TB_Y1, TB_Y1 - 7.0, TB_Y1 - 14.0)                         # DRAWN / CHECKED
 XS_APPROVAL = (COL_B[0], COL_B[0] + 14.5, COL_B[0] + 43.0, COL_B[1])  # label | name (28.5) | date (18.0)
-Y_MATERIAL = (ROW_B[3], (ROW_B[3] + TB_Y0) / 2, TB_Y0)               # MATERIAL over FINISH
+Y_MATERIAL = (ROW_B[-1], (ROW_B[-1] + TB_Y0) / 2, TB_Y0)               # MATERIAL over FINISH
 Y_PROJECTION = TB_Y0 + 12.0                                          # top of the projection cell
 
 # revision table (sheet 1), top right inside the frame
@@ -298,15 +298,20 @@ class Template:
     def column_b(self):
         x0, x1 = COL_B
         self.line((x0, TB_Y0), (x0, TB_Y1), "TITLE_BLOCK")
-        for i, key in enumerate(("DRAWN", "CHECKED", "APPROVED")):
+        for i, key in enumerate(("DRAWN", "CHECKED")):
             y1, y0 = ROW_B[i], ROW_B[i + 1]
             self.line((x0, y0), (x1, y0))
             ym = (y0 + y1) / 2
             self.text((x0 + 0.9, ym), key, H_LABEL, attach="MIDDLE_LEFT")
             self.field(f"{key}_NAME", (XS_APPROVAL[1] + 1.0, ym), "----", H_NAME, attach="MIDDLE_LEFT")
             self.field(f"{key}_DATE", (XS_APPROVAL[2] + 1.0, ym), "----", H_NAME, attach="MIDDLE_LEFT")
+        # PDF fields follow the same cells as the DXF text; borders stay outside them.
+        self.map["pdf_form_fields"] = [
+            {"name": "CHECKED_NAME", "label": "Checked by", "rect": [XS_APPROVAL[1] + .6, ROW_B[2] + .6, XS_APPROVAL[2] - .6, ROW_B[1] - .6], "height_mm": H_NAME},
+            {"name": "CHECKED_DATE", "label": "Checked date (YYYY-MM-DD)", "rect": [XS_APPROVAL[2] + .6, ROW_B[2] + .6, XS_APPROVAL[3] - .6, ROW_B[1] - .6], "height_mm": H_NAME, "max_length": 10},
+        ]
         for xx in XS_APPROVAL[1:3]:
-            self.line((xx, ROW_B[3]), (xx, ROW_B[0]))
+            self.line((xx, ROW_B[-1]), (xx, ROW_B[0]))
         for key, (y1, y0) in (("MATERIAL", Y_MATERIAL[0:2]), ("FINISH", Y_MATERIAL[1:3])):
             self.label(x0, y1, key)
             self.field(key, ((x0 + x1) / 2, (y0 + y1) / 2 - 0.9), "----", H_MATERIAL, width=(x1 - x0) - 3.0)
@@ -435,7 +440,7 @@ class Template:
         self.map["revision_table"] = {
             "columns_x": {name: [x0, x1] for (name, _), x0, x1 in zip(REV_COLS, xs[:-1], xs[1:])},
             "row_height": REV_ROW_H, "first_row_y": list(REV_FIRST_ROW), "next_row_top": REV_FIRST_ROW[1],
-            "data_ch": 2.5, "text_inset": 1.2,
+            "data_ch": 2.5, "text_inset": 1.2, "pdf_approval_fields": True,
             "note": "The template has no data rows: Sheet.revision_row(1, ...) adds the first row under the "
                     "header (its top at next_row_top), later rows below it, drawing their own cell lines on "
                     "layer TABLES.",
@@ -500,11 +505,19 @@ def render_preview(dxf, map_json, out_dir, png_dir):
     """PDF preview through the pipeline's own renderer (which also proves the template loads in
     it); the PNG, written to ``png_dir``, feeds the pipeline's render check."""
     from kurtshape.drawing import sheet as SH
-    sh = SH.Sheet(dxf, template_map=str(map_json), standard=False)   # a bare template is not a drawing
+    sh = SH.Sheet(dxf, template_map=str(map_json))
+    # A template has no part scale or weight. Populate those two fields only while
+    # checking the layout, then restore placeholders for the blank template PDF.
+    sh.fill({"SCALE": "1:1"})
+    sh.set_weight(1.0, 1.0)
+    if sh.map.get("revision_table"):
+        sh.revision_row(1, "", "")
+    lint = sh.lint()
+    sh.fill({"SCALE": "----", "WEIGHT": "----"})
     stem = Path(dxf).stem
     sh.render(Path(out_dir) / f"{stem}.pdf", Path(png_dir) / f"{stem}.png", dpi=200,
               title=f"Aerial Hedra template {stem}")
-    return list(sh.issues), sh.lint()
+    return list(sh.issues), lint
 
 
 # The example follows the engineering drawing standard (Documents/Dodec/Drawing Template/
@@ -517,12 +530,11 @@ EXAMPLE = {
         "DWG_NO": "D021", "REV": "B", "SCALE": "2:1", "SHEET": "1 OF 1",
         "MATERIAL": "ALLOY STEEL, CLASS 10.9", "FINISH": "BLACK ZINC FLAKE, 8 µm MIN",
         "DRAWN_NAME": "KURTSHAPE", "DRAWN_DATE": "2026-10-23",
-        "CHECKED_NAME": "CLAUDE", "CHECKED_DATE": "2026-10-28",
-        "APPROVED_NAME": "K. ZELLER", "APPROVED_DATE": "2026-10-28",
+        "CHECKED_NAME": "", "CHECKED_DATE": "",
     },
-    "revisions": [("A", "INITIAL RELEASE", "2026-10-23", "KZ", 1),
+    "revisions": [("A", "INITIAL RELEASE", "", "", 1),
                   ("B", "THREAD SHORTENED 1.5 MM; RECESS CHANGED TO ISO 10664 T40; TORQUE NOTE ADDED",
-                   "2026-10-28", "KZ", 2)],
+                   "", "", 2)],
     "notes": ["TORX T40 RECESS PER ISO 10664.",
               "DIMENSIONS APPLY AFTER COATING.",
               "O-RING SUPPLIED SEPARATELY; DO NOT INSTALL."],

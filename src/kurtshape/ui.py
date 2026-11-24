@@ -254,6 +254,8 @@ class Panel(QtGui.QDockWidget):
         self.assembly_tree = AssemblyTree(self)
         # Assembly UX item 6: live measurement of the selection, right of the status line.
         self.measure_label = MeasureLabel(self)
+        from .cylinder_seams import CylinderSeams
+        self.cylinder_seams = CylinderSeams(self)
         # Assembly UX item 7: Refresh finds parts changed on disk; the GUI hashes only on request.
         assembly_sync.INSPECT_HASHES = False
         self.assembly_refresh = AssemblyRefresh(self)
@@ -4886,6 +4888,7 @@ class Panel(QtGui.QDockWidget):
         self.additive_selection.shutdown()
         self.assembly_links.close()
         self.measure_label.close()
+        self.cylinder_seams.close()
         if self.open_handoff:
             self.open_handoff.close()
         self.parameter_section.close()

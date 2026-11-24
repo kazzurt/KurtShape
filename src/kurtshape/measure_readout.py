@@ -4,8 +4,10 @@ FreeCAD-only (no Qt): the GUI's live readout and the bridge's ``measure``
 operation share it. ``element_shape`` turns a selected object/sub-element into
 its world-frame shape (an occurrence's face where it sits in the assembly, not
 in its source frame); ``describe`` measures one or more such shapes and
-returns ``{"kind", "text", "values"}``. Lengths are mm with 3 decimals, angles
-degrees with 2. Parallel/perpendicular tolerance 0.5°, coaxial 1 µm radial.
+returns ``{"kind", "text", "values"}``. Single-edge lengths, diameters and radii
+show mm with 1 decimal and inches with 3; other lengths show mm with 3 decimals,
+angles degrees with 2. Numeric values remain in mm. Parallel/perpendicular
+tolerance 0.5°, coaxial 1 µm radial.
 """
 from __future__ import annotations
 
@@ -48,6 +50,10 @@ def _fmt(value, digits=3):
 
 def length(value):
     return _fmt(value) + " mm"
+
+
+def dual_length(value):
+    return f"{_fmt(value, 1)} mm ({_fmt(value / 25.4, 3)} in)"
 
 
 def angle(value):
@@ -132,11 +138,11 @@ def single(entry):
                 "values": {"point_mm": _vector(p)}}
     if kind == "circle":
         radius = entry["radius"]
-        return {"kind": "circle", "text": f"Ø {length(2 * radius)} · R {length(radius)}",
+        return {"kind": "circle", "text": f"Ø {dual_length(2 * radius)} · R {dual_length(radius)}",
                 "values": {"diameter_mm": 2 * radius, "radius_mm": radius, "length_mm": shape.Length,
                            "center_mm": _vector(entry["point"]), "axis": _vector(entry["direction"])}}
     if kind in {"line", "edge"}:
-        return {"kind": "edge", "text": "Length " + length(shape.Length), "values": {"length_mm": shape.Length}}
+        return {"kind": "edge", "text": "Length " + dual_length(shape.Length), "values": {"length_mm": shape.Length}}
     if kind == "plane":
         n = entry["normal"]
         return {"kind": "plane", "text": f"Area {_fmt(shape.Area)} mm² · Normal ({_fmt(n.x)}, {_fmt(n.y)}, {_fmt(n.z)})",

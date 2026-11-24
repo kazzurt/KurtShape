@@ -2,6 +2,27 @@
 
 ## Behavior changes
 
+### Cylinder seams hidden (2026-11-17)
+
+Cylinder ID and OD parameter seams are hidden in the normal viewport and face
+hover outline. Circular rims and real cut boundaries remain visible and selectable.
+This is a display change: native BRep geometry, saved topology, EdgeN references
+and undo history are unchanged. Save and restart KurtShape to load it.
+
+`cylinder_seams.py` observes native geometry and view changes and filters Coin edge
+polylines after tessellation. Each seam retains a collapsed two-point slot. The
+initial one-point approach was rejected by the native pick test: Coin skipped that
+slot and reported the next rim as the seam's EdgeN. Two coincident points preserve
+both drawing/highlight numbering and native picking. No idle polling is used.
+
+Verified with FreeCAD 1.1.4 / OCCT 7.8.1: 44 private GUI checks cover ID/OD seams,
+hover, exact rim indices and dual-unit measurement, tessellation changes, edits,
+undo/redo, partial cylinders, Body/Tip rendering, linked occurrences, save/reopen
+and idle stability. Reproduce with
+`tools/run_gui_recipe.ps1 -Recipe cylinder-seams`; the recipe retains before/after
+native renders and the fixture FCStd in its isolated runtime session. The focused
+native suites are `test_navigation` and `test_measure_readout` (23 tests).
+
 ### Click selection adds (2026-10-24)
 
 - A click on a face, edge or vertex **adds** it to the selection; clicking an element that is already selected removes it. Hovering a selected face outlines it in orange (a click removes it), an unselected one in blue.

@@ -157,6 +157,7 @@ class Sheet:
         self._view_letters = set()    # letters of viewing-direction arrows (auxiliary views, this sheet)
         self._notes_items = []
         self._rev_bottom = None       # y under the lowest revision row the drawing added
+        self._revision_form_fields = []
         self._allow = []              # waivers given with allow()
         self._fitted_circles = []     # (sheet centre, sheet radius) of B-spline loops accepted as holes
         self.map = json.loads((TEMPLATES / template_map).read_text(encoding="utf-8"))
@@ -1121,6 +1122,10 @@ class Sheet:
         for key, value in fields.items():
             spec = self.map["fields"].get(key)
             if spec is None:
+                if key in {"APPROVED_NAME", "APPROVED_DATE"}:
+                    if not str(value or "").strip():
+                        continue  # Older specs may explicitly clear the removed title-block cells.
+                    raise DrawingError(f"{key} was removed; put approval in revision_row()")
                 raise DrawingError(f"template has no field {key}")
             e = self.doc.entitydb.get(spec["handle"])
             if e is None:
@@ -1262,6 +1267,24 @@ class Sheet:
                       attach="MIDDLE_LEFT", layer="TABLES")
             if approved:
                 self.text((cols["APPROVED"][0] + inset, ym), approved, h=h, attach="MIDDLE_LEFT", layer="TABLES")
+
+        if rt.get("pdf_approval_fields") and not approved:
+            for column, value, label in (("DATE", date, "Approval date (YYYY-MM-DD)"), ("APPROVED", approved, "Approved by")):
+                if column in cols:
+                    self._revision_form_fields.append({
+                        "name": f"REV_{index}_{column}", "label": f"Revision {rev or index}: {label}",
+                        "rect": [cols[column][0] + .6, y0 + .6, cols[column][1] - .6, y1 - .6],
+                        "value": value, "height_mm": h, "max_length": 10 if column == "DATE" else 40,
+                    })
+
+    def pdf_form_fields(self):
+        """Editable sign-off cells; completed revision rows remain printed history."""
+        marks = set(self.map.get("placeholders", ("----", "-")))
+        result = []
+        for spec in self.map.get("pdf_form_fields", []):
+            value = self._field_text(spec["name"])
+            result.append(dict(spec, value="" if value in marks else value))
+        return result + self._revision_form_fields
 
     def set_block_text(self, block, handle, value):
         b = self.doc.blocks.get(block)
@@ -1961,6 +1984,10 @@ class Sheet:
             fig.savefig(str(png_path), dpi=dpi, facecolor="white")
             self.check_render(png_path, dpi)
         plt.close(fig)
+        fields = self.pdf_form_fields()
+        if fields:
+            from .pdf_forms import add_signoff_fields
+            add_signoff_fields(pdf_path, fields, self.map["sheet_box"])
 
     def check_render(self, png_path, dpi):
         """The preview must be black on white outside the logo: no coloured pixels, and no

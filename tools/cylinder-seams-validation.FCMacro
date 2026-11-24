@@ -1,0 +1,158 @@
+"""Native cylinder seam display/picking; run_gui_recipe.ps1 -Recipe cylinder-seams."""
+import os
+from pathlib import Path
+import sys
+
+root = Path(os.environ["KURTSHAPE_ROOT"])
+sys.path[:0] = [str(root / "src"), str(root / "tools")]
+import FreeCAD as App
+import FreeCADGui as Gui
+import Part
+from assembly_ux_probe import Probe, SESSION
+from kurtshape.cylinder_seams import CylinderSeams, edge_nodes, seam_indices
+from kurtshape.hover_outline import boundary_polylines
+
+
+def slots(node):
+    result, current = [], []
+    for index in node.coordIndex.getValues():
+        if index == -1:
+            result.append(current)
+            current = []
+        else:
+            current.append(index)
+    return result
+
+
+def body(probe):
+    probe.call("new", name="Cylinder seam display")
+    doc = probe.panel.document()
+    tube = doc.addObject("Part::Feature", "Tube")
+    tube.Shape = Part.makeCylinder(10, 30).cut(Part.makeCylinder(6, 30))
+    doc.recompute()
+    probe.frame()
+    view = Gui.activeDocument().activeView()
+
+    def verify(obj):
+        seam_ids = seam_indices(obj.Shape)
+        nodes = edge_nodes(obj.ViewObject.RootNode)
+        probe.check(obj.Name + " has native edge geometry", bool(nodes))
+        for node in nodes:
+            lines = slots(node)
+            probe.check(obj.Name + " retains every EdgeN slot", len(lines) == len(obj.Shape.Edges),
+                        [len(line) for line in lines])
+            probe.check(obj.Name + " hides only cylindrical seams",
+                        all(len(line) == 2 and line[0] == line[1] if i in seam_ids else len(line) >= 2
+                            for i, line in enumerate(lines, 1)), [seam_ids, [len(line) for line in lines]])
+        return seam_ids
+
+    probe.check("Tube has both ID and OD seams", len(verify(tube)) == 2)
+    for face in tube.Shape.Faces:
+        if isinstance(face.Surface, Part.Cylinder):
+            probe.check("Cylindrical face hover keeps just the two rims", len(boundary_polylines(face)) == 2)
+
+    # Native before/after pick at the front-facing seam, away from either rim.
+    view.viewRight()
+    view.fitAll()
+    probe.wait(200)
+    def hit(point, edge=False):
+        pixel = view.getPointOnViewport(App.Vector(*point))
+        if edge:
+            for dy in range(-3, 4):
+                for dx in range(-3, 4):
+                    result = view.getObjectInfo((round(pixel[0]) + dx, round(pixel[1]) + dy))
+                    if result and result["Component"].startswith("Edge"):
+                        return result
+        return view.getObjectInfo((round(pixel[0]), round(pixel[1])))
+
+    probe.panel.cylinder_seams.close()
+    probe.wait(150)
+    before = hit((10, 0, 15))
+    view.saveImage(str(probe.output / "tube-before.png"), 900, 650, "White")
+    native_slots = [slots(node) for node in edge_nodes(tube.ViewObject.RootNode)]
+    probe.check("Baseline contains drawable ID and OD seams", all(len(lines[i-1]) >= 2
+                for lines in native_slots for i in seam_indices(tube.Shape)))
+    saved_shape = tube.Shape.exportBrepToString()
+    before_undo = doc.UndoCount
+    probe.panel.cylinder_seams = CylinderSeams(probe.panel)
+    probe.wait(200)
+    after = hit((10, 0, 15))
+    probe.check("Hidden seam picks the continuous cylindrical face", after and after["Component"].startswith("Face"), after)
+    probe.check("Presentation preserves BRep and undo history",
+                tube.Shape.exportBrepToString() == saved_shape and doc.UndoCount == before_undo)
+    view.saveImage(str(probe.output / "tube-after.png"), 900, 650, "White")
+    for original, node in zip(native_slots, edge_nodes(tube.ViewObject.RootNode)):
+        probe.check("Rim coordinates and native edge numbers are unchanged",
+                    all(line == original[i-1] for i, line in enumerate(slots(node), 1) if i not in seam_indices(tube.Shape)))
+    rim_hit = hit((8, 6, 30), edge=True)
+    probe.report["log"].append({"seam_before": before, "seam_after": after, "rim": rim_hit})
+    probe.check("Real circular rim still picks an edge", rim_hit and rim_hit["Component"].startswith("Edge"), rim_hit)
+    lower_hit = hit((8, 6, 0), edge=True)
+    probe.check("Lower rim keeps the correct EdgeN after the seam slot", lower_hit
+                and lower_hit["Component"].startswith("Edge")
+                and abs(tube.Shape.getElement(lower_hit["Component"]).CenterOfMass.z) < 1e-7, lower_hit)
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(tube, rim_hit["Component"])
+    probe.wait(200)
+    probe.check("Rim selection still reports dual-unit diameter", "20.0 mm (0.787 in)" in probe.panel.measure_label.label.text(),
+                probe.panel.measure_label.label.text())
+    Gui.Selection.clearSelection()
+
+    # Native re-tessellation and document edits replace the Coin indices.
+    tube.ViewObject.Deviation = 0.2
+    probe.wait(200)
+    verify(tube)
+    doc.openTransaction("Resize tube")
+    tube.Shape = Part.makeCylinder(12, 35).cut(Part.makeCylinder(7, 35))
+    doc.recompute()
+    doc.commitTransaction()
+    probe.wait(200)
+    verify(tube)
+    doc.undo()
+    probe.wait(200)
+    verify(tube)
+    doc.redo()
+    probe.wait(200)
+    verify(tube)
+
+    # A cut cylinder's straight boundary is real, not a seam.
+    cut = doc.addObject("Part::Feature", "HalfCylinder")
+    cut.Shape = Part.makeCylinder(10, 30, App.Vector(35, 0, 0), App.Vector(0, 0, 1), 180)
+    doc.recompute()
+    probe.wait(200)
+    probe.check("Partial-cylinder cut edges are not seams", not seam_indices(cut.Shape))
+    verify(cut)
+
+    # Body/Tip rendering and an occurrence of the same native source.
+    native_body = doc.addObject("PartDesign::Body", "CylinderBody")
+    feature = native_body.newObject("PartDesign::Feature", "Solid")
+    feature.Shape = Part.makeCylinder(4, 16, App.Vector(60, 0, 0))
+    native_body.Tip = feature
+    link = doc.addObject("App::Link", "Occurrence")
+    link.setLink(tube)
+    link.Placement.Base = App.Vector(85, 0, 0)
+    doc.recompute()
+    probe.frame()
+    probe.wait(200)
+    verify(native_body)
+    for node in edge_nodes(link.ViewObject.RootNode):
+        probe.check("Linked occurrence uses filtered source edges", all(len(line) == 2 and line[0] == line[1]
+                    for i, line in enumerate(slots(node), 1) if i in seam_indices(tube.Shape)))
+
+    saved = SESSION / "cylinder-seam-fixtures.FCStd"
+    doc.saveAs(str(saved))
+    App.closeDocument(doc.Name)
+    restored = App.openDocument(str(saved))
+    Gui.activeDocument().activeView().viewAxonometric()
+    Gui.activeDocument().activeView().fitAll()
+    probe.wait(300)
+    verify(restored.Tube)
+    verify(restored.CylinderBody)
+    Gui.activeDocument().activeView().saveImage(str(probe.output / "fixtures-after-reopen.png"), 1100, 700, "White")
+    count = probe.panel.cylinder_seams.updates
+    probe.wait(250)
+    probe.check("Idle does not keep rewriting edge geometry", probe.panel.cylinder_seams.updates == count)
+    probe.report["picks"] = {"before": before, "after": after, "rim": rim_hit}
+
+
+Probe("cylinder-seams", "Private native GUI; real Coin geometry, native picks, hover boundaries, edits, undo/redo and reopen.").run(body)

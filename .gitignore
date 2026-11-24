@@ -18,6 +18,8 @@ validation/**/user-data/
 validation/**/SavedPreferencePacks/
 validation/**/*working/
 validation/user-reports/
+# Private model/session evidence; retain locally, never include in public commits.
+validation/assembly-ux/visibility-2026-11-16/
 
 # Built by tools/build-windows-launcher.ps1 from tools/KurtShapeLauncher.cs; not tracked.
 KurtShape.exe

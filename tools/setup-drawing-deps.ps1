@@ -12,7 +12,7 @@ $runtime = [IO.Path]::GetFullPath($RuntimeRoot)
 $python = Join-Path $runtime 'freecad-1.1.4\FreeCAD_1.1.4-Windows-x86_64-py311\bin\python.exe'
 if (-not (Test-Path -LiteralPath $python)) { throw 'Run setup.ps1 to install the pinned runtime first.' }
 $target = Join-Path $runtime 'vendor\drawing-py311'
-$packages = @('ezdxf==1.4.5', 'olefile==0.47')
+$packages = @('ezdxf==1.4.5', 'olefile==0.47', 'pypdf==6.21.4')
 
 if ($Force -and (Test-Path -LiteralPath $target)) { Remove-Item -LiteralPath $target -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $target | Out-Null
@@ -27,7 +27,7 @@ $script = Join-Path $work 'check.py'
 @"
 import sys
 sys.path.append(r'$target')
-import ezdxf, olefile, numpy, matplotlib, fontTools, pyparsing, typing_extensions, PIL
+import ezdxf, olefile, pypdf, numpy, matplotlib, fontTools, pyparsing, typing_extensions, PIL
 from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
 from ezdxf.npshapes import to_matplotlib_path
 from ezdxf.addons.drawing.pipeline import RenderPipeline2d

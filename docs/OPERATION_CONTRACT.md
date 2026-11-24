@@ -657,7 +657,7 @@ their existing behavior. This is GUI presentation only; bridge schemas are uncha
 
 ### Measure (assembly UX, 2026-10-24)
 
-`measure {references:[...]}` (read-only) measures 1-24 references in **global** coordinates and returns `{kind, text, values}`, the same readout the GUI shows right of the status line for the current selection (`KurtShapeMeasure`, updated 80 ms after a selection change). A reference is a selector (it must match exactly one element: `missing_reference` / `ambiguous_reference` otherwise) or `{object, subelement}`; an occurrence's sub-element is measured where it sits in the assembly, and an omitted subelement measures the whole object. Lengths are mm (3 decimals in `text`), angles degrees (2 decimals); `values` holds the unrounded numbers.
+`measure {references:[...]}` (read-only) measures 1-24 references in **global** coordinates and returns `{kind, text, values}`, the same readout the GUI shows right of the status line for the current selection (`KurtShapeMeasure`, updated 80 ms after a selection change). A reference is a selector (it must match exactly one element: `missing_reference` / `ambiguous_reference` otherwise) or `{object, subelement}`; an occurrence's sub-element is measured where it sits in the assembly, and an omitted subelement measures the whole object. Since 2026-11-17, a single selected edge shows its length (or a circular edge's diameter and radius) in mm with 1 decimal and inches with 3, for example `Length 25.4 mm (1.000 in)`. Each unit is rounded independently from the measured value (25.4 mm per inch). Other lengths are mm with 3 decimals in `text`, angles degrees with 2; `values` keeps the unrounded measurements in the existing mm-based units.
 
 | Selection | `kind` | Reported |
 |---|---|---|

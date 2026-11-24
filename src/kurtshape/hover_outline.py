@@ -53,10 +53,14 @@ def is_face_reference(element):
 
 def boundary_polylines(shape):
     """Return every wire boundary, including holes, with bounded tessellation."""
+    from .cylinder_seams import seam_indices
+    seams = seam_indices(shape)
     scale = max(shape.BoundBox.DiagonalLength, 1.0)
     deflection = max(scale * 0.0005, 0.01)
     result = []
-    for edge in shape.Edges:
+    for index, edge in enumerate(shape.Edges, 1):
+        if index in seams:
+            continue
         points = edge.discretize(Deflection=deflection)
         if len(points) >= 2:
             result.append([tuple(point) for point in points])

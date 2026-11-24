@@ -479,14 +479,11 @@ class SheetTests(unittest.TestCase):
         self.assertAlmostEqual(box[3] - box[1], 11 * 72, delta=0.5)
         self.assertIn(b"TEST SHEET", raw)
         # line widths in points: 0.50 mm visible lines print 1.42 pt, nothing under 0.13 mm
-        import zlib
-        widths = set()
-        for m in re.finditer(rb"stream\r?\n(.*?)\r?\nendstream", raw, re.S):
-            try:
-                data = zlib.decompress(m.group(1))
-            except zlib.error:
-                continue
-            widths.update(float(w) for w in re.findall(rb"([\d.]+) w\b", data))
+        from pypdf import PdfReader
+        # Decode the page content through the PDF parser: compression and stream
+        # delimiters are serialization details, not drawing lineweight behavior.
+        data = PdfReader(pdf).pages[0].get_contents().get_data()
+        widths = {float(w) for w in re.findall(rb"([\d.]+) w\b", data)}
         self.assertIn(round(0.50 * 72 / 25.4, 2), {round(w, 2) for w in widths})
         stroked = [w for w in widths if w > 0]               # '0 w' belongs to filled shapes
         self.assertGreaterEqual(min(stroked), 0.13 * 72 / 25.4 - 0.01)

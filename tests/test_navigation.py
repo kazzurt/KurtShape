@@ -111,6 +111,26 @@ class SketchProjectionTests(unittest.TestCase):
         for element in ['', None, 'Edge1', 'Vertex2', 'Face0', 'SomeFace1', 'Face3.extra']:
             self.assertFalse(is_face_reference(element))
 
+    def test_cylinder_hover_omits_seams_but_keeps_partial_cylinder_boundaries(self):
+        import Part
+        from kurtshape.cylinder_seams import seam_indices
+        tube = Part.makeCylinder(10, 30).cut(Part.makeCylinder(6, 30))
+        self.assertEqual(len(seam_indices(tube)), 2)
+        for face in tube.Faces:
+            if isinstance(face.Surface, Part.Cylinder):
+                self.assertEqual(len(boundary_polylines(face)), 2)
+        half = Part.makeCylinder(10, 30, App.Vector(), App.Vector(0, 0, 1), 180)
+        self.assertEqual(seam_indices(half), set())
+        curved = next(face for face in half.Faces if isinstance(face.Surface, Part.Cylinder))
+        self.assertEqual(len(boundary_polylines(curved)), 4)
+
+    def test_cylinder_seam_mask_preserves_native_edge_slots_and_unknown_layouts(self):
+        from kurtshape.cylinder_seams import masked_indices
+        source = [10, 11, 12, -1, 20, 21, -1, 30, 31, 32, -1]
+        self.assertEqual(masked_indices(source, {2}, 3),
+                         [10, 11, 12, -1, 20, 20, -1, 30, 31, 32, -1])
+        self.assertEqual(masked_indices(source, {2}, 4), source)
+
 
 if __name__ == '__main__':
     unittest.main()

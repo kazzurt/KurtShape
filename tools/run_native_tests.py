@@ -39,6 +39,7 @@ SUITES = {
         "test_delivery_clearance.ClearanceTests", "test_delivery_clearance.DeliveryValidationTests",
         # 2D drawings (docs/DRAWINGS.md): the module skips itself when ezdxf is not installed (tools/setup-drawing-deps.ps1).
         "test_drawing.ViewProjectionTests", "test_drawing.SectionTests", "test_drawing.SheetTests", "test_drawing.StandardTests",
+        "test_drawing_pdf_forms.SignoffFormTests",
         "test_extrusion_edit.ExtrusionEditTests", "test_history_lifecycle.HistoryLifecycleTests",
         "test_everyday_modeling.EverydayModelingDirectionTests",
         "test_dress_up_edit.DressUpEditTests", "test_holes.HoleTests",
